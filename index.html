@@ -19,12 +19,13 @@
             font-family: 'Plus Jakarta Sans', sans-serif; 
             background: radial-gradient(circle at top left, #1e1b4b, #0b1120); 
             color: white; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
             margin: 0; 
-            overflow: hidden; /* Prevents scrollbars from floating images */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Better for scrolling on short phones */
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto; 
             position: relative;
         }
 
@@ -41,22 +42,20 @@
 
         .bg-img {
             position: absolute;
-            filter: brightness(0.6) contrast(1.2) grayscale(0.3);
+            filter: brightness(0.4) contrast(1.2);
             border-radius: 20px;
             animation: float 8s ease-in-out infinite;
-            opacity: 0.4;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            opacity: 0.3;
         }
 
-        /* Image Positions & Sizes */
-        .img-bike { top: 10%; left: -5%; width: 300px; --rot: -10deg; }
-        .img-helmet { bottom: 10%; right: -2%; width: 180px; --rot: 15deg; animation-delay: 1s; }
-        .img-spanner { top: 15%; right: 5%; width: 120px; --rot: 25deg; animation-delay: 2s; }
-        .img-exhaust { bottom: 15%; left: 5%; width: 220px; --rot: -20deg; animation-delay: 3s; }
+        .img-bike { top: 5%; left: -10%; width: 250px; --rot: -10deg; }
+        .img-helmet { bottom: 5%; right: -5%; width: 150px; --rot: 15deg; animation-delay: 1s; }
+        .img-spanner { top: 10%; right: 2%; width: 80px; --rot: 25deg; animation-delay: 2s; }
+        .img-exhaust { bottom: 10%; left: -5%; width: 180px; --rot: -20deg; animation-delay: 3s; }
 
         @keyframes float {
             0%, 100% { transform: translateY(0) rotate(var(--rot)); }
-            50% { transform: translateY(-30px) rotate(calc(var(--rot) + 5deg)); }
+            50% { transform: translateY(-20px) rotate(calc(var(--rot) + 5deg)); }
         }
 
         /* --- UI COMPONENTS --- */
@@ -65,18 +64,19 @@
             flex-direction: column;
             align-items: center;
             width: 100%;
-            max-width: 460px;
-            padding: 20px;
+            max-width: 420px;
+            padding: 20px 15px; /* Reduced side padding for mobile */
             z-index: 10;
+            box-sizing: border-box;
         }
 
         .auth-card { 
             background: var(--glass); 
-            padding: 40px; 
-            border-radius: 28px; 
+            padding: 30px 25px; /* Thinner padding for mobile */
+            border-radius: 24px; 
             width: 100%; 
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); 
-            backdrop-filter: blur(20px); 
+            backdrop-filter: blur(15px); 
             border: 1px solid var(--border);
             text-align: center;
             box-sizing: border-box;
@@ -84,59 +84,56 @@
 
         .logo-box { 
             background: linear-gradient(135deg, var(--primary), #4f46e5); 
-            width: 70px; height: 70px; line-height: 70px; 
-            border-radius: 20px; margin: 0 auto 20px; 
-            font-size: 32px; font-weight: 800; 
+            width: 60px; height: 60px; line-height: 60px; 
+            border-radius: 18px; margin: 0 auto 15px; 
+            font-size: 28px; font-weight: 800; 
             box-shadow: 0 10px 20px rgba(99, 102, 241, 0.4);
         }
 
         .brand-name {
-            font-size: 1.8rem; font-weight: 800; letter-spacing: -1px; margin: 0;
+            font-size: 1.6rem; font-weight: 800; letter-spacing: -1px; margin: 0;
             background: linear-gradient(to right, #ffffff, #94a3b8);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             text-transform: uppercase;
         }
 
-        h2 { font-weight: 600; margin: 10px 0 5px 0; font-size: 1.3rem; color: #f8fafc; }
-        .tagline { color: #94a3b8; font-size: 0.9rem; margin-bottom: 25px; }
+        h2 { font-weight: 600; margin: 8px 0 4px 0; font-size: 1.2rem; color: #f8fafc; }
+        .tagline { color: #94a3b8; font-size: 0.85rem; margin-bottom: 20px; }
 
         input, select, button { 
-            width: 100%; padding: 14px; margin: 10px 0; 
-            border-radius: 12px; border: 1px solid var(--border); 
-            box-sizing: border-box; font-size: 1rem; transition: 0.3s;
+            width: 100%; padding: 12px; margin: 8px 0; 
+            border-radius: 10px; border: 1px solid var(--border); 
+            box-sizing: border-box; font-size: 0.95rem; transition: 0.3s;
         }
 
-        input, select { background: rgba(15, 23, 42, 0.5); color: white; outline: none; }
+        input, select { background: rgba(15, 23, 42, 0.6); color: white; outline: none; }
         input:focus { border-color: var(--primary); background: rgba(15, 23, 42, 0.8); }
 
         button { 
             background: var(--primary); color: white; font-weight: 800; 
-            cursor: pointer; border: none; margin-top: 15px;
+            cursor: pointer; border: none; margin-top: 10px;
             text-transform: uppercase; letter-spacing: 1px;
         }
-        button:hover { background: var(--accent); transform: translateY(-1px); }
 
-        /* --- BANKING LOGOS --- */
         .banking-section {
-            margin-top: 25px;
-            padding-top: 20px;
+            margin-top: 20px;
+            padding-top: 15px;
             border-top: 1px solid var(--border);
         }
-        .banking-label { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-        .logo-flex { display: flex; justify-content: center; align-items: center; gap: 20px; }
-        .bank-img { height: 22px; filter: brightness(0) invert(1); opacity: 0.6; transition: 0.3s; }
-        .bank-img:hover { opacity: 1; filter: none; }
+        .banking-label { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .logo-flex { display: flex; justify-content: center; align-items: center; gap: 15px; }
+        .bank-img { height: 18px; filter: brightness(0) invert(1); opacity: 0.7; }
 
-        .toggle-link { text-align: center; font-size: 0.9rem; margin-top: 20px; cursor: pointer; color: #94a3b8; }
+        .toggle-link { text-align: center; font-size: 0.85rem; margin-top: 15px; cursor: pointer; color: #94a3b8; }
         .toggle-link b { color: var(--primary); text-decoration: underline; }
 
         .saftech-footer {
-            margin-top: 30px; text-align: center; padding: 15px;
-            border-radius: 20px; background: rgba(255, 255, 255, 0.03);
+            margin: 20px 0; text-align: center; padding: 12px;
+            border-radius: 18px; background: rgba(255, 255, 255, 0.03);
             width: 100%; box-sizing: border-box;
         }
-        .saftech-footer h4 { font-size: 0.7rem; text-transform: uppercase; color: var(--primary); margin: 0 0 5px 0; }
-        .contact-info { font-weight: 600; color: #ffffff; margin-top: 5px; font-size: 0.85rem; }
+        .saftech-footer h4 { font-size: 0.65rem; text-transform: uppercase; color: var(--primary); margin: 0 0 4px 0; }
+        .contact-info { font-weight: 600; color: #ffffff; margin-top: 4px; font-size: 0.8rem; }
 
         .hidden { display: none; }
     </style>
@@ -155,7 +152,7 @@
         <div class="logo-box">J</div>
         <h1 class="brand-name">JEPE AUTOSPARES</h1>
         <h2 id="auth-title">Staff Sign In</h2>
-        <p class="tagline" id="auth-subtitle">Excellence in Spares, Gas Hub & Banking.</p>
+        <p class="tagline" id="auth-subtitle">Excellence in Spares & Banking.</p>
         
         <div id="success-msg" class="hidden"></div>
 
@@ -187,7 +184,7 @@
 
     <div class="saftech-footer">
         <h4>System by SAFTECH</h4>
-        <p>Engineered by <b>Alex Safari</b></p>
+        <p style="font-size: 0.8rem; margin:0;">Engineered by <b>Alex Safari</b></p>
         <p class="contact-info">📞 0794963537 / 0707441702</p>
     </div>
 </div>
@@ -204,7 +201,6 @@
         document.getElementById('main-btn').innerText = isLogin ? "Sign In" : "Register Now";
         document.getElementById('toggle-text').innerHTML = isLogin ? 
             "New staff? <b>Create Account</b>" : "Already a member? <b>Sign In</b>";
-        document.getElementById('success-msg').classList.add('hidden');
     };
 
     window.handleAuth = async () => {
@@ -212,7 +208,6 @@
         const password = document.getElementById('password').value;
         const role = document.getElementById('role').value;
         const btn = document.getElementById('main-btn');
-        const successDiv = document.getElementById('success-msg');
 
         if (!email || !password) return alert("Please fill in all fields.");
         
@@ -226,23 +221,15 @@
                 await checkRoleAndRedirect(data.user.id);
             } else {
                 const { data, error } = await supabase.auth.signUp({ 
-                    email, 
-                    password,
-                    options: { data: { role: role } } 
+                    email, password, options: { data: { role: role } } 
                 });
-                
                 if (error) throw error;
-
-                // Sync profile
                 await supabase.from('profiles').upsert({ id: data.user.id, role: role, email: email });
-
-                successDiv.innerText = "Registration successful! You may now sign in.";
-                successDiv.className = "success-banner";
-                successDiv.classList.remove('hidden');
+                alert("Registration successful! You may now sign in.");
                 toggleMode();
             }
         } catch (err) {
-            alert("Error: " + err.message);
+            alert(err.message);
         } finally {
             btn.disabled = false;
             btn.innerText = isLogin ? "Sign In" : "Register Now";
@@ -250,15 +237,12 @@
     };
 
     async function checkRoleAndRedirect(userId) {
-        const { data, error } = await supabase.from('profiles').select('role').eq('id', userId).single();
-        if (error || !data) {
-            setTimeout(async () => {
-                const { data: retry } = await supabase.from('profiles').select('role').eq('id', userId).single();
-                if (retry) window.location.href = (retry.role === 'admin') ? 'admin.html' : 'cashier.html';
-                else { alert("Syncing... please try sign in again."); await supabase.auth.signOut(); }
-            }, 1500);
-        } else {
+        const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
+        if (data) {
             window.location.href = (data.role === 'admin') ? 'admin.html' : 'cashier.html';
+        } else {
+            alert("Setting up profile... Please wait and sign in again.");
+            await supabase.auth.signOut();
         }
     }
 </script>
