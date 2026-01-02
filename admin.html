@@ -19,7 +19,6 @@
             --warning: #f59e0b;
             --blue: #2563eb;
             --purple: #8b5cf6;
-            --sidebar-bg: #1e293b;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -32,89 +31,81 @@
             min-height: 100vh;
         }
 
-        /* --- WELCOME BANNER --- */
-        .welcome-section {
-            padding: 20px 20px 10px 20px;
-        }
-        .welcome-section h2 {
-            margin: 0;
-            font-size: 1.4rem;
-            font-weight: 800;
-            color: var(--admin-dark);
-        }
-        .welcome-section p {
-            margin: 5px 0 0 0;
-            color: var(--text-dim);
-            font-size: 0.9rem;
-        }
-
-        /* --- NAVIGATION OVERLAY (THE BANNER) --- */
+        /* --- NAVIGATION OVERLAY --- */
         .nav-overlay {
             position: fixed;
             inset: 0;
             background: rgba(15, 23, 42, 0.98);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(15px);
             z-index: 3000;
             display: none;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            padding: 80px 20px 40px 20px; /* Added top padding for the X */
+            overflow-y: auto; /* Allow scrolling if many buttons */
             animation: fadeIn 0.3s ease;
         }
 
         .nav-overlay.active { display: flex; }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .nav-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
+            gap: 12px;
             width: 100%;
             max-width: 500px;
+            margin: 0 auto;
         }
 
         .nav-card {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 20px;
+            border-radius: 18px;
+            padding: 18px 10px;
             text-align: center;
             color: white;
             text-decoration: none;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             transition: 0.2s;
         }
 
         .nav-card:active { background: var(--admin-accent); transform: scale(0.95); }
-        .nav-card span { font-size: 1.5rem; }
-        .nav-card small { font-weight: 600; font-size: 0.8rem; }
+        .nav-card span { font-size: 1.4rem; }
+        .nav-card small { font-weight: 600; font-size: 0.75rem; line-height: 1.2; }
 
+        /* FIXED CLOSE BUTTON */
         .close-nav {
-            position: absolute;
-            top: 30px;
-            right: 30px;
-            background: none;
-            border: none;
+            position: fixed;
+            top: 25px;
+            right: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255,255,255,0.2);
             color: white;
-            font-size: 2rem;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
             cursor: pointer;
+            z-index: 3100;
         }
 
-        /* --- FLOATING MENU BUTTON --- */
+        /* --- SWINGING FAB MENU BUTTON --- */
         .fab-menu {
             position: fixed;
-            bottom: 25px;
-            right: 25px;
-            width: 60px;
-            height: 60px;
+            bottom: 30px;
+            left: 25px; /* Moved to left as requested by your text */
+            width: 65px;
+            height: 65px;
             background: var(--admin-accent);
             border-radius: 50%;
             display: flex;
@@ -122,16 +113,26 @@
             justify-content: center;
             color: white;
             font-size: 1.8rem;
-            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
-            border: none;
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.5);
+            border: 3px solid white;
             cursor: pointer;
             z-index: 2000;
+            animation: swing 3s infinite ease-in-out;
+            transform-origin: center;
         }
 
-        /* --- HEADER --- */
+        @keyframes swing {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            20% { transform: rotate(15deg) scale(1.1); }
+            40% { transform: rotate(-15deg); }
+            60% { transform: rotate(10deg); }
+            80% { transform: rotate(-10deg); }
+        }
+
+        /* --- HEADER & CONTENT --- */
         header {
             background: white;
-            padding: 15px 20px;
+            padding: 18px 20px;
             border-bottom: 1px solid #e2e8f0;
             display: flex;
             justify-content: space-between;
@@ -141,14 +142,18 @@
             z-index: 100;
         }
 
-        header h1 { margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--admin-accent); }
+        header h1 { margin: 0; font-size: 1.2rem; font-weight: 800; color: var(--admin-accent); letter-spacing: -1px; }
 
-        /* --- DASHBOARD CONTENT --- */
-        .container { padding: 15px; max-width: 1400px; margin: auto; }
+        .welcome-section { padding: 25px 20px 10px; }
+        .welcome-section h2 { margin: 0; font-size: 1.4rem; font-weight: 800; line-height: 1.2; }
+        .welcome-section p { color: var(--text-dim); font-size: 0.9rem; margin-top: 10px; line-height: 1.5; }
 
+        .container { padding: 15px; max-width: 1400px; margin: auto; padding-bottom: 100px; }
+
+        /* STATS CARDS */
         .card { 
-            background: white; padding: 20px; border-radius: 16px; 
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; 
+            background: white; padding: 20px; border-radius: 20px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #eef2f6; 
             margin-bottom: 20px;
         }
 
@@ -159,78 +164,79 @@
             margin-top: 15px;
         }
 
-        @media (min-width: 768px) {
-            .stats-grid { grid-template-columns: repeat(3, 1fr); }
-            .nav-grid { grid-template-columns: repeat(3, 1fr); max-width: 800px; }
-        }
-
         .stat-box { 
-            padding: 15px; 
-            border-radius: 12px; 
+            padding: 18px 12px; 
+            border-radius: 16px; 
             color: white; 
-            text-align: center; 
+            text-align: left; 
         }
-        .stat-box small { text-transform: uppercase; font-weight: 700; opacity: 0.9; font-size: 0.65rem; display: block;}
-        .stat-box div { font-size: 1.1rem; font-weight: 800; margin-top: 4px; }
+        .stat-box small { text-transform: uppercase; font-weight: 800; opacity: 0.8; font-size: 0.6rem; display: block; letter-spacing: 0.5px;}
+        .stat-box div { font-size: 1.2rem; font-weight: 800; margin-top: 5px; }
 
-        .revenue { background: var(--blue); } 
-        .profit { background: var(--success); } 
-        .monthly { background: var(--purple); grid-column: span 2; }
-        @media (min-width: 768px) { .monthly { grid-column: span 1; } }
+        .revenue { background: linear-gradient(135deg, #3b82f6, #2563eb); } 
+        .profit { background: linear-gradient(135deg, #10b981, #059669); } 
+        .monthly { background: linear-gradient(135deg, #8b5cf6, #7c3aed); grid-column: span 2; }
 
-        /* --- STOCK LIST --- */
+        /* STOCK CARDS */
         .stock-card {
-            background: white; border: 1px solid #e2e8f0; border-radius: 12px;
-            padding: 15px; margin-bottom: 10px;
+            background: white; border: 1px solid #e2e8f0; border-radius: 15px;
+            padding: 16px; margin-bottom: 12px; transition: 0.2s;
         }
-        .stock-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-        .stock-card-title { font-weight: 800; font-size: 0.95rem; }
-        .stock-card-subtitle { font-size: 0.75rem; color: var(--text-dim); }
-        .stock-card-badge { padding: 4px 8px; border-radius: 6px; font-weight: 800; font-size: 0.8rem; }
-        .stock-card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid #f1f5f9; padding-top: 10px; }
-        .grid-label { font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; }
-        .grid-val { font-size: 0.85rem; font-weight: 700; }
+        .stock-card:active { background: #f8fafc; }
+        .stock-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .stock-card-title { font-weight: 800; font-size: 1rem; color: var(--admin-dark); }
+        .stock-card-badge { padding: 6px 12px; border-radius: 10px; font-weight: 800; font-size: 0.85rem; }
+        
+        .stock-card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; border-top: 1px solid #f1f5f9; padding-top: 12px; }
+        .grid-label { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; margin-bottom: 2px; }
+        .grid-val { font-size: 0.8rem; font-weight: 700; }
 
         input[type="month"], input[type="text"] {
-            padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-family: inherit; width: 100%; font-size: 14px;
+            padding: 14px; border: 1px solid #e2e8f0; border-radius: 12px; width: 100%; font-size: 15px; background: #fcfcfd;
         }
 
         .logout-btn {
             background: var(--danger);
             color: white;
             width: 100%;
-            padding: 15px;
-            border-radius: 12px;
+            padding: 18px;
+            border-radius: 16px;
             border: none;
             font-weight: 800;
             margin-top: 20px;
             grid-column: span 2;
+            letter-spacing: 1px;
         }
+
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
 <div class="nav-overlay" id="navBanner">
     <button class="close-nav" onclick="toggleNav()">✕</button>
-    <h2 style="color: white; margin-bottom: 10px; font-weight: 800;">JEPE AUTOSPARES</h2>
-    <p style="color: rgba(255,255,255,0.6); margin-bottom: 30px;">Management Terminal</p>
+    
+    <div style="text-align: center; margin-bottom: 30px;">
+        <h2 style="color: white; margin: 0; font-size: 1.8rem; font-weight: 800;">JEPE</h2>
+        <p style="color: rgba(255,255,255,0.5); margin: 5px 0 0; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px;">Management Hub</p>
+    </div>
     
     <div class="nav-grid">
-        <a href="admin.html" class="nav-card active"><span>📊</span><small>Dashboard</small></a>
-        <a href="shift-history.html" class="nav-card"><span>📋</span><small>Shift Audit</small></a>
-         <a href="reports.html" class="nav-card"><span>📄</span><small>Reports</small></a>
-         <a href="gas_hub.html" class="nav-card"><span>🔥</span><small>Gas Hub</small></a>
-         <a href="audit_trail.html" class="nav-card">🔍 what cashier edited</a>
-         <a href="price_audits.html" class="nav-card"><span>📉</span><small>item sold under price</small></a>
+        <a href="admin.html" class="nav-card" style="background: var(--admin-accent)"><span>📊</span><small>Dashboard</small></a>
         <a href="inventory.html" class="nav-card"><span>➕</span><small>Add Stock</small></a>
         <a href="sales_editor.html" class="nav-card"><span>✏️</span><small>Edit Stock</small></a>
-        <a href="money-history.html" class="nav-card"><span>💰</span><small>Money IN/OUT history</small></a>
+        <a href="gas_hub.html" class="nav-card"><span>🔥</span><small>Gas Hub</small></a>
+        <a href="shift-history.html" class="nav-card"><span>📋</span><small>Shift Audit</small></a>
         <a href="sales-history.html" class="nav-card"><span>📜</span><small>Sales History</small></a>
-         <a href="admin-debtors.html" class="nav-card"><span>👥</span><small>Debtors</small></a>
-         <a href="suppliers.html" class="nav-card"><span>🤝</span><small>Suppliers</small></a>
-         <a href="low_stock.html" class="nav-card"><span>⚠️</span><small>Low Stock</small></a>
-        <a href="Monthly Performance Report.html" class="nav-card"><span>📄</span><small>Monthly Report</small></a>
-        <button onclick="handleLogout()" class="logout-btn">🚪 LOGOUT</button>
+        <a href="money-history.html" class="nav-card"><span>💰</span><small>Cash Flow</small></a>
+        <a href="admin-debtors.html" class="nav-card"><span>👥</span><small>Debtors</small></a>
+        <a href="low_stock.html" class="nav-card"><span>⚠️</span><small>Low Stock</small></a>
+        <a href="audit_trail.html" class="nav-card"><span>🔍</span><small>Staff Edits</small></a>
+        <a href="reports.html" class="nav-card"><span>📄</span><small>Reports</small></a>
+        <a href="price_audits.html" class="nav-card"><span>📉</span><small>Underpriced</small></a>
+        <a href="suppliers.html" class="nav-card"><span>🤝</span><small>Suppliers</small></a>
+        <a href="Monthly Performance Report.html" class="nav-card"><span>📅</span><small>Monthly</small></a>
+        <button onclick="handleLogout()" class="logout-btn">🚪 LOGOUT SYSTEM</button>
     </div>
 </div>
 
@@ -238,35 +244,34 @@
 
 <header>
     <h1>JEPE AUTOSPARES</h1>
-    <div id="status-dot" style="width: 10px; height: 10px; border-radius: 50%; background: var(--success);"></div>
+    <div id="status-dot" style="width: 12px; height: 12px; border-radius: 50%; background: var(--success); box-shadow: 0 0 10px var(--success);"></div>
 </header>
 
 <div class="welcome-section">
-    <h2>Welcome back, ADMIN 👋</h2>
-    <h2> Here is what's happening at JEPE AUTOSPARES today.</h2>
-    <p>click the menu button ( ☰  ) to the bottom left to see what's happening at JEPE AUTOSPARES .</p>
+    <h2>Welcome, ADMIN 👋</h2>
+    <p>Real-time analytics for <b>JEPE AUTOSPARES</b>. Use the floating menu (☰) to manage operations.</p>
 </div>
 
 <div class="container">
     <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
-            <h2 style="margin:0; font-size: 1rem;">Live Overview</h2>
-            <input type="month" id="month-selector" style="max-width: 140px; padding: 8px;">
+            <h2 style="margin:0; font-size: 1rem; font-weight: 800;">Business Performance</h2>
+            <input type="month" id="month-selector" style="max-width: 130px; padding: 8px; font-size: 12px;">
         </div>
         <div class="stats-grid">
-            <div class="stat-box revenue"><small>Today Rev</small><div id="total-rev">Ksh 0</div></div>
+            <div class="stat-box revenue"><small>Today Revenue</small><div id="total-rev">Ksh 0</div></div>
             <div class="stat-box profit"><small>Today Profit</small><div id="total-profit">Ksh 0</div></div>
-            <div class="stat-box monthly"><small>Monthly Revenue</small><div id="month-rev">Ksh 0</div></div>
+            <div class="stat-box monthly"><small>Current Month Revenue</small><div id="month-rev">Ksh 0</div></div>
         </div>
     </div>
 
     <div class="card">
         <div style="margin-bottom: 20px;">
-            <h3 style="margin:0 0 10px 0; font-size: 0.9rem;">Quick Stock Check</h3>
-            <input type="text" id="invSearch" placeholder="Search product name...">
+            <h3 style="margin:0 0 10px 0; font-size: 0.9rem; font-weight: 800;">Quick Inventory Lookup</h3>
+            <input type="text" id="invSearch" placeholder="Search by product name...">
         </div>
         <div id="stock-cards-container">
-            <div style="text-align: center; color: var(--text-dim); padding: 20px;">Fetching products...</div>
+            <div style="text-align: center; color: var(--text-dim); padding: 40px;">Initializing inventory...</div>
         </div>
     </div>
 </div>
@@ -274,7 +279,6 @@
 <script type="module">
     import { supabase } from './auth.js';
 
-    // Toggle the Navigation Banner
     window.toggleNav = () => {
         document.getElementById('navBanner').classList.toggle('active');
     };
@@ -288,7 +292,7 @@
     protectPage();
 
     window.handleLogout = async () => {
-        if(confirm("Logout from JEPE AUTOSPARES Admin?")) { 
+        if(confirm("Confirm Logout from Admin Terminal?")) { 
             await supabase.auth.signOut(); 
             window.location.href = 'index.html'; 
         }
@@ -302,7 +306,7 @@
         const monthPicker = document.getElementById('month-selector');
         if(!monthPicker.value) monthPicker.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-        // Fetch Today's Sales
+        // Today's Sales
         const { data: dSales } = await supabase.from('sales').select('*').gte('created_at', today);
         let dRev = 0, dProfit = 0;
         if (dSales) {
@@ -314,14 +318,14 @@
         document.getElementById('total-rev').innerText = `Ksh ${dRev.toLocaleString()}`;
         document.getElementById('total-profit').innerText = `Ksh ${dProfit.toLocaleString()}`;
 
-        // Fetch Monthly Sales
+        // Monthly Sales
         const monthStart = `${monthPicker.value}-01T00:00:00Z`;
         const { data: mSales } = await supabase.from('sales').select('total_amount').gte('created_at', monthStart);
         let mRev = 0;
         if (mSales) mSales.forEach(s => mRev += s.total_amount);
         document.getElementById('month-rev').innerText = `Ksh ${mRev.toLocaleString()}`;
 
-        // Fetch Inventory
+        // Inventory
         const { data: products } = await supabase.from('products').select('*').order('name');
         allProducts = products || [];
         renderInventory(allProducts);
@@ -329,9 +333,8 @@
 
     function renderInventory(items) {
         const cardContainer = document.getElementById('stock-cards-container');
-        
         if (items.length === 0) {
-            cardContainer.innerHTML = `<div style="text-align:center; color:var(--text-dim);">No items found</div>`;
+            cardContainer.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-dim);">No matching products found.</div>`;
             return;
         }
 
@@ -339,20 +342,20 @@
             const unitProfit = p.selling_price - p.cost_price;
             const isLow = p.stock_quantity < 5;
             return `
-                <div class="stock-card" style="${isLow ? 'border-left: 5px solid var(--warning);' : ''}">
+                <div class="stock-card" style="${isLow ? 'border-left: 4px solid var(--danger);' : ''}">
                     <div class="stock-card-header">
                         <div>
                             <div class="stock-card-title">${p.name}</div>
-                            <div class="stock-card-subtitle">${p.part_type || 'General'}</div>
+                            <div style="font-size: 0.7rem; color: var(--text-dim);">${p.part_type || 'General Spare'}</div>
                         </div>
-                        <div class="stock-card-badge" style="background:${isLow ? '#fee2e2':'#f1f5f9'}; color:${isLow ? 'var(--danger)':'var(--text)'}">
-                            ${p.stock_quantity} <small>Unit</small>
+                        <div class="stock-card-badge" style="background:${isLow ? '#fee2e2':'#f1f5f9'}; color:${isLow ? 'var(--danger)':'var(--admin-dark)'}">
+                            ${p.stock_quantity} <span style="font-size: 0.6rem; opacity: 0.7;">QTY</span>
                         </div>
                     </div>
                     <div class="stock-card-grid">
-                        <div><div class="grid-label">Cost</div><div class="grid-val">Ksh ${p.cost_price.toLocaleString()}</div></div>
+                        <div><div class="grid-label">Buying</div><div class="grid-val">Ksh ${p.cost_price.toLocaleString()}</div></div>
                         <div><div class="grid-label">Selling</div><div class="grid-val">Ksh ${p.selling_price.toLocaleString()}</div></div>
-                        <div><div class="grid-label">Profit/U</div><div class="grid-val" style="color:var(--success)">+${unitProfit.toLocaleString()}</div></div>
+                        <div><div class="grid-label">Margin</div><div class="grid-val" style="color:var(--success)">+${unitProfit.toLocaleString()}</div></div>
                     </div>
                 </div>`;
         }).join('');
