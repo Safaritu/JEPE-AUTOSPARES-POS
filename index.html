@@ -2,170 +2,233 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JEPE AUTOSPARES | Secure Staff Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JEPE AUTOSPARES | SAFTECH Systems</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root { 
             --primary: #6366f1; 
             --accent: #818cf8;
             --bg: #0b1120; 
-            --glass: rgba(30, 41, 59, 0.7); 
-            --border: rgba(255, 255, 255, 0.1);
+            --glass: rgba(7, 10, 25, 0.94); 
+            --border: rgba(255, 255, 255, 0.3);
         }
+
+        * { box-sizing: border-box; }
 
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
-            background: radial-gradient(circle at top left, #1e1b4b, #0b1120); 
+            /* FIXED POSITIONING: Bike moved to far left (25% left offset) to avoid login box */
+            background: 
+                linear-gradient(rgba(11, 17, 32, 0.4), rgba(11, 17, 32, 0.6)),
+                url('https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&q=80&w=1000') left center / 33.33% no-repeat,
+                url('https://images.unsplash.com/photo-1486006396113-c7b36766558b?auto=format&fit=crop&q=80&w=1000') center center / 33.33% no-repeat,
+                url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&q=80&w=1000') right center / 33.34% no-repeat;
+            background-size: cover;
+            backdrop-filter: saturate(1.5) brightness(1.1);
             color: white; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
+            height: 100vh;
             margin: 0; 
-        }
-
-        .container {
+            overflow: hidden; 
             display: flex;
             flex-direction: column;
+        }
+
+        .main-stage {
+            flex: 1;
+            display: flex;
             align-items: center;
-            width: 100%;
-            max-width: 460px;
-            padding: 20px;
+            justify-content: center;
+            gap: 60px;
+            padding: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .info-panel {
+            flex: 1.2;
+            max-width: 600px;
+            display: none; 
+            animation: fadeIn 1s ease-out;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+        }
+
+        @media (min-width: 1024px) {
+            .info-panel { display: block; }
+        }
+
+        .info-panel h2 { 
+            color: #fff; 
+            font-weight: 800; 
+            font-size: 3.5rem; 
+            margin-bottom: 20px;
+            border-left: 8px solid var(--primary);
+            padding-left: 20px;
+        }
+        
+        .info-panel p { color: #ffffff; line-height: 1.8; font-size: 1.3rem; font-weight: 600; }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 30px;
+        }
+        .feature-list li {
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            font-size: 1.2rem;
+            color: #ffffff;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 700;
+        }
+        .feature-list li::before {
+            content: '✅';
+            margin-right: 15px;
         }
 
         .auth-card { 
             background: var(--glass); 
-            padding: 45px; 
-            border-radius: 28px; 
+            padding: 50px; 
+            border-radius: 40px; 
             width: 100%; 
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); 
-            backdrop-filter: blur(20px); 
-            border: 1px solid var(--border);
+            max-width: 500px;
+            box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 1); 
+            backdrop-filter: blur(30px); 
+            border: 2px solid var(--border);
             text-align: center;
+            animation: slideUp 0.6s ease-out;
         }
 
         .logo-box { 
             background: linear-gradient(135deg, var(--primary), #4f46e5); 
-            width: 70px; 
-            height: 70px; 
-            line-height: 70px; 
-            border-radius: 20px; 
-            margin: 0 auto 25px; 
-            font-size: 32px; 
-            font-weight: 800; 
-            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.4);
+            width: 80px; height: 80px; line-height: 80px; 
+            border-radius: 24px; margin: 0 auto 20px; 
+            font-size: 36px; font-weight: 800; 
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.5);
         }
 
-        /* Large Brand Heading */
         .brand-name {
-            font-size: 2.2rem;
-            font-weight: 800;
-            letter-spacing: -1.5px;
-            margin: 0;
-            background: linear-gradient(to right, #ffffff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-transform: uppercase;
+            font-size: 2.5rem; font-weight: 800; letter-spacing: -2px;
+            margin: 0; text-transform: uppercase;
+            color: white;
         }
 
-        h2 { font-weight: 600; margin: 10px 0 5px 0; font-size: 1.4rem; color: #f8fafc; }
-        .tagline { color: #94a3b8; font-size: 0.95rem; margin-bottom: 30px; }
+        .tagline { color: #a5b4fc; font-size: 1.2rem; margin-bottom: 30px; font-weight: 600; }
 
         input, select, button { 
-            width: 100%; 
-            padding: 16px; 
-            margin: 12px 0; 
-            border-radius: 14px; 
-            border: 1px solid var(--border); 
-            box-sizing: border-box; 
-            font-size: 1rem;
-            transition: all 0.3s ease;
+            width: 100%; padding: 20px; margin: 12px 0; 
+            border-radius: 18px; border: 2px solid var(--border); 
+            font-size: 1.2rem; transition: 0.3s;
+            font-weight: 600;
         }
 
-        input, select { background: rgba(15, 23, 42, 0.5); color: white; }
-        input:focus { border-color: var(--primary); background: rgba(15, 23, 42, 0.8); box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2); }
+        input, select { background: rgba(0, 0, 0, 0.7); color: white; outline: none; }
+        input:focus { border-color: var(--primary); background: #000; }
 
         button { 
-            background: var(--primary); 
-            color: white; 
-            font-weight: 800; 
-            cursor: pointer; 
-            border: none;
-            margin-top: 20px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            background: var(--primary); color: white; font-weight: 800; 
+            cursor: pointer; border: none; margin-top: 25px;
+            text-transform: uppercase; letter-spacing: 2px;
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.4);
         }
-        button:hover { background: var(--accent); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4); }
+        button:hover { background: var(--accent); transform: scale(1.03); }
 
-        .toggle-link { text-align: center; font-size: 0.95rem; margin-top: 25px; cursor: pointer; color: #94a3b8; }
-        .toggle-link b { color: var(--primary); text-decoration: underline; }
+        .toggle-link { font-size: 1.1rem; margin-top: 20px; cursor: pointer; color: #cbd5e1; }
+        .toggle-link b { color: var(--accent); }
 
-        /* Success Banner */
-        .success-banner {
-            background: rgba(34, 197, 94, 0.15);
-            color: #4ade80;
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 0.9rem;
-            border: 1px solid rgba(34, 197, 94, 0.3);
+        /* OPTIMIZED COMPACT FOOTER */
+        .footer {
+            background: #000;
+            border-top: 4px solid var(--primary);
+            padding: 20px 60px; /* Reduced vertical padding */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 10;
         }
 
-        /* SAFTECH Engineering Footer */
-        .saftech-footer {
-            margin-top: 40px;
-            text-align: center;
-            padding: 20px;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.03);
-            width: 100%;
+        .saftech-branding { display: flex; flex-direction: column; gap: 4px; }
+        .saftech-logo { color: white; font-weight: 900; font-size: 1.6rem; letter-spacing: 2px; }
+        .expert-tag { 
+            background: var(--primary); color: white;
+            padding: 4px 12px; border-radius: 6px; 
+            font-weight: 800; font-size: 0.9rem; 
+            width: fit-content; text-transform: uppercase;
         }
+        
+        .footer-text-large { font-size: 1.2rem; font-weight: 700; color: #fff; }
+        .footer-sub { font-size: 1rem; color: var(--accent); font-weight: 500; }
 
-        .saftech-footer h4 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 3px; color: var(--primary); margin-bottom: 10px; }
-        .saftech-footer p { font-size: 0.9rem; color: #cbd5e1; margin: 4px 0; }
-        .contact-info { font-weight: 600; color: #ffffff !important; margin-top: 8px !important; font-size: 0.85rem !important; }
+        .contact-box { text-align: right; }
+        .contact-phone { font-size: 1.5rem; font-weight: 900; color: white; display: block; margin-bottom: 5px; }
+        .contact-email { font-size: 1.1rem; color: #a5b4fc; font-weight: 600; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
         .hidden { display: none; }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="main-stage">
+    <div class="info-panel">
+        <h2>JEPE AUTOSPARES</h2>
+        <p>Your premium gateway for <b>Auto Spares</b>, <b>Heavy Bikes</b>, and <b>Banking Logistics</b>. Experience the power of SAFTECH'S precision-engineered ERP.</p>
+        
+        <ul class="feature-list">
+            <li>Motorbike & Spare Parts Inventory</li>
+            <li>Banking & Digital Payments Integration</li>
+            <li>Automated Gas Distribution Tracking</li>
+            <li>Multi-Level Admin & Cashier Control</li>
+        </ul>
+        <div style="margin-top: 35px; padding: 25px; background: rgba(0, 0, 0, 0.7); border-radius: 25px; border: 2px solid var(--primary);">
+            <p style="font-style: italic; margin: 0; color: #fff; font-size: 1.2rem; font-weight: 700;">"JEPE: Built for the Bold. Designed for the Future."</p>
+        </div>
+    </div>
+
     <div class="auth-card">
         <div class="logo-box">J</div>
-        <h1 class="brand-name">JEPE AUTOSPARES</h1>
-        <h2 id="auth-title">Staff Sign In</h2>
-        <p class="tagline" id="auth-subtitle">Excellence in Spares, Gas Hub & Banking.</p>
+        <h1 class="brand-name">JEPE PORTAL</h1>
+        <p class="tagline">Secure Management Gateway</p>
         
-        <div id="success-msg" class="hidden"></div>
-
-        <input type="email" id="email" placeholder="Email Address">
-        <input type="password" id="password" placeholder="Password">
+        <input type="email" id="email" placeholder="Staff Email Address">
+        <input type="password" id="password" placeholder="Access Password">
         
         <div id="register-fields" class="hidden">
             <select id="role">
-                <option value="cashier">Cashier Access</option>
-                <option value="admin">Administrator Access</option>
+                <option value="cashier">Access Level: Cashier</option>
+                <option value="admin">Access Level: Administrator</option>
             </select>
         </div>
 
-        <button id="main-btn" onclick="handleAuth()">Sign In</button>
+        <button id="main-btn" onclick="handleAuth()">Authorized Entry</button>
         
         <div class="toggle-link" onclick="toggleMode()" id="toggle-text">
-            New staff? <b>Create Account</b>
+            New Staff? <b>Register Account</b>
         </div>
     </div>
-
-    <div class="saftech-footer">
-        <h4>System by SAFTECH</h4>
-        <p>Engineered by <b>Alex Safari</b></p>
-        <p style="font-size: 0.75rem; opacity: 0.7;">Software Engineer | Innovator</p>
-        <p class="contact-info">📞 0794963537 / 0707441702</p>
-        <p style="font-size: 0.7rem; margin-top: 15px; color: var(--accent);">"Transforming dreams into digital reality."</p>
-    </div>
 </div>
+
+<footer class="footer">
+    <div class="saftech-branding">
+        <div class="expert-tag"> CHIEF ARCHITECT</div>
+        <span class="saftech-logo">SAFTECH COMPANY LTD</span>
+        <span class="footer-text-large">Alex Safari — <span class="footer-sub">Software Engineer</span></span>
+    </div>
+    
+    <div class="contact-box">
+        <span class="contact-phone">📞 0794963537 / 0707441702</span>
+        <span class="contact-email">saftech@gmail.com | <b>Coding Your Dream To Reality</b></span>
+    </div>
+</footer>
 
 <script type="module">
     import { supabase } from './auth.js';
@@ -174,12 +237,10 @@
 
     window.toggleMode = () => {
         isLogin = !isLogin;
-        document.getElementById('auth-title').innerText = isLogin ? "Staff Sign In" : "New Registration";
         document.getElementById('register-fields').classList.toggle('hidden');
-        document.getElementById('main-btn').innerText = isLogin ? "Sign In" : "Register Now";
+        document.getElementById('main-btn').innerText = isLogin ? "Authorized Entry" : "Create Staff Account";
         document.getElementById('toggle-text').innerHTML = isLogin ? 
-            "New staff? <b>Create Account</b>" : "Already a member? <b>Sign In</b>";
-        document.getElementById('success-msg').classList.add('hidden');
+            "New Staff? <b>Register Account</b>" : "Existing Member? <b>Sign In</b>";
     };
 
     window.handleAuth = async () => {
@@ -187,7 +248,6 @@
         const password = document.getElementById('password').value;
         const role = document.getElementById('role').value;
         const btn = document.getElementById('main-btn');
-        const successDiv = document.getElementById('success-msg');
 
         if (!email || !password) return alert("All fields are required.");
         
@@ -201,40 +261,27 @@
                 await checkRoleAndRedirect(data.user.id);
             } else {
                 const { data, error } = await supabase.auth.signUp({ 
-                    email, 
-                    password,
-                    options: { data: { role: role } } 
+                    email, password, options: { data: { role: role } } 
                 });
-                
                 if (error) throw error;
-
-                successDiv.innerText = "Registration successful! You may now sign in.";
-                successDiv.className = "success-banner";
-                successDiv.classList.remove('hidden');
+                alert("Account created! Log in to begin.");
                 toggleMode();
             }
         } catch (err) {
             alert(err.message);
         } finally {
             btn.disabled = false;
-            btn.innerText = isLogin ? "Sign In" : "Register Now";
+            btn.innerText = isLogin ? "Authorized Entry" : "Create Staff Account";
         }
     };
 
     async function checkRoleAndRedirect(userId) {
-        const { data, error } = await supabase.from('profiles').select('role').eq('id', userId).single();
+        const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
         if (data) {
             window.location.href = (data.role === 'admin') ? 'admin.html' : 'cashier.html';
         } else {
-            setTimeout(async () => {
-                const { data: retry } = await supabase.from('profiles').select('role').eq('id', userId).single();
-                if (retry) {
-                    window.location.href = (retry.role === 'admin') ? 'admin.html' : 'cashier.html';
-                } else {
-                    alert("Syncing profile... Please click Sign In once more.");
-                    await supabase.auth.signOut();
-                }
-            }, 1000);
+            alert("Redirecting to dashboard...");
+            window.location.reload();
         }
     }
 </script>
