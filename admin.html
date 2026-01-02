@@ -9,7 +9,7 @@
     <style>
         :root { 
             --admin-dark: #0f172a;
-            --admin-accent: #6366f1;
+            --admin-accent: #1e3a8a; /* UPDATED: Rich Deep Blue */
             --bg: #f8fafc;
             --card: #ffffff;
             --text: #1e293b;
@@ -103,8 +103,8 @@
             position: fixed;
             bottom: 30px;
             left: 25px;
-            width: 65px;
-            height: 65px;
+            width: 70px; /* Slightly larger for better touch */
+            height: 70px;
             background: var(--admin-accent);
             border-radius: 50%;
             display: flex;
@@ -112,27 +112,28 @@
             justify-content: center;
             color: white;
             font-size: 1.8rem;
-            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.5);
-            border: 3px solid white;
+            box-shadow: 0 10px 30px rgba(30, 58, 138, 0.5);
+            border: 4px solid white; /* Thicker border for contrast */
             cursor: pointer;
             z-index: 2000;
             animation: swing 3s infinite ease-in-out;
-            transform-origin: center;
+            transform-origin: center bottom;
         }
 
         @keyframes swing {
             0%, 100% { transform: rotate(0deg) scale(1); }
-            20% { transform: rotate(15deg) scale(1.1); }
+            20% { transform: rotate(15deg) scale(1.05); }
             40% { transform: rotate(-15deg); }
             60% { transform: rotate(10deg); }
             80% { transform: rotate(-10deg); }
         }
 
-        /* --- NEW USER GUIDING HAND --- */
+        /* --- FIXED: ALIGNED GUIDING HAND --- */
         .guide-hand {
             position: fixed;
-            bottom: 100px;
-            left: 45px;
+            bottom: 110px; /* Adjusted to sit perfectly above the 70px FAB */
+            left: 25px;
+            width: 70px; /* Same width as FAB to center content */
             z-index: 2500;
             pointer-events: none;
             display: flex;
@@ -144,6 +145,7 @@
         .guide-hand span {
             font-size: 3rem;
             filter: drop-shadow(0 5px 15px rgba(0,0,0,0.2));
+            line-height: 1;
         }
 
         .guide-label {
@@ -153,13 +155,14 @@
             border-radius: 8px;
             font-size: 0.7rem;
             font-weight: 800;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             white-space: nowrap;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
 
         @keyframes bouncePoint {
             0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
+            50% { transform: translateY(-12px); }
         }
 
         /* --- HEADER & CONTENT --- */
@@ -175,7 +178,7 @@
             z-index: 100;
         }
 
-        header h1 { margin: 0; font-size: 1.2rem; font-weight: 800; color: var(--admin-accent); letter-spacing: -1px; }
+        header h1 { margin: 0; font-size: 1.2rem; font-weight: 800; color: #1e3a8a; letter-spacing: -1px; }
 
         .welcome-section { padding: 25px 20px 10px; }
         .welcome-section h2 { margin: 0; font-size: 1.4rem; font-weight: 800; line-height: 1.2; }
@@ -276,7 +279,7 @@
     </div>
 </div>
 
-<button class="fab-menu" onclick="toggleNav()">☰</button>
+<button class="fab-menu" id="fabMenu" onclick="toggleNav()">☰</button>
 
 <header>
     <h1>JEPE AUTOSPARES</h1>
