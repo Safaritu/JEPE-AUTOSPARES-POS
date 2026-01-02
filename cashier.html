@@ -20,6 +20,8 @@
             --text-dim: #64748b;
             --border: #e2e8f0; 
             --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            /* NEW DEEP BLUE COLOR */
+            --deep-blue: #1e3a8a;
         }
 
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
@@ -129,7 +131,63 @@
         .float-list li b { color: var(--text-main); }
         .total-cell { font-weight: 800; color: var(--primary); border-top: 2px solid var(--border); margin-top: 5px; padding-top: 5px; font-size: 0.85rem; display: flex; justify-content: space-between; }
         
-        .menu-fab { position: fixed; bottom: 25px; right: 25px; width: 65px; height: 65px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.8rem; box-shadow: 0 10px 25px rgba(79, 70, 229, 0.4); cursor: pointer; z-index: 5000; border: 4px solid white; transition: 0.3s; }
+        /* UPDATED SWINGING MENU FAB */
+        .menu-fab { 
+            position: fixed; 
+            bottom: 25px; 
+            right: 25px; 
+            width: 70px; 
+            height: 70px; 
+            background: var(--deep-blue); 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: white; 
+            font-size: 2rem; 
+            box-shadow: 0 10px 30px rgba(30, 58, 138, 0.5); 
+            cursor: pointer; 
+            z-index: 5000; 
+            border: 4px solid white; 
+            animation: swingIcon 3s infinite ease-in-out;
+            transform-origin: center bottom;
+        }
+
+        @keyframes swingIcon {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            20% { transform: rotate(15deg) scale(1.05); }
+            40% { transform: rotate(-15deg); }
+            60% { transform: rotate(10deg); }
+            80% { transform: rotate(-10deg); }
+        }
+
+        /* GUIDING HAND STYLES */
+        .guide-hand {
+            position: fixed;
+            bottom: 105px;
+            right: 35px;
+            z-index: 5500;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: bounceHand 1.5s infinite;
+        }
+        .guide-label {
+            background: #0f172a;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            margin-bottom: 5px;
+            white-space: nowrap;
+        }
+        @keyframes bounceHand {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
         .menu-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); z-index: 6000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); padding: 40px; }
         .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; width: 100%; max-width: 450px; }
         .menu-item { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 18px; color: white; text-decoration: none; text-align: center; font-weight: 700; font-size: 0.8rem; display: flex; flex-direction: column; gap: 8px; align-items: center; transition: 0.2s; }
@@ -137,6 +195,11 @@
     </style>
 </head>
 <body>
+
+<div class="guide-hand" id="onboardingHand">
+    <div class="guide-label">CLICK FOR MENU</div>
+    <span style="font-size: 2.5rem;">👇</span>
+</div>
 
 <div class="menu-fab" onclick="toggleFullMenu()">☰</div>
 
@@ -305,7 +368,12 @@
 
     window.toggleFullMenu = () => {
         const menu = document.getElementById('full-menu');
+        const hand = document.getElementById('onboardingHand');
+        
         menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+        
+        // Hide the pointing hand when menu is clicked
+        if (hand) hand.style.display = 'none';
     };
 
     window.logoutUser = async () => { await supabase.auth.signOut(); location.href = 'index.html'; };
