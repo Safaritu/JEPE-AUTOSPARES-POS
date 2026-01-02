@@ -40,8 +40,8 @@
             z-index: 3000;
             display: none;
             flex-direction: column;
-            padding: 80px 20px 40px 20px; /* Added top padding for the X */
-            overflow-y: auto; /* Allow scrolling if many buttons */
+            padding: 80px 20px 40px 20px;
+            overflow-y: auto;
             animation: fadeIn 0.3s ease;
         }
 
@@ -80,7 +80,6 @@
         .nav-card span { font-size: 1.4rem; }
         .nav-card small { font-weight: 600; font-size: 0.75rem; line-height: 1.2; }
 
-        /* FIXED CLOSE BUTTON */
         .close-nav {
             position: fixed;
             top: 25px;
@@ -103,7 +102,7 @@
         .fab-menu {
             position: fixed;
             bottom: 30px;
-            left: 25px; /* Moved to left as requested by your text */
+            left: 25px;
             width: 65px;
             height: 65px;
             background: var(--admin-accent);
@@ -129,6 +128,40 @@
             80% { transform: rotate(-10deg); }
         }
 
+        /* --- NEW USER GUIDING HAND --- */
+        .guide-hand {
+            position: fixed;
+            bottom: 100px;
+            left: 45px;
+            z-index: 2500;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: bouncePoint 1.5s infinite;
+        }
+
+        .guide-hand span {
+            font-size: 3rem;
+            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.2));
+        }
+
+        .guide-label {
+            background: var(--admin-dark);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            margin-bottom: 5px;
+            white-space: nowrap;
+        }
+
+        @keyframes bouncePoint {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
         /* --- HEADER & CONTENT --- */
         header {
             background: white;
@@ -150,7 +183,6 @@
 
         .container { padding: 15px; max-width: 1400px; margin: auto; padding-bottom: 100px; }
 
-        /* STATS CARDS */
         .card { 
             background: white; padding: 20px; border-radius: 20px; 
             box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #eef2f6; 
@@ -177,7 +209,6 @@
         .profit { background: linear-gradient(135deg, #10b981, #059669); } 
         .monthly { background: linear-gradient(135deg, #8b5cf6, #7c3aed); grid-column: span 2; }
 
-        /* STOCK CARDS */
         .stock-card {
             background: white; border: 1px solid #e2e8f0; border-radius: 15px;
             padding: 16px; margin-bottom: 12px; transition: 0.2s;
@@ -213,6 +244,11 @@
 </head>
 <body>
 
+<div class="guide-hand" id="onboardingHand">
+    <div class="guide-label">CLICK FOR MENU</div>
+    <span>👇</span>
+</div>
+
 <div class="nav-overlay" id="navBanner">
     <button class="close-nav" onclick="toggleNav()">✕</button>
     
@@ -223,12 +259,12 @@
     
     <div class="nav-grid">
         <a href="admin.html" class="nav-card" style="background: var(--admin-accent)"><span>📊</span><small>Dashboard</small></a>
-        <a href="shift-history.html" class="nav-card"><span>📋</span><small>Shift Audit</small></a>
-        <a href="money-history.html" class="nav-card"><span>💰</span><small>Cash Flow</small></a>
         <a href="inventory.html" class="nav-card"><span>➕</span><small>Add Stock</small></a>
         <a href="sales_editor.html" class="nav-card"><span>✏️</span><small>Edit Stock</small></a>
         <a href="gas_hub.html" class="nav-card"><span>🔥</span><small>Gas Hub</small></a>
-       <a href="sales-history.html" class="nav-card"><span>📜</span><small>Sales History</small></a>
+        <a href="shift-history.html" class="nav-card"><span>📋</span><small>Shift Audit</small></a>
+        <a href="sales-history.html" class="nav-card"><span>📜</span><small>Sales History</small></a>
+        <a href="money-history.html" class="nav-card"><span>💰</span><small>Cash Flow</small></a>
         <a href="admin-debtors.html" class="nav-card"><span>👥</span><small>Debtors</small></a>
         <a href="low_stock.html" class="nav-card"><span>⚠️</span><small>Low Stock</small></a>
         <a href="audit_trail.html" class="nav-card"><span>🔍</span><small>Staff Edits</small></a>
@@ -280,7 +316,13 @@
     import { supabase } from './auth.js';
 
     window.toggleNav = () => {
-        document.getElementById('navBanner').classList.toggle('active');
+        const nav = document.getElementById('navBanner');
+        const hand = document.getElementById('onboardingHand');
+        
+        nav.classList.toggle('active');
+        
+        // Remove hand guide once user finds the menu
+        if (hand) hand.style.display = 'none';
     };
 
     async function protectPage() {
@@ -306,7 +348,6 @@
         const monthPicker = document.getElementById('month-selector');
         if(!monthPicker.value) monthPicker.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-        // Today's Sales
         const { data: dSales } = await supabase.from('sales').select('*').gte('created_at', today);
         let dRev = 0, dProfit = 0;
         if (dSales) {
@@ -318,14 +359,12 @@
         document.getElementById('total-rev').innerText = `Ksh ${dRev.toLocaleString()}`;
         document.getElementById('total-profit').innerText = `Ksh ${dProfit.toLocaleString()}`;
 
-        // Monthly Sales
         const monthStart = `${monthPicker.value}-01T00:00:00Z`;
         const { data: mSales } = await supabase.from('sales').select('total_amount').gte('created_at', monthStart);
         let mRev = 0;
         if (mSales) mSales.forEach(s => mRev += s.total_amount);
         document.getElementById('month-rev').innerText = `Ksh ${mRev.toLocaleString()}`;
 
-        // Inventory
         const { data: products } = await supabase.from('products').select('*').order('name');
         allProducts = products || [];
         renderInventory(allProducts);
@@ -371,4 +410,3 @@
 </script>
 </body>
 </html>
-
