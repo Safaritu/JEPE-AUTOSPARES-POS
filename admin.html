@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JEPE AUTOSPARES | Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --admin-dark: #0f172a;
+            --admin-accent: #6366f1;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-dim: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --blue: #2563eb;
+            --purple: #8b5cf6;
+            --sidebar-bg: #1e293b;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg); 
+            margin: 0; 
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* --- WELCOME BANNER --- */
+        .welcome-section {
+            padding: 20px 20px 10px 20px;
+        }
+        .welcome-section h2 {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--admin-dark);
+        }
+        .welcome-section p {
+            margin: 5px 0 0 0;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        /* --- NAVIGATION OVERLAY (THE BANNER) --- */
+        .nav-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.98);
+            backdrop-filter: blur(10px);
+            z-index: 3000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .nav-overlay.active { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .nav-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            color: white;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            transition: 0.2s;
+        }
+
+        .nav-card:active { background: var(--admin-accent); transform: scale(0.95); }
+        .nav-card span { font-size: 1.5rem; }
+        .nav-card small { font-weight: 600; font-size: 0.8rem; }
+
+        .close-nav {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+        }
+
+        /* --- FLOATING MENU BUTTON --- */
+        .fab-menu {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            width: 60px;
+            height: 60px;
+            background: var(--admin-accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.8rem;
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+            border: none;
+            cursor: pointer;
+            z-index: 2000;
+        }
+
+        /* --- HEADER --- */
+        header {
+            background: white;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header h1 { margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--admin-accent); }
+
+        /* --- DASHBOARD CONTENT --- */
+        .container { padding: 15px; max-width: 1400px; margin: auto; }
+
+        .card { 
+            background: white; padding: 20px; border-radius: 16px; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; 
+            margin-bottom: 20px;
+        }
+
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 12px; 
+            margin-top: 15px;
+        }
+
+        @media (min-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(3, 1fr); }
+            .nav-grid { grid-template-columns: repeat(3, 1fr); max-width: 800px; }
+        }
+
+        .stat-box { 
+            padding: 15px; 
+            border-radius: 12px; 
+            color: white; 
+            text-align: center; 
+        }
+        .stat-box small { text-transform: uppercase; font-weight: 700; opacity: 0.9; font-size: 0.65rem; display: block;}
+        .stat-box div { font-size: 1.1rem; font-weight: 800; margin-top: 4px; }
+
+        .revenue { background: var(--blue); } 
+        .profit { background: var(--success); } 
+        .monthly { background: var(--purple); grid-column: span 2; }
+        @media (min-width: 768px) { .monthly { grid-column: span 1; } }
+
+        /* --- STOCK LIST --- */
+        .stock-card {
+            background: white; border: 1px solid #e2e8f0; border-radius: 12px;
+            padding: 15px; margin-bottom: 10px;
+        }
+        .stock-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .stock-card-title { font-weight: 800; font-size: 0.95rem; }
+        .stock-card-subtitle { font-size: 0.75rem; color: var(--text-dim); }
+        .stock-card-badge { padding: 4px 8px; border-radius: 6px; font-weight: 800; font-size: 0.8rem; }
+        .stock-card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid #f1f5f9; padding-top: 10px; }
+        .grid-label { font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; }
+        .grid-val { font-size: 0.85rem; font-weight: 700; }
+
+        input[type="month"], input[type="text"] {
+            padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-family: inherit; width: 100%; font-size: 14px;
+        }
+
+        .logout-btn {
+            background: var(--danger);
+            color: white;
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 800;
+            margin-top: 20px;
+            grid-column: span 2;
+        }
+    </style>
+</head>
+<body>
+
+<div class="nav-overlay" id="navBanner">
+    <button class="close-nav" onclick="toggleNav()">✕</button>
+    <h2 style="color: white; margin-bottom: 10px; font-weight: 800;">JEPE AUTOSPARES</h2>
+    <p style="color: rgba(255,255,255,0.6); margin-bottom: 30px;">Management Terminal</p>
+    
+    <div class="nav-grid">
+        <a href="admin.html" class="nav-card active"><span>📊</span><small>Dashboard</small></a>
+        <a href="shift-history.html" class="nav-card"><span>📋</span><small>Shift Audit</small></a>
+         <a href="reports.html" class="nav-card"><span>📄</span><small>Reports</small></a>
+         <a href="gas_hub.html" class="nav-card"><span>🔥</span><small>Gas Hub</small></a>
+         <a href="audit_trail.html" class="nav-card">🔍 what cashier edited</a>
+         <a href="price_audits.html" class="nav-card"><span>📉</span><small>item sold under price</small></a>
+        <a href="inventory.html" class="nav-card"><span>➕</span><small>Add Stock</small></a>
+        <a href="sales_editor.html" class="nav-card"><span>✏️</span><small>Edit Stock</small></a>
+        <a href="money-history.html" class="nav-card"><span>💰</span><small>Money IN/OUT history</small></a>
+        <a href="sales-history.html" class="nav-card"><span>📜</span><small>Sales History</small></a>
+         <a href="admin-debtors.html" class="nav-card"><span>👥</span><small>Debtors</small></a>
+         <a href="suppliers.html" class="nav-card"><span>🤝</span><small>Suppliers</small></a>
+         <a href="low_stock.html" class="nav-card"><span>⚠️</span><small>Low Stock</small></a>
+        <a href="Monthly Performance Report.html" class="nav-card"><span>📄</span><small>Monthly Report</small></a>
+        <button onclick="handleLogout()" class="logout-btn">🚪 LOGOUT</button>
+    </div>
+</div>
+
+<button class="fab-menu" onclick="toggleNav()">☰</button>
+
+<header>
+    <h1>JEPE AUTOSPARES</h1>
+    <div id="status-dot" style="width: 10px; height: 10px; border-radius: 50%; background: var(--success);"></div>
+</header>
+
+<div class="welcome-section">
+    <h2>Welcome back, ADMIN 👋</h2>
+    <h2> Here is what's happening at JEPE AUTOSPARES today.</h2>
+    <p>click the menu button ( ☰  ) to the bottom left to see what's happening at JEPE AUTOSPARES .</p>
+</div>
+
+<div class="container">
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+            <h2 style="margin:0; font-size: 1rem;">Live Overview</h2>
+            <input type="month" id="month-selector" style="max-width: 140px; padding: 8px;">
+        </div>
+        <div class="stats-grid">
+            <div class="stat-box revenue"><small>Today Rev</small><div id="total-rev">Ksh 0</div></div>
+            <div class="stat-box profit"><small>Today Profit</small><div id="total-profit">Ksh 0</div></div>
+            <div class="stat-box monthly"><small>Monthly Revenue</small><div id="month-rev">Ksh 0</div></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div style="margin-bottom: 20px;">
+            <h3 style="margin:0 0 10px 0; font-size: 0.9rem;">Quick Stock Check</h3>
+            <input type="text" id="invSearch" placeholder="Search product name...">
+        </div>
+        <div id="stock-cards-container">
+            <div style="text-align: center; color: var(--text-dim); padding: 20px;">Fetching products...</div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { supabase } from './auth.js';
+
+    // Toggle the Navigation Banner
+    window.toggleNav = () => {
+        document.getElementById('navBanner').classList.toggle('active');
+    };
+
+    async function protectPage() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { window.location.href = 'index.html'; return; }
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        if (profile?.role !== 'admin') { window.location.href = 'cashier_inventory.html'; }
+    }
+    protectPage();
+
+    window.handleLogout = async () => {
+        if(confirm("Logout from JEPE AUTOSPARES Admin?")) { 
+            await supabase.auth.signOut(); 
+            window.location.href = 'index.html'; 
+        }
+    };
+
+    let allProducts = [];
+
+    async function loadDashboard() {
+        const now = new Date();
+        const today = now.toISOString().split('T')[0];
+        const monthPicker = document.getElementById('month-selector');
+        if(!monthPicker.value) monthPicker.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+        // Fetch Today's Sales
+        const { data: dSales } = await supabase.from('sales').select('*').gte('created_at', today);
+        let dRev = 0, dProfit = 0;
+        if (dSales) {
+            dSales.forEach(s => { 
+                dRev += s.total_amount; 
+                dProfit += (s.unit_price - (s.cost_price || 0)) * s.quantity; 
+            });
+        }
+        document.getElementById('total-rev').innerText = `Ksh ${dRev.toLocaleString()}`;
+        document.getElementById('total-profit').innerText = `Ksh ${dProfit.toLocaleString()}`;
+
+        // Fetch Monthly Sales
+        const monthStart = `${monthPicker.value}-01T00:00:00Z`;
+        const { data: mSales } = await supabase.from('sales').select('total_amount').gte('created_at', monthStart);
+        let mRev = 0;
+        if (mSales) mSales.forEach(s => mRev += s.total_amount);
+        document.getElementById('month-rev').innerText = `Ksh ${mRev.toLocaleString()}`;
+
+        // Fetch Inventory
+        const { data: products } = await supabase.from('products').select('*').order('name');
+        allProducts = products || [];
+        renderInventory(allProducts);
+    }
+
+    function renderInventory(items) {
+        const cardContainer = document.getElementById('stock-cards-container');
+        
+        if (items.length === 0) {
+            cardContainer.innerHTML = `<div style="text-align:center; color:var(--text-dim);">No items found</div>`;
+            return;
+        }
+
+        cardContainer.innerHTML = items.map(p => {
+            const unitProfit = p.selling_price - p.cost_price;
+            const isLow = p.stock_quantity < 5;
+            return `
+                <div class="stock-card" style="${isLow ? 'border-left: 5px solid var(--warning);' : ''}">
+                    <div class="stock-card-header">
+                        <div>
+                            <div class="stock-card-title">${p.name}</div>
+                            <div class="stock-card-subtitle">${p.part_type || 'General'}</div>
+                        </div>
+                        <div class="stock-card-badge" style="background:${isLow ? '#fee2e2':'#f1f5f9'}; color:${isLow ? 'var(--danger)':'var(--text)'}">
+                            ${p.stock_quantity} <small>Unit</small>
+                        </div>
+                    </div>
+                    <div class="stock-card-grid">
+                        <div><div class="grid-label">Cost</div><div class="grid-val">Ksh ${p.cost_price.toLocaleString()}</div></div>
+                        <div><div class="grid-label">Selling</div><div class="grid-val">Ksh ${p.selling_price.toLocaleString()}</div></div>
+                        <div><div class="grid-label">Profit/U</div><div class="grid-val" style="color:var(--success)">+${unitProfit.toLocaleString()}</div></div>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    document.getElementById('invSearch').oninput = (e) => {
+        const term = e.target.value.toLowerCase();
+        renderInventory(allProducts.filter(p => p.name.toLowerCase().includes(term)));
+    };
+
+    document.getElementById('month-selector').onchange = loadDashboard;
+    loadDashboard();
+</script>
+</body>
+</html>

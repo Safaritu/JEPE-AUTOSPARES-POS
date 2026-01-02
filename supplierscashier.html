@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JEPE POS | Suppliers & Logistics</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --primary: #4f46e5; 
+            --bg: #f8fafc; 
+            --card: #ffffff; 
+            --border: #e2e8f0; 
+            --text: #1e293b; 
+            --text-dim: #64748b;
+            --danger: #ef4444; 
+            --success: #10b981; 
+            --warning: #f59e0b;
+            --sidebar-bg: #1e293b;
+            --sidebar-width: 260px;
+        }
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            line-height: 1.5; 
+            display: flex;
+        }
+
+        /* --- Sidebar Navigation --- */
+        .sidebar {
+            position: fixed;
+            left: -260px;
+            top: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--sidebar-bg);
+            transition: 0.3s ease;
+            z-index: 2000;
+            padding: 25px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            color: white;
+        }
+
+        @media (min-width: 1024px) {
+            .sidebar { left: 0; }
+            .main-wrapper { margin-left: var(--sidebar-width); }
+            .mobile-header { display: none !important; }
+        }
+
+        .sidebar.active { left: 0; }
+
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            z-index: 1500;
+        }
+        .overlay.active { display: block; }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-weight: 500;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            transition: 0.2s;
+        }
+        .nav-link:hover { background: rgba(255,255,255,0.1); color: white; }
+        .nav-link.active { background: var(--primary); color: white; font-weight: 700; }
+
+        /* --- Content Layout --- */
+        .main-wrapper { width: 100%; min-height: 100vh; flex-grow: 1; }
+
+        .mobile-header {
+            background: var(--primary);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .container { 
+            width: 100%; 
+            max-width: 1200px; 
+            margin: auto; 
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* --- Stats Cards --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .card { 
+            background: var(--card); 
+            border-radius: 16px; 
+            border: 1px solid var(--border); 
+            padding: 20px; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); 
+            margin-bottom: 25px;
+        }
+
+        .section-title { 
+            font-size: 0.8rem; 
+            text-transform: uppercase; 
+            font-weight: 800; 
+            color: var(--primary); 
+            letter-spacing: 1px; 
+            margin: 25px 0 12px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+
+        /* --- Tables --- */
+        .table-container { width: 100%; overflow-x: auto; border-radius: 10px; }
+        table { width: 100%; min-width: 650px; border-collapse: collapse; }
+        th { text-align: left; padding: 14px; background: #f8fafc; font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border); }
+        td { padding: 14px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+
+        input, select { 
+            width: 100%; padding: 14px; border: 1px solid var(--border); 
+            border-radius: 12px; margin-bottom: 12px; font-family: inherit; font-size: 16px; outline: none;
+        }
+
+        .btn { padding: 12px 18px; border-radius: 10px; border: none; cursor: pointer; font-weight: 700; font-size: 0.85rem; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-outline { background: white; border: 1px solid var(--border); color: var(--text); width: 100%; }
+
+        .badge { padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; }
+        .bg-debt { background: #fee2e2; color: #991b1b; }
+        .bg-clear { background: #dcfce7; color: #166534; }
+
+        .modal { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.6); justify-content: center; align-items: center; 
+            z-index: 3000; padding: 15px; box-sizing: border-box; 
+        }
+        .modal-content { background: white; padding: 30px; border-radius: 20px; width: 100%; max-width: 420px; color: var(--text); }
+    </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<div class="sidebar" id="sidebar">
+    <div style="margin-bottom: 30px;">
+        <h2 style="color:white; font-weight:800; margin:0;">JEPE POS</h2>
+        <small style="color: #94a3b8;">Logistics Manager</small>
+    </div>
+        <a href="cashier.html" class="nav-link">📊 Dashboard</a>
+        <a href="cashiergashub.html" class="nav-link">⛽ Gas Hub</a>
+        <a href="low-stock-cashier.html" class="nav-link">⚠️ Low Stock</a>
+        <a href="debtors.html" class="nav-link">👥 Debtors</a>
+        <a href="supplierscashier.html" class="nav-link active">🤝 Suppliers</a>
+        <a href="gas_delivery.html" class="nav-link">🚚 Delivery Records</a>
+        <a href="cashier_inventory.html" class="nav-link">📦 Add Items</a>
+        <a href="sales_reports.html" class="nav-link">📜 Sales History</a>
+        <a href="shift history cashier.html" class="nav-link">🌞 Shift History</a>
+        <a href="moneyinout.html" class="nav-link">💸 Cash Flow</a>
+        <a href="pos.html" class="nav-link">🌠 View All Items</a>
+    
+    <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+        <a href="index.html" class="nav-link" style="color:#f87171;">🚪 Logout System</a>
+    </div>
+</div>
+
+<div class="main-wrapper">
+    <div class="mobile-header">
+        <button onclick="toggleSidebar()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">☰</button>
+        <div style="font-weight:800; letter-spacing:1px;">SUPPLIERS</div>
+        <div style="width:30px;"></div>
+    </div>
+
+    <div class="container">
+        <div class="stats-grid">
+            <div class="card" style="margin-bottom:0; text-align: center;">
+                <small style="color:var(--text-dim); font-weight:700;">TOTAL ACCOUNTS PAYABLE</small>
+                <h2 id="total-debt-display" style="color:var(--danger); margin:10px 0 0;">Ksh 0</h2>
+            </div>
+            <div class="card" style="margin-bottom:0; text-align: center;">
+                <small style="color:var(--text-dim); font-weight:700;">ACTIVE VENDORS</small>
+                <h2 id="total-vendors-display" style="margin:10px 0 0;">0</h2>
+            </div>
+        </div>
+
+        <div class="section-title">
+            <span>Supplier Directory</span>
+            <button class="btn btn-success" onclick="openSupplierModal()">+ NEW SUPPLIER</button>
+        </div>
+        
+        <div class="card">
+            <input type="text" id="searchSupplier" placeholder="🔍 Search name or phone..." onkeyup="filterSuppliers()">
+            <div class="table-container">
+                <table id="supplierTable">
+                    <thead>
+                        <tr>
+                            <th>Supplier Details</th>
+                            <th>Category</th>
+                            <th>Current Balance</th>
+                            <th>Quick Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section-title">Stock-In History</div>
+        <div class="card">
+            <div class="table-container">
+                <table id="orderTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Supplier</th>
+                            <th>Items Received</th>
+                            <th>Amount (Ksh)</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <button class="btn btn-outline" style="margin-top:15px;" onclick="loadMoreOrders()">Load More History</button>
+        </div>
+    </div>
+</div>
+
+<div id="paymentModal" class="modal">
+    <div class="modal-content">
+        <h3 style="margin-top:0;">Process Payment</h3>
+        <input type="hidden" id="pay-sup-id">
+        <label style="font-size:0.8rem; font-weight:bold;">Paying To</label>
+        <input type="text" id="pay-sup-name" readonly style="background:#f8fafc;">
+        <label style="font-size:0.8rem; font-weight:bold;">Source</label>
+        <select id="pay-method">
+            <option>Shop Cash</option>
+            <option>Mpesa Business</option>
+            <option>Equity/Bank</option>
+        </select>
+        <label style="font-size:0.8rem; font-weight:bold;">Amount (Ksh)</label>
+        <input type="number" id="pay-amount" placeholder="0.00">
+        <button class="btn btn-primary" onclick="processPayment()" style="width:100%; margin-top:10px;">Confirm Payment</button>
+        <button class="btn btn-outline" style="border:none;" onclick="closeModals()">Cancel</button>
+    </div>
+</div>
+
+<div id="supplierModal" class="modal">
+    <div class="modal-content">
+        <h3 style="margin-top:0;">New Supplier</h3>
+        <input type="text" id="sup-name" placeholder="Business Name">
+        <select id="sup-category">
+            <option>Spare Parts</option>
+            <option>Gas Refills</option>
+            <option>Motorbikes</option>
+            <option>General Hardware</option>
+        </select>
+        <input type="text" id="sup-phone" placeholder="Phone Number">
+        <label style="font-size:0.8rem; font-weight:bold;">Opening Balance Owed</label>
+        <input type="number" id="sup-balance" value="0">
+        <button class="btn btn-success" onclick="saveSupplier()" style="width:100%; margin-top:10px;">Save Supplier</button>
+        <button class="btn btn-outline" style="border:none;" onclick="closeModals()">Cancel</button>
+    </div>
+</div>
+
+<div id="orderModal" class="modal">
+    <div class="modal-content">
+        <h3 style="margin-top:0;">Record Delivery</h3>
+        <input type="hidden" id="order-sup-id">
+        <input type="text" id="order-sup-name" readonly style="background:#f8fafc;">
+        <input type="text" id="order-items" placeholder="e.g. 20 Tires, 5 Helmets">
+        <label style="font-size:0.8rem; font-weight:bold;">Cost (Ksh)</label>
+        <input type="number" id="order-cost" placeholder="0.00">
+        <button class="btn btn-primary" onclick="saveOrder()" style="width:100%; margin-top:10px;">Record Stock</button>
+        <button class="btn btn-outline" style="border:none;" onclick="closeModals()">Cancel</button>
+    </div>
+</div>
+
+<script>
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
+    }
+    function closeModals() {
+        document.querySelectorAll('.modal').forEach(m => m.style.display = "none");
+    }
+</script>
+
+<script type="module">
+    import { supabase } from './auth.js';
+
+    let allSuppliers = [];
+    let allOrders = [];
+    let orderLimit = 10;
+
+    async function init() {
+        await fetchSuppliers();
+        await fetchOrders();
+    }
+
+    async function fetchSuppliers() {
+        const { data } = await supabase.from('suppliers').select('*').order('name');
+        allSuppliers = data || [];
+        updateStats();
+        filterSuppliers();
+    }
+
+    async function fetchOrders() {
+        const { data } = await supabase.from('supplier_orders').select('*, suppliers(name)').order('order_date', {ascending:false});
+        allOrders = data || [];
+        renderOrders();
+    }
+
+    function updateStats() {
+        const totalDebt = allSuppliers.reduce((sum, s) => sum + (s.balance_owed || 0), 0);
+        document.getElementById('total-debt-display').innerText = `Ksh ${totalDebt.toLocaleString()}`;
+        document.getElementById('total-vendors-display').innerText = allSuppliers.length;
+    }
+
+    window.filterSuppliers = () => {
+        const q = document.getElementById('searchSupplier').value.toLowerCase();
+        const filtered = allSuppliers.filter(s => s.name.toLowerCase().includes(q));
+        document.querySelector('#supplierTable tbody').innerHTML = filtered.map(s => `
+            <tr>
+                <td><b>${s.name}</b><br><small style="color:var(--text-dim)">${s.phone || 'No phone'}</small></td>
+                <td><span class="badge" style="background:#f1f5f9; color:var(--text)">${s.category}</span></td>
+                <td><span class="badge ${s.balance_owed > 0 ? 'bg-debt' : 'bg-clear'}">Ksh ${s.balance_owed.toLocaleString()}</span></td>
+                <td>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-primary" style="padding:6px 12px; font-size:0.75rem;" onclick="openOrderModal('${s.id}', '${s.name}')">+ Stock</button>
+                        <button class="btn btn-success" style="padding:6px 12px; font-size:0.75rem;" onclick="openPaymentModal('${s.id}', '${s.name}')">Pay</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    };
+
+    function renderOrders() {
+        document.querySelector('#orderTable tbody').innerHTML = allOrders.slice(0, orderLimit).map(o => `
+            <tr>
+                <td><small>${new Date(o.order_date).toLocaleDateString('en-GB')}</small></td>
+                <td><b>${o.suppliers?.name || 'Unknown'}</b></td>
+                <td><small>${o.items_brought}</small></td>
+                <td><b>${o.cost.toLocaleString()}</b></td>
+            </tr>
+        `).join('');
+    }
+
+    window.loadMoreOrders = () => { orderLimit += 10; renderOrders(); };
+
+    window.openOrderModal = (id, name) => {
+        document.getElementById('order-sup-id').value = id;
+        document.getElementById('order-sup-name').value = name;
+        document.getElementById('orderModal').style.display = "flex";
+    };
+
+    window.openPaymentModal = (id, name) => {
+        document.getElementById('pay-sup-id').value = id;
+        document.getElementById('pay-sup-name').value = name;
+        document.getElementById('paymentModal').style.display = "flex";
+    };
+
+    window.openSupplierModal = () => {
+        document.getElementById('supplierModal').style.display = "flex";
+    };
+
+    window.saveSupplier = async () => {
+        const payload = {
+            name: document.getElementById('sup-name').value,
+            category: document.getElementById('sup-category').value,
+            phone: document.getElementById('sup-phone').value,
+            balance_owed: parseFloat(document.getElementById('sup-balance').value) || 0
+        };
+        await supabase.from('suppliers').insert([payload]);
+        closeModals();
+        fetchSuppliers();
+    };
+
+    window.saveOrder = async () => {
+        const sid = document.getElementById('order-sup-id').value;
+        const cost = parseFloat(document.getElementById('order-cost').value) || 0;
+        const items = document.getElementById('order-items').value;
+
+        await supabase.from('supplier_orders').insert([{ 
+            supplier_id: sid, items_brought: items, cost: cost 
+        }]);
+
+        const sup = allSuppliers.find(x => x.id === sid);
+        await supabase.from('suppliers').update({ balance_owed: (sup.balance_owed || 0) + cost }).eq('id', sid);
+        
+        closeModals();
+        init();
+    };
+
+    window.processPayment = async () => {
+        const sid = document.getElementById('pay-sup-id').value;
+        const amount = parseFloat(document.getElementById('pay-amount').value);
+        if(!amount) return;
+
+        const sup = allSuppliers.find(x => x.id === sid);
+        const newBal = (sup.balance_owed || 0) - amount;
+        
+        await supabase.from('suppliers').update({ balance_owed: newBal }).eq('id', sid);
+        await supabase.from('supplier_payments').insert([{
+            supplier_id: sid, 
+            amount_paid: amount, 
+            balance_after: newBal, 
+            payment_method: document.getElementById('pay-method').value
+        }]);
+        
+        closeModals();
+        init();
+    };
+
+    init();
+</script>
+</body>
+</html>

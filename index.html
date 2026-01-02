@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JEPE AUTOSPARES | Secure Staff Portal</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --primary: #6366f1; 
+            --accent: #818cf8;
+            --bg: #0b1120; 
+            --glass: rgba(30, 41, 59, 0.7); 
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: radial-gradient(circle at top left, #1e1b4b, #0b1120); 
+            color: white; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 460px;
+            padding: 20px;
+        }
+
+        .auth-card { 
+            background: var(--glass); 
+            padding: 45px; 
+            border-radius: 28px; 
+            width: 100%; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); 
+            backdrop-filter: blur(20px); 
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .logo-box { 
+            background: linear-gradient(135deg, var(--primary), #4f46e5); 
+            width: 70px; 
+            height: 70px; 
+            line-height: 70px; 
+            border-radius: 20px; 
+            margin: 0 auto 25px; 
+            font-size: 32px; 
+            font-weight: 800; 
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        /* Large Brand Heading */
+        .brand-name {
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -1.5px;
+            margin: 0;
+            background: linear-gradient(to right, #ffffff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+
+        h2 { font-weight: 600; margin: 10px 0 5px 0; font-size: 1.4rem; color: #f8fafc; }
+        .tagline { color: #94a3b8; font-size: 0.95rem; margin-bottom: 30px; }
+
+        input, select, button { 
+            width: 100%; 
+            padding: 16px; 
+            margin: 12px 0; 
+            border-radius: 14px; 
+            border: 1px solid var(--border); 
+            box-sizing: border-box; 
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input, select { background: rgba(15, 23, 42, 0.5); color: white; }
+        input:focus { border-color: var(--primary); background: rgba(15, 23, 42, 0.8); box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2); }
+
+        button { 
+            background: var(--primary); 
+            color: white; 
+            font-weight: 800; 
+            cursor: pointer; 
+            border: none;
+            margin-top: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        button:hover { background: var(--accent); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4); }
+
+        .toggle-link { text-align: center; font-size: 0.95rem; margin-top: 25px; cursor: pointer; color: #94a3b8; }
+        .toggle-link b { color: var(--primary); text-decoration: underline; }
+
+        /* Success Banner */
+        .success-banner {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        /* SAFTECH Engineering Footer */
+        .saftech-footer {
+            margin-top: 40px;
+            text-align: center;
+            padding: 20px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            width: 100%;
+        }
+
+        .saftech-footer h4 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 3px; color: var(--primary); margin-bottom: 10px; }
+        .saftech-footer p { font-size: 0.9rem; color: #cbd5e1; margin: 4px 0; }
+        .contact-info { font-weight: 600; color: #ffffff !important; margin-top: 8px !important; font-size: 0.85rem !important; }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="auth-card">
+        <div class="logo-box">J</div>
+        <h1 class="brand-name">JEPE AUTOSPARES</h1>
+        <h2 id="auth-title">Staff Sign In</h2>
+        <p class="tagline" id="auth-subtitle">Excellence in Spares, Gas Hub & Banking.</p>
+        
+        <div id="success-msg" class="hidden"></div>
+
+        <input type="email" id="email" placeholder="Email Address">
+        <input type="password" id="password" placeholder="Password">
+        
+        <div id="register-fields" class="hidden">
+            <select id="role">
+                <option value="cashier">Cashier Access</option>
+                <option value="admin">Administrator Access</option>
+            </select>
+        </div>
+
+        <button id="main-btn" onclick="handleAuth()">Sign In</button>
+        
+        <div class="toggle-link" onclick="toggleMode()" id="toggle-text">
+            New staff? <b>Create Account</b>
+        </div>
+    </div>
+
+    <div class="saftech-footer">
+        <h4>System by SAFTECH</h4>
+        <p>Engineered by <b>Alex Safari</b></p>
+        <p style="font-size: 0.75rem; opacity: 0.7;">Software Engineer | Innovator</p>
+        <p class="contact-info">📞 0794963537 / 0707441702</p>
+        <p style="font-size: 0.7rem; margin-top: 15px; color: var(--accent);">"Transforming dreams into digital reality."</p>
+    </div>
+</div>
+
+<script type="module">
+    import { supabase } from './auth.js';
+
+    let isLogin = true;
+
+    window.toggleMode = () => {
+        isLogin = !isLogin;
+        document.getElementById('auth-title').innerText = isLogin ? "Staff Sign In" : "New Registration";
+        document.getElementById('register-fields').classList.toggle('hidden');
+        document.getElementById('main-btn').innerText = isLogin ? "Sign In" : "Register Now";
+        document.getElementById('toggle-text').innerHTML = isLogin ? 
+            "New staff? <b>Create Account</b>" : "Already a member? <b>Sign In</b>";
+        document.getElementById('success-msg').classList.add('hidden');
+    };
+
+    window.handleAuth = async () => {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const role = document.getElementById('role').value;
+        const btn = document.getElementById('main-btn');
+        const successDiv = document.getElementById('success-msg');
+
+        if (!email || !password) return alert("All fields are required.");
+        
+        btn.disabled = true;
+        btn.innerText = "AUTHENTICATING...";
+
+        try {
+            if (isLogin) {
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                await checkRoleAndRedirect(data.user.id);
+            } else {
+                const { data, error } = await supabase.auth.signUp({ 
+                    email, 
+                    password,
+                    options: { data: { role: role } } 
+                });
+                
+                if (error) throw error;
+
+                successDiv.innerText = "Registration successful! You may now sign in.";
+                successDiv.className = "success-banner";
+                successDiv.classList.remove('hidden');
+                toggleMode();
+            }
+        } catch (err) {
+            alert(err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = isLogin ? "Sign In" : "Register Now";
+        }
+    };
+
+    async function checkRoleAndRedirect(userId) {
+        const { data, error } = await supabase.from('profiles').select('role').eq('id', userId).single();
+        if (data) {
+            window.location.href = (data.role === 'admin') ? 'admin.html' : 'cashier.html';
+        } else {
+            setTimeout(async () => {
+                const { data: retry } = await supabase.from('profiles').select('role').eq('id', userId).single();
+                if (retry) {
+                    window.location.href = (retry.role === 'admin') ? 'admin.html' : 'cashier.html';
+                } else {
+                    alert("Syncing profile... Please click Sign In once more.");
+                    await supabase.auth.signOut();
+                }
+            }, 1000);
+        }
+    }
+</script>
+</body>
+</html>

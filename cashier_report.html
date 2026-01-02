@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Daily Operations Report | JEPE LOGISTICS</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --sidebar-bg: #1e293b;
+            --sidebar-width: 260px;
+            --header-height: 64px;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); margin: 0; display: flex; color: var(--text); min-height: 100vh; }
+
+        /* --- SIDEBAR --- */
+        .sidebar { 
+            width: var(--sidebar-width); height: 100vh; background: var(--sidebar-bg); 
+            padding: 25px; color: white; position: fixed; z-index: 3000;
+            transform: translateX(-100%); transition: transform 0.3s ease;
+        }
+        
+        @media (min-width: 1025px) {
+            .sidebar { transform: translateX(0); }
+            .main-content { margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)); }
+            .mobile-header { display: none; }
+            .sidebar-close { display: none; }
+        }
+
+        .sidebar.active { transform: translateX(0); }
+
+        .nav-link { display: block; padding: 12px; color: #cbd5e1; text-decoration: none; border-radius: 8px; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; }
+        .nav-link.active { background: var(--primary); color: white; }
+
+        .sidebar-close { background: none; border: none; color: white; font-size: 2rem; position: absolute; top: 15px; right: 15px; cursor: pointer; }
+
+        /* --- MOBILE HEADER --- */
+        .mobile-header {
+            position: fixed; top: 0; left: 0; right: 0; height: var(--header-height);
+            background: var(--sidebar-bg); color: white; display: flex; align-items: center;
+            padding: 0 20px; z-index: 2000; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* --- MAIN CONTENT --- */
+        .main-content { padding: 30px; width: 100%; margin-top: 0; }
+        
+        @media (max-width: 1024px) {
+            .main-content { margin-top: var(--header-height); padding: 20px; }
+        }
+
+        .report-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; border-bottom: 2px solid var(--border); padding-bottom: 20px; }
+        @media (max-width: 600px) { .report-header { flex-direction: column; align-items: flex-start; gap: 15px; } }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 15px; border-radius: 12px; border: 1px solid var(--border); }
+        .stat-card small { color: #64748b; font-weight: 700; text-transform: uppercase; font-size: 0.65rem; display: block; margin-bottom: 5px; }
+        .stat-card h2 { margin: 0; font-size: 1.4rem; letter-spacing: -0.5px; }
+
+        /* --- DATA PRESENTATION --- */
+        .table-container { background: white; border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #f1f5f9; text-align: left; padding: 15px; font-size: 0.75rem; color: #64748b; text-transform: uppercase; }
+        td { padding: 15px; border-top: 1px solid var(--border); font-size: 0.85rem; }
+
+        /* Mobile Record List */
+        .mobile-records { display: none; flex-direction: column; gap: 10px; }
+        .record-card { background: white; padding: 15px; border-radius: 12px; border: 1px solid var(--border); }
+        .card-top { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: 700; }
+        .card-details { display: flex; justify-content: space-between; color: #64748b; font-size: 0.8rem; }
+
+        @media (max-width: 768px) {
+            .table-container { display: none; }
+            .mobile-records { display: flex; }
+        }
+
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+        .pay-cash { background: #dcfce7; color: #166534; }
+        .pay-mpesa { background: #e0e7ff; color: #4338ca; }
+
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; z-index: 2500; backdrop-filter: blur(4px); }
+        .overlay.active { display: block; }
+
+        @media print { .sidebar, .no-print, .mobile-header { display: none; } .main-content { margin-left: 0; padding: 0; width: 100%; } }
+    </style>
+</head>
+<body>
+
+    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+    <div class="mobile-header no-print">
+        <button onclick="toggleMenu()" style="background:none; border:none; color:white; font-size:1.8rem; cursor:pointer;">☰</button>
+        <span style="margin-left: 15px; font-weight: 800; font-size: 1.1rem; letter-spacing: 1px;">JEPE ADMIN</span>
+    </div>
+
+    <div class="sidebar no-print" id="sidebar">
+        <button class="sidebar-close" onclick="toggleMenu()">&times;</button>
+        <h2 style="font-size: 1.4rem; margin-bottom: 30px;">JEPE LOGISTICS</h2>
+        <nav>
+                 <a href="cashier.html" class="nav-link">📊 Dashboard</a>
+        <a href="cashiergashub.html" class="nav-link">⛽ Gas Hub</a>
+        <a href="low-stock-cashier.html" class="nav-link">⚠️ Low Stock</a>
+        <a href="debtors.html" class="nav-link">👥 Debtors</a>
+        <a href="supplierscashier.html" class="nav-link">🤝 Suppliers</a>
+        <a href="gas_delivery.html" class="nav-link">🚚 Delivery Records</a>
+        <a href="cashier_inventory.html" class="nav-link">📦 Add Items</a>
+        <a href="sales_reports.html" class="nav-link">📜 Sales History</a>
+        <a href="shift history cashier.html" class="nav-link">🌞 Shift History</a>
+        <a href="moneyinout.html" class="nav-link">💸 Cash Flow</a>
+        <a href="pos.html" class="nav-link">🌠 View All Items</a>
+            <a href="index.html" class="nav-link" style="margin-top:20px; color:var(--danger)">🚪 Logout</a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="report-header">
+            <div>
+                <h1 style="margin:0; font-size: 1.6rem;">Daily Operations Report</h1>
+                <p id="report-date" style="color:#64748b; margin: 5px 0; font-weight: 600;">Loading date...</p>
+            </div>
+            <button onclick="window.print()" class="no-print" style="padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 700; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);">🖨️ Print Report</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card" style="border-left: 4px solid var(--primary);">
+                <small>Total Sales Today</small>
+                <h2 id="total-sales">Ksh 0</h2>
+            </div>
+            <div class="stat-card" style="border-left: 4px solid var(--warning);">
+                <small>Transactions</small>
+                <h2 id="sales-count">0</h2>
+            </div>
+            <div class="stat-card" style="border-left: 4px solid var(--success);">
+                <small>Empties Out</small>
+                <h2 id="cylinders-out">0 Units</h2>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <h3 style="margin:0; font-size: 1.1rem; color: var(--text);">Today's Sales Records</h3>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Item Name</th>
+                        <th>Qty</th>
+                        <th>Unit Price</th>
+                        <th>Total</th>
+                        <th>Payment</th>
+                    </tr>
+                </thead>
+                <tbody id="transaction-body">
+                    <tr><td colspan="6" style="text-align:center; padding: 40px;">Fetching today's sales...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="mobile-record-list" class="mobile-records"></div>
+    </div>
+
+    <script type="module">
+        import { supabase } from './auth.js';
+
+        window.toggleMenu = () => {
+            document.getElementById('sidebar').classList.toggle('active');
+            document.getElementById('overlay').classList.toggle('active');
+        };
+
+        async function generateReport() {
+            const startOfDay = new Date();
+            startOfDay.setHours(0,0,0,0);
+            const endOfDay = new Date();
+            endOfDay.setHours(23,59,59,999);
+
+            document.getElementById('report-date').innerText = new Date().toLocaleDateString('en-GB', { 
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+            });
+
+            const { data: sales, error } = await supabase
+                .from('sales')
+                .select('*')
+                .gte('created_at', startOfDay.toISOString())
+                .lte('created_at', endOfDay.toISOString())
+                .order('created_at', { ascending: false });
+
+            if (error) return;
+
+            // Stats
+            const totalRevenue = sales.reduce((sum, s) => sum + Number(s.total_amount), 0);
+            document.getElementById('total-sales').innerText = `Ksh ${totalRevenue.toLocaleString()}`;
+            document.getElementById('sales-count').innerText = sales.length;
+
+            const { data: products } = await supabase.from('products').select('empty_quantity');
+            const cylindersOut = products?.reduce((sum, p) => sum + (p.empty_quantity || 0), 0) || 0;
+            document.getElementById('cylinders-out').innerText = `${cylindersOut} Units`;
+
+            // Rendering
+            const tableBody = document.getElementById('transaction-body');
+            const mobileList = document.getElementById('mobile-record-list');
+            
+            if (sales.length === 0) {
+                const emptyMsg = `<tr><td colspan="6" style="text-align:center; padding:40px; color:#64748b;">No sales recorded today.</td></tr>`;
+                tableBody.innerHTML = emptyMsg;
+                mobileList.innerHTML = `<p style="text-align:center; color:#64748b;">No sales recorded today.</p>`;
+            } else {
+                tableBody.innerHTML = sales.map(s => `
+                    <tr>
+                        <td>${new Date(s.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                        <td style="font-weight:600;">${s.item_name}</td>
+                        <td>${s.quantity}</td>
+                        <td>${Number(s.unit_price).toLocaleString()}</td>
+                        <td style="font-weight:700;">${Number(s.total_amount).toLocaleString()}</td>
+                        <td><span class="badge ${s.payment_method === 'Cash' ? 'pay-cash' : 'pay-mpesa'}">${s.payment_method}</span></td>
+                    </tr>
+                `).join('');
+
+                mobileList.innerHTML = sales.map(s => `
+                    <div class="record-card">
+                        <div class="card-top">
+                            <span>${s.item_name}</span>
+                            <span style="color:var(--primary)">Ksh ${Number(s.total_amount).toLocaleString()}</span>
+                        </div>
+                        <div class="card-details">
+                            <span>Qty: ${s.quantity} @ ${Number(s.unit_price).toLocaleString()}</span>
+                            <span>${new Date(s.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        </div>
+                        <div style="margin-top:10px;">
+                            <span class="badge ${s.payment_method === 'Cash' ? 'pay-cash' : 'pay-mpesa'}">${s.payment_method}</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        generateReport();
+    </script>
+</body>
+</html>

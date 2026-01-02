@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JEPE POS | Debtors & Credit Manager</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --primary: #4f46e5; 
+            --bg: #f8fafc; 
+            --card: #ffffff; 
+            --border: #e2e8f0; 
+            --text: #1e293b; 
+            --text-dim: #64748b;
+            --danger: #ef4444; 
+            --success: #10b981; 
+            --warning: #f59e0b;
+            --sidebar-bg: #1e293b;
+            --sidebar-width: 260px;
+        }
+        
+        /* Prevent horizontal scroll on mobile */
+        html, body { overflow-x: hidden; width: 100%; position: relative; }
+        * { box-sizing: border-box; }
+
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); margin: 0; line-height: 1.5; display: flex; }
+
+        .sidebar { position: fixed; left: -260px; top: 0; width: var(--sidebar-width); height: 100vh; background: var(--sidebar-bg); transition: 0.3s ease; z-index: 2000; padding: 25px; display: flex; flex-direction: column; color: white; }
+        @media (min-width: 1024px) { .sidebar { left: 0; } .main-wrapper { margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)); } .mobile-header { display: none !important; } }
+        .sidebar.active { left: 0; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 1500; }
+        .overlay.active { display: block; }
+
+        .nav-link { display: block; padding: 12px 15px; color: #cbd5e1; text-decoration: none; font-weight: 600; border-radius: 10px; margin-bottom: 5px; transition: 0.2s; }
+        .nav-link:hover { background: rgba(255,255,255,0.1); color: white; }
+        .nav-link.active { background: var(--primary) !important; color: white !important; }
+
+        .main-wrapper { width: 100%; min-height: 100vh; flex-grow: 1; min-width: 0; }
+        .mobile-header { background: var(--sidebar-bg); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
+
+        .container { width: 100%; max-width: 1400px; margin: auto; padding: 15px; }
+        .grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        @media (min-width: 1024px) { .grid { grid-template-columns: 380px 1fr; gap: 25px; } }
+        
+        .card { background: var(--card); border-radius: 16px; border: 1px solid var(--border); padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .section-label { font-size: 0.7rem; text-transform: uppercase; font-weight: 800; color: var(--primary); letter-spacing: 1px; margin-bottom: 15px; display: block; }
+        
+        input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 15px; font-size: 16px; outline: none; }
+        .btn { width: 100%; padding: 14px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; background: var(--primary); color: white; }
+
+        /* Mobile Table Layout */
+        .table-container { width: 100%; }
+        @media (max-width: 768px) {
+            table, thead, tbody, th, td, tr { display: block; width: 100%; }
+            thead { display: none; }
+            tr { margin-bottom: 15px; border: 1px solid var(--border); border-radius: 12px; padding: 10px; background: white; }
+            td { display: flex; justify-content: space-between; padding: 8px 5px; border-bottom: 1px solid #f1f5f9; text-align: right; }
+            td::before { content: attr(data-label); font-weight: 700; color: var(--text-dim); text-align: left; font-size: 0.75rem; }
+            td:last-child { border-bottom: none; flex-direction: column; text-align: center; }
+        }
+        @media (min-width: 769px) {
+            table { width: 100%; border-collapse: collapse; }
+            th { text-align: left; padding: 12px; background: #f8fafc; font-size: 0.65rem; border-bottom: 1px solid var(--border); color: var(--text-dim); }
+            td { padding: 14px 12px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+        }
+
+        .report-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .summary-box { padding: 15px; border-radius: 12px; background: white; text-align: center; border: 1px solid var(--border); }
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; }
+        .bg-unpaid { background: #fee2e2; color: #991b1b; }
+        .bg-paid { background: #dcfce7; color: #166534; }
+    </style>
+</head>
+<body>
+
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <div class="sidebar" id="sidebar">
+        <div style="margin-bottom: 30px;">
+            <h2 style="color:white; font-weight:800; margin:0;">JEPE POS</h2>
+            <small style="color: #94a3b8;">Admin Dashboard</small>
+        </div>
+        <nav id="nav-menu">
+            <a href="cashier.html" class="nav-link">📊 Dashboard</a>
+            <a href="cashiergashub.html" class="nav-link">⛽ Gas Hub</a>
+            <a href="low-stock-cashier.html" class="nav-link">⚠️ Low Stock</a>
+            <a href="debtors.html" class="nav-link active">👥 Debtors</a>
+            <a href="supplierscashier.html" class="nav-link">🤝 Suppliers</a>
+            <a href="gas_delivery.html" class="nav-link">🚚 Delivery Records</a>
+            <a href="cashier_inventory.html" class="nav-link">📦 Add Items</a>
+            <a href="sales_reports.html" class="nav-link">📜 Sales History</a>
+            <a href="shift history cashier.html" class="nav-link">🌞 Shift History</a>
+            <a href="pos.html" class="nav-link">🌠 View All Items</a>
+        </nav>
+        <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <a href="index.html" class="nav-link" style="color:#f87171;">🚪 Logout</a>
+        </div>
+    </div>
+
+<div class="main-wrapper">
+    <div class="mobile-header">
+        <button onclick="toggleSidebar()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">☰</button>
+        <div style="font-weight:800; letter-spacing:1px;">JEPE ADMIN</div>
+        <div style="width:30px;"></div>
+    </div>
+
+    <div class="container">
+        <div class="report-summary">
+            <div class="summary-box">
+                <small class="section-label" style="font-size: 0.6rem; margin-bottom:5px;">Unpaid</small>
+                <span id="total-debt" style="font-size:1rem; font-weight:800; color:var(--danger)">Ksh 0</span>
+            </div>
+            <div class="summary-box">
+                <small class="section-label" style="font-size: 0.6rem; margin-bottom:5px;">Recovered</small>
+                <span id="total-recovered" style="font-size:1rem; font-weight:800; color:var(--success)">Ksh 0</span>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <span class="section-label">New Debt Entry</span>
+                <form id="debt-form">
+                    <input type="text" id="cust-name" placeholder="Customer Name" required>
+                    <input type="tel" id="cust-phone" placeholder="Phone Number">
+                    <input type="text" id="prod-search" list="prod-list" placeholder="Search product..." required>
+                    <datalist id="prod-list"></datalist>
+                    
+                    <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                        <div style="flex:1; background:#f1f5f9; padding:8px; border-radius:10px; text-align:center;">
+                            <small style="display:block; font-size:0.6rem; color:var(--text-dim);">STOCK</small>
+                            <span id="live-stock" style="font-weight:800; color:var(--primary)">-</span>
+                        </div>
+                        <div style="flex:1; background:#f1f5f9; padding:8px; border-radius:10px; text-align:center;">
+                            <small style="display:block; font-size:0.6rem; color:var(--text-dim);">MIN PRICE</small>
+                            <span id="live-min" style="font-weight:800; color:var(--primary)">-</span>
+                        </div>
+                    </div>
+
+                    <input type="number" id="debt-amt" step="0.01" placeholder="Debt Amount" required>
+                    <button type="submit" id="submit-btn" class="btn">SAVE DEBT ENTRY</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="tabs">
+                    <button class="tab active" onclick="filterTable('All', this)">All</button>
+                    <button class="tab" onclick="filterTable('Unpaid', this)">Unpaid</button>
+                </div>
+                <input type="text" id="ledger-search" placeholder="Search customer..." style="margin-top:10px;">
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Item</th>
+                                <th>Debt</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledger-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
+    }
+
+    // DYNAMIC HIGHLIGHT SCRIPT
+    function highlightMenu() {
+        const currentPath = window.location.pathname.split("/").pop();
+        const links = document.querySelectorAll('.nav-link');
+        links.forEach(link => {
+            if (link.getAttribute('href') === currentPath) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+    }
+    window.addEventListener('DOMContentLoaded', highlightMenu);
+</script>
+
+<script type="module">
+    import { supabase } from './auth.js';
+
+    let allProducts = [];
+    let allDebts = [];
+    let currentFilter = 'All';
+
+    async function init() {
+        const { data: prods } = await supabase.from('products').select('*');
+        allProducts = prods || [];
+        
+        const dList = document.getElementById('prod-list');
+        dList.innerHTML = allProducts.map(p => {
+            const label = `${p.name} ${p.weight_category || ''}`.trim();
+            return `<option value="${label}" data-id="${p.id}" data-price="${p.selling_price}" data-stock="${p.stock_quantity}" data-min="${p.min_price}">`;
+        }).join('');
+
+        loadLedger();
+    }
+
+    document.getElementById('prod-search').oninput = (e) => {
+        const opt = document.querySelector(`#prod-list option[value="${e.target.value}"]`);
+        if (opt) {
+            document.getElementById('debt-amt').value = opt.dataset.price;
+            document.getElementById('live-stock').innerText = opt.dataset.stock;
+            document.getElementById('live-min').innerText = opt.dataset.min;
+        }
+    };
+
+    async function loadLedger() {
+        const { data } = await supabase.from('debtors').select('*, products(*)').order('created_at', { ascending: false });
+        allDebts = data || [];
+        renderTable();
+    }
+
+    function renderTable() {
+        const searchTerm = document.getElementById('ledger-search').value.toLowerCase();
+        const tbody = document.getElementById('ledger-body');
+        let out = 0, rec = 0;
+        
+        const filtered = allDebts.filter(d => {
+            const matchesTab = currentFilter === 'All' || d.status === currentFilter;
+            const matchesSearch = d.customer_name.toLowerCase().includes(searchTerm);
+            return matchesTab && matchesSearch;
+        });
+
+        tbody.innerHTML = filtered.map(d => {
+            const isUnpaid = d.status === 'Unpaid';
+            if(isUnpaid) { out += d.amount_owed; } else { rec += d.amount_owed; }
+            const prodName = d.products ? d.products.name : 'Item';
+
+            return `
+                <tr>
+                    <td data-label="Date">${new Date(d.created_at).toLocaleDateString()}</td>
+                    <td data-label="Customer"><b>${d.customer_name}</b></td>
+                    <td data-label="Item">${prodName}</td>
+                    <td data-label="Debt">Ksh ${d.amount_owed.toLocaleString()}</td>
+                    <td data-label="Status"><span class="badge ${isUnpaid ? 'bg-unpaid' : 'bg-paid'}">${d.status}</span></td>
+                    <td data-label="Action">
+                        ${isUnpaid ? `<button onclick="window.confirmSettle('${d.id}', ${d.amount_owed})" style="background:var(--success); color:white; border:none; padding:8px; border-radius:5px; width:100%; font-weight:bold;">SETTLE</button>` : 'PAID ✓'}
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        document.getElementById('total-debt').innerText = `Ksh ${out.toLocaleString()}`;
+        document.getElementById('total-recovered').innerText = `Ksh ${rec.toLocaleString()}`;
+    }
+
+    window.filterTable = (status, btn) => {
+        currentFilter = status;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        renderTable();
+    };
+
+    document.getElementById('ledger-search').oninput = renderTable;
+
+    window.confirmSettle = async (id, amt) => {
+        if (!confirm(`Confirm settling Ksh ${amt}?`)) return;
+        const { error } = await supabase.from('debtors').update({ status: 'Paid' }).eq('id', id);
+        if (!error) loadLedger();
+    };
+
+    document.getElementById('debt-form').onsubmit = async (e) => {
+        e.preventDefault();
+        const searchVal = document.getElementById('prod-search').value;
+        const opt = document.querySelector(`#prod-list option[value="${searchVal}"]`);
+        if(!opt) return alert("Select product");
+
+        const { error } = await supabase.from('debtors').insert([{
+            customer_name: document.getElementById('cust-name').value,
+            product_id: opt.dataset.id,
+            amount_owed: parseFloat(document.getElementById('debt-amt').value),
+            status: 'Unpaid'
+        }]);
+
+        if(!error) {
+            document.getElementById('debt-form').reset();
+            loadLedger();
+        }
+    };
+
+    init();
+</script>
+</body>
+</html>

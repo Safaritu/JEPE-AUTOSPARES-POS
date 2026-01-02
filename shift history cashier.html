@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Shift Audit | JEPE POS</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --primary: #4f46e5; 
+            --bg: #f8fafc; 
+            --card: #ffffff;
+            --success: #10b981; 
+            --danger: #ef4444; 
+            --text: #1e293b; 
+            --dim: #64748b; 
+            --border: #e2e8f0; 
+            --sidebar-width: 260px;
+            --sidebar-bg: #0f172a; 
+            --header-height: 64px;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg); color: var(--text); margin: 0; 
+            display: flex; min-height: 100vh; overflow-x: hidden;
+        }
+
+        /* --- SIDEBAR & NAV --- */
+        .sidebar {
+            width: var(--sidebar-width); background: var(--sidebar-bg);
+            display: flex; flex-direction: column; position: fixed; 
+            left: 0; top: 0; height: 100vh; z-index: 3000;
+            transform: translateX(-100%); transition: transform 0.3s ease;
+        }
+        @media (min-width: 1025px) {
+            .sidebar { transform: translateX(0); }
+            .main-content { margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)); margin-top: 0 !important; }
+            .mobile-header { display: none; }
+        }
+        .sidebar.active { transform: translateX(0); }
+        .sidebar-header { padding: 25px; font-weight: 800; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; }
+        .nav-list { list-style: none; padding: 15px; margin: 0; }
+        .nav-link { display: flex; align-items: center; padding: 12px; text-decoration: none; color: #94a3b8; font-weight: 600; border-radius: 10px; margin-bottom: 4px; gap: 10px; }
+        .nav-link.active { background: var(--primary); color: #fff; }
+
+        /* --- CONTENT --- */
+        .main-content { flex-grow: 1; padding: 20px; margin-top: var(--header-height); }
+        .mobile-header { position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); background: var(--sidebar-bg); color: white; display: flex; align-items: center; padding: 0 20px; z-index: 2000; }
+        
+        .page-header { background: white; padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 20px; }
+        
+        /* --- EXPLANATION BOX --- */
+        .info-box { background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px; border-radius: 12px; margin-bottom: 20px; font-size: 0.8rem; color: #1e40af; line-height: 1.4; }
+
+        /* --- DESKTOP TABLE --- */
+        .table-view { background: white; border-radius: 16px; border: 1px solid var(--border); overflow-x: auto; display: block; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        th { background: #f8fafc; text-align: left; padding: 15px; font-size: 0.7rem; text-transform: uppercase; color: var(--dim); }
+        td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 0.85rem; vertical-align: top; }
+
+        /* --- MOBILE CARDS --- */
+        .mobile-cards-view { display: none; flex-direction: column; gap: 15px; }
+        .shift-card { background: white; border-radius: 16px; border: 1px solid var(--border); padding: 16px; }
+        .card-row { display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px dotted var(--border); }
+        .label-desc { display: block; font-size: 0.7rem; color: var(--dim); margin-top: 2px; }
+
+        /* --- VARIANCE STYLES --- */
+        .variance-status { font-weight: 800; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; }
+        .balanced { background: #dcfce7; color: #15803d; }
+        .shortage { background: #fee2e2; color: #b91c1c; }
+        .surplus { background: #fef9c3; color: #854d0e; }
+
+        .acc-row { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 2px; }
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; z-index: 2500; }
+        .overlay.active { display: block; }
+
+        @media (max-width: 1024px) {
+            .table-view { display: none; }
+            .mobile-cards-view { display: flex; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="mobile-header">
+    <button onclick="toggleMenu()" style="background:none; border:none; color:white; font-size:1.5rem;">☰</button>
+    <span style="margin-left:15px; font-weight:700;">Shift Audit History</span>
+</div>
+
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <span>JEPE ADMIN</span>
+        <button onclick="toggleMenu()" style="background:none; border:none; color:white; font-size:1.5rem;">&times;</button>
+    </div>
+    <div class="nav-list">
+            <a href="cashier.html" class="nav-link">📊 Dashboard</a>
+        <a href="cashiergashub.html" class="nav-link">⛽ Gas Hub</a>
+        <a href="low-stock-cashier.html" class="nav-link">⚠️ Low Stock</a>
+        <a href="debtors.html" class="nav-link">👥 Debtors</a>
+        <a href="supplierscashier.html" class="nav-link">🤝 Suppliers</a>
+        <a href="gas_delivery.html" class="nav-link">🚚 Delivery Records</a>
+        <a href="cashier_inventory.html" class="nav-link">📦 Add Items</a>
+        <a href="sales_reports.html" class="nav-link">📜 Sales History</a>
+        <a href="shift history cashier.html" class="nav-link active">🌞 Shift History</a>
+        <a href="moneyinout.html" class="nav-link">💸 Cash Flow</a>
+        <a href="pos.html" class="nav-link">🌠 View All Items</a>
+        <a href="index.html" class="nav-link" style="color:var(--danger); margin-top:20px;">🚪 Logout</a>
+    </div>
+</nav>
+
+<main class="main-content">
+    <div class="page-header">
+        <h1 style="margin:0; font-size:1.3rem;">Shift Performance Audit</h1>
+        <p style="margin:5px 0 0 0; color:var(--dim); font-size:0.85rem;">Reviewing how money moved during each shift.</p>
+    </div>
+
+    <div class="info-box">
+        <strong>💡 Understanding the Audit:</strong><br>
+        • <b>Money In:</b> Total sales + any cash added.<br>
+        • <b>Money Out:</b> Total expenses + payouts paid during the shift.<br>
+        • <b>Variance:</b> Difference between what the system says should be there and what was actually counted.
+    </div>
+
+    <div class="table-view">
+        <table>
+            <thead>
+                <tr>
+                    <th>Shift Info</th>
+                    <th>Opening (Start)</th>
+                    <th>Money In/Out</th>
+                    <th>Closing (Actual)</th>
+                    <th>Variance (Gap)</th>
+                </tr>
+            </thead>
+            <tbody id="audit-body-desktop">
+                <tr><td colspan="5" style="text-align:center; padding:40px;">Loading audit data...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="audit-body-mobile" class="mobile-cards-view"></div>
+
+    <br>
+    <button id="loadMore" style="width:100%; padding:16px; background:var(--sidebar-bg); color:white; border-radius:12px; border:none; font-weight:700; cursor:pointer;">Load More Shifts</button>
+</main>
+
+<script type="module">
+    import { supabase } from './auth.js';
+    
+    let currentLimit = 10;
+    let allTransactions = [];
+
+    window.toggleMenu = () => {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
+    };
+
+    async function fetchData() {
+        const { data: shifts } = await supabase.from('daily_shifts').select('*').order('start_time', { ascending: false }).limit(currentLimit);
+        const { data: trans } = await supabase.from('cash_transactions').select('*');
+        allTransactions = trans || [];
+        render(shifts || []);
+    }
+
+    function render(shifts) {
+        const desktop = document.getElementById('audit-body-desktop');
+        const mobile = document.getElementById('audit-body-mobile');
+        desktop.innerHTML = '';
+        mobile.innerHTML = '';
+
+        shifts.forEach(sh => {
+            const logs = allTransactions.filter(t => t.shift_id === sh.id);
+            const inAmt = logs.filter(t => t.type === 'Money In' || t.type === 'In').reduce((sum, t) => sum + (t.amount || 0), 0);
+            const outAmt = logs.filter(t => t.type === 'Money Out' || t.type === 'Out').reduce((sum, t) => sum + (t.amount || 0), 0);
+            
+            const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_equity||0);
+            const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_equity||0);
+            const expected = openTotal + inAmt - outAmt;
+            const variance = closeTotal - expected;
+
+            const date = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
+            
+            let varClass = 'balanced';
+            let varText = 'Balanced';
+            if (variance < 0) { varClass = 'shortage'; varText = `Short: Ksh ${Math.abs(variance).toLocaleString()}`; }
+            else if (variance > 0) { varClass = 'surplus'; varText = `Surplus: Ksh ${variance.toLocaleString()}`; }
+
+            // Desktop Row
+            desktop.innerHTML += `
+                <tr>
+                    <td><b>${date}</b><br><small>${sh.cashier_name || 'Staff'}</small></td>
+                    <td>Ksh ${openTotal.toLocaleString()}</td>
+                    <td>
+                        <span style="color:var(--success)">+${inAmt.toLocaleString()} (In)</span><br>
+                        <span style="color:var(--danger)">-${outAmt.toLocaleString()} (Out)</span>
+                    </td>
+                    <td>Ksh ${closeTotal.toLocaleString()}</td>
+                    <td><span class="variance-status ${varClass}">${varText}</span></td>
+                </tr>
+            `;
+
+            // Mobile Card
+            mobile.innerHTML += `
+                <div class="shift-card">
+                    <div class="card-row">
+                        <span><b>${date} Shift</b></span>
+                        <span class="variance-status ${varClass}">${varText}</span>
+                    </div>
+                    <div class="acc-row">
+                        <span>Opening Balance <small class="label-desc">Amount started with</small></span>
+                        <b>${openTotal.toLocaleString()}</b>
+                    </div>
+                    <div class="acc-row">
+                        <span>Shift Activity <small class="label-desc">Money In vs Expenses</small></span>
+                        <span style="text-align:right">
+                            <small style="color:var(--success)">+${inAmt.toLocaleString()}</small><br>
+                            <small style="color:var(--danger)">-${outAmt.toLocaleString()}</small>
+                        </span>
+                    </div>
+                    <div class="acc-row" style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border)">
+                        <span>Final Count <small class="label-desc">Actual money found</small></span>
+                        <b>Ksh ${closeTotal.toLocaleString()}</b>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    document.getElementById('loadMore').onclick = () => { currentLimit += 10; fetchData(); };
+    fetchData();
+</script>
+</body>
+</html>

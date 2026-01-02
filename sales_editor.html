@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Stock Editor | JEPE ADMIN</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --admin-dark: #1e293b;
+            --admin-accent: #6366f1;
+            --bg: #f8fafc;
+            --white: #ffffff;
+            --text: #1e293b;
+            --text-dim: #64748b;
+            --green: #10b981; 
+            --blue: #2563eb; 
+            --red: #ef4444; 
+            --orange: #f59e0b;
+            --sidebar-width: 260px;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg); 
+            margin: 0; 
+            color: var(--text);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            position: fixed;
+            left: -260px;
+            top: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--admin-dark);
+            z-index: 2000;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: white;
+            box-shadow: 10px 0 15px rgba(0,0,0,0.1);
+        }
+
+        .sidebar.active { left: 0 !important; }
+
+        @media (min-width: 1024px) {
+            .sidebar { left: 0; }
+            .main-wrapper { margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)); }
+            body.sidebar-closed .sidebar { left: -260px; }
+            body.sidebar-closed .main-wrapper { margin-left: 0; width: 100%; }
+            body.sidebar-closed .mobile-header { display: flex !important; }
+            .mobile-header { display: none; }
+        }
+
+        .sidebar h2 { color: white; font-weight: 800; font-size: 1.2rem; margin-bottom: 25px; letter-spacing: 1px; }
+        
+        .nav-link {
+            display: flex; align-items: center; padding: 10px 15px;
+            color: #94a3b8; text-decoration: none; font-weight: 600;
+            border-radius: 10px; margin-bottom: 2px; transition: 0.2s; font-size: 0.8rem;
+        }
+        .nav-link:hover { background: rgba(255,255,255,0.05); color: white; }
+        .nav-link.active { background: var(--admin-accent); color: white; }
+
+        /* --- MAIN CONTENT --- */
+        .main-wrapper { width: 100%; transition: 0.3s; }
+        .mobile-header {
+            background: var(--admin-dark); color: white; padding: 15px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000;
+        }
+
+        .container { padding: 20px; max-width: 1400px; margin: auto; }
+
+        .card { 
+            background: var(--white); padding: 20px; border-radius: 16px; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; 
+        }
+
+        /* --- TABLE --- */
+        .table-container { width: 100%; overflow-x: auto; border-radius: 12px; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        th { text-align: left; padding: 12px; background: #f8fafc; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; }
+        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; }
+        
+        .low-stock-row { background-color: #fff1f2; }
+        .btn { padding: 8px 14px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; transition: 0.2s; font-size: 0.75rem; }
+        .btn-add { background: var(--green); color: white; }
+        .btn-edit { background: var(--blue); color: white; }
+        .btn-delete { background: var(--red); color: white; }
+
+        /* --- MODAL --- */
+        #productModal { 
+            display: none; position: fixed; inset: 0; 
+            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px);
+            justify-content: center; align-items: center; z-index: 3000; padding: 15px;
+        }
+        .modal-content { 
+            background: white; padding: 25px; border-radius: 20px; width: 100%; max-width: 500px; 
+            max-height: 90vh; overflow-y: auto;
+        }
+        .grid-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .full-width { grid-column: span 2; }
+        
+        input, select { 
+            width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; 
+            margin-top: 5px; font-size: 0.85rem; font-family: inherit;
+        }
+        label { font-size: 0.65rem; color: var(--text-dim); font-weight: 700; text-transform: uppercase; }
+
+        @media (max-width: 1023px) { .grid-form { grid-template-columns: 1fr; } .full-width { grid-column: span 1; } }
+
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; z-index: 1500; }
+        .overlay.active { display: block; }
+    </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<div class="sidebar" id="sidebar">
+    <h2>JEPE ADMIN</h2>
+    <nav>
+        <a href="admin.html" class="nav-link">📊 Dashboard view</a>
+        <a href="shift-history.html" class="nav-link">📋 Daily Shift Audit</a>
+        <a href="inventory.html" class="nav-link">➕ Add Stock</a>
+        <a href="audit_trail.html" class="nav-link">🔍 Track Stock Edits</a>
+        <a href="sales_editor.html" class="nav-link active">✏️ Edit Stock/Sales</a>
+        <a href="sales-history.html" class="nav-link">📜 Sales History</a>
+        <a href="reports.html" class="nav-link">📄 Detailed Reports</a>
+        <a href="suppliers.html" class="nav-link">🤝 Suppliers</a>
+        <a href="gas_hub.html" class="nav-link">🔥 Gas Hub</a>
+        <a href="low_stock.html" class="nav-link">⚠️ Low Stock Alerts</a>
+        <a href="admin-debtors.html" class="nav-link">👥 Debtors</a>
+        <a href="price_audits.html" class="nav-link">📉 Price Audits</a>
+        <a href="money-history.html" class="nav-link">📜 Money History</a>
+        <a href="Monthly Performance Report.html" class="nav-link"><span>📄</span><small>Monthly Report</small></a>
+    </nav>
+    <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+        <a onclick="handleLogout()" class="nav-link" style="color: #fb7185; cursor:pointer;">🚪 Logout</a>
+    </div>
+</div>
+
+<div class="main-wrapper">
+    <div class="mobile-header">
+        <button onclick="toggleSidebar()" style="background:none; border:none; color:white; font-size:1.5rem;">☰</button>
+        <div style="font-weight:800; font-size: 0.8rem;">STOCK EDITOR</div>
+        <div style="width:24px;"></div>
+    </div>
+
+    <div class="container">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap: 15px;">
+            <h2 style="margin:0; font-size: 1.1rem;">Inventory Control</h2>
+            <button class="btn btn-add" onclick="openModal()">+ New Product</button>
+        </div>
+
+        <div class="card">
+            <input type="text" id="searchBar" placeholder="Search database..." style="margin-bottom:15px; border-radius:10px;">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name / Type</th>
+                            <th>Supplier</th>
+                            <th>Stock</th>
+                            <th>Cost</th>
+                            <th>Sell</th>
+                            <th>Min</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="product-list-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="productModal">
+    <div class="modal-content">
+        <h3 id="modalTitle" style="margin:0 0 15px 0; font-size: 1rem;">Edit Product</h3>
+        <input type="hidden" id="prod-id">
+        <div class="grid-form">
+            <div class="full-width"><label>Product Name</label><input type="text" id="prod-name"></div>
+            <div class="full-width"><label>Supplier</label><select id="prod-supplier"></select></div>
+            <div><label>Category</label><select id="prod-category">
+                <option value="Spare Part">Spare Part</option>
+                <option value="Motorbike">Motorbike</option>
+                <option value="Gas">Gas</option>
+            </select></div>
+            <div><label>Part Type</label><select id="prod-type">
+                <option value="Original">Original</option>
+                <option value="Copy">Copy</option>
+                <option value="N/A">N/A</option>
+            </select></div>
+            <div><label>Cost Price</label><input type="number" id="prod-cost"></div>
+            <div><label>Selling Price</label><input type="number" id="prod-sell"></div>
+            <div><label>Min Price</label><input type="number" id="prod-min"></div>
+            <div><label>Stock Qty</label><input type="number" id="prod-stock" style="border-color:var(--orange)"></div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button class="btn btn-add" style="flex:2;" onclick="saveProduct()">Save Changes</button>
+            <button class="btn" style="flex:1; background:#f1f5f9;" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { supabase } from './auth.js';
+    let allProducts = [];
+
+    window.toggleSidebar = () => {
+        if (window.innerWidth >= 1024) document.body.classList.toggle('sidebar-closed');
+        else {
+            document.getElementById('sidebar').classList.toggle('active');
+            document.getElementById('overlay').classList.toggle('active');
+        }
+    };
+
+    async function init() {
+        const { data: sups } = await supabase.from('suppliers').select('id, name').order('name');
+        document.getElementById('prod-supplier').innerHTML = '<option value="">-- No Supplier --</option>' + 
+            sups.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        await fetchProducts();
+    }
+
+    async function fetchProducts() {
+        const { data } = await supabase.from('products').select('*, suppliers(name)').order('name');
+        allProducts = data || [];
+        renderTable(allProducts);
+    }
+
+    function renderTable(data) {
+        document.getElementById('product-list-body').innerHTML = data.map(p => `
+            <tr class="${p.stock_quantity < 5 ? 'low-stock-row' : ''}">
+                <td><strong>${p.name}</strong><br><small>${p.part_type}</small></td>
+                <td><small>${p.suppliers?.name || '---'}</small></td>
+                <td style="font-weight:800">${p.stock_quantity}</td>
+                <td>${p.cost_price.toLocaleString()}</td>
+                <td>${p.selling_price.toLocaleString()}</td>
+                <td>${p.min_price.toLocaleString()}</td>
+                <td>
+                    <div style="display:flex; gap:5px;">
+                        <button class="btn btn-edit" onclick="editProduct('${p.id}')">Edit</button>
+                        <button class="btn btn-delete" onclick="deleteProduct('${p.id}')">Del</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    window.openModal = () => {
+        document.getElementById('modalTitle').innerText = "New Product";
+        document.getElementById('prod-id').value = "";
+        document.getElementById('productModal').style.display = "flex";
+    };
+
+    window.closeModal = () => document.getElementById('productModal').style.display = "none";
+
+    window.editProduct = (id) => {
+        const p = allProducts.find(item => item.id === id);
+        if (!p) return;
+        document.getElementById('prod-id').value = p.id;
+        document.getElementById('prod-name').value = p.name;
+        document.getElementById('prod-supplier').value = p.supplier_id || "";
+        document.getElementById('prod-category').value = p.category;
+        document.getElementById('prod-type').value = p.part_type;
+        document.getElementById('prod-cost').value = p.cost_price;
+        document.getElementById('prod-sell').value = p.selling_price;
+        document.getElementById('prod-min').value = p.min_price;
+        document.getElementById('prod-stock').value = p.stock_quantity;
+        document.getElementById('productModal').style.display = "flex";
+    };
+
+    window.saveProduct = async () => {
+        const id = document.getElementById('prod-id').value;
+        const data = {
+            name: document.getElementById('prod-name').value,
+            supplier_id: document.getElementById('prod-supplier').value || null,
+            category: document.getElementById('prod-category').value,
+            part_type: document.getElementById('prod-type').value,
+            cost_price: parseFloat(document.getElementById('prod-cost').value) || 0,
+            selling_price: parseFloat(document.getElementById('prod-sell').value) || 0,
+            min_price: parseFloat(document.getElementById('prod-min').value) || 0,
+            stock_quantity: parseInt(document.getElementById('prod-stock').value) || 0
+        };
+        const { error } = id ? await supabase.from('products').update(data).eq('id', id) : await supabase.from('products').insert([data]);
+        if (error) alert(error.message); else { closeModal(); fetchProducts(); }
+    };
+
+    window.deleteProduct = async (id) => {
+        if (confirm("Delete permanently?")) {
+            await supabase.from('products').delete().eq('id', id);
+            fetchProducts();
+        }
+    };
+
+    document.getElementById('searchBar').oninput = (e) => {
+        const term = e.target.value.toLowerCase();
+        renderTable(allProducts.filter(p => p.name.toLowerCase().includes(term) || (p.suppliers?.name && p.suppliers.name.toLowerCase().includes(term))));
+    };
+
+    window.handleLogout = async () => { await supabase.auth.signOut(); window.location.href = 'index.html'; };
+    init();
+</script>
+</body>
+</html>

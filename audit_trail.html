@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Audit Trail | JEPE Admin</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --admin-dark: #0f172a; --admin-accent: #6366f1; --bg: #f8fafc;
+            --white: #ffffff; --text: #1e293b; --text-dim: #64748b;
+            --border: #e2e8f0; --success: #10b981; --danger: #ef4444;
+            --sidebar-width: 260px;
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); margin: 0; display: flex; min-height: 100vh; color: var(--text); }
+
+        /* --- SIDEBAR (HIDDEN ON MOBILE) --- */
+        .sidebar {
+            position: fixed; left: 0; top: 0; width: var(--sidebar-width); height: 100vh;
+            background: var(--admin-dark); z-index: 3000; padding: 25px; color: white; 
+            overflow-y: auto; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sidebar h2 { font-size: 1.2rem; font-weight: 800; margin-bottom: 30px; color: var(--admin-accent); letter-spacing: 1px; }
+        .nav-link {
+            display: flex; align-items: center; padding: 12px 15px; color: #94a3b8;
+            text-decoration: none; font-weight: 600; border-radius: 12px; margin-bottom: 4px; font-size: 0.85rem; gap: 10px;
+        }
+        .nav-link.active { background: var(--admin-accent); color: white; }
+
+        /* --- MOBILE HEADER --- */
+        .mobile-header {
+            display: none; position: fixed; top: 0; width: 100%; height: 60px;
+            background: var(--admin-dark); color: white; z-index: 2000;
+            padding: 0 20px; align-items: center; justify-content: space-between;
+        }
+        .menu-btn { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0; }
+
+        /* --- MAIN CONTENT --- */
+        .main-content { margin-left: var(--sidebar-width); padding: 40px; width: 100%; transition: 0.3s; }
+        
+        .header-flex { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; gap: 20px; }
+        
+        .table-view { 
+            background: white; border-radius: 20px; border: 1px solid var(--border); 
+            overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { padding: 18px; background: #f8fafc; font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border); }
+        td { padding: 18px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+
+        /* --- BADGES --- */
+        .badge { padding: 5px 10px; border-radius: 8px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; }
+        .badge-sale { background: #fee2e2; color: #b91c1c; }
+        .badge-restock { background: #dcfce7; color: #15803d; }
+        
+        #live-indicator { display: flex; align-items: center; gap: 8px; background: #dcfce7; color: #15803d; padding: 8px 15px; border-radius: 30px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+        
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; z-index: 2500; backdrop-filter: blur(4px); }
+
+        /* --- MOBILE RESPONSIVENESS --- */
+        @media (max-width: 1024px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.active { transform: translateX(0); }
+            .main-content { margin-left: 0; padding: 80px 15px 40px; }
+            .mobile-header { display: flex; }
+            .overlay.active { display: block; }
+            .header-flex { flex-direction: column; align-items: flex-start; }
+
+            /* Table into Cards */
+            thead { display: none; }
+            tr { display: block; padding: 15px; border-bottom: 8px solid var(--bg); }
+            td { 
+                display: flex; justify-content: space-between; align-items: center; 
+                padding: 10px 0; border: none; text-align: right;
+            }
+            td::before { 
+                content: attr(data-label); font-weight: 800; color: var(--text-dim); 
+                font-size: 0.7rem; text-transform: uppercase; text-align: left;
+            }
+            td:last-child { border-top: 1px solid var(--border); margin-top: 5px; padding-top: 15px; text-align: left; display: block; }
+            td:last-child::before { display: block; margin-bottom: 5px; }
+        }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+    <div class="mobile-header">
+        <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        <div style="font-weight: 800; letter-spacing: 1px;">JEPE ADMIN</div>
+        <div style="width: 24px;"></div> </div>
+
+    <div class="sidebar" id="sidebar">
+        <h2>JEPE ADMIN</h2>
+        <nav>
+          <a href="admin.html" class="nav-link ">📊 Dashboard view</a>
+        <a href="shift-history.html" class="nav-link">📋 Daily Shift Audit</a>
+        <a href="reports.html" class="nav-link">📄 Detailed Reports</a>
+        <a href="money-history.html" class="nav-link">📜 Money money IN/OUT history</a>
+        <a href="gas_hub.html" class="nav-link">🔥 Gas Hub</a>
+        <a href="inventory.html" class="nav-link">➕ Add Stock</a>
+         <a href="low_stock.html" class="nav-link" id="low-stock-nav">⚠️ Low Stock Alerts</a>
+         <a href="price_audits.html" class="nav-link">📉 item sold under price</a>
+        <a href="audit_trail.html" class="nav-link active">🔍 what cashier edited</a>
+        <a href="sales_editor.html" class="nav-link">✏️ Edit Stock/Sales</a>
+        <a href="sales-history.html" class="nav-link">📜 Sales History</a>
+         <a href="suppliers.html" class="nav-link">🤝 Suppliers</a>
+        <a href="admin-debtors.html" class="nav-link">👥 Debtors</a>
+       <a href="Monthly Performance Report.html" class="nav-link"><span>📄</span><small>Monthly Report</small></a>
+            <hr style="opacity: 0.1; margin: 20px 0;">
+            <a href="#" onclick="handleLogout()" class="nav-link" style="color: var(--danger);">🚪 Logout</a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="header-flex">
+            <div>
+                <h1 style="margin:0; font-weight: 800; letter-spacing: -1px; font-size: 2rem;">Audit Trail</h1>
+                <p style="color: var(--text-dim); margin: 5px 0 0;">Recent inventory activity logs.</p>
+            </div>
+            <div id="live-indicator">
+                <span style="width:8px; height:8px; background:#22c55e; border-radius:50%; animation: pulse 1.5s infinite;"></span> LIVE SYNC ACTIVE
+            </div>
+        </div>
+
+        <div class="table-view">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Action</th>
+                        <th>Product</th>
+                        <th>Change</th>
+                        <th>User</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody id="desktop-tbody">
+                    <tr><td colspan="6" style="text-align:center; padding:50px;">Syncing logs...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { supabase } from './auth.js';
+
+        // Toggle Function for Mobile
+        window.toggleMenu = () => {
+            document.getElementById('sidebar').classList.toggle('active');
+            document.getElementById('overlay').classList.toggle('active');
+        }
+
+        async function fetchLogs() {
+            const { data: logs, error } = await supabase
+                .from('inventory_logs')
+                .select('*')
+                .order('timestamp', { ascending: false })
+                .limit(50);
+
+            if (error) return;
+
+            const tbody = document.getElementById('desktop-tbody');
+            if (!logs || logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px;">No logs found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = logs.map(l => {
+                const date = new Date(l.timestamp);
+                const actionClass = l.action_type === 'SALE' ? 'badge-sale' : 'badge-restock';
+                const qtyChange = l.quantity || 0;
+                
+                return `
+                    <tr>
+                        <td data-label="Date & Time">
+                            <div style="font-weight:700">${date.toLocaleDateString('en-GB')}</div>
+                            <small style="color:var(--text-dim)">${date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</small>
+                        </td>
+                        <td data-label="Action"><span class="badge ${actionClass}">${l.action_type || 'LOG'}</span></td>
+                        <td data-label="Product"><b style="font-size:0.95rem">${l.product_name || 'System'}</b></td>
+                        <td data-label="Change" style="color:${qtyChange > 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:800">
+                            ${qtyChange > 0 ? '+' : ''}${qtyChange}
+                        </td>
+                        <td data-label="User" style="font-size:0.85rem; color:var(--text-dim)">${l.performed_by || 'Admin'}</td>
+                        <td data-label="Full Details" style="font-size:0.8rem;">${l.details || '-'}</td>
+                    </tr>`;
+            }).join('');
+        }
+
+        fetchLogs();
+
+        supabase.channel('logs-channel')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'inventory_logs' }, () => fetchLogs())
+            .subscribe();
+
+        window.handleLogout = async () => {
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
+        };
+    </script>
+</body>
+</html>

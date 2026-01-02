@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gas Delivery Dispatch | JEPE COMPANY LIMITED</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --primary: #4f46e5; 
+            --bg: #f8fafc; 
+            --card: #ffffff; 
+            --border: #e2e8f0; 
+            --text: #1e293b; 
+            --text-dim: #64748b;
+            --danger: #ef4444; 
+            --success: #10b981; 
+            --warning: #f59e0b;
+            --sidebar-bg: #1e293b;
+            --sidebar-width: 260px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg); 
+            margin: 0; 
+            color: var(--text);
+            display: flex;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            position: fixed; left: -260px; top: 0; width: var(--sidebar-width);
+            height: 100vh; background: var(--sidebar-bg); transition: 0.3s ease;
+            z-index: 2000; padding: 25px; display: flex; flex-direction: column; color: white;
+        }
+
+        @media (min-width: 1024px) {
+            .sidebar { left: 0; }
+            .main-wrapper { margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)); }
+            .mobile-header { display: none !important; }
+        }
+
+        .sidebar.active { left: 0; }
+        .sidebar h2 { color: var(--warning); font-weight: 800; font-size: 1.1rem; margin-bottom: 30px; }
+        
+        .nav-link {
+            display: block; padding: 12px 15px; color: #cbd5e1;
+            text-decoration: none; font-weight: 600; border-radius: 10px;
+            margin-bottom: 5px; transition: 0.2s; font-size: 0.9rem;
+        }
+        .nav-link:hover { background: rgba(255,255,255,0.1); color: white; }
+        .nav-link.active { background: var(--primary); color: white; }
+
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: none; z-index: 1500;
+        }
+        .overlay.active { display: block; }
+
+        /* --- LAYOUT --- */
+        .main-wrapper { width: 100%; min-height: 100vh; }
+        .mobile-header {
+            background: var(--sidebar-bg); color: white; padding: 15px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000;
+        }
+
+        .container { padding: 20px; max-width: 1400px; margin: auto; }
+
+        /* Stats Grid */
+        .stats-grid { 
+            display: grid; grid-template-columns: repeat(2, 1fr); 
+            gap: 12px; margin-bottom: 25px; 
+        }
+        @media (min-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        }
+
+        .stat-card { 
+            background: white; padding: 20px; border-radius: 16px; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid var(--border);
+            border-top: 4px solid var(--primary); 
+        }
+        .stat-card h4 { margin: 0; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase; }
+        .stat-card div { font-size: 1.3rem; font-weight: 800; color: var(--text); margin-top: 8px; }
+
+        /* Delivery Grid */
+        .delivery-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media (min-width: 1100px) {
+            .delivery-grid { grid-template-columns: 380px 1fr; }
+        }
+
+        .card { 
+            background: white; padding: 25px; border-radius: 16px; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid var(--border); 
+        }
+        
+        /* --- FORMS --- */
+        label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-dim); margin-bottom: 6px; }
+        input, select, textarea { 
+            padding: 12px; border-radius: 10px; border: 1px solid var(--border); 
+            width: 100%; margin-bottom: 15px; font-size: 16px; font-family: inherit; outline: none;
+        }
+        input:focus { border-color: var(--primary); }
+        
+        .btn { 
+            padding: 14px; color: white; border: none; font-weight: 800; 
+            cursor: pointer; border-radius: 10px; width: 100%; font-size: 0.85rem; 
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn-dispatch { background: var(--primary); }
+        .btn-summary { background: var(--text); width: auto; padding: 10px 20px; font-size: 0.7rem; }
+
+        /* --- TABLE --- */
+        .table-container { overflow-x: auto; background: white; border-radius: 16px; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th { text-align: left; padding: 16px; background: #f8fafc; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase; }
+        td { padding: 16px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; }
+
+        .status-pill { padding: 5px 12px; border-radius: 8px; font-size: 0.65rem; font-weight: 800; }
+        .pill-out { background: #fff7ed; color: #9a3412; }
+        .pill-done { background: #f0fdf4; color: #166534; }
+
+        #print-area { display: none; }
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { display: block; position: absolute; left: 0; top: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <div class="sidebar" id="sidebar">
+        <div>
+            <h2>JEPE LOGISTICS</h2>
+            <p style="color: #94a3b8; font-size: 0.7rem; margin-top: 5px;">Dispatch Control Center</p>
+        </div>
+        <div style="margin-top: 30px;"><a href="cashier.html" class="nav-link">📊 Dashboard</a>
+          <a href="cashier.html" class="nav-link">📊 Dashboard</a>
+        <a href="cashiergashub.html" class="nav-link">⛽ Gas Hub</a>
+        <a href="low-stock-cashier.html" class="nav-link">⚠️ Low Stock</a>
+        <a href="debtors.html" class="nav-link ">👥 Debtors</a>
+        <a href="supplierscashier.html" class="nav-link">🤝 Suppliers</a>
+        <a href="gas_delivery.html" class="nav-link active">🚚 Delivery Records</a>
+        <a href="cashier_inventory.html" class="nav-link">📦 Add Items</a>
+        <a href="sales_reports.html" class="nav-link">📜 Sales History</a>
+        <a href="shift history cashier.html" class="nav-link">🌞 Shift History</a>
+        <a href="moneyinout.html" class="nav-link">💸 Cash Flow</a>
+        <a href="pos.html" class="nav-link">🌠 View All Items</a>
+        </div>
+        <div style="margin-top: auto;">
+            <a href="index.html" class="nav-link" style="color:var(--danger);">🚪 Logout</a>
+        </div>
+    </div>
+
+    <div class="main-wrapper">
+        <div class="mobile-header">
+            <button onclick="toggleSidebar()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">☰</button>
+            <div style="font-weight:800;">JEPE LOGISTICS</div>
+            <div style="width:24px;"></div>
+        </div>
+
+        <div class="container">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+                <h1 style="margin:0; font-size: 1.4rem;">Dispatch Center</h1>
+                <button class="btn btn-summary" onclick="window.print()">📄 PRINT LOG</button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card"><h4>On Delivery</h4><div id="stat-out">0</div></div>
+                <div class="stat-card" style="border-top-color: var(--success);"><h4>Completed</h4><div id="stat-done">0</div></div>
+                <div class="stat-card" style="border-top-color: var(--warning); grid-column: span 2;"><h4>Revenue</h4><div id="stat-rev">Ksh 0</div></div>
+            </div>
+
+            <div class="delivery-grid">
+                <div class="card">
+                    <span style="font-size: 0.7rem; font-weight: 800; color: var(--primary); display: block; margin-bottom: 15px;">NEW SHIPMENT</span>
+                    <form id="delivery-form">
+                        <label>Customer Name</label>
+                        <input type="text" id="cust-name" required>
+                        <label>Phone Number</label>
+                        <input type="tel" id="cust-phone" required>
+                        <label>Address</label>
+                        <textarea id="cust-address" rows="2" required></textarea>
+                        <label>Select Gas</label>
+                        <select id="gas-select" required></select>
+                        <label>Quantity</label>
+                        <input type="number" id="gas-qty" value="1" min="1" required>
+                        <label>Assign Rider</label>
+                        <select id="rider-select">
+                            <option>Rider 1 (Bike)</option>
+                            <option>Rider 2 (Van)</option>
+                            <option>Self-Pickup</option>
+                        </select>
+                        <button type="submit" class="btn btn-dispatch">DISPATCH NOW</button>
+                    </form>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order</th>
+                                <th>Customer</th>
+                                <th>Details</th>
+                                <th>Status</th>
+                                <th>Total</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="print-area"></div>
+
+    <script type="module">
+        import { supabase } from './auth.js';
+
+        let gasProducts = [];
+        let deliveries = [];
+
+        window.toggleSidebar = () => {
+            document.getElementById('sidebar').classList.toggle('active');
+            document.getElementById('overlay').classList.toggle('active');
+        };
+
+        async function init() {
+            await loadProducts();
+            await fetchHistory();
+        }
+
+        async function loadProducts() {
+            const { data } = await supabase.from('products').select('*').eq('category', 'Gas');
+            gasProducts = data || [];
+            document.getElementById('gas-select').innerHTML = gasProducts.map(p => 
+                `<option value="${p.id}">${p.name} - Ksh ${p.selling_price}</option>`
+            ).join('');
+        }
+
+        async function fetchHistory() {
+            const { data } = await supabase.from('delivery_history').select('*').order('created_at', { ascending: false });
+            deliveries = data || [];
+            renderHistory();
+        }
+
+        document.getElementById('delivery-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const prodId = document.getElementById('gas-select').value;
+            const product = gasProducts.find(p => p.id === prodId);
+            const qty = parseInt(document.getElementById('gas-qty').value);
+            
+            const newJob = {
+                id: "D" + Math.floor(1000 + Math.random() * 9000),
+                customer_name: document.getElementById('cust-name').value,
+                customer_phone: document.getElementById('cust-phone').value,
+                address: document.getElementById('cust-address').value,
+                gas_type: product.name,
+                quantity: qty,
+                rider: document.getElementById('rider-select').value,
+                status: 'out',
+                total_amount: product.selling_price * qty
+            };
+
+            const { error } = await supabase.from('delivery_history').insert([newJob]);
+            if (!error) {
+                // Deduct from stock
+                await supabase.from('products').update({ stock_quantity: product.stock_quantity - qty }).eq('id', prodId);
+                e.target.reset();
+                fetchHistory();
+                printNote(newJob);
+            }
+        };
+
+        function renderHistory() {
+            document.getElementById('history-body').innerHTML = deliveries.map(d => `
+                <tr>
+                    <td>#${d.id}</td>
+                    <td><b>${d.customer_name}</b><br><small>${d.customer_phone}</small></td>
+                    <td>${d.quantity}x ${d.gas_type}</td>
+                    <td><span class="status-pill ${d.status === 'out' ? 'pill-out' : 'pill-done'}">${d.status.toUpperCase()}</span></td>
+                    <td>Ksh ${d.total_amount.toLocaleString()}</td>
+                    <td>
+                        <button style="padding:6px; cursor:pointer;" onclick="printNoteById('${d.id}')">🖨️</button>
+                        ${d.status === 'out' ? `<button style="background:var(--success); color:white; border:none; padding:6px 10px; border-radius:5px; cursor:pointer;" onclick="markDone('${d.id}')">DONE</button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+            updateStats();
+        }
+
+        window.markDone = async (id) => {
+            await supabase.from('delivery_history').update({ status: 'delivered' }).eq('id', id);
+            fetchHistory();
+        };
+
+        window.printNoteById = (id) => {
+            const d = deliveries.find(item => item.id === id);
+            if(d) printNote(d);
+        };
+
+        window.printNote = (d) => {
+            document.getElementById('print-area').innerHTML = `
+                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #000; width: 300px;">
+                    <h3 style="text-align:center;">JEPE LOGISTICS</h3>
+                    <p style="text-align:center; font-size:12px;">DELIVERY NOTE: #${d.id}</p>
+                    <hr>
+                    <p><b>Customer:</b> ${d.customer_name}</p>
+                    <p><b>Phone:</b> ${d.customer_phone}</p>
+                    <p><b>Address:</b> ${d.address}</p>
+                    <hr>
+                    <p><b>Item:</b> ${d.quantity}x ${d.gas_type}</p>
+                    <p><b>Total:</b> Ksh ${d.total_amount}</p>
+                    <p><b>Rider:</b> ${d.rider}</p>
+                    <br><br>
+                    <p style="border-top:1px solid #000; padding-top:5px; text-align:center;">Customer Signature</p>
+                </div>
+            `;
+            window.print();
+        };
+
+        function updateStats() {
+            const out = deliveries.filter(d => d.status === 'out').length;
+            const done = deliveries.filter(d => d.status === 'delivered').length;
+            const rev = deliveries.reduce((sum, d) => sum + d.total_amount, 0);
+            document.getElementById('stat-out').innerText = out;
+            document.getElementById('stat-done').innerText = done;
+            document.getElementById('stat-rev').innerText = "Ksh " + rev.toLocaleString();
+        }
+
+        init();
+    </script>
+</body>
+</html>

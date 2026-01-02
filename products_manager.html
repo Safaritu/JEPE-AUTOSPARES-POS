@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JEPE ADMIN | Product Manager</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --blue: #2563eb; --slate: #1e293b; --green: #10b981; --red: #ef4444; --light: #f1f5f9; }
+        body { font-family: sans-serif; background: var(--light); margin: 0; display: flex; }
+        .sidebar { width: 240px; background: var(--slate); height: 100vh; color: white; padding: 20px; position: fixed; }
+        .sidebar h2 { color: var(--green); font-size: 1.2rem; margin-bottom: 30px; }
+        .nav-link { display: block; color: #cbd5e1; text-decoration: none; padding: 12px; border-radius: 8px; margin-bottom: 5px; }
+        .nav-link:hover { background: var(--blue); color: white; }
+        .main-content { margin-left: 240px; padding: 30px; width: 100%; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
+        .btn-add { background: var(--green); color: white; }
+        #productModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 500px; max-height: 90vh; overflow-y: auto; }
+        .grid-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-top: 5px; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>JEPE ADMIN</h2>
+    <a href="admin.html" class="nav-link active">📊 Dashboard view</a>
+    <a href="shift-history.html" class="nav-link">📋 Daily Shift Audit</a>
+    <a href="inventory.html" class="nav-link">➕ Add Stock</a>
+     <a href="audit_trail.html" class="nav-link">🤝 track cashier stock edits</a>
+    <a href="sales_editor.html" class="nav-link">✏️ Edit Stock/Sales</a>
+    <a href="sales-history.html" class="nav-link">📜 Sales History</a>
+    <a href="reports.html" class="nav-link">📄 Detailed Reports</a>
+    <a href="suppliers.html" class="nav-link">🤝 Suppliers</a>
+    <a href="gas_hub.html" class="nav-link">🔥 Gas Hub</a>
+    <a href="low_stock.html" class="nav-link" id="low-stock-nav">⚠️ Low Stock Alerts</a>
+    <a href="admin-debtors.html" class="nav-link">👥 Debtors</a>
+   <a href="price_audits.html" class="nav-link">📉 under price sold items</a>
+    <a href="money-history.html" class="nav-link">📜money IN/OUT history</a>
+    <hr style="opacity: 0.1; margin: 20px 0;">
+    <a href="index.html" class="nav-link">Logout</a>
+</div>
+
+<div class="main-content">
+    <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+        <h2>Inventory Manager</h2>
+        <button class="btn btn-add" onclick="openModal()">+ Add Product</button>
+    </div>
+
+    <div class="card">
+        <table id="productTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Supplier</th>
+                    <th>Stock</th>
+                    <th>Sell Price</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="productModal">
+    <div class="modal-content">
+        <h3 id="modalTitle">Add Product</h3>
+        <input type="hidden" id="prod-id">
+        
+        <div class="grid-form">
+            <div style="grid-column: span 2;">
+                <label>Product Name</label>
+                <input type="text" id="prod-name" required>
+            </div>
+            
+            <div style="grid-column: span 2;">
+                <label>Assigned Supplier</label>
+                <select id="prod-supplier">
+                    <option value="">-- Select Supplier --</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Category</label>
+                <select id="prod-category">
+                    <option value="Spare Part">Spare Part</option>
+                    <option value="Motorbike">Motorbike</option>
+                    <option value="Gas">Gas</option>
+                </select>
+            </div>
+            
+            <div>
+                <label>Part Type</label>
+                <select id="prod-type">
+                    <option value="Original">Original</option>
+                    <option value="Copy">Copy</option>
+                    <option value="N/A">N/A</option>
+                </select>
+            </div>
+
+            <div><label>Cost Price</label><input type="number" id="prod-cost" value="0"></div>
+            <div><label>Sell Price</label><input type="number" id="prod-sell" required></div>
+            <div><label>Min Price</label><input type="number" id="prod-min" value="0"></div>
+            <div><label>Stock Qty</label><input type="number" id="prod-stock" value="0"></div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:25px;">
+            <button class="btn btn-add" style="flex:2;" onclick="saveProduct()">Save Product</button>
+            <button class="btn" style="flex:1; background:#eee;" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { supabase } from './auth.js';
+
+    let allProducts = [];
+    let allSuppliers = [];
+
+    async function init() {
+        // Fetch Suppliers first for the dropdown
+        const { data: sups } = await supabase.from('suppliers').select('id, name').order('name');
+        allSuppliers = sups || [];
+        const supSelect = document.getElementById('prod-supplier');
+        supSelect.innerHTML = '<option value="">-- Select Supplier --</option>' + 
+            allSuppliers.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+        loadProducts();
+    }
+
+    async function loadProducts() {
+        // Use a join to get the supplier name
+        const { data, error } = await supabase
+            .from('products')
+            .select('*, suppliers(name)')
+            .order('name');
+
+        if (error) return console.error(error);
+        allProducts = data;
+        renderTable(data);
+    }
+
+    function renderTable(data) {
+        const tbody = document.querySelector('#productTable tbody');
+        tbody.innerHTML = data.map(p => `
+            <tr>
+                <td><strong>${p.name}</strong><br><small>${p.category}</small></td>
+                <td>${p.suppliers?.name || '<span style="color:#999">No Supplier</span>'}</td>
+                <td>${p.stock_quantity}</td>
+                <td>Ksh ${p.selling_price}</td>
+                <td>
+                    <button style="color:blue; cursor:pointer; background:none; border:none;" onclick="editProduct('${p.id}')">Edit</button>
+                    <button style="color:red; cursor:pointer; background:none; border:none;" onclick="deleteProduct('${p.id}')">Delete</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    window.openModal = () => {
+        document.getElementById('modalTitle').innerText = "Add Product";
+        document.getElementById('prod-id').value = "";
+        document.getElementById('prod-name').value = "";
+        document.getElementById('prod-supplier').value = "";
+        document.getElementById('productModal').style.display = "flex";
+    };
+
+    window.closeModal = () => document.getElementById('productModal').style.display = "none";
+
+    window.editProduct = (id) => {
+        const p = allProducts.find(item => item.id === id);
+        document.getElementById('modalTitle').innerText = "Edit Product";
+        document.getElementById('prod-id').value = p.id;
+        document.getElementById('prod-name').value = p.name;
+        document.getElementById('prod-supplier').value = p.supplier_id || "";
+        document.getElementById('prod-category').value = p.category;
+        document.getElementById('prod-type').value = p.part_type;
+        document.getElementById('prod-cost').value = p.cost_price;
+        document.getElementById('prod-sell').value = p.selling_price;
+        document.getElementById('prod-min').value = p.min_price;
+        document.getElementById('prod-stock').value = p.stock_quantity;
+        document.getElementById('productModal').style.display = "flex";
+    };
+
+    window.saveProduct = async () => {
+        const id = document.getElementById('prod-id').value;
+        const productData = {
+            name: document.getElementById('prod-name').value,
+            supplier_id: document.getElementById('prod-supplier').value || null,
+            category: document.getElementById('prod-category').value,
+            part_type: document.getElementById('prod-type').value,
+            cost_price: parseFloat(document.getElementById('prod-cost').value),
+            selling_price: parseFloat(document.getElementById('prod-sell').value),
+            min_price: parseFloat(document.getElementById('prod-min').value),
+            stock_quantity: parseInt(document.getElementById('prod-stock').value)
+        };
+
+        const { error } = id 
+            ? await supabase.from('products').update(productData).eq('id', id)
+            : await supabase.from('products').insert([productData]);
+
+        if (error) alert("Error: " + error.message);
+        else { closeModal(); loadProducts(); }
+    };
+
+    window.deleteProduct = async (id) => {
+        if (confirm("Delete product?")) {
+            await supabase.from('products').delete().eq('id', id);
+            loadProducts();
+        }
+    };
+
+    init();
+</script>
+</body>
+</html>

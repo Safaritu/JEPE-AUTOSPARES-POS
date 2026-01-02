@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Point of Sale | JEPE COMPANY</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --primary: #4f46e5; 
+            --bg: #f1f5f9; 
+            --card: #ffffff; 
+            --border: #e2e8f0; 
+            --text: #1e293b; 
+            --success: #10b981;
+            --sidebar-bg: #1e293b; 
+            --sidebar-width: 260px;
+            --header-height: 60px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg); 
+            margin: 0; 
+            color: var(--text);
+            overflow-x: hidden;
+            display: flex;
+        }
+
+        /* --- MOBILE HEADER (Hidden on Laptop) --- */
+        .mobile-header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: var(--header-height);
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            z-index: 3000;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar { 
+            position: fixed; 
+            left: -280px; 
+            top: 0; 
+            width: var(--sidebar-width); 
+            height: 100vh; 
+            background: var(--sidebar-bg); 
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            z-index: 4000; 
+            padding: 25px; 
+            color: white; 
+            display: flex; 
+            flex-direction: column; 
+        }
+        
+        .sidebar.active { left: 0; }
+
+        /* Laptop Adjustments */
+        @media (min-width: 1024px) {
+            .mobile-header { display: none; }
+            .sidebar { left: 0; z-index: 1000; }
+            .main-content { 
+                margin-left: var(--sidebar-width); 
+                padding-top: 0 !important;
+                width: calc(100% - var(--sidebar-width));
+            }
+            .menu-close { display: none; } /* Hide X on laptop */
+            .sidebar-overlay { display: none !important; }
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 3500;
+            display: none;
+        }
+        .sidebar-overlay.active { display: block; }
+
+        .nav-link { 
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px; 
+            color: #cbd5e1; 
+            text-decoration: none; 
+            font-weight: 600; 
+            border-radius: 10px; 
+            margin-bottom: 5px; 
+            font-size: 0.9rem; 
+        }
+        .nav-link:hover { background: rgba(255,255,255,0.05); color: white; }
+        .nav-link.active { background: var(--primary); color: white; }
+
+        /* --- MAIN CONTENT --- */
+        .main-content { 
+            width: 100%; 
+            min-height: 100vh;
+            padding-top: var(--header-height); 
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pos-container { 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 20px; 
+            padding: 20px;
+            flex: 1;
+        }
+        
+        @media (min-width: 1100px) { 
+            .pos-container { 
+                grid-template-columns: 1fr 380px; 
+                height: 100vh;
+                overflow: hidden;
+            } 
+        }
+
+        /* --- PRODUCT GRID --- */
+        .search-section { 
+            background: white; 
+            border-radius: 16px; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            border: 1px solid var(--border);
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .product-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+            gap: 15px; 
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
+
+        .prod-card { 
+            background: #fff; 
+            border: 1px solid var(--border); 
+            padding: 15px; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            transition: 0.2s;
+        }
+        .prod-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .prod-name { font-weight: 700; font-size: 0.9rem; margin-bottom: 5px; }
+        .prod-price { color: var(--primary); font-weight: 800; }
+
+        /* --- CART --- */
+        .cart-section { 
+            background: white; 
+            border-radius: 16px; 
+            display: flex; 
+            flex-direction: column; 
+            border: 1px solid var(--border); 
+            padding: 20px;
+            height: 100%;
+        }
+
+        .cart-items { flex: 1; overflow-y: auto; margin: 15px 0; }
+        
+        .total-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: 600; }
+        .grand-total { font-size: 1.5rem; font-weight: 800; color: var(--primary); border-top: 2px dashed var(--border); padding-top: 15px; margin-top: 10px; }
+
+        .btn-checkout { 
+            background: var(--success); 
+            color: white; border: none; width: 100%; padding: 18px; 
+            border-radius: 12px; font-weight: 800; cursor: pointer;
+        }
+
+        .qty-control { display: flex; align-items: center; gap: 10px; background: #f1f5f9; padding: 5px; border-radius: 8px; }
+        .btn-qty { border: none; background: white; width: 25px; height: 25px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        
+        .menu-toggle { background: var(--primary); color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="mobile-header">
+    <button class="menu-toggle" onclick="toggleSidebar()">☰ Menu</button>
+    <div style="font-weight: 800; color: var(--primary);">JEPE POS</div>
+    <div id="mobile-cart-count" style="font-weight: 700;">0</div>
+</div>
+
+<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<div class="sidebar" id="sidebar">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <div>
+            <h2 style="color: #f59e0b; margin: 0; font-size: 1.4rem;">JEPE CO.</h2>
+        </div>
+        <button onclick="toggleSidebar()" class="menu-close" style="background:none; border:none; color:white; font-size:2rem; cursor:pointer;">&times;</button>
+    </div>
+
+    <nav style="flex: 1; overflow-y: auto;">
+            <a href="cashier.html" class="nav-link">📊 Dashboard</a>
+        <a href="cashiergashub.html" class="nav-link">⛽ Gas Hub</a>
+        <a href="low-stock-cashier.html" class="nav-link">⚠️ Low Stock</a>
+        <a href="debtors.html" class="nav-link">👥 Debtors</a>
+        <a href="supplierscashier.html" class="nav-link">🤝 Suppliers</a>
+        <a href="gas_delivery.html" class="nav-link">🚚 Delivery Records</a>
+        <a href="cashier_inventory.html" class="nav-link">📦 Add Items</a>
+        <a href="sales_reports.html" class="nav-link">📜 Sales History</a>
+        <a href="shift history cashier.html" class="nav-link">🌞 Shift History</a>
+        <a href="moneyinout.html" class="nav-link">💸 Cash Flow</a>
+        <a href="pos.html" class="nav-link active">🌠 View All Items</a>
+    </nav>
+</div>
+
+<div class="main-content">
+    <div class="pos-container">
+        <div class="search-section">
+            <input type="text" id="search" class="search-bar" style="padding: 15px; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 15px;" placeholder="🔍 Search product name...">
+            <div class="product-grid" id="product-grid">
+                </div>
+        </div>
+
+        <div class="cart-section">
+            <h3 style="margin: 0;">Current Order</h3>
+            <div class="cart-items" id="cart-items">
+                <p style="text-align: center; color: #94a3b8; margin-top: 50px;">Cart is empty</p>
+            </div>
+            
+            <div class="totals">
+                <div class="total-row">
+                    <span>Items:</span>
+                    <span id="item-count">0</span>
+                </div>
+                <div class="total-row grand-total">
+                    <span>Total:</span>
+                    <span id="grand-total">Ksh 0</span>
+                </div>
+                
+                <select id="pay-method" style="width: 100%; padding: 12px; border-radius: 10px; margin: 15px 0; border: 1px solid var(--border); font-weight: 600;">
+                    <option value="Cash">Cash</option>
+                    <option value="M-Pesa">kcb paybill</option>
+                    <option value="Credit">Credit/Debt</option>
+                </select>
+
+                <button class="btn-checkout" id="checkout-btn" onclick="processCheckout()" disabled>PROCESS SALE</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { supabase } from './auth.js';
+
+    let allProducts = [];
+    let cart = [];
+
+    // --- Sidebar Toggle ---
+    window.toggleSidebar = () => {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
+    };
+
+    // --- Load Products ---
+    async function loadProducts() {
+        const { data } = await supabase.from('products').select('*').gt('stock_quantity', 0).order('name');
+        allProducts = data || [];
+        renderGrid(allProducts);
+    }
+
+    function renderGrid(products) {
+        const grid = document.getElementById('product-grid');
+        grid.innerHTML = products.map(p => `
+            <div class="prod-card" onclick="addToCart('${p.id}')">
+                <div class="prod-name">${p.name}</div>
+                <div class="prod-price">Ksh ${p.selling_price.toLocaleString()}</div>
+                <div style="font-size: 0.7rem; color: #64748b;">Stock: ${p.stock_quantity}</div>
+            </div>
+        `).join('');
+    }
+
+    window.addToCart = (id) => {
+        const product = allProducts.find(p => p.id === id);
+        const existing = cart.find(item => item.id === id);
+        if (existing) {
+            if (existing.qty < product.stock_quantity) existing.qty++;
+        } else {
+            cart.push({ ...product, qty: 1 });
+        }
+        renderCart();
+    };
+
+    function renderCart() {
+        const cartDiv = document.getElementById('cart-items');
+        let total = 0;
+        
+        if(cart.length === 0) {
+            cartDiv.innerHTML = `<p style="text-align: center; color: #94a3b8; margin-top: 50px;">Cart is empty</p>`;
+        } else {
+            cartDiv.innerHTML = cart.map(item => {
+                total += (item.selling_price * item.qty);
+                return `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #eee;">
+                        <div>
+                            <div style="font-weight:700; font-size:0.8rem;">${item.name}</div>
+                            <div style="font-size:0.7rem; color:var(--primary)">Ksh ${item.selling_price}</div>
+                        </div>
+                        <div class="qty-control">
+                            <button class="btn-qty" onclick="updateQty('${item.id}', -1)">-</button>
+                            <span style="font-weight:800; font-size:0.8rem;">${item.qty}</span>
+                            <button class="btn-qty" onclick="updateQty('${item.id}', 1)">+</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        document.getElementById('grand-total').innerText = `Ksh ${total.toLocaleString()}`;
+        document.getElementById('item-count').innerText = cart.length;
+        document.getElementById('mobile-cart-count').innerText = cart.length;
+        document.getElementById('checkout-btn').disabled = cart.length === 0;
+    }
+
+    window.updateQty = (id, change) => {
+        const item = cart.find(i => i.id === id);
+        item.qty += change;
+        if (item.qty <= 0) cart = cart.filter(i => i.id !== id);
+        renderCart();
+    };
+
+    window.processCheckout = async () => {
+        const method = document.getElementById('pay-method').value;
+        const total = cart.reduce((sum, item) => sum + (item.selling_price * item.qty), 0);
+        if (!confirm(`Confirm sale of Ksh ${total.toLocaleString()}?`)) return;
+
+        // Add your Supabase sale insertion logic here
+        alert("Sale Processed Locally!");
+        cart = [];
+        renderCart();
+    };
+
+    document.getElementById('search').oninput = (e) => {
+        const t = e.target.value.toLowerCase();
+        renderGrid(allProducts.filter(p => p.name.toLowerCase().includes(t)));
+    };
+
+    loadProducts();
+</script>
+</body>
+</html>
