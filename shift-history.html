@@ -245,9 +245,9 @@
             <thead>
                 <tr>
                     <th>Shift Timing</th>
-                    <th>Opening Float</th>
+                    <th>Opening & Sales</th>
                     <th>Money In/Out</th>
-                    <th>Closing Float</th>
+                    <th>Closing Actuals</th>
                     <th>Variance</th>
                     <th>Notes</th>
                 </tr>
@@ -269,6 +269,7 @@
     let currentLimit = 15;
     let allShifts = [];
     let allTransactions = [];
+    let allSales = [];
 
     window.toggleMenu = () => {
         document.getElementById('sidebar').classList.toggle('active');
@@ -284,9 +285,11 @@
                 .limit(currentLimit);
 
             const { data: transactions } = await supabase.from('cash_transactions').select('*');
+            const { data: sales } = await supabase.from('sales').select('shift_id, total_amount, payment_method');
 
             allShifts = shifts || [];
             allTransactions = transactions || [];
+            allSales = sales || [];
             renderData(allShifts);
         } catch (error) {
             console.error("Fetch Error:", error);
@@ -302,17 +305,26 @@
 
         shiftsToRender.forEach(sh => {
             const shiftLogs = allTransactions.filter(t => t.shift_id === sh.id);
+            const shiftSales = allSales.filter(s => s.shift_id === sh.id);
+
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((sum, t) => sum + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((sum, t) => sum + (t.amount || 0), 0);
+            
+            // Unified Calculation Formula
+            const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((a,b) => a + b.total_amount, 0);
+            const paybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((a,b) => a + b.total_amount, 0);
 
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_equity||0);
-            const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_equity||0);
+            
+            // Formula: Closing Actuals = (Physical Floats) + Paybill Sales
+            const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_equity||0) + paybillSales;
+            
             const expected = sh.system_expected_total || openTotal; 
             const varianceVal = closeTotal - expected;
             const isClosed = sh.status === 'Closed';
             
-            const statusClass = varianceVal === 0 ? 'balanced' : 'mismatch';
-            const statusText = varianceVal === 0 ? 'BALANCED' : `Ksh ${varianceVal.toLocaleString()}`;
+            const statusClass = Math.abs(varianceVal) < 1 ? 'balanced' : 'mismatch';
+            const statusText = Math.abs(varianceVal) < 1 ? 'BALANCED' : `Ksh ${varianceVal.toLocaleString()}`;
 
             const startD = new Date(sh.start_time);
             const endD = sh.end_time ? new Date(sh.end_time) : null;
@@ -338,7 +350,10 @@
                             KCB: ${(sh.open_kcb||0).toLocaleString()}<br>
                             Equity: ${(sh.open_equity||0).toLocaleString()}
                         </div>
-                        <div style="font-weight:700; border-top:1px solid #eee; margin-top:5px; padding-top:2px;">Total: Ksh ${openTotal.toLocaleString()}</div>
+                        <div style="font-size:0.7rem; color:var(--success); margin-top:4px; padding:4px; background:#f0fdf4; border-radius:4px;">
+                            + Cash Sales: ${cashSales.toLocaleString()}<br>
+                            + Paybill Sales: ${paybillSales.toLocaleString()}
+                        </div>
                     </td>
                     <td>
                         <span style="color:var(--success); font-weight:700;">+${moneyIn.toLocaleString()}</span><br>
@@ -349,7 +364,8 @@
                             Cash: ${(sh.close_cash||0).toLocaleString()}<br>
                             M-Pesa: ${(sh.close_mpesa||0).toLocaleString()}<br>
                             KCB: ${(sh.close_kcb||0).toLocaleString()}<br>
-                            Equity: ${(sh.close_equity||0).toLocaleString()}
+                            Equity: ${(sh.close_equity||0).toLocaleString()}<br>
+                            <span style="color:var(--primary)">Paybill: ${paybillSales.toLocaleString()}</span>
                         </div>
                         <div style="font-weight:700; border-top:1px solid #eee; margin-top:5px; padding-top:2px;">Total: Ksh ${closeTotal.toLocaleString()}</div>
                     </td>
@@ -357,7 +373,7 @@
                     <td><small style="color:var(--dim); font-style:italic;">${sh.variance_note || '-'}</small></td>
                 </tr>`;
 
-            // Mobile Logic (Money In/Out Added Below)
+            // Mobile Logic
             mobileHTML += `
                 <div class="audit-card">
                     <div class="card-top">
@@ -386,22 +402,18 @@
                     
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                         <div>
-                            <span class="label-xs">Opening Float</span>
+                            <span class="label-xs">Opening & Sales</span>
                             <div class="card-details">
-                                <div class="detail-row"><span>Cash</span><span>${(sh.open_cash||0).toLocaleString()}</span></div>
-                                <div class="detail-row"><span>M-Pesa</span><span>${(sh.open_mpesa||0).toLocaleString()}</span></div>
-                                <div class="detail-row"><span>KCB</span><span>${(sh.open_kcb||0).toLocaleString()}</span></div>
-                                <div class="detail-row"><span>Equity</span><span>${(sh.open_equity||0).toLocaleString()}</span></div>
-                                <div class="detail-row bold"><span>Total</span><span>${openTotal.toLocaleString()}</span></div>
+                                <div class="detail-row"><span>Floats</span><span>${openTotal.toLocaleString()}</span></div>
+                                <div class="detail-row"><span>Cash Sales</span><span>+${cashSales.toLocaleString()}</span></div>
+                                <div class="detail-row"><span>Paybill Sales</span><span>+${paybillSales.toLocaleString()}</span></div>
                             </div>
                         </div>
                         <div>
-                            <span class="label-xs">Closing Float</span>
+                            <span class="label-xs">Closing Actuals</span>
                             <div class="card-details" style="background:#f0fdf4">
-                                <div class="detail-row"><span>Cash</span><span>${(sh.close_cash||0).toLocaleString()}</span></div>
-                                <div class="detail-row"><span>M-Pesa</span><span>${(sh.close_mpesa||0).toLocaleString()}</span></div>
-                                <div class="detail-row"><span>KCB</span><span>${(sh.close_kcb||0).toLocaleString()}</span></div>
-                                <div class="detail-row"><span>Equity</span><span>${(sh.close_equity||0).toLocaleString()}</span></div>
+                                <div class="detail-row"><span>Floats</span><span>${((sh.close_cash||0)+(sh.close_mpesa||0)+(sh.close_kcb||0)+(sh.close_equity||0)).toLocaleString()}</span></div>
+                                <div class="detail-row" style="color:var(--primary)"><span>Paybill</span><span>${paybillSales.toLocaleString()}</span></div>
                                 <div class="detail-row bold"><span>Total</span><span>${closeTotal.toLocaleString()}</span></div>
                             </div>
                         </div>
