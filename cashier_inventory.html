@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Inventory Management | JEPE COMPANY LIMITED</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --primary: #4f46e5; 
+            --bg: #f8fafc; 
+            --card: #ffffff; 
+            --border: #e2e8f0; 
+            --text: #1e293b; 
+            --text-dim: #64748b;
+            --danger: #ef4444; 
+            --success: #10b981; 
+            --warning: #f59e0b;
+            --sidebar-bg: #1e293b;
+            --sidebar-width: 260px;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg); 
+            margin: 0; 
+            color: var(--text);
+            display: flex;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            position: fixed; left: -260px; top: 0; width: var(--sidebar-width);
+            height: 100vh; background: var(--sidebar-bg); transition: 0.3s ease;
+            z-index: 2000; padding: 25px; display: flex; flex-direction: column; color: white;
+        }
+
+        @media (min-width: 1024px) {
+            .sidebar { left: 0; }
+            .main-wrapper { margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)); }
+            .mobile-header { display: none !important; }
+        }
+
+        .sidebar.active { left: 0; }
+        .sidebar h2 { color: var(--warning); font-weight: 800; font-size: 1.1rem; margin-bottom: 5px; }
+        
+        .nav-link {
+            display: block; padding: 10px 15px; color: #cbd5e1;
+            text-decoration: none; font-weight: 600; border-radius: 10px;
+            margin-bottom: 2px; transition: 0.2s; font-size: 0.85rem;
+        }
+        .nav-link:hover { background: rgba(255,255,255,0.1); color: white; }
+        .nav-link.active { background: var(--primary); color: white; }
+
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: none; z-index: 1500;
+        }
+        .overlay.active { display: block; }
+
+        /* --- LAYOUT --- */
+        .main-wrapper { width: 100%; min-height: 100vh; }
+        .mobile-header {
+            background: var(--sidebar-bg); color: white; padding: 15px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000;
+        }
+
+        .container { padding: 20px; max-width: 1400px; margin: auto; }
+
+        .card { 
+            background: white; padding: 20px; border-radius: 16px; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid var(--border); 
+            margin-bottom: 20px;
+        }
+
+        h3 { margin: 0 0 20px 0; font-size: 1.1rem; font-weight: 700; }
+
+        .form-row { 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
+            gap: 15px; margin-bottom: 15px; 
+        }
+
+        label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-dim); margin-bottom: 5px; }
+
+        input, select { 
+            padding: 12px; border: 1px solid var(--border); border-radius: 10px; 
+            width: 100%; font-size: 16px; background: #fff; color: var(--text);
+            font-family: inherit; transition: 0.2s;
+        }
+        input:focus { border-color: var(--primary); outline: none; }
+
+        .btn-add { 
+            background: var(--primary); color: white; border: none; 
+            padding: 15px; border-radius: 10px; font-weight: 800; 
+            cursor: pointer; width: 100%; text-transform: uppercase;
+            letter-spacing: 1px; font-size: 0.85rem;
+        }
+
+        /* --- SEARCH & TABLE --- */
+        .search-box { position: sticky; top: 0; background: var(--bg); padding: 10px 0; z-index: 100; }
+        .search-box input { border-radius: 30px; padding-left: 20px; border: 2px solid var(--border); }
+
+        .table-wrap { width: 100%; overflow-x: auto; background: white; border-radius: 12px; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        th { text-align: left; padding: 15px; background: #f8fafc; color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase; }
+        td { padding: 15px; border-top: 1px solid var(--border); vertical-align: middle; }
+
+        @media (max-width: 768px) {
+            .table-wrap { border: none; background: transparent; }
+            table, thead, tbody, th, td, tr { display: block; }
+            thead { display: none; }
+            tr { background: white; padding: 15px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 15px; position: relative; }
+            td { display: flex; justify-content: space-between; border: none; padding: 8px 0; font-size: 0.9rem; align-items: center;}
+            td:before { content: attr(data-label); font-weight: 700; color: var(--text-dim); }
+            td:first-child { border-bottom: 2px solid var(--primary); margin-bottom: 10px; padding-bottom: 10px; font-weight: 800; display: block; }
+            td:first-child:before { display: none; }
+        }
+
+        .badge { background: #e0e7ff; color: var(--primary); padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; margin-right: 5px; }
+        .sup-badge { background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
+        
+        /* Low Stock Highlighting */
+        .low-stock { background: #fffcf0 !important; border-left: 5px solid var(--warning) !important; }
+        .low-stock-text { color: var(--danger); font-weight: 800; }
+        
+        .onetouch-flex { display: flex; gap: 8px; }
+        .onetouch-input { width: 70px !important; text-align: center; padding: 8px; }
+        .btn-touch { background: var(--success); color: white; border: none; padding: 8px 15px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<div class="sidebar" id="sidebar">
+    <div>
+        <h2>JEPE LOGISTICS</h2>
+        <p style="color: #94a3b8; font-size: 0.7rem; margin-top: 5px;">Warehouse System</p>
+    </div>
+    <div style="margin-top: 20px; overflow-y: auto;">
+           <a href="cashier.html" class="nav-link">📊 Dashboard</a>
+        <a href="cashiergashub.html" class="nav-link">⛽ Gas Hub</a>
+        <a href="low-stock-cashier.html" class="nav-link">⚠️ Low Stock</a>
+        <a href="debtors.html" class="nav-link">👥 Debtors</a>
+        <a href="supplierscashier.html" class="nav-link">🤝 Suppliers</a>
+        <a href="gas_delivery.html" class="nav-link">🚚 Delivery Records</a>
+        <a href="cashier_inventory.html" class="nav-link active">📦 Add Items</a>
+        <a href="sales_reports.html" class="nav-link">📜 Sales History</a>
+        <a href="shift history cashier.html" class="nav-link">🌞 Shift History</a>
+        <a href="moneyinout.html" class="nav-link">💸 Cash Flow</a>
+        <a href="pos.html" class="nav-link">🌠 View All Items</a>
+    </div>
+    <div style="margin-top: auto;">
+        <a href="index.html" class="nav-link" style="color:var(--danger);">🚪 Logout</a>
+    </div>
+</div>
+
+<div class="main-wrapper">
+    <div class="mobile-header">
+        <button onclick="toggleSidebar()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">☰</button>
+        <div style="font-weight:800; letter-spacing:1px;">INVENTORY</div>
+        <div style="width:24px;"></div>
+    </div>
+
+    <div class="container">
+        <div class="card" style="border-top: 4px solid var(--primary);">
+            <h3>Register New Product</h3>
+            <form id="cashier-form">
+                <div class="form-row">
+                    <div style="grid-column: span 2;"><label>Item Name</label><input type="text" id="name" placeholder="e.g. 15W40 Engine Oil" required></div>
+                    <div>
+                        <label>Category</label>
+                        <select id="cat" onchange="toggleGas()">
+                            <option value="Spare Part">Spare Part</option>
+                            <option value="Motorbike">Motorbike</option>
+                            <option value="Gas">Gas</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Sub-Type</label>
+                        <select id="type">
+                            <option value="N/A">N/A</option>
+                            <option value="Original">Original</option>
+                            <option value="Copy">Copy</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row" id="gas-fields" style="display:none;">
+                    <div style="grid-column: span 2;">
+                        <label>Cylinder Size</label>
+                        <select id="weight_cat">
+                            <option value="6kg">6 KG Cylinder</option>
+                            <option value="13kg">13 KG Cylinder</option>
+                            <option value="50kg">50 KG Cylinder</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div><label>Supplier</label><select id="prod-supplier"></select></div>
+                    <div><label>Cost Price</label><input type="number" id="cost" placeholder="Buying" required></div>
+                    <div><label>Selling Price</label><input type="number" id="sell" placeholder="Selling" required></div>
+                    <div><label>Min. Price</label><input type="number" id="min_price" placeholder="Bottom Price" required></div>
+                    <div><label>Initial Qty</label><input type="number" id="stock" placeholder="In Stock" required></div>
+                </div>
+                <button type="submit" class="btn-add">Add Product to Database</button>
+            </form>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="search" placeholder="🔍 Search items by name or supplier...">
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item Details</th>
+                        <th>Supplier</th>
+                        <th>Buying</th>
+                        <th>Selling</th>
+                        <th>Min. Price</th>
+                        <th>Stock Level</th>
+                        <th>Quick Restock</th>
+                    </tr>
+                </thead>
+                <tbody id="inv-body"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { supabase } from './auth.js';
+    let allProducts = [];
+
+    window.toggleSidebar = () => {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
+    };
+
+    window.toggleGas = () => {
+        const isGas = document.getElementById('cat').value === 'Gas';
+        document.getElementById('gas-fields').style.display = isGas ? 'grid' : 'none';
+    };
+
+    async function load() {
+        const { data: sups } = await supabase.from('suppliers').select('id, name').order('name');
+        document.getElementById('prod-supplier').innerHTML = '<option value="">-- No Supplier --</option>' + 
+            sups.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+        const { data, error } = await supabase.from('products').select('*, suppliers(name)').order('name');
+        allProducts = data || [];
+        render();
+    }
+
+    function render(data = allProducts) {
+        document.getElementById('inv-body').innerHTML = data.map(p => {
+            const extra = p.weight_category || p.part_type || 'N/A';
+            const isLow = p.stock_quantity < 7;
+            
+            return `
+                <tr class="${isLow ? 'low-stock' : ''}">
+                    <td>
+                        <div style="font-weight:800; color:var(--text);">${p.name}</div>
+                        <div style="margin-top:4px;">
+                            <span class="badge">${extra}</span>
+                            <span class="badge" style="background:#f1f5f9; color:#64748b">${p.category}</span>
+                        </div>
+                    </td>
+                    <td data-label="Supplier"><span class="sup-badge">${p.suppliers?.name || 'Manual'}</span></td>
+                    <td data-label="Buying">Ksh ${p.cost_price?.toLocaleString()}</td>
+                    <td data-label="Selling" style="font-weight:700; color:var(--primary)">Ksh ${p.selling_price?.toLocaleString()}</td>
+                    <td data-label="Min. Price">Ksh ${p.min_price?.toLocaleString()}</td>
+                    <td data-label="Stock Level" class="${isLow ? 'low-stock-text' : ''}" style="font-weight:800">
+                        ${p.stock_quantity} ${isLow ? '⚠️' : ''}
+                    </td>
+                    <td data-label="Restock">
+                        <div class="onetouch-flex">
+                            <input type="number" id="add-${p.id}" class="onetouch-input" value="10" min="1">
+                            <button class="btn-touch" onclick="quickAdd('${p.id}', '${p.name}', ${p.stock_quantity})">ADD</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    // Quick Restock Logic
+    window.quickAdd = async (id, name, current) => {
+        const val = parseInt(document.getElementById(`add-${id}`).value);
+        if (isNaN(val) || val < 1) return;
+        
+        const btn = event.target;
+        btn.innerText = "Saving...";
+        btn.disabled = true;
+
+        const { error } = await supabase
+            .from('products')
+            .update({ stock_quantity: current + val })
+            .eq('id', id);
+
+        if(!error) {
+            load(); 
+        } else {
+            alert("Update failed");
+            btn.innerText = "ADD";
+            btn.disabled = false;
+        }
+    };
+
+    document.getElementById('cashier-form').onsubmit = async (e) => {
+        e.preventDefault();
+        const payload = {
+            name: document.getElementById('name').value,
+            category: document.getElementById('cat').value,
+            part_type: document.getElementById('type').value,
+            supplier_id: document.getElementById('prod-supplier').value || null,
+            weight_category: document.getElementById('cat').value === 'Gas' ? document.getElementById('weight_cat').value : null,
+            stock_quantity: parseInt(document.getElementById('stock').value),
+            cost_price: parseFloat(document.getElementById('cost').value),
+            selling_price: parseFloat(document.getElementById('sell').value),
+            min_price: parseFloat(document.getElementById('min_price').value)
+        };
+        const { error } = await supabase.from('products').insert([payload]);
+        if (!error) { 
+            alert("Product Registered!"); 
+            load(); 
+            e.target.reset(); 
+            toggleGas(); 
+        } else {
+            alert("Error: " + error.message);
+        }
+    };
+
+    document.getElementById('search').oninput = (e) => {
+        const t = e.target.value.toLowerCase();
+        render(allProducts.filter(p => 
+            p.name.toLowerCase().includes(t) || 
+            (p.suppliers?.name && p.suppliers.name.toLowerCase().includes(t))
+        ));
+    };
+
+    load();
+</script>
+</body>
+</html>

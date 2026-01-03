@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JEPE ADMIN | Gas Hub Management</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --admin-dark: #1e293b;
+            --admin-accent: #6366f1;
+            --bg: #f8fafc;
+            --white: #ffffff;
+            --text: #1e293b;
+            --text-dim: #64748b;
+            --border: #e2e8f0;
+            --primary: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --orange: #f59e0b;
+            --sidebar-width: 280px;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg); margin: 0; color: var(--text);
+            display: flex; min-height: 100vh; overflow-x: hidden;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            position: fixed; left: 0; top: 0; width: var(--sidebar-width);
+            height: 100vh; background: var(--admin-dark); z-index: 2000;
+            padding: 25px; display: flex; flex-direction: column; color: white;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar-header { padding: 10px 0 30px; display: flex; justify-content: space-between; align-items: center; }
+        .sidebar-header h2 { color: var(--admin-accent); font-size: 1.3rem; font-weight: 800; margin: 0; letter-spacing: 1px; }
+        
+        .nav-list { flex-grow: 1; overflow-y: auto; margin: 0 -10px; padding: 0 10px; }
+        .nav-link {
+            display: flex; align-items: center; padding: 12px 15px;
+            color: #94a3b8; text-decoration: none; font-weight: 600;
+            border-radius: 12px; margin-bottom: 4px; transition: 0.2s; font-size: 0.85rem;
+        }
+        .nav-link.active { background: var(--admin-accent); color: white; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+        .nav-link:hover:not(.active) { background: rgba(255,255,255,0.05); color: white; }
+
+        .close-sidebar { display: none; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+
+        /* --- MOBILE HEADER --- */
+        .mobile-top-bar {
+            display: none; position: fixed; top: 0; left: 0; width: 100%;
+            height: 64px; background: var(--admin-dark); color: white;
+            align-items: center; justify-content: space-between; padding: 0 20px; z-index: 1500;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .menu-toggle { background: none; border: none; color: white; font-size: 1.8rem; cursor: pointer; }
+
+        .overlay {
+            display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6);
+            z-index: 1900; backdrop-filter: blur(4px);
+        }
+
+        /* --- MAIN CONTENT --- */
+        .main-content { 
+            margin-left: var(--sidebar-width); padding: 40px; 
+            width: 100%; transition: margin 0.3s;
+        }
+
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
+            gap: 20px; margin-bottom: 30px; 
+        }
+
+        .stat-card { 
+            background: white; padding: 22px; border-radius: 20px; 
+            border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+        }
+
+        .stat-card div { font-size: 1.4rem; font-weight: 800; margin-top: 8px; letter-spacing: -0.5px; }
+
+        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .chart-container { 
+            background: white; padding: 25px; border-radius: 24px; 
+            border: 1px solid var(--border); height: 350px; position: relative;
+        }
+
+        .registration-form {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
+            gap: 12px; margin-top: 20px;
+        }
+
+        .registration-form input {
+            padding: 14px; border: 1px solid var(--border); border-radius: 12px; font-size: 0.9rem; outline: none; background: var(--bg);
+        }
+        .registration-form input:focus { border-color: var(--admin-accent); background: white; }
+
+        .gas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        
+        .stock-row { 
+            display: flex; justify-content: space-between; margin-top: 15px; 
+            background: var(--bg); padding: 15px; border-radius: 14px; gap: 10px;
+        }
+
+        .table-wrap { 
+            overflow-x: auto; background: white; border-radius: 20px; 
+            border: 1px solid var(--border); width: 100%;
+        }
+
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th { text-align: left; padding: 18px; background: #f8fafc; font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); font-weight: 700; border-bottom: 1px solid var(--border); }
+        td { padding: 18px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+        .badge { padding: 5px 10px; border-radius: 8px; font-size: 0.65rem; font-weight: 800; }
+
+        @media (max-width: 1100px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.active { transform: translateX(0); box-shadow: 10px 0 30px rgba(0,0,0,0.2); }
+            .close-sidebar { display: block; }
+            .main-content { margin-left: 0; padding: 90px 20px 40px; }
+            .mobile-top-bar { display: flex; }
+            .overlay.active { display: block; }
+            .charts-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .registration-form { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+    <div class="mobile-top-bar">
+        <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+        <span style="font-weight: 800; letter-spacing: -0.5px; font-size: 1rem;">GAS HUB ADMIN</span>
+        <div style="width: 30px;"></div>
+    </div>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>JEPE ADMIN</h2>
+            <button class="close-sidebar" onclick="toggleMenu()">✕</button>
+        </div>
+        <div class="nav-list">
+                <a href="admin.html" class="nav-link ">📊 Dashboard view</a>
+        <a href="shift-history.html" class="nav-link">📋 Daily Shift Audit</a>
+        <a href="reports.html" class="nav-link">📄 Detailed Reports</a>
+        <a href="money-history.html" class="nav-link">📜 Money money IN/OUT history</a>
+        <a href="gas_hub.html" class="nav-link active">🔥 Gas Hub</a>
+        <a href="inventory.html" class="nav-link">➕ Add Stock</a>
+         <a href="low_stock.html" class="nav-link" id="low-stock-nav">⚠️ Low Stock Alerts</a>
+         <a href="price_audits.html" class="nav-link">📉 item sold under price</a>
+        <a href="audit_trail.html" class="nav-link ">🔍 what cashier edited</a>
+        <a href="sales_editor.html" class="nav-link">✏️ Edit Stock/Sales</a>
+        <a href="sales-history.html" class="nav-link">📜 Sales History</a>
+         <a href="suppliers.html" class="nav-link">🤝 Suppliers</a>
+        <a href="admin-debtors.html" class="nav-link">👥 Debtors</a>
+       <a href="Monthly Performance Report.html" class="nav-link"><span>📄</span><small>Monthly Report</small></a>
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.05);">
+                <a href="#" onclick="handleLogout()" class="nav-link" style="color: var(--danger);">🚪 Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 35px; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <h1 style="margin:0; font-weight: 800; letter-spacing: -1.5px; font-size: 2.2rem;">Gas Inventory Hub</h1>
+                <p style="color: var(--text-dim); margin-top: 5px; font-weight: 500;">Manage brands, weights, and cylinder health.</p>
+            </div>
+            <div id="sync-status" style="background: #dcfce7; color: #166534; padding: 10px 20px; border-radius: 50px; font-size: 0.75rem; font-weight: 800; display: flex; align-items: center; gap: 8px; border: 1px solid #bbf7d0;">
+                <span style="width: 10px; height: 10px; background: #22c55e; border-radius: 50%; display: inline-block;"></span> LIVE DATA SYNC
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card"><small style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; font-weight: 800;">Inv. Valuation</small><div id="stat-total-cost">Ksh 0</div></div>
+            <div class="stat-card"><small style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; font-weight: 800;">Estimated Profit</small><div id="stat-total-profit" style="color: var(--success);">Ksh 0</div></div>
+            <div class="stat-card"><small style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; font-weight: 800;">Total Full</small><div id="stat-total-full">0 Units</div></div>
+            <div class="stat-card"><small style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; font-weight: 800;">Total Empties</small><div id="stat-total-empties" style="color: var(--orange);">0 Units</div></div>
+        </div>
+
+        
+
+        <div class="charts-grid">
+            <div class="chart-container"><canvas id="brandChart"></canvas></div>
+            <div class="chart-container"><canvas id="weightChart"></canvas></div>
+        </div>
+
+        <div style="background: white; padding: 30px; border-radius: 24px; margin-bottom: 30px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);">
+            <h3 style="margin-top:0; font-size: 1.1rem; font-weight: 800; letter-spacing: -0.5px;">Register New Gas Brand</h3>
+            <div class="registration-form">
+                <input type="text" id="add-name" placeholder="Brand (e.g. K-Gas)">
+                <input type="text" id="add-weight" placeholder="Weight (e.g. 13kg)">
+                <input type="number" id="add-cost" placeholder="Refill Cost">
+                <input type="number" id="add-sell" placeholder="Retail Price">
+                <input type="number" id="add-qty" placeholder="Initial Full Stock">
+                <button onclick="addNewProduct()" style="background: var(--admin-dark); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 800; padding: 14px; transition: transform 0.1s;">REGISTER BRAND</button>
+            </div>
+        </div>
+
+        <div class="gas-grid" id="admin-inventory-display"></div>
+
+        <div style="margin-top: 45px;">
+            <h3 style="margin-bottom: 20px; font-size: 1.1rem; font-weight: 800; letter-spacing: -0.5px;">Recent Gas Movements</h3>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Operation</th>
+                            <th>Product</th>
+                            <th>Change</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-audit-logs"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { supabase } from './auth.js';
+
+        let brandChartInstance = null;
+        let weightChartInstance = null;
+
+        window.toggleMenu = () => {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+            document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : 'auto';
+        };
+
+        async function init() {
+            await loadAdminData();
+            supabase.channel('gas-sync')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => loadAdminData())
+                .subscribe();
+        }
+
+        async function loadAdminData() {
+            const { data: products } = await supabase
+                .from('products')
+                .select('*')
+                .eq('category', 'Gas')
+                .order('name');
+
+            if (products) {
+                renderInventory(products);
+                calculateStats(products);
+                updateCharts(products);
+            }
+
+            const { data: logs } = await supabase
+                .from('inventory_logs')
+                .select('*')
+                .eq('category', 'Gas')
+                .order('timestamp', { ascending: false })
+                .limit(10);
+            
+            if (logs) renderLogs(logs);
+        }
+
+        function calculateStats(products) {
+            let cost = 0, rev = 0, full = 0, emp = 0;
+            products.forEach(p => {
+                cost += (p.stock_quantity * p.cost_price);
+                rev += (p.stock_quantity * p.selling_price);
+                full += p.stock_quantity;
+                emp += (p.empty_quantity || 0);
+            });
+            document.getElementById('stat-total-cost').innerText = `Ksh ${cost.toLocaleString()}`;
+            document.getElementById('stat-total-profit').innerText = `Ksh ${(rev - cost).toLocaleString()}`;
+            document.getElementById('stat-total-full').innerText = `${full} Units`;
+            document.getElementById('stat-total-empties').innerText = `${emp} Units`;
+        }
+
+        function renderInventory(products) {
+            document.getElementById('admin-inventory-display').innerHTML = products.map(p => `
+                <div style="background:white; border-radius:20px; padding:22px; border:1px solid var(--border); position:relative;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div>
+                            <h4 style="margin:0; font-size:1.1rem; font-weight:800;">${p.name}</h4>
+                            <span style="font-size:0.75rem; color:var(--text-dim); font-weight:700; text-transform:uppercase;">${p.weight_category} Cylinder</span>
+                        </div>
+                        <div style="text-align:right;">
+                            <b style="color:var(--primary); font-size:1rem; display:block;">Ksh ${p.selling_price}</b>
+                            <small style="color:var(--success); font-weight:700;">Margin: Ksh ${p.selling_price - p.cost_price}</small>
+                        </div>
+                    </div>
+                    <div class="stock-row">
+                        <div style="text-align:center; flex:1;">
+                            <b style="font-size:1.2rem; color:var(--admin-dark);">${p.stock_quantity}</b>
+                            <small style="display:block; font-size:0.6rem; font-weight:800; color:var(--text-dim); text-transform:uppercase; margin-top:4px;">Full Units</small>
+                        </div>
+                        <div style="text-align:center; flex:1; border-left:1px solid var(--border); border-right:1px solid var(--border);">
+                            <b style="font-size:1.2rem; color:var(--orange);">${p.empty_quantity || 0}</b>
+                            <small style="display:block; font-size:0.6rem; font-weight:800; color:var(--text-dim); text-transform:uppercase; margin-top:4px;">Empty Shells</small>
+                        </div>
+                        <div style="text-align:center; flex:1;">
+                            <b style="font-size:1.2rem; color:var(--text-dim);">${p.cost_price}</b>
+                            <small style="display:block; font-size:0.6rem; font-weight:800; color:var(--text-dim); text-transform:uppercase; margin-top:4px;">Cost Refill</small>
+                        </div>
+                    </div>
+                    <div style="margin-top:18px; display:flex; justify-content:flex-end;">
+                         <button onclick="deleteProduct('${p.id}')" style="background:none; border:none; color:var(--danger); font-size:0.75rem; cursor:pointer; font-weight:800; padding:5px;">🗑️ DELETE BRAND</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderLogs(logs) {
+            document.getElementById('admin-audit-logs').innerHTML = logs.map(l => `
+                <tr>
+                    <td><small style="font-weight:600;">${new Date(l.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small></td>
+                    <td><span class="badge" style="background:${l.action_type === 'SALE' ? '#dbeafe' : '#dcfce7'}; color:${l.action_type === 'SALE' ? '#1e40af' : '#166534'}">${l.action_type}</span></td>
+                    <td><b style="font-size:0.8rem;">${l.product_name}</b></td>
+                    <td style="color:${l.quantity < 0 ? 'var(--danger)' : 'var(--success)'}; font-weight:800;">${l.quantity > 0 ? '+' : ''}${l.quantity}</td>
+                </tr>
+            `).join('');
+        }
+
+        function updateCharts(products) {
+            const brandNames = products.map(p => p.name);
+            const brandQtys = products.map(p => p.stock_quantity);
+            const weightData = {};
+            products.forEach(p => weightData[p.weight_category] = (weightData[p.weight_category] || 0) + p.stock_quantity);
+
+            if (brandChartInstance) brandChartInstance.destroy();
+            brandChartInstance = new Chart(document.getElementById('brandChart'), {
+                type: 'bar',
+                data: { labels: brandNames, datasets: [{ label: 'Full Cylinders', data: brandQtys, backgroundColor: '#6366f1', borderRadius: 8 }] },
+                options: { maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'Stock by Brand', font: { weight: 'bold' } } } }
+            });
+
+            if (weightChartInstance) weightChartInstance.destroy();
+            weightChartInstance = new Chart(document.getElementById('weightChart'), {
+                type: 'doughnut',
+                data: { labels: Object.keys(weightData), datasets: [{ data: Object.values(weightData), backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444'], borderWidth: 0 }] },
+                options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, usePointStyle: true } }, title: { display: true, text: 'Stock by Weight', font: { weight: 'bold' } } }, cutout: '70%' }
+            });
+        }
+
+        window.addNewProduct = async () => {
+            const btn = event.target;
+            const name = document.getElementById('add-name').value;
+            const weight = document.getElementById('add-weight').value;
+            const cost = parseFloat(document.getElementById('add-cost').value);
+            const sell = parseFloat(document.getElementById('add-sell').value);
+            const qty = parseInt(document.getElementById('add-qty').value) || 0;
+
+            if(!name || !weight || isNaN(cost) || isNaN(sell)) return alert("Please fill all brand details.");
+
+            btn.style.opacity = '0.5';
+            btn.innerText = 'SAVING...';
+
+            const { error } = await supabase.from('products').insert([{
+                name, weight_category: weight, cost_price: cost, selling_price: sell, stock_quantity: qty, category: 'Gas', empty_quantity: 0
+            }]);
+
+            if (error) alert(error.message);
+            else {
+                loadAdminData();
+                ['add-name', 'add-weight', 'add-cost', 'add-sell', 'add-qty'].forEach(id => document.getElementById(id).value = '');
+            }
+            btn.style.opacity = '1';
+            btn.innerText = 'REGISTER BRAND';
+        };
+
+        window.deleteProduct = async (id) => {
+            if (confirm("Delete this brand and all its stock history? This cannot be undone.")) {
+                await supabase.from('products').delete().eq('id', id);
+                loadAdminData();
+            }
+        };
+
+        window.handleLogout = async () => {
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
+        };
+
+        init();
+    </script>
+</body>
+</html>

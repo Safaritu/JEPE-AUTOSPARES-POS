@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Shift Audit | JEPE POS</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --primary: #4f46e5; 
+            --bg: #f8fafc; 
+            --card: #ffffff;
+            --success: #10b981; 
+            --danger: #ef4444; 
+            --text: #1e293b; 
+            --dim: #64748b; 
+            --border: #e2e8f0; 
+            --sidebar-width: 260px;
+            --sidebar-bg: #0f172a; 
+            --sidebar-text: #94a3b8;
+            --header-height: 64px;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            z-index: 3000;
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @media (min-width: 1025px) {
+            .sidebar { transform: translateX(0); }
+            .main-content { margin-left: var(--sidebar-width); margin-top: 0 !important; }
+            .mobile-header { display: none; }
+        }
+
+        .sidebar.active { transform: translateX(0); }
+
+        .sidebar-header {
+            padding: 25px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: #ffffff;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .nav-list { list-style: none; padding: 15px; margin: 0; flex-grow: 1; overflow-y: auto;}
+        
+        .nav-item {
+            display: flex; 
+            align-items: center; 
+            padding: 12px 15px;
+            text-decoration: none; 
+            color: var(--sidebar-text);
+            font-weight: 600; 
+            font-size: 0.9rem; 
+            border-radius: 10px;
+            margin-bottom: 4px; 
+            transition: 0.2s;
+        }
+
+        .nav-item:hover { background: rgba(255,255,255,0.05); color: #ffffff; }
+        .nav-item.active { background: var(--primary); color: #ffffff; }
+
+        /* --- MAIN CONTENT --- */
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            width: 100%;
+        }
+
+        .page-header {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .page-header h1 { margin: 0; font-size: 1.4rem; font-weight: 800; }
+
+        /* --- TABLE --- */
+        .table-view { 
+            background: white; 
+            border-radius: 16px; 
+            border: 1px solid var(--border); 
+            overflow-x: auto; 
+        }
+
+        table { width: 100%; border-collapse: collapse; min-width: 1100px; }
+        th { background: #f8fafc; text-align: left; padding: 18px; font-size: 0.7rem; text-transform: uppercase; color: var(--dim); border-bottom: 1px solid var(--border); }
+        td { padding: 18px; border-bottom: 1px solid var(--border); font-size: 0.85rem; vertical-align: top; }
+
+        .total-row {
+            font-weight: 700;
+            border-top: 1px solid #eee;
+            margin-top: 8px;
+            padding-top: 4px;
+            color: var(--text);
+        }
+
+        .variance-status { font-weight: 800; padding: 6px 12px; border-radius: 8px; font-size: 0.7rem; }
+        .balanced { background: #dcfce7; color: #15803d; }
+        .mismatch { background: #fee2e2; color: #b91c1c; }
+        .time-tag { font-size: 0.7rem; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-weight: 600; display: inline-block; margin-bottom: 2px; }
+        
+        .search-input {
+            width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">JEPE ADMIN</div>
+    <div class="nav-list">
+        <a href="admin.html" class="nav-item">📊 Dashboard</a>
+        <a href="shift-history.html" class="nav-item active">📋 Daily Shift Audit</a>
+        <a href="reports.html" class="nav-item">📄 Reports</a>
+         <a href="gas_hub.html" class="nav-item">🔥 Gas Hub</a>
+         <a href="money-history.html" class="nav-item">💰 Money IN/OUT History</a>
+        <a href="inventory.html" class="nav-item">➕ Add Stock</a>
+        <a href="audit_trail.html" class="nav-item">🔍 Track Stock Edits</a>
+        <a href="sales_editor.html" class="nav-item">✏️ Edit Stock/Sales</a>
+        <a href="sales-history.html" class="nav-item">📜 Sales History</a>
+         <a href="low_stock.html" class="nav-item">⚠️ Low Stock Alerts</a>
+         <a href="suppliers.html" class="nav-item">🤝 Suppliers</a>
+          <a href="price_audits.html" class="nav-item">📉 Price Audits</a>
+          <a href="admin-debtors.html" class="nav-item ">👥 Debtors Hub</a>
+        <a href="Monthly Performance Report.html" class="nav-item"><span>📄</span><small>Monthly Report</small></a>
+    </div>
+</nav>
+
+<main class="main-content">
+    <div class="page-header">
+        <h1>Detailed Shift Audit</h1>
+        <p>Complete breakdown of individual floats (Cash, M-Pesa, KCB, Equity) and variances.</p>
+    </div>
+
+    <input type="text" id="auditSearch" class="search-input" placeholder="Search by date (e.g. 03 Jan 2026)...">
+
+    <div class="table-view">
+        <table>
+            <thead>
+                <tr>
+                    <th>Shift Timing</th>
+                    <th>Opening Floats</th>
+                    <th>Adjustments (In/Out)</th>
+                    <th>Closing Actuals</th>
+                    <th>Variance</th>
+                    <th>Notes / Reason</th>
+                </tr>
+            </thead>
+            <tbody id="audit-body-desktop">
+                <tr><td colspan="6" style="text-align:center; padding:50px;">Fetching records...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<script type="module">
+    import { supabase } from './auth.js';
+    
+    let allShifts = [];
+    let allTransactions = [];
+    let allSales = [];
+
+    async function fetchData() {
+        try {
+            const { data: shifts } = await supabase.from('daily_shifts').select('*').order('start_time', { ascending: false });
+            const { data: trans } = await supabase.from('cash_transactions').select('*');
+            const { data: sales } = await supabase.from('sales').select('shift_id, total_amount, payment_method');
+
+            allShifts = shifts || [];
+            allTransactions = trans || [];
+            allSales = sales || [];
+            render();
+        } catch (e) { console.error(e); }
+    }
+
+    function render() {
+        const tbody = document.getElementById('audit-body-desktop');
+        let html = '';
+
+        allShifts.forEach(sh => {
+            const shiftSales = allSales.filter(s => s.shift_id === sh.id);
+            const shiftLogs = allTransactions.filter(t => t.shift_id === sh.id);
+
+            const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
+            const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
+            
+            const paybillRev = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((a, b) => a + b.total_amount, 0);
+
+            // Calculations
+            const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_equity||0);
+            const physicalClose = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_equity||0);
+            const grandClose = physicalClose + paybillRev;
+
+            // Variance logic
+            const expected = sh.system_expected_total || openTotal;
+            const varianceVal = grandClose - expected;
+            const statusClass = Math.abs(varianceVal) < 1 ? 'balanced' : 'mismatch';
+            const statusText = Math.abs(varianceVal) < 1 ? 'BALANCED' : `Ksh ${varianceVal.toLocaleString()}`;
+
+            const startD = new Date(sh.start_time);
+            const endD = sh.end_time ? new Date(sh.end_time) : null;
+
+            html += `
+                <tr>
+                    <td>
+                        <b style="color:var(--primary)">${startD.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})}</b><br>
+                        <span class="time-tag">IN: ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span><br>
+                        <span class="time-tag" style="color:var(--danger)">OUT: ${endD ? endD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'Active'}</span>
+                    </td>
+                    <td>
+                        <div style="font-size:0.75rem; color:var(--dim)">
+                            Cash: ${(sh.open_cash||0).toLocaleString()}<br>
+                            M-Pesa: ${(sh.open_mpesa||0).toLocaleString()}<br>
+                            KCB: ${(sh.open_kcb||0).toLocaleString()}<br>
+                            Equity: ${(sh.open_equity||0).toLocaleString()}
+                        </div>
+                        <div class="total-row">Total: Ksh ${openTotal.toLocaleString()}</div>
+                    </td>
+                    <td>
+                        <span style="color:var(--success); font-weight:700;">+${moneyIn.toLocaleString()}</span><br>
+                        <span style="color:var(--danger); font-weight:700;">-${moneyOut.toLocaleString()}</span>
+                    </td>
+                    <td>
+                        <div style="font-size:0.75rem; color:var(--dim)">
+                            Cash: ${(sh.close_cash||0).toLocaleString()}<br>
+                            M-Pesa: ${(sh.close_mpesa||0).toLocaleString()}<br>
+                            KCB: ${(sh.close_kcb||0).toLocaleString()}<br>
+                            Equity: ${(sh.close_equity||0).toLocaleString()}<br>
+                            <span style="color:var(--primary)">Paybill Revenue: +${paybillRev.toLocaleString()}</span>
+                        </div>
+                        <div class="total-row">Total: Ksh ${grandClose.toLocaleString()}</div>
+                    </td>
+                    <td><span class="variance-status ${statusClass}">${statusText}</span></td>
+                    <td><small style="color:var(--dim)">${sh.variance_note || 'Balanced'}</small></td>
+                </tr>`;
+        });
+
+        tbody.innerHTML = html || '<tr><td colspan="6" style="text-align:center">No records.</td></tr>';
+    }
+
+    // Search Logic
+    document.getElementById('auditSearch').addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        const filtered = allShifts.filter(sh => {
+            const dateStr = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }).toLowerCase();
+            return dateStr.includes(term);
+        });
+        // We'd need to modify render to accept a list, but for brevity:
+        const oldShifts = allShifts;
+        allShifts = filtered;
+        render();
+        allShifts = oldShifts;
+    });
+
+    fetchData();
+</script>
+</body>
+</html>

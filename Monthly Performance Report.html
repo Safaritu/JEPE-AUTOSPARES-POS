@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JEPE ADMIN | Analytics & Date Filter</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .report-container { max-width: 1100px; margin: 0 auto; }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .filter-bar {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 25px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: flex-end;
+        }
+
+        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        .filter-group label { font-size: 0.75rem; font-weight: 800; color: #64748b; }
+
+        select, input {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-family: inherit;
+            background: white;
+        }
+
+        .grid-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .stat-card small { color: #64748b; font-weight: 700; text-transform: uppercase; font-size: 0.7rem; }
+        .stat-card h2 { margin: 8px 0 0; font-size: 1.5rem; letter-spacing: -0.5px; }
+
+        .charts-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card-box {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .table-section {
+            background: var(--card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .table-header { padding: 15px 20px; border-bottom: 1px solid var(--border); background: #fcfdfe; font-weight: 800; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px 20px; background: #f8fafc; color: #64748b; font-size: 0.75rem; text-transform: uppercase; }
+        td { padding: 12px 20px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+
+        .btn-group { display: flex; gap: 10px; }
+        .btn-action {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .btn-secondary { background: #64748b; }
+
+        @media print { .filter-bar, .btn-group { display: none; } body { background: white; } }
+    </style>
+</head>
+<body>
+    
+
+<div class="report-container">
+    <div class="header">
+        <div>
+            <h1 style="margin:0; font-size: 1.6rem;">JEPE Auto Spares Insights</h1>
+            <p id="date-label" style="color:#64748b; margin:5px 0 0; font-weight: 600;"></p>
+        </div>
+        <div class="btn-group">
+            <button class="btn-action btn-secondary" onclick="exportToCSV()">Export CSV</button>
+            <button class="btn-action" onclick="window.print()">Print PDF</button>
+        </div>
+    </div>
+
+    <div class="filter-bar">
+        <div class="filter-group">
+            <label>FROM DATE</label>
+            <input type="date" id="start-date" onchange="loadAnalytics()">
+        </div>
+        <div class="filter-group">
+            <label>TO DATE</label>
+            <input type="date" id="end-date" onchange="loadAnalytics()">
+        </div>
+        <div class="filter-group">
+            <label>OR SELECT SHIFT</label>
+            <select id="shift-select" onchange="handleShiftChange()">
+                <option value="all">Full Date Range View</option>
+            </select>
+        </div>
+        <button class="btn-action" onclick="resetFilters()" style="background:#e2e8f0; color:#1e293b;">Reset to Month</button>
+    </div>
+
+    <div class="grid-stats">
+        <div class="stat-card">
+            <small>Gross Revenue</small>
+            <h2 id="total-revenue">Ksh 0</h2>
+        </div>
+        <div class="stat-card">
+            <small>Gross Profit</small>
+            <h2 id="gross-profit" style="color:var(--success);">Ksh 0</h2>
+        </div>
+        <div class="stat-card">
+            <small>Expenses (Out)</small>
+            <h2 id="total-expenses" style="color:var(--danger);">Ksh 0</h2>
+        </div>
+        <div class="stat-card">
+            <small>Net Profit</small>
+            <h2 id="net-performance">Ksh 0</h2>
+        </div>
+    </div>
+
+    <div class="charts-row">
+        <div class="card-box">
+            <h3 style="margin-top:0; font-size:0.85rem;">REVENUE VS EXPENSES</h3>
+            <canvas id="barChart" height="150"></canvas>
+        </div>
+        <div class="card-box">
+            <h3 style="margin-top:0; font-size:0.85rem;">CHANNELS (Excl. Mpesa)</h3>
+            <canvas id="pieChart"></canvas>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div class="table-section">
+            <div class="table-header">Operational Expenses</div>
+            <table>
+                <thead><tr><th>Category</th><th>Total</th></tr></thead>
+                <tbody id="expense-body"></tbody>
+            </table>
+        </div>
+
+        <div class="table-section">
+            <div class="table-header">Payment Summary</div>
+            <table>
+                <thead><tr><th>Method</th><th>Total</th></tr></thead>
+                <tbody id="payment-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="table-section">
+        <div class="table-header">Top Selling Items</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Item Name</th>
+                    <th>Qty Sold</th>
+                    <th>Revenue</th>
+                </tr>
+            </thead>
+            <tbody id="items-body"></tbody>
+        </table>
+    </div>
+</div>
+
+<script type="module">
+    import { supabase } from './auth.js';
+
+    let barChart, pieChart;
+    let currentData = { sales: [], transactions: [] };
+
+    async function init() {
+        const now = new Date();
+        // Set default dates to current month
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+        
+        document.getElementById('start-date').value = firstDay;
+        document.getElementById('end-date').value = lastDay;
+
+        // Load Shifts for current month
+        const { data: shifts } = await supabase
+            .from('daily_shifts')
+            .select('id, created_at')
+            .gte('created_at', firstDay)
+            .order('created_at', { ascending: false });
+
+        const select = document.getElementById('shift-select');
+        shifts?.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.innerText = `${new Date(s.created_at).toLocaleDateString()} (ID: ${s.id.slice(0,5)})`;
+            select.appendChild(opt);
+        });
+
+        loadAnalytics();
+    }
+
+    window.handleShiftChange = function() {
+        const shiftId = document.getElementById('shift-select').value;
+        if(shiftId !== 'all') {
+            // Disable date inputs when viewing specific shift to avoid confusion
+            document.getElementById('start-date').disabled = true;
+            document.getElementById('end-date').disabled = true;
+        } else {
+            document.getElementById('start-date').disabled = false;
+            document.getElementById('end-date').disabled = false;
+        }
+        loadAnalytics();
+    }
+
+    window.resetFilters = function() {
+        const now = new Date();
+        document.getElementById('start-date').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+        document.getElementById('end-date').value = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+        document.getElementById('shift-select').value = 'all';
+        document.getElementById('start-date').disabled = false;
+        document.getElementById('end-date').disabled = false;
+        loadAnalytics();
+    }
+
+    window.loadAnalytics = async function() {
+        const start = document.getElementById('start-date').value;
+        const end = document.getElementById('end-date').value + "T23:59:59";
+        const shiftId = document.getElementById('shift-select').value;
+        
+        document.getElementById('date-label').innerText = `${start} to ${document.getElementById('end-date').value}`;
+
+        let salesQuery = supabase.from('sales').select('*');
+        let transQuery = supabase.from('cash_transactions').select('*');
+
+        if (shiftId !== 'all') {
+            salesQuery = salesQuery.eq('shift_id', shiftId);
+            transQuery = transQuery.eq('shift_id', shiftId);
+        } else {
+            salesQuery = salesQuery.gte('created_at', start).lte('created_at', end);
+            transQuery = transQuery.gte('created_at', start).lte('created_at', end);
+        }
+
+        const [sRes, tRes] = await Promise.all([salesQuery, transQuery]);
+        currentData.sales = sRes.data || [];
+        currentData.transactions = tRes.data || [];
+
+        processUI();
+    };
+
+    function processUI() {
+        let rev = 0, cost = 0, exp = 0;
+        const payments = {}, products = {}, expenses = {};
+
+        currentData.sales.forEach(s => {
+            const amt = parseFloat(s.total_amount);
+            rev += amt;
+            cost += (parseFloat(s.cost_price || 0) * s.quantity);
+            payments[s.payment_method] = (payments[s.payment_method] || 0) + amt;
+
+            if (!products[s.item_name]) products[s.item_name] = { qty: 0, rev: 0 };
+            products[s.item_name].qty += s.quantity;
+            products[s.item_name].rev += amt;
+        });
+
+        currentData.transactions.forEach(t => {
+            if (t.type === 'Money Out') {
+                const amt = parseFloat(t.amount);
+                exp += amt;
+                let cat = t.category || 'General';
+                // Equity to KCB Paybill replacement
+                if (cat.toLowerCase() === 'equity') cat = 'KCB Paybill (Stock)';
+                expenses[cat] = (expenses[cat] || 0) + amt;
+            }
+        });
+
+        document.getElementById('total-revenue').innerText = `Ksh ${rev.toLocaleString()}`;
+        document.getElementById('gross-profit').innerText = `Ksh ${(rev - cost).toLocaleString()}`;
+        document.getElementById('total-expenses').innerText = `Ksh ${exp.toLocaleString()}`;
+        const net = (rev - cost) - exp;
+        document.getElementById('net-performance').innerText = `Ksh ${net.toLocaleString()}`;
+        document.getElementById('net-performance').style.color = net >= 0 ? 'var(--success)' : 'var(--danger)';
+
+        renderTable('payment-body', payments);
+        renderTable('expense-body', expenses);
+
+        const topItems = Object.entries(products).sort((a,b) => b[1].qty - a[1].qty).slice(0, 8);
+        document.getElementById('items-body').innerHTML = topItems.map(([name, data]) => `
+            <tr><td><b>${name}</b></td><td>${data.qty}</td><td>Ksh ${data.rev.toLocaleString()}</td></tr>
+        `).join('');
+
+        // Filtering out Mpesa from Pie Chart
+        const pieLabels = Object.keys(payments).filter(p => p.toLowerCase() !== 'mpesa');
+        const pieValues = pieLabels.map(l => payments[l]);
+        updateCharts(rev, exp, pieLabels, pieValues);
+    }
+
+    function renderTable(id, obj) {
+        document.getElementById(id).innerHTML = Object.entries(obj).map(([k, v]) => `
+            <tr><td>${k}</td><td style="font-weight:700;">Ksh ${v.toLocaleString()}</td></tr>
+        `).join('');
+    }
+
+    function updateCharts(rev, exp, pieL, pieV) {
+        if (barChart) barChart.destroy();
+        if (pieChart) pieChart.destroy();
+
+        barChart = new Chart(document.getElementById('barChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Revenue', 'Expenses'],
+                datasets: [{ data: [rev, exp], backgroundColor: ['#4f46e5', '#ef4444'], borderRadius: 6 }]
+            },
+            options: { plugins: { legend: { display: false } } }
+        });
+
+        pieChart = new Chart(document.getElementById('pieChart'), {
+            type: 'doughnut',
+            data: {
+                labels: pieL,
+                datasets: [{ data: pieV, backgroundColor: ['#4f46e5', '#10b981', '#f59e0b', '#6366f1'] }]
+            }
+        });
+    }
+
+    window.exportToCSV = () => {
+        const rows = currentData.sales.map(s => [new Date(s.created_at).toLocaleDateString(), s.item_name, s.quantity, s.total_amount, s.payment_method]);
+        let csv = "Date,Item,Qty,Amount,Method\n" + rows.map(r => r.join(",")).join("\n");
+        const link = document.createElement("a");
+        link.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv);
+        link.target = '_blank';
+        link.download = `JEPE_Report_${document.getElementById('start-date').value}.csv`;
+        link.click();
+    };
+
+    init();
+</script>
+</body>
+</html>
