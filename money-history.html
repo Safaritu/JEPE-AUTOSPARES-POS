@@ -3,232 +3,270 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JEPE ADMIN | Cash Transactions</title>
+    <title>Shift Audit | JEPE POS</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root { 
-            --primary: #4f46e5; 
-            --bg: #f8fafc; 
-            --card: #ffffff; 
-            --border: #e2e8f0; 
-            --text-main: #1e293b; 
-            --text-dim: #64748b;
-            --success: #10b981; 
-            --danger: #ef4444; 
-            --sidebar-width: 280px;
-            --sidebar-bg: #0f172a; 
+            --primary: #4f46e5; --bg: #f8fafc; --card: #ffffff;
+            --success: #10b981; --danger: #ef4444; --text: #1e293b; 
+            --dim: #64748b; --border: #e2e8f0; --sidebar-width: 260px;
+            --sidebar-bg: #0f172a; --sidebar-text: #94a3b8; --header-height: 64px;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background: var(--bg); color: var(--text-main); margin: 0; 
-            display: flex; min-height: 100vh;
-        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; min-height: 100vh; overflow-x: hidden; }
 
         /* --- SIDEBAR --- */
-        .sidebar {
-            width: var(--sidebar-width); background: var(--sidebar-bg);
-            display: flex; flex-direction: column; position: fixed; 
-            height: 100vh; z-index: 2000;
-            transition: transform 0.3s ease;
-        }
-        .sidebar-header { padding: 30px 25px; font-weight: 800; color: #fff; font-size: 1.3rem; }
-        .nav-list { list-style: none; padding: 0 15px; flex-grow: 1; }
-        .nav-item {
-            display: flex; align-items: center; padding: 14px 18px; text-decoration: none;
-            color: #94a3b8; font-weight: 600; font-size: 0.85rem; border-radius: 12px; margin-bottom: 6px;
-            transition: 0.2s; gap: 12px;
-        }
-        .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
-        .nav-item.active { background: var(--primary); color: #fff; }
+        .sidebar { width: var(--sidebar-width); background: var(--sidebar-bg); display: flex; flex-direction: column; position: fixed; left: 0; top: 0; height: 100vh; z-index: 3000; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        @media (min-width: 1025px) { .sidebar { transform: translateX(0); } .main-content { margin-left: var(--sidebar-width); margin-top: 0 !important; } .mobile-header { display: none; } }
+        .sidebar.active { transform: translateX(0); }
+        .sidebar-header { padding: 25px; font-weight: 800; font-size: 1.1rem; color: #ffffff; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .nav-list { list-style: none; padding: 15px; margin: 0; flex-grow: 1; overflow-y: auto;}
+        .nav-item { display: flex; align-items: center; padding: 12px 15px; text-decoration: none; color: var(--sidebar-text); font-weight: 600; font-size: 0.9rem; border-radius: 10px; margin-bottom: 4px; transition: 0.2s; }
+        .nav-item:hover { background: rgba(255,255,255,0.05); color: #ffffff; }
+        .nav-item.active { background: var(--primary); color: #ffffff; }
 
-        /* --- CONTENT --- */
-        .main-content { margin-left: var(--sidebar-width); flex-grow: 1; padding: 40px; width: 100%; }
+        /* --- UI COMPONENTS --- */
+        .mobile-header { display: flex; background: var(--sidebar-bg); color: white; padding: 0 20px; height: var(--header-height); position: fixed; top: 0; left: 0; right: 0; z-index: 2000; align-items: center; }
+        .main-content { flex-grow: 1; padding: 20px; margin-top: calc(var(--header-height) + 10px); width: 100%; z-index: 1; }
+        .page-header { background: white; padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 20px; }
+        .page-header h1 { margin: 0; font-size: 1.4rem; font-weight: 800; }
+        .filter-container { margin-bottom: 20px; }
+        .search-input { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px; font-size: 15px; outline: none; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+
+        /* --- TABLE & CARDS --- */
+        .table-view { background: white; border-radius: 16px; border: 1px solid var(--border); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 1450px; }
+        th { background: #f8fafc; text-align: left; padding: 18px; font-size: 0.7rem; text-transform: uppercase; color: var(--dim); border-bottom: 1px solid var(--border); }
+        td { padding: 18px; border-bottom: 1px solid var(--border); font-size: 0.85rem; vertical-align: top; }
+
+        .account-list { list-style: none; padding: 0; margin: 5px 0 0 0; font-size: 0.75rem; color: var(--dim); }
+        .account-list li { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 2px; }
+        .account-list b { color: var(--text); }
+
+        .mobile-cards-view { display: none; }
+        @media (max-width: 1024px) { .table-view { display: none; } .mobile-cards-view { display: block; } }
+
+        .audit-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
+        .card-details { padding: 10px; background: #f8fafc; border-radius: 10px; margin: 5px 0; font-size: 0.75rem; }
+        .detail-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+        .detail-row.bold { font-weight: 700; color: var(--text); border-top: 1px solid #e2e8f0; margin-top: 5px; padding-top: 3px;}
         
-        .mobile-nav {
-            display: none; background: var(--sidebar-bg); color: white;
-            padding: 0 20px; align-items: center; justify-content: space-between;
-            position: fixed; top: 0; width: 100%; height: 64px; z-index: 1000;
-        }
+        .label-xs { font-size: 0.65rem; color: var(--dim); text-transform: uppercase; font-weight: 700; }
+        .variance-status { font-weight: 800; padding: 6px 12px; border-radius: 8px; font-size: 0.7rem; }
+        .balanced { background: #dcfce7; color: #15803d; }
+        .mismatch { background: #fee2e2; color: #b91c1c; }
+        .status-active { background: #e0e7ff; color: #4338ca; }
+        .btn-load { width: 100%; padding: 16px; background: var(--sidebar-bg); color: white; font-weight: 700; border: none; border-radius: 14px; cursor: pointer; }
+        .overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); display: none; z-index: 2500; }
+        .overlay.active { display: block; }
 
-        .summary-banner {
-            background: white; border: 1px solid var(--border); border-radius: 24px;
-            padding: 24px; display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.04);
-        }
-
-        .card { background: var(--card); border-radius: 24px; border: 1px solid var(--border); overflow: hidden; }
-        
-        .table-responsive { width: 100%; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 700px; }
-        th { text-align: left; padding: 18px 20px; background: #f8fafc; font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); }
-        td { padding: 18px 20px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-
-        /* --- MOBILE LIST --- */
-        .mobile-list { display: none; }
-        .transaction-card { padding: 20px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
-        .mobile-desc { 
-            font-size: 0.8rem; 
-            color: var(--text-dim); 
-            background: #f1f5f9; 
-            padding: 8px 12px; 
-            border-radius: 8px; 
-            margin-top: 4px;
-            font-style: italic;
-        }
-
-        .type-pill { padding: 4px 10px; border-radius: 6px; font-size: 0.6rem; font-weight: 800; text-transform: uppercase; }
-        .type-in { background: #dcfce7; color: #166534; }
-        .type-out { background: #fee2e2; color: #991b1b; }
-
-        .btn-load { 
-            width: 100%; padding: 20px; background: #fff; border: none; 
-            color: var(--primary); font-weight: 800; cursor: pointer;
-        }
-
-        @media (max-width: 1100px) {
-            .sidebar { transform: translateX(-100%); }
-            .sidebar.active { transform: translateX(0); }
-            .main-content { margin-left: 0; padding: 90px 20px 40px; }
-            .mobile-nav { display: flex; }
-        }
-
-        @media (max-width: 768px) {
-            .table-responsive { display: none; }
-            .mobile-list { display: block; }
-            .summary-banner { flex-direction: column; gap: 15px; text-align: center; }
-        }
+        .note-box { font-size: 0.75rem; color: #92400e; background: #fffbeb; padding: 8px; border-radius: 8px; border: 1px solid #fef3c7; line-height: 1.4; margin-top: 5px; }
     </style>
 </head>
 <body>
+
+<div class="mobile-header">
+    <button onclick="toggleMenu()" style="background:none; border:none; color:white; font-size:1.8rem;">☰</button>
+    <span style="margin-left: 15px; font-weight: 700;">Account Audit</span>
+</div>
+
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
 <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">JEPE ADMIN</div>
     <div class="nav-list">
         <a href="admin.html" class="nav-item">📊 Dashboard</a>
-        <a href="shift-history.html" class="nav-item">📋 Daily Shift Audit</a>
-        <a href="reports.html" class="nav-item">📄 Reports</a>
-         <a href="gas_hub.html" class="nav-item">🔥 Gas Hub</a>
-         <a href="money-history.html" class="nav-item active">💰 Money IN/OUT History</a>
+        <a href="shift-history.html" class="nav-item active">📋 Daily Shift Audit</a>
         <a href="inventory.html" class="nav-item">➕ Add Stock</a>
-        <a href="audit_trail.html" class="nav-item">🔍 Track Stock Edits</a>
-        <a href="sales_editor.html" class="nav-item">✏️ Edit Stock/Sales</a>
         <a href="sales-history.html" class="nav-item">📜 Sales History</a>
-         <a href="low_stock.html" class="nav-item">⚠️ Low Stock Alerts</a>
-         <a href="suppliers.html" class="nav-item">🤝 Suppliers</a>
-          <a href="price_audits.html" class="nav-item">📉 Price Audits</a>
-          <a href="admin-debtors.html" class="nav-item ">👥 Debtors Hub</a>
-        <a href="Monthly Performance Report.html" class="nav-item"><span>📄</span><small>Monthly Report</small></a>
         <a href="index.html" class="nav-item" style="color: var(--danger); margin-top: 20px;">🚪 Logout</a>
     </div>
 </nav>
 
-<div class="mobile-nav">
-    <button onclick="toggleSidebar()" style="background:none; border:none; color:white; font-size:1.5rem;">☰</button>
-    <div style="font-weight:800;">CASH FLOW</div>
-    <div style="width:24px;"></div>
-</div>
-
 <main class="main-content">
-    <div class="summary-banner">
-        <div>
-            <small style="color:var(--text-dim); font-weight:800; text-transform:uppercase; font-size:0.7rem;">Ledger Balance</small>
-            <span id="net-balance" style="font-size:1.8rem; font-weight:800; display:block;">Ksh 0</span>
-        </div>
-        <div id="record-count" style="font-weight:700; color:var(--primary); font-size:0.8rem;">0 Records</div>
+    <div class="page-header">
+        <h1>Detailed Shift Audit</h1>
+        <p>Full breakdown of Cash and Paybill Sales based on payment records.</p>
     </div>
 
-    <div class="card">
-        <div class="table-responsive">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date & Time</th>
-                        <th>Type</th>
-                        <th>Category</th>
-                        <th>Amount</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody id="data-body-desktop"></tbody>
-            </table>
-        </div>
-        <div id="data-body-mobile" class="mobile-list"></div>
-        <button id="loadMore" class="btn-load">LOAD MORE TRANSACTIONS</button>
+    <div class="filter-container">
+        <input type="text" id="auditSearch" class="search-input" placeholder="Search by date (e.g. 25 Oct)...">
     </div>
+
+    <div class="table-view">
+        <table>
+            <thead>
+                <tr>
+                    <th>Shift Timing</th>
+                    <th>Opening Floats</th>
+                    <th>Sales & Adj</th>
+                    <th>Closing Floats</th>
+                    <th>Audit Summary</th>
+                    <th>Variance & Notes</th>
+                </tr>
+            </thead>
+            <tbody id="audit-body-desktop">
+                <tr><td colspan="6" style="text-align:center; padding:50px;">Fetching account records...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="audit-body-mobile" class="mobile-cards-view"></div>
+    <br>
+    <button id="loadMore" class="btn-load">Load More Shifts</button>
 </main>
 
 <script type="module">
     import { supabase } from './auth.js';
-    let limit = 20;
+    
+    let currentLimit = 15;
+    let allShifts = [];
+    let allTransactions = [];
+    let allSales = [];
 
-    window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('active');
+    window.toggleMenu = () => {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
+    };
 
-    async function fetchData() {
-        const { data, error } = await supabase
-            .from('cash_transactions')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(limit);
+    async function fetchShiftAudit() {
+        try {
+            const { data: shifts } = await supabase.from('daily_shifts').select('*').order('start_time', { ascending: false }).limit(currentLimit);
+            const { data: transactions } = await supabase.from('cash_transactions').select('*');
+            const { data: sales } = await supabase.from('sales').select('total_amount, payment_method, shift_id');
 
-        if (error) return;
+            allShifts = shifts || [];
+            allTransactions = transactions || [];
+            allSales = sales || [];
+            renderData(allShifts);
+        } catch (e) { console.error("Data Fetch Error:", e); }
+    }
 
-        let net = 0;
-        let desktopHTML = '';
-        let mobileHTML = '';
+    function renderData(shiftsToRender) {
+        const desktopTbody = document.getElementById('audit-body-desktop');
+        const mobileContainer = document.getElementById('audit-body-mobile');
+        let dHTML = ''; let mHTML = '';
 
-        data.forEach(t => {
-            const isMoneyIn = t.type === 'Money In' || t.type === 'In';
-            const amount = parseFloat(t.amount);
-            net += isMoneyIn ? amount : -amount;
+        shiftsToRender.forEach(h => {
+            const sSales = allSales.filter(s => s.shift_id === h.id);
+            const sTrans = allTransactions.filter(t => t.shift_id === h.id);
+
+            // ACCURATE REVENUE BREAKDOWN BASED ON SCHEMA
+            // Cash = 'Cash'
+            // Paybill = 'Mpesa', 'Bank', 'KCB Paybill'
+            const cashSales = sSales.filter(s => s.payment_method === 'Cash').reduce((a, b) => a + (Number(b.total_amount) || 0), 0);
+            const paybillSales = sSales.filter(s => ['Mpesa', 'Bank', 'KCB Paybill'].includes(s.payment_method)).reduce((a, b) => a + (Number(b.total_amount) || 0), 0);
             
-            const date = new Date(t.created_at).toLocaleDateString();
-            const time = new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-            const description = t.description || 'No description provided';
+            // Total excluding Debts
+            const totalRevenue = cashSales + paybillSales;
+            
+            const tIn = sTrans.filter(t => t.type === 'Money In').reduce((a, b) => a + (b.amount || 0), 0);
+            const tOut = sTrans.filter(t => t.type === 'Money Out').reduce((a, b) => a + (b.amount || 0), 0);
 
-            desktopHTML += `
+            const opTotal = (h.open_cash||0) + (h.open_mpesa||0) + (h.open_kcb||0) + (h.open_equity||0);
+            const clFloats = (h.close_cash||0) + (h.close_mpesa||0) + (h.close_kcb||0) + (h.close_equity||0);
+            const clKcbBank = h.close_kcb_bank || 0; 
+            const actualTotal = clFloats + clKcbBank;
+
+            const calcExpected = (opTotal + totalRevenue + tIn) - tOut;
+            const finalExpected = (h.status === 'Closed' && h.system_expected_total) ? h.system_expected_total : calcExpected;
+            const varianceVal = h.status === 'Open' ? 0 : actualTotal - finalExpected;
+
+            const isClosed = h.status === 'Closed';
+            const statusClass = Math.abs(varianceVal) < 1 ? 'balanced' : 'mismatch';
+            const statusText = Math.abs(varianceVal) < 1 ? 'BALANCED' : `Ksh ${varianceVal.toLocaleString()}`;
+            const dateStr = new Date(h.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
+
+            dHTML += `
                 <tr>
-                    <td><b>${date}</b><br><small style="color:var(--text-dim)">${time}</small></td>
-                    <td><span class="type-pill ${isMoneyIn ? 'type-in' : 'type-out'}">${t.type}</span></td>
-                    <td><b>${t.category || 'Other'}</b></td>
-                    <td style="color:${isMoneyIn ? 'var(--success)' : 'var(--danger)'}; font-weight:800;">
-                        ${isMoneyIn ? '+' : '-'} Ksh ${amount.toLocaleString()}
+                    <td>
+                        <b style="color:var(--primary)">${dateStr}</b><br>
+                        <small style="color:var(--dim)">${h.status}</small>
                     </td>
-                    <td style="color:var(--text-dim); font-size:0.8rem;">${t.description || '-'}</td>
+                    <td>
+                        <ul class="account-list">
+                            <li>CASH: <b>${(h.open_cash||0).toLocaleString()}</b></li>
+                            <li>MPESA: <b>${(h.open_mpesa||0).toLocaleString()}</b></li>
+                            <li>KCB: <b>${(h.open_kcb||0).toLocaleString()}</b></li>
+                            <li>EQUITY: <b>${(h.open_equity||0).toLocaleString()}</b></li>
+                        </ul>
+                    </td>
+                    <td>
+                        <div style="margin-bottom:8px;">
+                           <span style="font-size:0.7rem; color:var(--dim)">SALES:</span><br>
+                           <span style="color:var(--success)">• Cash: <b>${cashSales.toLocaleString()}</b></span><br>
+                           <span style="color:var(--success)">• Paybill/Bank: <b>${paybillSales.toLocaleString()}</b></span>
+                        </div>
+                        <div style="border-top:1px solid #eee; padding-top:4px;">
+                           <span style="font-size:0.7rem; color:var(--dim)">ADJUSTMENTS:</span><br>
+                           <span style="color:var(--success)">+${tIn.toLocaleString()} In</span> | 
+                           <span style="color:var(--danger)">-${tOut.toLocaleString()} Out</span>
+                        </div>
+                    </td>
+                    <td>
+                        <ul class="account-list">
+                            <li>CASH: <b>${(h.close_cash||0).toLocaleString()}</b></li>
+                            <li>MPESA: <b>${(h.close_mpesa||0).toLocaleString()}</b></li>
+                            <li>KCB: <b>${(h.close_kcb||0).toLocaleString()}</b></li>
+                            <li>EQUITY: <b>${(h.close_equity||0).toLocaleString()}</b></li>
+                        </ul>
+                    </td>
+                    <td>
+                        <div style="font-weight:800; font-size:0.95rem;">Ksh ${actualTotal.toLocaleString()}</div>
+                        <small style="color:var(--dim)">Exp: ${finalExpected.toLocaleString()}</small>
+                    </td>
+                    <td>
+                        <span class="variance-status ${isClosed ? statusClass : 'status-active'}">
+                            ${isClosed ? statusText : 'ACTIVE'}
+                        </span>
+                        ${h.variance_note ? `<div class="note-box"><b>Reason:</b> ${h.variance_note}</div>` : ''}
+                    </td>
                 </tr>`;
 
-            mobileHTML += `
-                <div class="transaction-card">
-                    <div style="display:flex; justify-content:space-between; align-items: center;">
-                        <span class="type-pill ${isMoneyIn ? 'type-in' : 'type-out'}">${t.type}</span>
-                        <small style="color:var(--text-dim); font-weight: 600;">${date} • ${time}</small>
+            mHTML += `
+                <div class="audit-card">
+                    <div class="card-top">
+                        <b>${dateStr} Shift</b>
+                        <span class="variance-status ${isClosed ? statusClass : 'status-active'}">${isClosed ? statusText : 'ACTIVE'}</span>
                     </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-weight:700; font-size: 1rem;">${t.category || 'General'}</span>
-                        <span style="font-weight:800; font-size: 1.1rem; color:${isMoneyIn ? 'var(--success)' : 'var(--danger)'}">
-                            ${isMoneyIn ? '+' : '-'} Ksh ${amount.toLocaleString()}
-                        </span>
+                    <div class="card-details">
+                        <span class="label-xs">Opening Floats</span>
+                        <div class="detail-row"><span>Cash/Mpesa</span><span>${((h.open_cash||0)+(h.open_mpesa||0)).toLocaleString()}</span></div>
+                        <div class="detail-row"><span>Bank A/Cs</span><span>${((h.open_kcb||0)+(h.open_equity||0)).toLocaleString()}</span></div>
                     </div>
-                    <div class="mobile-desc">
-                        📝 ${description}
+                    <div class="card-details">
+                        <span class="label-xs">Shift Sales Activity</span>
+                        <div class="detail-row"><span>Cash</span><span style="color:var(--success)">+${cashSales.toLocaleString()}</span></div>
+                        <div class="detail-row"><span>Paybill/Bank</span><span style="color:var(--success)">+${paybillSales.toLocaleString()}</span></div>
+                        <div class="detail-row" style="border-top:1px solid #ddd; margin-top:5px; padding-top:2px;">
+                            <span>Adj (In/Out)</span><span>${(tIn - tOut).toLocaleString()}</span>
+                        </div>
+                    </div>
+                    <div class="card-details" style="background:#f0fdf4">
+                        <span class="label-xs" style="color:#166534">Closing Count</span>
+                        <div class="detail-row bold" style="color:#166534"><span>Grand Total</span><span>${actualTotal.toLocaleString()}</span></div>
                     </div>
                 </div>`;
         });
 
-        document.getElementById('data-body-desktop').innerHTML = desktopHTML;
-        document.getElementById('data-body-mobile').innerHTML = mobileHTML;
-        
-        const netEl = document.getElementById('net-balance');
-        netEl.innerText = `Ksh ${net.toLocaleString()}`;
-        netEl.style.color = net >= 0 ? 'var(--success)' : 'var(--danger)';
-        document.getElementById('record-count').innerText = `${data.length} Transactions Loaded`;
+        desktopTbody.innerHTML = dHTML || '<tr><td colspan="6" style="text-align:center">No records.</td></tr>';
+        mobileContainer.innerHTML = mHTML || '<div style="text-align:center">No records.</div>';
     }
 
-    document.getElementById('loadMore').onclick = () => { limit += 20; fetchData(); };
-    fetchData();
+    document.getElementById('auditSearch').addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        const filtered = allShifts.filter(sh => {
+            const d = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short' }).toLowerCase();
+            return d.includes(term);
+        });
+        renderData(filtered);
+    });
+
+    document.getElementById('loadMore').onclick = () => { currentLimit += 15; fetchShiftAudit(); };
+    fetchShiftAudit();
 </script>
 </body>
 </html>
