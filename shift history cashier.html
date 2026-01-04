@@ -44,7 +44,7 @@
             left: 0;
             top: 0;
             height: 100vh;
-            z-index: 5000; /* Higher than mobile header */
+            z-index: 5000;
             transform: translateX(-100%);
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 4px 0 20px rgba(0,0,0,0.1);
@@ -84,7 +84,7 @@
         .nav-item:hover { background: rgba(255,255,255,0.08); color: #ffffff; }
         .nav-item.active { background: var(--primary); color: #ffffff; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
 
-        /* --- MOBILE HEADER (FIXED) --- */
+        /* --- MOBILE HEADER --- */
         .mobile-header {
             display: flex;
             background: var(--sidebar-bg);
@@ -93,7 +93,7 @@
             height: var(--header-height);
             position: fixed;
             top: 0; left: 0; right: 0;
-            z-index: 4000; /* High z-index to stay on top */
+            z-index: 4000;
             align-items: center;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
@@ -102,7 +102,6 @@
         .main-content {
             flex-grow: 1;
             padding: 20px;
-            /* Key fix: Use the header height variable for margin */
             margin-top: var(--header-height); 
             width: 100%;
             position: relative;
@@ -118,20 +117,9 @@
             clear: both; 
         }
 
-        .page-header h1 {
-            margin: 0;
-            font-size: 1.6rem;
-            font-weight: 800;
-            color: #0f172a;
-        }
+        .page-header h1 { margin: 0; font-size: 1.6rem; font-weight: 800; color: #0f172a; }
+        .page-header p { margin: 8px 0 0 0; color: var(--dim); font-size: 0.9rem; }
 
-        .page-header p {
-            margin: 8px 0 0 0;
-            color: var(--dim);
-            font-size: 0.9rem;
-        }
-
-        /* --- TABLES & CARDS --- */
         .search-input {
             width: 100%;
             padding: 16px 20px;
@@ -150,13 +138,12 @@
             background: white; 
             border-radius: 20px; 
             border: 1px solid var(--border); 
-            overflow: hidden; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
             overflow-x: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
         }
 
         table { width: 100%; border-collapse: collapse; min-width: 1000px; }
-        th { background: #f8fafc; text-align: left; padding: 20px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--dim); border-bottom: 1px solid var(--border); font-weight: 700; }
+        th { background: #f8fafc; text-align: left; padding: 20px; font-size: 0.75rem; text-transform: uppercase; color: var(--dim); border-bottom: 1px solid var(--border); font-weight: 700; }
         td { padding: 20px; border-bottom: 1px solid var(--border); font-size: 0.9rem; vertical-align: top; }
 
         .float-row { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px dashed #f1f5f9; }
@@ -200,7 +187,6 @@
             font-weight: 700; border: 2px solid var(--border); border-radius: 15px; cursor: pointer;
             transition: all 0.2s;
         }
-        .btn-load:hover { background: #f8fafc; border-color: var(--dim); }
     </style>
 </head>
 <body>
@@ -234,7 +220,7 @@
 <main class="main-content">
     <div class="page-header">
         <h1>Detailed Shift Audit</h1>
-        <p>Complete breakdown of individual floats (Cash, M-Pesa, KCB, Equity) and variances.</p>
+        <p>Complete breakdown of individual floats and system variances.</p>
     </div>
 
     <input type="text" id="auditSearch" class="search-input" placeholder="🔍 Search by date (e.g. 03 Jan 2026)...">
@@ -268,7 +254,6 @@
     let currentLimit = 15;
     let allShifts = [];
     let allTransactions = [];
-    let allSales = [];
 
     window.toggleMenu = () => {
         document.getElementById('sidebar').classList.toggle('active');
@@ -283,12 +268,10 @@
                 .order('start_time', { ascending: false })
                 .limit(currentLimit);
 
-            const { data: transactions } = await supabase.from('cash_transactions').select('*');
-            const { data: sales } = await supabase.from('sales').select('shift_id, total_amount, payment_method');
+            const { data: transactions } = await supabase.from('cash_transactions').select('shift_id, amount, type');
 
             allShifts = shifts || [];
             allTransactions = transactions || [];
-            allSales = sales || [];
             renderData(allShifts);
         } catch (error) {
             console.error("Fetch Error:", error);
@@ -304,18 +287,19 @@
 
         shiftsToRender.forEach(sh => {
             const shiftLogs = allTransactions.filter(t => t.shift_id === sh.id);
-            const shiftSales = allSales.filter(s => s.shift_id === sh.id);
 
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((sum, t) => sum + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((sum, t) => sum + (t.amount || 0), 0);
-            const paybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill' || s.payment_method === 'KCB Paybill Only').reduce((a,b) => a + b.total_amount, 0);
-
-            const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_equity||0);
-            const closePhysical = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_equity||0);
-            const closeTotal = closePhysical + paybillSales;
             
+            // FORMULA MATCH: Summing all opening components
+            const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_equity||0) + (sh.open_kcb_bank || 0);
+            
+            // FORMULA MATCH: Summing all closing components
+            const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_equity||0) + (sh.close_kcb_bank||0);
+            
+            // FORMULA MATCH: Expected = System Calculated Total OR Opening Total if session just started
             const expected = sh.system_expected_total || openTotal; 
-            const varianceVal = closeTotal - expected;
+            const varianceVal = sh.status === 'Open' ? 0 : closeTotal - expected;
             const isClosed = sh.status === 'Closed';
             
             const statusClass = Math.abs(varianceVal) < 1 ? 'balanced' : 'mismatch';
@@ -328,8 +312,8 @@
             const floatBreakdown = (prefix) => `
                 <div class="float-row"><span class="float-label">Cash</span><span class="float-val">${(sh[prefix+'_cash']||0).toLocaleString()}</span></div>
                 <div class="float-row"><span class="float-label">M-Pesa</span><span class="float-val">${(sh[prefix+'_mpesa']||0).toLocaleString()}</span></div>
-                <div class="float-row"><span class="float-label">KCB</span><span class="float-val">${(sh[prefix+'_kcb']||0).toLocaleString()}</span></div>
-                <div class="float-row"><span class="float-label">Equity</span><span class="float-val">${(sh[prefix+'_equity']||0).toLocaleString()}</span></div>
+                <div class="float-row"><span class="float-label">KCB Float</span><span class="float-val">${(sh[prefix+'_kcb']||0).toLocaleString()}</span></div>
+                <div class="float-row"><span class="float-label">Equity Float</span><span class="float-val">${(sh[prefix+'_equity']||0).toLocaleString()}</span></div>
             `;
 
             desktopHTML += `
@@ -350,14 +334,16 @@
                         <div style="color:var(--danger); font-weight:700;">-${moneyOut.toLocaleString()}</div>
                     </td>
                     <td>
-                        ${floatBreakdown('close')}
-                        <div class="float-row" style="border-top: 1px solid #e2e8f0; margin-top:5px; padding-top:5px;">
-                            <span class="float-label" style="color:var(--primary)">Paybill Revenue</span>
-                            <span class="float-val" style="color:var(--primary)">+${paybillSales.toLocaleString()}</span>
-                        </div>
-                        <div style="font-weight:800; text-align:right; margin-top:5px; color:#000;">Total: Ksh ${closeTotal.toLocaleString()}</div>
+                        ${isClosed ? `
+                            ${floatBreakdown('close')}
+                            <div class="float-row" style="border-top: 1px solid #e2e8f0; margin-top:5px; padding-top:5px;">
+                                <span class="float-label" style="color:var(--primary)">KCB Paybill (Bank)</span>
+                                <span class="float-val" style="color:var(--primary)">+${(sh.close_kcb_bank||0).toLocaleString()}</span>
+                            </div>
+                            <div style="font-weight:800; text-align:right; margin-top:5px; color:#000;">Total: Ksh ${closeTotal.toLocaleString()}</div>
+                        ` : '<span class="status-active variance-status">SHIFT ACTIVE</span>'}
                     </td>
-                    <td><span class="variance-status ${isClosed ? statusClass : 'status-active'}">${isClosed ? statusText : 'ACTIVE'}</span></td>
+                    <td><span class="variance-status ${isClosed ? statusClass : 'status-active'}">${isClosed ? statusText : 'N/A'}</span></td>
                     <td><small style="color:var(--dim)">${sh.variance_note || '-'}</small></td>
                 </tr>`;
 
@@ -377,23 +363,24 @@
                     
                     <div style="display:flex; gap:10px; margin: 10px 0;">
                         <div style="flex:1; background:#f0fdf4; padding:8px; border-radius:10px; text-align:center;">
-                            <span class="label-xs">Money In</span><b style="color:var(--success)">+${moneyIn.toLocaleString()}</b>
+                            <span class="label-xs">In</span><b style="color:var(--success)">+${moneyIn.toLocaleString()}</b>
                         </div>
                         <div style="flex:1; background:#fef2f2; padding:8px; border-radius:10px; text-align:center;">
-                            <span class="label-xs">Money Out</span><b style="color:var(--danger)">-${moneyOut.toLocaleString()}</b>
+                            <span class="label-xs">Out</span><b style="color:var(--danger)">-${moneyOut.toLocaleString()}</b>
                         </div>
                     </div>
 
+                    ${isClosed ? `
                     <span class="label-xs">Closing Actuals</span>
                     <div class="card-details" style="background:#eef2ff">
                         ${floatBreakdown('close')}
                         <div class="float-row" style="color:var(--primary); font-weight:700; border-top:1px solid #d1d5db; margin-top:5px; padding-top:5px;">
-                            <span>Paybill Sales</span><span>+${paybillSales.toLocaleString()}</span>
+                            <span>Paybill Sales</span><span>+${(sh.close_kcb_bank||0).toLocaleString()}</span>
                         </div>
                         <div class="float-row" style="font-weight:800; font-size:1rem; padding-top:5px;">
                             <span>Total Final</span><span>Ksh ${closeTotal.toLocaleString()}</span>
                         </div>
-                    </div>
+                    </div>` : ''}
                 </div>`;
         });
 
