@@ -19,6 +19,7 @@
             --warning: #f59e0b;
             --blue: #2563eb;
             --purple: #8b5cf6;
+            --switch-btn: #0ea5e9; /* Sky blue for the switch feature */
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -80,6 +81,14 @@
         .nav-card span { font-size: 1.4rem; }
         .nav-card small { font-weight: 600; font-size: 0.75rem; line-height: 1.2; }
 
+        /* Specific style for the Switch Button */
+        .switch-card {
+            background: var(--switch-btn);
+            grid-column: span 2;
+            margin-bottom: 10px;
+            border: none;
+        }
+
         .close-nav {
             position: fixed;
             top: 25px;
@@ -103,7 +112,7 @@
             position: fixed;
             bottom: 30px;
             left: 25px;
-            width: 70px; /* Slightly larger for better touch */
+            width: 70px;
             height: 70px;
             background: var(--admin-accent);
             border-radius: 50%;
@@ -113,7 +122,7 @@
             color: white;
             font-size: 1.8rem;
             box-shadow: 0 10px 30px rgba(30, 58, 138, 0.5);
-            border: 4px solid white; /* Thicker border for contrast */
+            border: 4px solid white;
             cursor: pointer;
             z-index: 2000;
             animation: swing 3s infinite ease-in-out;
@@ -128,12 +137,11 @@
             80% { transform: rotate(-10deg); }
         }
 
-        /* --- FIXED: ALIGNED GUIDING HAND --- */
         .guide-hand {
             position: fixed;
-            bottom: 110px; /* Adjusted to sit perfectly above the 70px FAB */
+            bottom: 110px;
             left: 25px;
-            width: 70px; /* Same width as FAB to center content */
+            width: 70px;
             z-index: 2500;
             pointer-events: none;
             display: flex;
@@ -165,7 +173,6 @@
             50% { transform: translateY(-12px); }
         }
 
-        /* --- HEADER & CONTENT --- */
         header {
             background: white;
             padding: 18px 20px;
@@ -240,6 +247,7 @@
             margin-top: 20px;
             grid-column: span 2;
             letter-spacing: 1px;
+            cursor: pointer;
         }
 
         .hidden { display: none; }
@@ -261,6 +269,11 @@
     </div>
     
     <div class="nav-grid">
+        <a href="cashier.html" class="nav-card switch-card" id="switchLink">
+            <span>🔄</span>
+            <small>SWITCH TO CASHIER MODE</small>
+        </a>
+
         <a href="admin.html" class="nav-card" style="background: var(--admin-accent)"><span>📊</span><small>Dashboard</small></a>
         <a href="inventory.html" class="nav-card"><span>➕</span><small>Add Stock</small></a>
         <a href="sales_editor.html" class="nav-card"><span>✏️</span><small>Edit Stock</small></a>
@@ -330,9 +343,29 @@
 
     async function protectPage() {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { window.location.href = 'index.html'; return; }
+        if (!user) { 
+            window.location.href = 'index.html'; 
+            return; 
+        }
+        
         const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-        if (profile?.role !== 'admin') { window.location.href = 'cashier_inventory.html'; }
+        
+        // Security: If they aren't an admin, kick them out to cashier view immediately
+        if (profile?.role !== 'admin') { 
+            window.location.href = 'cashier_inventory.html'; 
+            return;
+        }
+
+        // Feature: "Switch to Cashier" link behavior
+        const switchLink = document.getElementById('switchLink');
+        if (switchLink) {
+            switchLink.onclick = (e) => {
+                e.preventDefault();
+                if(confirm("Switch to Cashier POS view? You can return to Admin later(by clicking back in your button).")) {
+                    window.location.href = 'cashier.html'; // Adjust this filename to your actual POS page
+                }
+            };
+        }
     }
     protectPage();
 
