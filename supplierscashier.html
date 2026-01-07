@@ -137,8 +137,8 @@
         td { padding: 14px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
 
         input, select { 
-            width: 100%; padding: 12px; border: 1px solid var(--border); 
-            border-radius: 10px; margin-bottom: 10px; font-family: inherit; font-size: 15px; outline: none;
+            width: 100%; padding: 14px; border: 1px solid var(--border); 
+            border-radius: 12px; margin-bottom: 12px; font-family: inherit; font-size: 16px; outline: none;
         }
 
         .btn { padding: 12px 18px; border-radius: 10px; border: none; cursor: pointer; font-weight: 700; font-size: 0.85rem; transition: 0.2s; }
@@ -155,10 +155,9 @@
             background: rgba(0,0,0,0.6); justify-content: center; align-items: center; 
             z-index: 3000; padding: 15px; box-sizing: border-box; 
         }
-        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 100%; max-width: 480px; color: var(--text); overflow-y: auto; max-height: 90vh; }
+        .modal-content { background: white; padding: 30px; border-radius: 20px; width: 100%; max-width: 450px; color: var(--text); }
         
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        label { font-size: 0.7rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; display: block; }
+        #product-results div:hover { background-color: #f1f5f9; }
     </style>
 </head>
 <body>
@@ -237,7 +236,7 @@
                             <th>Date</th>
                             <th>Supplier</th>
                             <th>Items Received</th>
-                            <th>Total Cost (Ksh)</th>
+                            <th>Amount (Ksh)</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -252,15 +251,15 @@
     <div class="modal-content">
         <h3 style="margin-top:0;">Process Payment</h3>
         <input type="hidden" id="pay-sup-id">
-        <label>Paying To</label>
+        <label style="font-size:0.8rem; font-weight:bold;">Paying To</label>
         <input type="text" id="pay-sup-name" readonly style="background:#f8fafc;">
-        <label>Source Wallet</label>
+        <label style="font-size:0.8rem; font-weight:bold;">Source</label>
         <select id="pay-method">
             <option>Shop Cash</option>
             <option>Mpesa Business</option>
             <option>Equity/Bank</option>
         </select>
-        <label>Amount (Ksh)</label>
+        <label style="font-size:0.8rem; font-weight:bold;">Amount (Ksh)</label>
         <input type="number" id="pay-amount" placeholder="0.00">
         <button class="btn btn-primary" onclick="processPayment()" style="width:100%; margin-top:10px;">Confirm Payment</button>
         <button class="btn btn-outline" style="border:none;" onclick="closeModals()">Cancel</button>
@@ -278,7 +277,7 @@
             <option>General Hardware</option>
         </select>
         <input type="text" id="sup-phone" placeholder="Phone Number">
-        <label>Opening Balance Owed</label>
+        <label style="font-size:0.8rem; font-weight:bold;">Opening Balance Owed</label>
         <input type="number" id="sup-balance" value="0">
         <button class="btn btn-success" onclick="saveSupplier()" style="width:100%; margin-top:10px;">Save Supplier</button>
         <button class="btn btn-outline" style="border:none;" onclick="closeModals()">Cancel</button>
@@ -287,46 +286,54 @@
 
 <div id="orderModal" class="modal">
     <div class="modal-content">
-        <h3 style="margin-top:0; color:var(--primary);">📦 Record Delivery</h3>
+        <h3 style="margin-top:0;">Record Delivery</h3>
         <input type="hidden" id="order-sup-id">
+        <input type="text" id="order-sup-name" readonly style="background:#f1f5f9; border:none; font-weight:700; color:var(--primary); margin-bottom:15px;">
         
-        <label>Supplier</label>
-        <input type="text" id="order-sup-name" readonly style="background:#f8fafc;">
-        
-        <label>Select Item to Restock</label>
-        <input type="text" id="restock-search" list="productList" placeholder="Search product..." onchange="handleProductSelect(this.value)">
-        <datalist id="productList"></datalist>
-        <input type="hidden" id="selected-product-id">
+        <label style="font-size:0.75rem; font-weight:bold;">SEARCH PRODUCT (GAS OR PARTS)</label>
+        <div style="position:relative;">
+            <input type="text" id="restock-search" placeholder="Type name or weight (e.g. 6kg)..." oninput="searchProducts(this.value)" autocomplete="off">
+            <div id="product-results" style="position:absolute; top:100%; left:0; right:0; background:white; border:1px solid var(--border); border-radius:8px; z-index:100; max-height:200px; overflow-y:auto; display:none; box-shadow:0 10px 15px rgba(0,0,0,0.1);"></div>
+        </div>
 
-        <div class="grid-2">
-            <div>
-                <label>Qty Received</label>
-                <input type="number" id="order-qty" placeholder="0" oninput="calculateOrderCost()">
-            </div>
-            <div>
-                <label>Buy Price (Each)</label>
-                <input type="number" id="order-buy-price" placeholder="0.00" oninput="calculateOrderCost()">
+        <input type="hidden" id="selected-product-id">
+        
+        <div id="item-info-badge" style="display:none; background:#eff6ff; padding:12px; border-radius:10px; margin-bottom:15px; border:1px solid #dbeafe;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; font-size:0.8rem; gap:10px;">
+                <span>Available: <b id="info-qty" style="color:var(--primary)">0</b></span>
+                <span>Current Cost: <b id="info-cost">0</b></span>
             </div>
         </div>
 
-        <div class="grid-2">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
             <div>
-                <label>New Selling Price</label>
+                <label style="font-size:0.75rem; font-weight:bold;">QTY RECEIVED</label>
+                <input type="number" id="order-qty" placeholder="0" oninput="calcTotalCost()">
+            </div>
+            <div>
+                <label style="font-size:0.75rem; font-weight:bold;">BUY PRICE (EA)</label>
+                <input type="number" id="order-buy-price" placeholder="0.00" oninput="calcTotalCost()">
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <div>
+                <label style="font-size:0.75rem; font-weight:bold;">SELL PRICE</label>
                 <input type="number" id="order-sell-price" placeholder="0.00">
             </div>
             <div>
-                <label>Min Selling Price</label>
+                <label style="font-size:0.75rem; font-weight:bold;">MIN PRICE</label>
                 <input type="number" id="order-min-price" placeholder="0.00">
             </div>
         </div>
 
-        <div style="background: #f1f5f9; padding: 15px; border-radius: 12px; margin: 10px 0;">
-            <label>Total Debt Added</label>
-            <h2 id="order-total-display" style="margin:0; color:var(--danger);">Ksh 0.00</h2>
+        <div style="background:#f8fafc; padding:12px; border-radius:10px; margin:10px 0; text-align:center; border: 1px dashed var(--border);">
+            <small style="color:var(--text-dim); font-weight:bold;">TOTAL PAYABLE INCREASE</small>
+            <h3 id="order-total-display" style="margin:0; color:var(--danger);">Ksh 0</h3>
         </div>
 
-        <button class="btn btn-primary" id="saveOrderBtn" onclick="saveOrder()" style="width:100%;">Finalize Delivery</button>
-        <button class="btn btn-outline" style="border:none;" onclick="closeModals()">Cancel</button>
+        <button id="saveOrderBtn" class="btn btn-primary" onclick="saveOrder()" style="width:100%; padding:15px;">Finalize Restock</button>
+        <button class="btn btn-outline" style="border:none; margin-top:5px;" onclick="closeModals()">Cancel</button>
     </div>
 </div>
 
@@ -337,6 +344,7 @@
     }
     function closeModals() {
         document.querySelectorAll('.modal').forEach(m => m.style.display = "none");
+        document.getElementById('product-results').style.display = 'none';
     }
 </script>
 
@@ -349,17 +357,14 @@
     let orderLimit = 10;
 
     async function init() {
+        await fetchProducts();
         await fetchSuppliers();
         await fetchOrders();
-        await fetchProducts();
     }
 
     async function fetchProducts() {
-        const { data } = await supabase.from('products').select('*').order('name');
+        const { data } = await supabase.from('products').select('*');
         allProducts = data || [];
-        document.getElementById('productList').innerHTML = allProducts.map(p => 
-            `<option value="${p.name}${p.part_type !== 'N/A' ? ' ['+p.part_type+']' : ''}" data-id="${p.id}">`
-        ).join('');
     }
 
     async function fetchSuppliers() {
@@ -381,6 +386,61 @@
         document.getElementById('total-vendors-display').innerText = allSuppliers.length;
     }
 
+    // --- SEARCH & SELECT PRODUCTS ---
+    window.searchProducts = (query) => {
+        const container = document.getElementById('product-results');
+        if (!query || query.length < 1) {
+            container.style.display = 'none';
+            return;
+        }
+
+        const filtered = allProducts.filter(p => 
+            p.name.toLowerCase().includes(query.toLowerCase()) || 
+            (p.weight_category && p.weight_category.toLowerCase().includes(query.toLowerCase()))
+        ).slice(0, 10);
+
+        if (filtered.length > 0) {
+            container.innerHTML = filtered.map(p => `
+                <div onclick="selectProduct('${p.id}')" style="padding:12px; border-bottom:1px solid #f1f5f9; cursor:pointer;">
+                    <div style="font-weight:700; font-size:0.9rem;">${p.name} ${p.weight_category ? '<span style="color:var(--primary)">('+p.weight_category+')</span>' : ''}</div>
+                    <div style="font-size:0.75rem; color:#64748b; display:flex; justify-content:space-between;">
+                        <span>Type: ${p.part_type}</span>
+                        <span>Stock: ${p.stock_quantity || 0}</span>
+                    </div>
+                </div>
+            `).join('');
+            container.style.display = 'block';
+        } else {
+            container.style.display = 'none';
+        }
+    };
+
+    window.selectProduct = (id) => {
+        const p = allProducts.find(x => x.id === id);
+        document.getElementById('selected-product-id').value = p.id;
+        document.getElementById('restock-search').value = `${p.name} ${p.weight_category || ''}`;
+        
+        // Populate fields
+        document.getElementById('order-buy-price').value = p.cost_price || 0;
+        document.getElementById('order-sell-price').value = p.selling_price || 0;
+        document.getElementById('order-min-price').value = p.min_selling_price || 0;
+        
+        // Show context info
+        document.getElementById('item-info-badge').style.display = 'block';
+        document.getElementById('info-qty').innerText = p.stock_quantity || 0;
+        document.getElementById('info-cost').innerText = `Ksh ${p.cost_price || 0}`;
+        
+        document.getElementById('product-results').style.display = 'none';
+        calcTotalCost();
+    };
+
+    window.calcTotalCost = () => {
+        const qty = parseFloat(document.getElementById('order-qty').value) || 0;
+        const buy = parseFloat(document.getElementById('order-buy-price').value) || 0;
+        document.getElementById('order-total-display').innerText = `Ksh ${(qty * buy).toLocaleString()}`;
+    };
+
+    // --- LOGIC FUNCTIONS ---
     window.filterSuppliers = () => {
         const q = document.getElementById('searchSupplier').value.toLowerCase();
         const filtered = allSuppliers.filter(s => s.name.toLowerCase().includes(q));
@@ -405,32 +465,19 @@
                 <td><small>${new Date(o.order_date).toLocaleDateString('en-GB')}</small></td>
                 <td><b>${o.suppliers?.name || 'Unknown'}</b></td>
                 <td><small>${o.items_brought}</small></td>
-                <td><b>${(o.cost || 0).toLocaleString()}</b></td>
+                <td><b>${o.cost.toLocaleString()}</b></td>
             </tr>
         `).join('');
     }
-
-    window.calculateOrderCost = () => {
-        const qty = parseFloat(document.getElementById('order-qty').value) || 0;
-        const buy = parseFloat(document.getElementById('order-buy-price').value) || 0;
-        document.getElementById('order-total-display').innerText = `Ksh ${(qty * buy).toLocaleString()}`;
-    };
-
-    window.handleProductSelect = (val) => {
-        const product = allProducts.find(p => (p.name + (p.part_type !== 'N/A' ? ' ['+p.part_type+']' : '')) === val);
-        if (product) {
-            document.getElementById('selected-product-id').value = product.id;
-            document.getElementById('order-buy-price').value = product.cost_price || 0;
-            document.getElementById('order-sell-price').value = product.selling_price || 0;
-            document.getElementById('order-min-price').value = product.min_selling_price || product.min_price || 0;
-        }
-    };
 
     window.loadMoreOrders = () => { orderLimit += 10; renderOrders(); };
 
     window.openOrderModal = (id, name) => {
         document.getElementById('order-sup-id').value = id;
         document.getElementById('order-sup-name').value = name;
+        document.getElementById('order-qty').value = "";
+        document.getElementById('restock-search').value = "";
+        document.getElementById('item-info-badge').style.display = "none";
         document.getElementById('orderModal').style.display = "flex";
     };
 
@@ -458,52 +505,46 @@
 
     window.saveOrder = async () => {
         const saveBtn = document.getElementById('saveOrderBtn');
-        saveBtn.disabled = true;
-        saveBtn.innerText = "Processing...";
-
         const sid = document.getElementById('order-sup-id').value;
         const pid = document.getElementById('selected-product-id').value;
         const qty = parseInt(document.getElementById('order-qty').value) || 0;
         const buyPrice = parseFloat(document.getElementById('order-buy-price').value) || 0;
         const sellPrice = parseFloat(document.getElementById('order-sell-price').value) || 0;
         const minPrice = parseFloat(document.getElementById('order-min-price').value) || 0;
-        
         const totalCost = qty * buyPrice;
-        const productName = document.getElementById('restock-search').value;
 
-        if(!pid || qty <= 0) {
-            alert("Please select a product and enter quantity");
-            saveBtn.disabled = false;
-            saveBtn.innerText = "Finalize Delivery";
-            return;
-        }
+        if(!pid || qty <= 0) return alert("Please select a product and enter quantity");
 
-        // 1. Record in supplier_orders
+        saveBtn.disabled = true;
+        saveBtn.innerText = "Updating...";
+
+        const targetProduct = allProducts.find(p => p.id === pid);
+
+        // 1. Log History
         await supabase.from('supplier_orders').insert([{ 
             supplier_id: sid, 
-            items_brought: `${qty}x ${productName}`, 
+            items_brought: `${qty}x ${document.getElementById('restock-search').value}`, 
             cost: totalCost 
         }]);
 
-        // 2. Update Product Inventory & Prices
-        const targetProduct = allProducts.find(p => p.id === pid);
+        // 2. Update Product (Increment Stock)
         await supabase.from('products').update({ 
             stock_quantity: (targetProduct.stock_quantity || 0) + qty,
             cost_price: buyPrice,
             selling_price: sellPrice,
-            min_selling_price: minPrice,
-            min_price: minPrice
+            min_selling_price: minPrice
         }).eq('id', pid);
 
         // 3. Update Supplier Balance
-        const sup = allSuppliers.find(x => x.id === sid);
-        await supabase.from('suppliers').update({ balance_owed: (sup.balance_owed || 0) + totalCost }).eq('id', sid);
-        
-        alert("Stock updated successfully!");
+        const supplier = allSuppliers.find(x => x.id === sid);
+        await supabase.from('suppliers').update({ 
+            balance_owed: (supplier.balance_owed || 0) + totalCost 
+        }).eq('id', sid);
+
         closeModals();
         saveBtn.disabled = false;
-        saveBtn.innerText = "Finalize Delivery";
-        init();
+        saveBtn.innerText = "Finalize Restock";
+        init(); // Refresh data
     };
 
     window.processPayment = async () => {
