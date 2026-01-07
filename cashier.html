@@ -108,7 +108,8 @@
             td::before { content: attr(data-label); font-weight: 800; color: var(--text-dim); font-size: 0.65rem; display: block; text-align: left; }
         }
 
-        .btn { padding: 16px 24px; border-radius: 12px; font-weight: 800; cursor: pointer; border: none; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 8px; text-transform: uppercase; }
+        .btn { padding: 16px 24px; border-radius: 12px; font-weight: 800; cursor: pointer; border: none; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 8px; text-transform: uppercase; transition: 0.3s opacity; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-sync { background: var(--warning); color: white; }
@@ -131,24 +132,12 @@
         .total-cell { font-weight: 800; color: var(--primary); border-top: 2px solid var(--border); margin-top: 5px; padding-top: 5px; font-size: 0.85rem; display: flex; justify-content: space-between; }
         
         .menu-fab { 
-            position: fixed; 
-            bottom: 25px; 
-            right: 25px; 
-            width: 70px; 
-            height: 70px; 
-            background: var(--deep-blue); 
-            border-radius: 50%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            color: white; 
-            font-size: 2rem; 
-            box-shadow: 0 10px 30px rgba(30, 58, 138, 0.5); 
-            cursor: pointer; 
-            z-index: 5000; 
-            border: 4px solid white; 
-            animation: swingIcon 3s infinite ease-in-out;
-            transform-origin: center bottom;
+            position: fixed; bottom: 25px; right: 25px; width: 70px; height: 70px; 
+            background: var(--deep-blue); border-radius: 50%; display: flex; 
+            align-items: center; justify-content: center; color: white; 
+            font-size: 2rem; box-shadow: 0 10px 30px rgba(30, 58, 138, 0.5); 
+            cursor: pointer; z-index: 5000; border: 4px solid white; 
+            animation: swingIcon 3s infinite ease-in-out; transform-origin: center bottom;
         }
 
         @keyframes swingIcon {
@@ -160,25 +149,14 @@
         }
 
         .guide-hand {
-            position: fixed;
-            bottom: 105px;
-            right: 35px;
-            z-index: 5500;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            animation: bounceHand 1.5s infinite;
+            position: fixed; bottom: 105px; right: 35px; z-index: 5500;
+            pointer-events: none; display: flex; flex-direction: column;
+            align-items: center; animation: bounceHand 1.5s infinite;
         }
         .guide-label {
-            background: #0f172a;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 8px;
-            font-size: 0.7rem;
-            font-weight: 800;
-            margin-bottom: 5px;
-            white-space: nowrap;
+            background: #0f172a; color: white; padding: 5px 12px;
+            border-radius: 8px; font-size: 0.7rem; font-weight: 800;
+            margin-bottom: 5px; white-space: nowrap;
         }
         @keyframes bounceHand {
             0%, 100% { transform: translateY(0); }
@@ -364,11 +342,14 @@
     window.toggleFullMenu = () => {
         const menu = document.getElementById('full-menu');
         const hand = document.getElementById('onboardingHand');
-        menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+        menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
         if (hand) hand.style.display = 'none';
     };
 
-    window.logoutUser = async () => { await supabase.auth.signOut(); location.href = 'index.html'; };
+    window.logoutUser = async () => { 
+        await supabase.auth.signOut(); 
+        location.href = 'index.html'; 
+    };
 
     window.toggleSplitFields = () => {
         const method = document.getElementById('pMethod').value;
@@ -386,20 +367,23 @@
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return window.location.href = 'index.html';
 
-        const { data: prods } = await supabase.from('products').select('*');
-        inventory = prods || [];
+        // Optimized: Concurrent fetching
+        const [prodRes, shiftRes] = await Promise.all([
+            supabase.from('products').select('*'),
+            supabase.from('daily_shifts').select('*').eq('status', 'Open').maybeSingle()
+        ]);
+
+        inventory = prodRes.data || [];
         document.getElementById('pList').innerHTML = inventory.map(p => `<option value="${formatItemName(p)}">`).join('');
 
-        const { data: shift } = await supabase.from('daily_shifts').select('*').eq('status', 'Open').maybeSingle();
         const actionBtnContainer = document.getElementById('shift-action-container');
-        
-        if (shift) {
-            currentShift = shift;
+        if (shiftRes.data) {
+            currentShift = shiftRes.data;
             actionBtnContainer.innerHTML = `<button class="btn btn-danger special-action-btn" onclick="document.getElementById('close-modal').style.display='flex'">🔴 CLOSE DAY</button>`;
-            document.getElementById('float-cash').innerText = (shift.open_cash || 0).toLocaleString();
-            document.getElementById('float-mpesa').innerText = (shift.open_mpesa || 0).toLocaleString();
-            document.getElementById('float-kcb').innerText = (shift.open_kcb || 0).toLocaleString();
-            document.getElementById('float-equity').innerText = (shift.open_equity || 0).toLocaleString();
+            document.getElementById('float-cash').innerText = (currentShift.open_cash || 0).toLocaleString();
+            document.getElementById('float-mpesa').innerText = (currentShift.open_mpesa || 0).toLocaleString();
+            document.getElementById('float-kcb').innerText = (currentShift.open_kcb || 0).toLocaleString();
+            document.getElementById('float-equity').innerText = (currentShift.open_equity || 0).toLocaleString();
             loadShiftData();
         } else {
             actionBtnContainer.innerHTML = `<button class="btn btn-primary special-action-btn" onclick="document.getElementById('open-modal').style.display='flex'">🟢 START DAY</button>`;
@@ -418,10 +402,12 @@
         selectedItem = inventory.find(p => formatItemName(p) === e.target.value);
         if (selectedItem) {
             document.getElementById('pPrice').value = selectedItem.selling_price;
-            document.getElementById('hint-stock').innerText = `Stock: ${selectedItem.stock_quantity}`;
-            document.getElementById('hint-stock').style.display = 'inline-block';
-            document.getElementById('hint-min').innerText = `Min: ${selectedItem.min_price || 0}`;
-            document.getElementById('hint-min').style.display = 'inline-block';
+            const hStock = document.getElementById('hint-stock');
+            const hMin = document.getElementById('hint-min');
+            hStock.innerText = `Stock: ${selectedItem.stock_quantity}`;
+            hStock.style.display = 'inline-block';
+            hMin.innerText = `Min: ${selectedItem.min_price || 0}`;
+            hMin.style.display = 'inline-block';
             updateTotal();
         }
     };
@@ -432,11 +418,13 @@
         document.getElementById('total-text').innerText = (price * qty).toLocaleString();
         if (document.getElementById('pMethod').value === 'Split') calculateSplit();
     }
+
     document.getElementById('pPrice').oninput = updateTotal;
     document.getElementById('pQty').oninput = updateTotal;
 
     document.getElementById('sale-form').onsubmit = async (e) => {
         e.preventDefault();
+        const btn = document.getElementById('submit-sale-btn');
         if (!currentShift) return alert("Open shift first!");
         if (!selectedItem) return alert("Select a valid item.");
 
@@ -445,20 +433,24 @@
         const total = price * qty;
         const method = document.getElementById('pMethod').value;
 
-        let discReason = "";
         if (price < (selectedItem.min_price || 0)) {
-            discReason = prompt(`Price below Min. Reason:`);
+            const discReason = prompt(`Price below Min. Reason:`);
             if (!discReason) return;
+            selectedItem.tempReason = discReason;
         }
 
         if (qty > selectedItem.stock_quantity) return alert("Insufficient stock!");
+
+        // Prevent double submit
+        btn.disabled = true;
+        btn.innerText = "RECORDING...";
 
         let salesToInsert = [];
         const baseSale = {
             shift_id: currentShift.id,
             product_id: selectedItem.id,
             quantity: qty, unit_price: price, cost_price: selectedItem.cost_price || 0,
-            part_type: selectedItem.part_type || 'N/A', discount_reason: discReason
+            part_type: selectedItem.part_type || 'N/A', discount_reason: selectedItem.tempReason || ""
         };
 
         if (method === 'Split') {
@@ -471,43 +463,63 @@
         }
 
         const { data: sData, error } = await supabase.from('sales').insert(salesToInsert).select();
+        
         if (!error) {
             if(method === "Debt") {
                 const dName = prompt("Customer Name:");
                 if(dName) await supabase.from('debtors').insert([{ customer_name: dName, amount_owed: total, sale_id: sData[0].id }]);
             }
+            // Update stock locally and remotely
             await supabase.from('products').update({ 
                 stock_quantity: selectedItem.stock_quantity - qty,
                 empty_quantity: selectedItem.category === 'Gas' ? (selectedItem.empty_quantity || 0) + qty : selectedItem.empty_quantity
             }).eq('id', selectedItem.id);
-            location.reload();
-        } else { alert("Error: " + error.message); }
+            
+            // Fast UI update instead of reload
+            document.getElementById('sale-form').reset();
+            document.getElementById('hint-stock').style.display = 'none';
+            document.getElementById('hint-min').style.display = 'none';
+            loadShiftData(); 
+            btn.disabled = false;
+            btn.innerHTML = `RECORD ITEM Ksh <span id="total-text">0.00</span>`;
+        } else { 
+            alert("Error: " + error.message); 
+            btn.disabled = false;
+        }
     };
 
     async function loadShiftData() {
-        const { data: sales } = await supabase.from('sales').select('*').eq('shift_id', currentShift.id).order('created_at', {ascending:false});
-        const { data: trans } = await supabase.from('cash_transactions').select('*').eq('shift_id', currentShift.id).order('created_at', {ascending:false});
+        const [salesRes, transRes] = await Promise.all([
+            supabase.from('sales').select('*').eq('shift_id', currentShift.id).order('created_at', {ascending:false}),
+            supabase.from('cash_transactions').select('*').eq('shift_id', currentShift.id).order('created_at', {ascending:false})
+        ]);
 
-        currentKcbSalesTotal = (sales || []).filter(s => s.payment_method === 'KCB Paybill').reduce((a, b) => a + b.total_amount, 0);
+        const sales = salesRes.data || [];
+        const trans = transRes.data || [];
+
+        currentKcbSalesTotal = sales.filter(s => s.payment_method === 'KCB Paybill').reduce((a, b) => a + b.total_amount, 0);
         document.getElementById('live-kcb-box').innerText = currentKcbSalesTotal.toLocaleString();
         document.getElementById('c-bank').value = currentKcbSalesTotal;
 
-        document.getElementById('live-sales-body').innerHTML = (sales || []).map(s => `<tr><td data-label="Time">${new Date(s.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Item"><b>${s.item_name}</b></td><td data-label="Qty">${s.quantity}</td><td data-label="Total">Ksh ${s.total_amount.toLocaleString()}</td><td data-label="Method">${s.payment_method}</td></tr>`).join('');
-        document.getElementById('live-trans-body').innerHTML = (trans || []).map(t => `<tr><td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Reason">${t.description}</td><td data-label="Amt">Ksh ${t.amount.toLocaleString()}</td><td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">${t.type}</td><td data-label="Wallet">${t.category}</td></tr>`).join('');
+        document.getElementById('live-sales-body').innerHTML = sales.map(s => `<tr><td data-label="Time">${new Date(s.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Item"><b>${s.item_name}</b></td><td data-label="Qty">${s.quantity}</td><td data-label="Total">Ksh ${s.total_amount.toLocaleString()}</td><td data-label="Method">${s.payment_method}</td></tr>`).join('');
+        document.getElementById('live-trans-body').innerHTML = trans.map(t => `<tr><td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Reason">${t.description}</td><td data-label="Amt">Ksh ${t.amount.toLocaleString()}</td><td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">${t.type}</td><td data-label="Wallet">${t.category}</td></tr>`).join('');
     }
 
-    document.getElementById('confirm-open').onclick = async () => {
-        await supabase.from('daily_shifts').insert([{
+    document.getElementById('confirm-open').onclick = async function() {
+        this.disabled = true;
+        const openData = {
             open_cash: parseFloat(document.getElementById('o-cash').value || 0),
             open_mpesa: parseFloat(document.getElementById('o-mpesa').value || 0),
             open_kcb: parseFloat(document.getElementById('o-kcb').value || 0),
             open_equity: parseFloat(document.getElementById('o-equity').value || 0),
             status: 'Open', start_time: new Date().toISOString()
-        }]);
+        };
+        await supabase.from('daily_shifts').insert([openData]);
         location.reload();
     };
 
-    document.getElementById('confirm-close').onclick = async () => {
+    document.getElementById('confirm-close').onclick = async function() {
+        this.disabled = true;
         const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
         const clK = parseFloat(document.getElementById('c-kcb').value || 0);
         const clE = parseFloat(document.getElementById('c-equity').value || 0);
@@ -516,6 +528,7 @@
 
         const { data: sales } = await supabase.from('sales').select('total_amount').eq('shift_id', currentShift.id).neq('payment_method','Debt');
         const { data: trans } = await supabase.from('cash_transactions').select('amount, type').eq('shift_id', currentShift.id);
+        
         const totalSales = (sales || []).reduce((a,b) => a + b.total_amount, 0);
         const moneyIn = (trans || []).filter(t => t.type === 'Money In').reduce((a,b) => a + b.amount, 0);
         const moneyOut = (trans || []).filter(t => t.type === 'Money Out').reduce((a,b) => a + b.amount, 0);
@@ -526,7 +539,7 @@
         const variance = actual - expected;
 
         let note = Math.abs(variance) < 1 ? "Balanced" : prompt(`Variance: ${variance}. Reason:`);
-        if (Math.abs(variance) >= 1 && !note) return;
+        if (Math.abs(variance) >= 1 && !note) { this.disabled = false; return; }
 
         await supabase.from('daily_shifts').update({
             close_mpesa: clM, close_kcb: clK, close_equity: clE, close_kcb_bank: clB, close_cash: clC,
@@ -593,15 +606,30 @@
 
     document.getElementById('history-search').oninput = (e) => loadHistory(e.target.value);
     document.getElementById('load-more-btn').onclick = () => { historyLimit += 10; loadHistory(); };
-    document.getElementById('record-expense-btn').onclick = async () => {
+    
+    document.getElementById('record-expense-btn').onclick = async function() {
         const amt = parseFloat(document.getElementById('exp-amt').value);
         const desc = document.getElementById('exp-desc').value;
         if (!amt || !desc || !currentShift) return alert("Fill all fields");
-        await supabase.from('cash_transactions').insert([{
-            shift_id: currentShift.id, type: document.getElementById('exp-type').value,
-            category: document.getElementById('exp-method').value, amount: amt, description: desc
+        
+        this.disabled = true;
+        const { error } = await supabase.from('cash_transactions').insert([{
+            shift_id: currentShift.id, 
+            type: document.getElementById('exp-type').value,
+            category: document.getElementById('exp-method').value, 
+            amount: amt, 
+            description: desc
         }]);
-        location.reload();
+
+        if(!error) {
+            document.getElementById('exp-amt').value = '';
+            document.getElementById('exp-desc').value = '';
+            loadShiftData();
+            this.disabled = false;
+        } else {
+            alert(error.message);
+            this.disabled = false;
+        }
     };
 
     init();
