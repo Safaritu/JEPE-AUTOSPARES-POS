@@ -93,12 +93,13 @@
         }
 
         .registration-form {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
             gap: 12px; margin-top: 20px;
         }
 
-        .registration-form input {
+        .registration-form input, .registration-form select {
             padding: 14px; border: 1px solid var(--border); border-radius: 12px; font-size: 0.9rem; outline: none; background: var(--bg);
+            width: 100%;
         }
         .registration-form input:focus { border-color: var(--admin-accent); background: white; }
 
@@ -108,6 +109,14 @@
             display: flex; justify-content: space-between; margin-top: 15px; 
             background: var(--bg); padding: 15px; border-radius: 14px; gap: 10px;
         }
+
+        .btn-buy-link {
+            display: block; width: 100%; text-align: center; background: #f1f5f9;
+            color: var(--text); padding: 12px; border-radius: 12px; font-weight: 800;
+            font-size: 0.75rem; text-decoration: none; border: 1px dashed var(--border);
+            margin-top: 15px; transition: 0.2s;
+        }
+        .btn-buy-link:hover { background: #e2e8f0; border-color: var(--text-dim); }
 
         .table-wrap { 
             overflow-x: auto; background: white; border-radius: 20px; 
@@ -148,20 +157,20 @@
             <button class="close-sidebar" onclick="toggleMenu()">✕</button>
         </div>
         <div class="nav-list">
-                <a href="admin.html" class="nav-link ">📊 Dashboard view</a>
-        <a href="shift-history.html" class="nav-link">📋 Daily Shift Audit</a>
-        <a href="reports.html" class="nav-link">📄 Detailed Reports</a>
-        <a href="money-history.html" class="nav-link">📜 Money money IN/OUT history</a>
-        <a href="gas_hub.html" class="nav-link active">🔥 Gas Hub</a>
-        <a href="inventory.html" class="nav-link">➕ Add Stock</a>
-         <a href="low_stock.html" class="nav-link" id="low-stock-nav">⚠️ Low Stock Alerts</a>
-         <a href="price_audits.html" class="nav-link">📉 item sold under price</a>
-        <a href="audit_trail.html" class="nav-link ">🔍 what cashier edited</a>
-        <a href="sales_editor.html" class="nav-link">✏️ Edit Stock/Sales</a>
-        <a href="sales-history.html" class="nav-link">📜 Sales History</a>
-         <a href="suppliers.html" class="nav-link">🤝 Suppliers</a>
-        <a href="admin-debtors.html" class="nav-link">👥 Debtors</a>
-       <a href="Monthly Performance Report.html" class="nav-link"><span>📄</span><small>Monthly Report</small></a>
+            <a href="admin.html" class="nav-link ">📊 Dashboard view</a>
+            <a href="shift-history.html" class="nav-link">📋 Daily Shift Audit</a>
+            <a href="reports.html" class="nav-link">📄 Detailed Reports</a>
+            <a href="money-history.html" class="nav-link">📜 Money money IN/OUT history</a>
+            <a href="gas_hub.html" class="nav-link active">🔥 Gas Hub</a>
+            <a href="inventory.html" class="nav-link">➕ Add Stock</a>
+            <a href="low_stock.html" class="nav-link" id="low-stock-nav">⚠️ Low Stock Alerts</a>
+            <a href="price_audits.html" class="nav-link">📉 item sold under price</a>
+            <a href="audit_trail.html" class="nav-link ">🔍 what cashier edited</a>
+            <a href="sales_editor.html" class="nav-link">✏️ Edit Stock/Sales</a>
+            <a href="sales-history.html" class="nav-link">📜 Sales History</a>
+            <a href="suppliers.html" class="nav-link">🤝 Suppliers</a>
+            <a href="admin-debtors.html" class="nav-link">👥 Debtors</a>
+            <a href="Performance.html" class="nav-link">📊 Performance</a>
             <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.05);">
                 <a href="#" onclick="handleLogout()" class="nav-link" style="color: var(--danger);">🚪 Logout</a>
             </div>
@@ -172,7 +181,7 @@
         <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 35px; flex-wrap: wrap; gap: 15px;">
             <div>
                 <h1 style="margin:0; font-weight: 800; letter-spacing: -1.5px; font-size: 2.2rem;">Gas Inventory Hub</h1>
-                <p style="color: var(--text-dim); margin-top: 5px; font-weight: 500;">Manage brands, weights, and cylinder health.</p>
+                <p style="color: var(--text-dim); margin-top: 5px; font-weight: 500;">Manage brands, prices, and supplier links.</p>
             </div>
             <div id="sync-status" style="background: #dcfce7; color: #166534; padding: 10px 20px; border-radius: 50px; font-size: 0.75rem; font-weight: 800; display: flex; align-items: center; gap: 8px; border: 1px solid #bbf7d0;">
                 <span style="width: 10px; height: 10px; background: #22c55e; border-radius: 50%; display: inline-block;"></span> LIVE DATA SYNC
@@ -186,8 +195,6 @@
             <div class="stat-card"><small style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; font-weight: 800;">Total Empties</small><div id="stat-total-empties" style="color: var(--orange);">0 Units</div></div>
         </div>
 
-        
-
         <div class="charts-grid">
             <div class="chart-container"><canvas id="brandChart"></canvas></div>
             <div class="chart-container"><canvas id="weightChart"></canvas></div>
@@ -196,10 +203,13 @@
         <div style="background: white; padding: 30px; border-radius: 24px; margin-bottom: 30px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);">
             <h3 style="margin-top:0; font-size: 1.1rem; font-weight: 800; letter-spacing: -0.5px;">Register New Gas Brand</h3>
             <div class="registration-form">
-                <input type="text" id="add-name" placeholder="Brand (e.g. K-Gas)">
-                <input type="text" id="add-weight" placeholder="Weight (e.g. 13kg)">
+                <input type="text" id="add-name" placeholder="Brand Name">
+                <input type="text" id="add-weight" placeholder="Weight (e.g. 6kg)">
+                <select id="add-supplier-id"></select>
                 <input type="number" id="add-cost" placeholder="Refill Cost">
-                <input type="number" id="add-sell" placeholder="Retail Price">
+                <input type="number" id="add-sell" placeholder="Selling Price">
+                <input type="number" id="add-min-sell" placeholder="Min Sell Price">
+                <input type="number" id="add-cyl-price" placeholder="Shell Price">
                 <input type="number" id="add-qty" placeholder="Initial Full Stock">
                 <button onclick="addNewProduct()" style="background: var(--admin-dark); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 800; padding: 14px; transition: transform 0.1s;">REGISTER BRAND</button>
             </div>
@@ -241,9 +251,19 @@
 
         async function init() {
             await loadAdminData();
+            await loadSuppliers();
             supabase.channel('gas-sync')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => loadAdminData())
                 .subscribe();
+        }
+
+        async function loadSuppliers() {
+            const { data } = await supabase.from('suppliers').select('id, name').order('name');
+            if (data) {
+                document.getElementById('add-supplier-id').innerHTML = 
+                    `<option value="">Select Supplier</option>` + 
+                    data.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            }
         }
 
         async function loadAdminData() {
@@ -272,9 +292,9 @@
         function calculateStats(products) {
             let cost = 0, rev = 0, full = 0, emp = 0;
             products.forEach(p => {
-                cost += (p.stock_quantity * p.cost_price);
-                rev += (p.stock_quantity * p.selling_price);
-                full += p.stock_quantity;
+                cost += (p.stock_quantity * (p.cost_price || 0));
+                rev += (p.stock_quantity * (p.selling_price || 0));
+                full += (p.stock_quantity || 0);
                 emp += (p.empty_quantity || 0);
             });
             document.getElementById('stat-total-cost').innerText = `Ksh ${cost.toLocaleString()}`;
@@ -293,7 +313,7 @@
                         </div>
                         <div style="text-align:right;">
                             <b style="color:var(--primary); font-size:1rem; display:block;">Ksh ${p.selling_price}</b>
-                            <small style="color:var(--success); font-weight:700;">Margin: Ksh ${p.selling_price - p.cost_price}</small>
+                            <small style="color:var(--success); font-weight:700;">Margin: Ksh ${p.selling_price - (p.cost_price || 0)}</small>
                         </div>
                     </div>
                     <div class="stock-row">
@@ -306,10 +326,15 @@
                             <small style="display:block; font-size:0.6rem; font-weight:800; color:var(--text-dim); text-transform:uppercase; margin-top:4px;">Empty Shells</small>
                         </div>
                         <div style="text-align:center; flex:1;">
-                            <b style="font-size:1.2rem; color:var(--text-dim);">${p.cost_price}</b>
-                            <small style="display:block; font-size:0.6rem; font-weight:800; color:var(--text-dim); text-transform:uppercase; margin-top:4px;">Cost Refill</small>
+                            <b style="font-size:1.2rem; color:var(--text-dim);">${p.cost_price || 0}</b>
+                            <small style="display:block; font-size:0.6rem; font-weight:800; color:var(--text-dim); text-transform:uppercase; margin-top:4px;">Refill Cost</small>
                         </div>
                     </div>
+
+                    <a href="inventory.html?item=${encodeURIComponent(p.name)}" class="btn-buy-link">
+                        📦 Cashier: Buy Complete Gas From Supplier
+                    </a>
+
                     <div style="margin-top:18px; display:flex; justify-content:flex-end;">
                          <button onclick="deleteProduct('${p.id}')" style="background:none; border:none; color:var(--danger); font-size:0.75rem; cursor:pointer; font-weight:800; padding:5px;">🗑️ DELETE BRAND</button>
                     </div>
@@ -331,48 +356,73 @@
         function updateCharts(products) {
             const brandNames = products.map(p => p.name);
             const brandQtys = products.map(p => p.stock_quantity);
-            const weightData = {};
-            products.forEach(p => weightData[p.weight_category] = (weightData[p.weight_category] || 0) + p.stock_quantity);
+            
+            // Logic to merge weights (13kg vs 13 kg) and filter for specific categories only
+            const weightData = { '6kg': 0, '13kg': 0, '50kg': 0 };
+            const allowedWeights = ['6kg', '13kg', '50kg'];
+
+            products.forEach(p => {
+                // Remove spaces and lowercase for comparison
+                const rawWeight = (p.weight_category || "").toLowerCase().replace(/\s/g, "");
+                
+                if (allowedWeights.includes(rawWeight)) {
+                    weightData[rawWeight] += p.stock_quantity;
+                }
+            });
 
             if (brandChartInstance) brandChartInstance.destroy();
             brandChartInstance = new Chart(document.getElementById('brandChart'), {
                 type: 'bar',
                 data: { labels: brandNames, datasets: [{ label: 'Full Cylinders', data: brandQtys, backgroundColor: '#6366f1', borderRadius: 8 }] },
-                options: { maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'Stock by Brand', font: { weight: 'bold' } } } }
+                options: { maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'Stock by Brand', font: { weight: 'bold' } } }, scales: { y: { beginAtZero: true } } }
             });
 
             if (weightChartInstance) weightChartInstance.destroy();
             weightChartInstance = new Chart(document.getElementById('weightChart'), {
                 type: 'doughnut',
-                data: { labels: Object.keys(weightData), datasets: [{ data: Object.values(weightData), backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444'], borderWidth: 0 }] },
-                options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, usePointStyle: true } }, title: { display: true, text: 'Stock by Weight', font: { weight: 'bold' } } }, cutout: '70%' }
+                data: { 
+                    labels: Object.keys(weightData).map(w => w.toUpperCase()), 
+                    datasets: [{ 
+                        data: Object.values(weightData), 
+                        backgroundColor: ['#6366f1', '#10b981', '#f59e0b'], 
+                        borderWidth: 0 
+                    }] 
+                },
+                options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, usePointStyle: true } }, title: { display: true, text: 'Weight Comparison (6, 13, 50kg)', font: { weight: 'bold' } } }, cutout: '70%' }
             });
         }
 
         window.addNewProduct = async () => {
-            const btn = event.target;
             const name = document.getElementById('add-name').value;
             const weight = document.getElementById('add-weight').value;
+            const supplier = document.getElementById('add-supplier-id').value;
             const cost = parseFloat(document.getElementById('add-cost').value);
             const sell = parseFloat(document.getElementById('add-sell').value);
+            const minSell = parseFloat(document.getElementById('add-min-sell').value);
+            const cylPrice = parseFloat(document.getElementById('add-cyl-price').value);
             const qty = parseInt(document.getElementById('add-qty').value) || 0;
 
-            if(!name || !weight || isNaN(cost) || isNaN(sell)) return alert("Please fill all brand details.");
-
-            btn.style.opacity = '0.5';
-            btn.innerText = 'SAVING...';
+            if(!name || !weight || isNaN(cost) || isNaN(sell)) return alert("Please fill Brand, Weight, Cost and Selling Price.");
 
             const { error } = await supabase.from('products').insert([{
-                name, weight_category: weight, cost_price: cost, selling_price: sell, stock_quantity: qty, category: 'Gas', empty_quantity: 0
+                name, 
+                weight_category: weight, 
+                supplier_id: supplier || null,
+                cost_price: cost, 
+                selling_price: sell, 
+                min_selling_price: minSell || sell,
+                cylinder_price: cylPrice || 0,
+                stock_quantity: qty, 
+                category: 'Gas', 
+                empty_quantity: 0
             }]);
 
             if (error) alert(error.message);
             else {
                 loadAdminData();
-                ['add-name', 'add-weight', 'add-cost', 'add-sell', 'add-qty'].forEach(id => document.getElementById(id).value = '');
+                ['add-name', 'add-weight', 'add-cost', 'add-sell', 'add-min-sell', 'add-cyl-price', 'add-qty'].forEach(id => document.getElementById(id).value = '');
+                alert("New Brand Registered Successfully!");
             }
-            btn.style.opacity = '1';
-            btn.innerText = 'REGISTER BRAND';
         };
 
         window.deleteProduct = async (id) => {
