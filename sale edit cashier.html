@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Inventory Control | JEPE COMPANY</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --primary: #4f46e5; --primary-light: #eef2ff; --bg: #f8fafc;
+            --white: #ffffff; --text: #0f172a; --text-dim: #64748b;
+            --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
+            --border: #e2e8f0; --sidebar-width: 260px;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); margin: 0; color: var(--text); display: flex; min-height: 100vh; }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            position: fixed; left: 0; top: 0; width: var(--sidebar-width); height: 100vh;
+            background: var(--white); z-index: 2000; padding: 25px; display: flex;
+            flex-direction: column; border-right: 1px solid var(--border);
+        }
+        .sidebar h2 { color: var(--primary); font-weight: 800; font-size: 1.3rem; margin-bottom: 30px; text-transform: uppercase; }
+        .nav-link {
+            display: flex; align-items: center; padding: 12px 15px; color: var(--text-dim);
+            text-decoration: none; font-weight: 600; border-radius: 12px; margin-bottom: 5px;
+            transition: 0.2s; font-size: 0.85rem; cursor: pointer;
+        }
+        .nav-link:hover { background: var(--primary-light); color: var(--primary); }
+        .nav-link.active { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2); }
+
+        /* --- CONTENT --- */
+        .main-wrapper { flex: 1; margin-left: var(--sidebar-width); padding: 30px; width: calc(100% - var(--sidebar-width)); }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .card { background: var(--white); padding: 25px; border-radius: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border: 1px solid var(--border); }
+
+        /* --- SEARCH & TABLE --- */
+        #searchBar { width: 100%; padding: 14px 20px; border-radius: 14px; border: 1px solid var(--border); margin-bottom: 20px; font-size: 0.9rem; background: var(--bg); }
+        .table-container { width: 100%; overflow-x: auto; border-radius: 12px; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        th { text-align: left; padding: 15px; background: #f1f5f9; color: var(--text-dim); font-size: 0.7rem; text-transform: uppercase; }
+        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; }
+        
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; }
+        .badge-gas { background: #fee2e2; color: #b91c1c; }
+        .badge-spare { background: #dcfce7; color: #15803d; }
+
+        .btn { padding: 10px 18px; border-radius: 10px; border: none; cursor: pointer; font-weight: 700; transition: 0.2s; }
+        .btn-add { background: var(--primary); color: white; }
+        .btn-edit { background: var(--primary-light); color: var(--primary); }
+        .btn-delete { background: #fff1f2; color: var(--danger); }
+
+        /* --- MODAL --- */
+        #productModal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 3000; padding: 20px; }
+        .modal-content { background: white; padding: 30px; border-radius: 24px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+        .grid-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .full { grid-column: span 2; }
+        input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; }
+        label { font-size: 0.75rem; color: var(--text-dim); font-weight: 700; margin-top: 10px; display: block; }
+
+        @media (max-width: 1024px) {
+            .sidebar { left: -260px; }
+            .main-wrapper { margin-left: 0; width: 100%; }
+            .sidebar.active { left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar" id="sidebar">
+    <h2 id="role-title">JEPE POS</h2>
+    <nav id="nav-container">
+        </nav>
+    <div style="margin-top: auto;">
+        <a onclick="handleLogout()" class="nav-link" style="color: var(--danger);">🚪 Logout</a>
+    </div>
+</div>
+
+<div class="main-wrapper">
+    <div class="header-flex">
+        <div>
+            <h1 style="margin:0; font-size: 1.5rem; font-weight: 800;">Inventory Control</h1>
+            <p id="sub-title" style="color: var(--text-dim); font-size: 0.9rem;">Manage Stock Levels and Pricing.</p>
+        </div>
+        <button class="btn btn-add" id="add-btn" onclick="openModal()">+ Add New Product</button>
+    </div>
+
+    <div class="card">
+        <input type="text" id="searchBar" placeholder="Search products, categories, or suppliers...">
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product Details</th>
+                        <th>Supplier</th>
+                        <th>Stock (Full/Empty)</th>
+                        <th>Price (Cost/Sell)</th>
+                        <th>Type/Weight</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="product-list-body"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="productModal">
+    <div class="modal-content">
+        <h2 id="modalTitle" style="margin:0 0 20px 0;">Product Details</h2>
+        <input type="hidden" id="prod-id">
+        <div class="grid-form">
+            <div class="full"><label>Product Name</label><input type="text" id="prod-name"></div>
+            <div class="full"><label>Supplier</label><select id="prod-supplier"></select></div>
+            <div><label>Category</label>
+                <select id="prod-category" onchange="toggleFields()">
+                    <option value="Spare Part">Spare Part</option>
+                    <option value="Gas">Gas</option>
+                    <option value="Motorbike">Motorbike</option>
+                </select>
+            </div>
+            <div id="type-container"><label>Part Type</label>
+                <select id="prod-type"><option value="Original">Original</option><option value="Copy">Copy</option></select>
+            </div>
+            <div id="weight-container" style="display:none;"><label>Weight (Gas)</label><input type="text" id="prod-weight"></div>
+            <div><label>Cost Price</label><input type="number" id="prod-cost"></div>
+            <div><label>Selling Price</label><input type="number" id="prod-sell"></div>
+            <div><label>Stock Qty</label><input type="number" id="prod-stock"></div>
+            <div id="empty-container" style="display:none;"><label>Empty Qty</label><input type="number" id="prod-empty"></div>
+        </div>
+        <div style="display:flex; gap:12px; margin-top:25px;">
+            <button class="btn btn-add" style="flex:2;" onclick="saveProduct()">Save Changes</button>
+            <button class="btn" style="flex:1; background:#f1f5f9;" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { supabase } from './auth.js';
+    let allProducts = [];
+
+    async function checkRoleAndInit() {
+        // 1. Get User Data
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { window.location.href = 'index.html'; return; }
+
+        // 2. Determine Role
+        const isAdmin = user.email.includes('admin');
+        document.getElementById('role-title').innerText = isAdmin ? "JEPE ADMIN" : "JEPE CASHIER";
+        
+        // 3. Render Sidebar based on role
+        const nav = document.getElementById('nav-container');
+        if (isAdmin) {
+            nav.innerHTML = `
+                <a href="admin.html" class="nav-link">📊 Dashboard</a>
+                <a href="inventory.html" class="nav-link">📦 Inventory</a>
+                <a href="sales_editor.html" class="nav-link active">✏️ Edit Stock</a>
+                <a href="sales-history.html" class="nav-link">📜 Sales History</a>
+            `;
+        } else {
+            // Cashier Links
+            nav.innerHTML = `
+                <a href="cashier.html" class="nav-link">📊 Dashboard</a>
+                <a href="cashiergashub.html" class="nav-link">⛽ Gas Hub</a>
+                <a href="pos.html" class="nav-link">🛒 POS System</a>
+                <a href="sales_editor.html" class="nav-link active">✏️ Inventory List</a>
+                <a href="sales_reports.html" class="nav-link">📜 My Sales</a>
+            `;
+            // Optional: Hide "Add New Product" for cashiers if you want
+            // document.getElementById('add-btn').style.display = 'none';
+        }
+
+        // 4. Initialize Data
+        const { data: sups } = await supabase.from('suppliers').select('id, name').order('name');
+        document.getElementById('prod-supplier').innerHTML = '<option value="">-- No Supplier --</option>' + 
+            sups.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        
+        await fetchProducts();
+    }
+
+    async function fetchProducts() {
+        const { data } = await supabase.from('products').select('*, suppliers(name)').order('name');
+        allProducts = data || [];
+        renderTable(allProducts);
+    }
+
+    window.toggleFields = () => {
+        const cat = document.getElementById('prod-category').value;
+        document.getElementById('type-container').style.display = cat === 'Gas' ? 'none' : 'block';
+        document.getElementById('weight-container').style.display = cat === 'Gas' ? 'block' : 'none';
+        document.getElementById('empty-container').style.display = cat === 'Gas' ? 'block' : 'none';
+    };
+
+    function renderTable(data) {
+        document.getElementById('product-list-body').innerHTML = data.map(p => `
+            <tr>
+                <td><div style="font-weight:700;">${p.name}</div><small>${p.category}</small></td>
+                <td><small>${p.suppliers?.name || '---'}</small></td>
+                <td><b>${p.stock_quantity}</b> Full ${p.category==='Gas' ? `<br><small>${p.empty_quantity||0} Empty</small>` : ''}</td>
+                <td><small>C: ${p.cost_price}</small><br><b style="color:var(--primary)">S: ${p.selling_price}</b></td>
+                <td><span class="badge ${p.category==='Gas'?'badge-gas':'badge-spare'}">${p.category==='Gas'?p.weight_category:p.part_type}</span></td>
+                <td>
+                    <button class="btn btn-edit" onclick="editProduct('${p.id}')">Edit</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    window.openModal = () => {
+        document.getElementById('prod-id').value = "";
+        document.getElementById('productModal').style.display = "flex";
+        toggleFields();
+    };
+
+    window.closeModal = () => document.getElementById('productModal').style.display = "none";
+
+    window.editProduct = (id) => {
+        const p = allProducts.find(x => x.id === id);
+        document.getElementById('prod-id').value = p.id;
+        document.getElementById('prod-name').value = p.name;
+        document.getElementById('prod-category').value = p.category;
+        document.getElementById('prod-stock').value = p.stock_quantity;
+        document.getElementById('prod-cost').value = p.cost_price;
+        document.getElementById('prod-sell').value = p.selling_price;
+        document.getElementById('productModal').style.display = "flex";
+        toggleFields();
+    };
+
+    window.saveProduct = async () => {
+        const id = document.getElementById('prod-id').value;
+        const data = {
+            name: document.getElementById('prod-name').value,
+            category: document.getElementById('prod-category').value,
+            stock_quantity: parseInt(document.getElementById('prod-stock').value),
+            cost_price: parseFloat(document.getElementById('prod-cost').value),
+            selling_price: parseFloat(document.getElementById('prod-sell').value)
+        };
+        const { error } = id ? await supabase.from('products').update(data).eq('id', id) : await supabase.from('products').insert([data]);
+        if (error) alert(error.message); else { closeModal(); fetchProducts(); }
+    };
+
+    window.handleLogout = async () => {
+        await supabase.auth.signOut();
+        window.location.replace('index.html'); // Use replace to prevent back-button issues
+    };
+
+    document.getElementById('searchBar').oninput = (e) => {
+        const term = e.target.value.toLowerCase();
+        renderTable(allProducts.filter(p => p.name.toLowerCase().includes(term) || p.category.toLowerCase().includes(term)));
+    };
+
+    checkRoleAndInit();
+</script>
+</body>
+</html>
