@@ -339,7 +339,6 @@
     let historyLimit = 10;
     let allShifts = [];
     let currentKcbSalesTotal = 0;
-    let supplierPaymentsTotal = 0; // New variable to track supplier costs
 
     window.toggleFullMenu = () => {
         const menu = document.getElementById('full-menu');
@@ -369,6 +368,7 @@
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return window.location.href = 'index.html';
 
+        // Optimized: Concurrent fetching
         const [prodRes, shiftRes] = await Promise.all([
             supabase.from('products').select('*'),
             supabase.from('daily_shifts').select('*').eq('status', 'Open').maybeSingle()
@@ -442,6 +442,7 @@
 
         if (qty > selectedItem.stock_quantity) return alert("Insufficient stock!");
 
+        // Prevent double submit
         btn.disabled = true;
         btn.innerText = "RECORDING...";
 
@@ -469,11 +470,13 @@
                 const dName = prompt("Customer Name:");
                 if(dName) await supabase.from('debtors').insert([{ customer_name: dName, amount_owed: total, sale_id: sData[0].id }]);
             }
+            // Update stock locally and remotely
             await supabase.from('products').update({ 
                 stock_quantity: selectedItem.stock_quantity - qty,
                 empty_quantity: selectedItem.category === 'Gas' ? (selectedItem.empty_quantity || 0) + qty : selectedItem.empty_quantity
             }).eq('id', selectedItem.id);
             
+            // Fast UI update instead of reload
             document.getElementById('sale-form').reset();
             document.getElementById('hint-stock').style.display = 'none';
             document.getElementById('hint-min').style.display = 'none';
@@ -487,35 +490,20 @@
     };
 
     async function loadShiftData() {
-        // Updated to fetch supplier payments recorded during the shift time range
-        const [salesRes, transRes, supPayRes] = await Promise.all([
+        const [salesRes, transRes] = await Promise.all([
             supabase.from('sales').select('*').eq('shift_id', currentShift.id).order('created_at', {ascending:false}),
-            supabase.from('cash_transactions').select('*').eq('shift_id', currentShift.id).order('created_at', {ascending:false}),
-            supabase.from('supplier_payments').select('*, suppliers(name)').gte('payment_date', currentShift.start_time)
+            supabase.from('cash_transactions').select('*').eq('shift_id', currentShift.id).order('created_at', {ascending:false})
         ]);
 
         const sales = salesRes.data || [];
         const trans = transRes.data || [];
-        const supPayments = supPayRes.data || [];
 
         currentKcbSalesTotal = sales.filter(s => s.payment_method === 'KCB Paybill').reduce((a, b) => a + b.total_amount, 0);
-        
-        // Sum all supplier payments made from "Shop Cash"
-        supplierPaymentsTotal = supPayments
-            .filter(p => p.payment_method === 'Shop Cash')
-            .reduce((a, b) => a + b.amount_paid, 0);
-
         document.getElementById('live-kcb-box').innerText = currentKcbSalesTotal.toLocaleString();
         document.getElementById('c-bank').value = currentKcbSalesTotal;
 
         document.getElementById('live-sales-body').innerHTML = sales.map(s => `<tr><td data-label="Time">${new Date(s.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Item"><b>${s.item_name}</b></td><td data-label="Qty">${s.quantity}</td><td data-label="Total">Ksh ${s.total_amount.toLocaleString()}</td><td data-label="Method">${s.payment_method}</td></tr>`).join('');
-        
-        // Merge cash_transactions and supplier_payments for the live view
-        let combinedTransHTML = trans.map(t => `<tr><td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Reason">${t.description}</td><td data-label="Amt">Ksh ${t.amount.toLocaleString()}</td><td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">${t.type}</td><td data-label="Wallet">${t.category}</td></tr>`).join('');
-        
-        combinedTransHTML += supPayments.map(p => `<tr><td data-label="Time">${new Date(p.payment_date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Reason">Paid: ${p.suppliers?.name}</td><td data-label="Amt">Ksh ${p.amount_paid.toLocaleString()}</td><td data-label="Type" class="text-danger">Money Out</td><td data-label="Wallet">${p.payment_method}</td></tr>`).join('');
-        
-        document.getElementById('live-trans-body').innerHTML = combinedTransHTML;
+        document.getElementById('live-trans-body').innerHTML = trans.map(t => `<tr><td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Reason">${t.description}</td><td data-label="Amt">Ksh ${t.amount.toLocaleString()}</td><td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">${t.type}</td><td data-label="Wallet">${t.category}</td></tr>`).join('');
     }
 
     document.getElementById('confirm-open').onclick = async function() {
@@ -544,13 +532,10 @@
         
         const totalSales = (sales || []).reduce((a,b) => a + b.total_amount, 0);
         const moneyIn = (trans || []).filter(t => t.type === 'Money In').reduce((a,b) => a + b.amount, 0);
-        
-        // Calculation Logic: Includes standard Money Out + Supplier Payments from Shop Cash
-        const standardMoneyOut = (trans || []).filter(t => t.type === 'Money Out').reduce((a,b) => a + b.amount, 0);
-        const totalMoneyOut = standardMoneyOut + supplierPaymentsTotal;
+        const moneyOut = (trans || []).filter(t => t.type === 'Money Out').reduce((a,b) => a + b.amount, 0);
 
         const opTotal = currentShift.open_cash + currentShift.open_mpesa + currentShift.open_kcb + currentShift.open_equity;
-        const expected = (opTotal + totalSales + moneyIn) - totalMoneyOut;
+        const expected = (opTotal + totalSales + moneyIn) - moneyOut;
         const actual = clM + clK + clE + clB + clC;
         const variance = actual - expected;
 
