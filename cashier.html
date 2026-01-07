@@ -20,7 +20,6 @@
             --text-dim: #64748b;
             --border: #e2e8f0; 
             --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            /* NEW DEEP BLUE COLOR */
             --deep-blue: #1e3a8a;
         }
 
@@ -131,7 +130,6 @@
         .float-list li b { color: var(--text-main); }
         .total-cell { font-weight: 800; color: var(--primary); border-top: 2px solid var(--border); margin-top: 5px; padding-top: 5px; font-size: 0.85rem; display: flex; justify-content: space-between; }
         
-        /* UPDATED SWINGING MENU FAB */
         .menu-fab { 
             position: fixed; 
             bottom: 25px; 
@@ -161,7 +159,6 @@
             80% { transform: rotate(-10deg); }
         }
 
-        /* GUIDING HAND STYLES */
         .guide-hand {
             position: fixed;
             bottom: 105px;
@@ -207,22 +204,24 @@
     <div style="position:absolute; top:30px; right:30px; color:white; font-size:2rem; cursor:pointer;" onclick="toggleFullMenu()">✕</div>
     <h2 style="color:white; margin-bottom: 30px; font-weight: 800;">Navigation Menu</h2>
     <div class="menu-grid">
-        <a href="cashier.html" class="menu-item active">📊 Dashboard</a>
-        <a href="cashiergashub.html" class="menu-item"><i>⛽</i> Gas Hub</a>
-        <a href="low-stock-cashier.html" class="menu-item"><i>⚠️</i> Low Stock</a>
-        <a href="debtors.html" class="menu-item"><i>👥</i> Debtors</a>
-        <a href="supplierscashier.html" class="menu-item"><i>🤝</i> Suppliers</a>
-        <a href="cashier_inventory.html" class="menu-item"><i>🤝</i> 🛒 Add Items</a>
-        <a href="moneyinout.html" class="menu-item"><i>💸</i> Money IN/OUT History</a>
-        <a href="shift history cashier.html" class="menu-item"><i>⏳</i> Shift History</a>
-        <a href="sales_reports.html" class="menu-item"><i>📊</i> Sales History</a>
-        <a href="pos.html" class="menu-item"><i>🛒</i>View Stock items </a>
-        <a href="gas_delivery.html" class="menu-item"><i>🏍</i> Delivery Services</a>
-        <a href="cashier_report.html" class="menu-item"><i>🏍</i> Todays report</a>
-        <a href="#" onclick="logoutUser()" class="menu-item" style="background: var(--danger); grid-column: span 2;"><i>🚪</i> Log Out</a>
+        <a href="cashier.html" class="menu-item">📊 Dashboard</a>
+        <a href="cashiergashub.html" class="menu-item">⛽ Gas Hub</a>
+        <a href="low-stock-cashier.html" class="menu-item">⚠️ Low Stock</a>
+        <a href="debtors.html" class="menu-item">👥 Debtors</a>
+        <a href="supplierscashier.html" class="menu-item">🤝 Suppliers</a>
+        <a href="cashier_inventory.html" class="menu-item">🛒 Add Items</a>
+        <a href="moneyinout.html" class="menu-item">💸 Transactions</a>
+        <a href="shift history cashier.html" class="menu-item">⏳ Shift History</a>
+        <a href="sales_reports.html" class="menu-item">📈 Sales History</a>
+        <a href="pos.html" class="menu-item">🛒 View Stock</a>
+        <a href="gas_delivery.html" class="menu-item">🏍 Delivery</a>
+        <a href="cashier_report.html" class="menu-item">📝 Today's Report</a>
+        <a href="#" onclick="logoutUser()" class="menu-item" style="background: var(--danger); grid-column: span 2;">🚪 Log Out</a>
     </div>
 </div>
-<div id="congrats-banner" class="congrats-msg">🎉 Well done SYENGO! Your last shift was perfectly balanced!  ✔ </div>
+
+<div id="congrats-banner" class="congrats-msg">🎉 Well done! Your last shift was perfectly balanced! ✔ </div>
+
 <div class="container">
     <header>
         <div class="logo">JEPE POS <span>/ Terminal</span></div>
@@ -292,7 +291,7 @@
             <select id="exp-type" style="margin-bottom:12px;"><option value="Money Out">Money Out</option><option value="Money In">Money In</option></select>
             <input type="text" id="exp-desc" placeholder="Reason (e.g. Loading Fee, Lunch)" style="width:100%; margin-bottom:12px;">
             <select id="exp-method" style="width:100%; margin-bottom:15px;">
-                <option value="Cash">Cash</option><option value="Mpesa">Mpesa</option><option value="KCB">KCB Paybill</option><option value="Equity">Equity</option><option value="KCB Bank">KCB Bank</option>
+                <option value="Cash">Cash</option><option value="Mpesa">Mpesa</option><option value="KCB">KCB Float</option><option value="Equity">Equity Float</option>
             </select>
             <button id="record-expense-btn" class="btn btn-sync" style="width: 100%;">RECORD MONEY</button>
         </div>
@@ -326,14 +325,10 @@
     <div class="modal">
         <h3>🚀 Start Day</h3>
         <div class="grid-inputs" style="grid-template-columns: 1fr 1fr;">
+            <div class="input-group"><label>Actual Cash</label><input type="number" id="o-cash" value="0"></div>
             <div class="input-group"><label>Mpesa Float</label><input type="number" id="o-mpesa" value="0"></div>
             <div class="input-group"><label>KCB Float</label><input type="number" id="o-kcb" value="0"></div>
             <div class="input-group"><label>Equity Float</label><input type="number" id="o-equity" value="0"></div>
-            <div class="input-group">
-                <label>KCB Paybill (Sales)</label>
-                <input type="number" id="o-bank" value="0" disabled style="background:#f1f5f9; cursor:not-allowed;">
-            </div>
-            <div class="input-group" style="grid-column: span 2;"><label>Actual Cash</label><input type="number" id="o-cash" value="0"></div>
         </div>
         <button class="btn btn-primary" style="margin-top:20px; width:100%" id="confirm-open">START DAY</button>
     </div>
@@ -369,10 +364,7 @@
     window.toggleFullMenu = () => {
         const menu = document.getElementById('full-menu');
         const hand = document.getElementById('onboardingHand');
-        
         menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
-        
-        // Hide the pointing hand when menu is clicked
         if (hand) hand.style.display = 'none';
     };
 
@@ -455,8 +447,8 @@
 
         let discReason = "";
         if (price < (selectedItem.min_price || 0)) {
-            discReason = prompt(`Price (Ksh ${price}) below Min Price (Ksh ${selectedItem.min_price}). Reason:`);
-            if (!discReason) return alert("Sale cancelled. Reason required.");
+            discReason = prompt(`Price below Min. Reason:`);
+            if (!discReason) return;
         }
 
         if (qty > selectedItem.stock_quantity) return alert("Insufficient stock!");
@@ -465,37 +457,17 @@
         const baseSale = {
             shift_id: currentShift.id,
             product_id: selectedItem.id,
-            quantity: qty,
-            unit_price: price,
-            cost_price: selectedItem.cost_price || 0,
-            part_type: selectedItem.part_type || 'N/A',
-            min_price_reason: discReason,
-            discount_reason: discReason
+            quantity: qty, unit_price: price, cost_price: selectedItem.cost_price || 0,
+            part_type: selectedItem.part_type || 'N/A', discount_reason: discReason
         };
 
         if (method === 'Split') {
             const cashAmt = parseFloat(document.getElementById('split-cash').value || 0);
             const onlineAmt = total - cashAmt;
-            salesToInsert.push({
-                ...baseSale,
-                item_name: `${formatItemName(selectedItem)} (Split-Cash)`,
-                total_amount: cashAmt,
-                payment_method: 'Cash'
-            });
-            salesToInsert.push({
-                ...baseSale,
-                item_name: `${formatItemName(selectedItem)} (Split-Online)`,
-                quantity: 0, unit_price: 0, total_amount: onlineAmt,
-                payment_method: 'KCB Paybill',
-                discount_reason: "Split Balance"
-            });
+            salesToInsert.push({ ...baseSale, item_name: `${formatItemName(selectedItem)} (Split-C)`, total_amount: cashAmt, payment_method: 'Cash' });
+            salesToInsert.push({ ...baseSale, item_name: `${formatItemName(selectedItem)} (Split-O)`, quantity: 0, total_amount: onlineAmt, payment_method: 'KCB Paybill' });
         } else {
-            salesToInsert.push({
-                ...baseSale,
-                item_name: formatItemName(selectedItem),
-                total_amount: total,
-                payment_method: method
-            });
+            salesToInsert.push({ ...baseSale, item_name: formatItemName(selectedItem), total_amount: total, payment_method: method });
         }
 
         const { data: sData, error } = await supabase.from('sales').insert(salesToInsert).select();
@@ -526,11 +498,10 @@
 
     document.getElementById('confirm-open').onclick = async () => {
         await supabase.from('daily_shifts').insert([{
+            open_cash: parseFloat(document.getElementById('o-cash').value || 0),
             open_mpesa: parseFloat(document.getElementById('o-mpesa').value || 0),
             open_kcb: parseFloat(document.getElementById('o-kcb').value || 0),
             open_equity: parseFloat(document.getElementById('o-equity').value || 0),
-            open_kcb_bank: 0,
-            open_cash: parseFloat(document.getElementById('o-cash').value || 0),
             status: 'Open', start_time: new Date().toISOString()
         }]);
         location.reload();
@@ -549,7 +520,7 @@
         const moneyIn = (trans || []).filter(t => t.type === 'Money In').reduce((a,b) => a + b.amount, 0);
         const moneyOut = (trans || []).filter(t => t.type === 'Money Out').reduce((a,b) => a + b.amount, 0);
 
-        const opTotal = currentShift.open_mpesa + currentShift.open_kcb + currentShift.open_equity + (currentShift.open_kcb_bank || 0) + currentShift.open_cash;
+        const opTotal = currentShift.open_cash + currentShift.open_mpesa + currentShift.open_kcb + currentShift.open_equity;
         const expected = (opTotal + totalSales + moneyIn) - moneyOut;
         const actual = clM + clK + clE + clB + clC;
         const variance = actual - expected;
@@ -559,8 +530,7 @@
 
         await supabase.from('daily_shifts').update({
             close_mpesa: clM, close_kcb: clK, close_equity: clE, close_kcb_bank: clB, close_cash: clC,
-            status: 'Closed', end_time: new Date().toISOString(), 
-            variance_note: note, system_expected_total: expected
+            status: 'Closed', end_time: new Date().toISOString(), variance_note: note, system_expected_total: expected
         }).eq('id', currentShift.id);
         location.reload();
     };
@@ -573,9 +543,8 @@
 
         const lastClosed = allShifts.find(s => s.status === 'Closed');
         if (lastClosed) {
-            const clT = (lastClosed.close_mpesa||0) + (lastClosed.close_kcb||0) + (lastClosed.close_equity||0) + (lastClosed.close_kcb_bank || 0) + (lastClosed.close_cash||0);
-            const varVal = clT - (lastClosed.system_expected_total || 0);
-            if (Math.abs(varVal) < 1) document.getElementById('congrats-banner').style.display = 'block';
+            const clT = (lastClosed.close_cash||0) + (lastClosed.close_mpesa||0) + (lastClosed.close_kcb||0) + (lastClosed.close_equity||0) + (lastClosed.close_kcb_bank || 0);
+            if (Math.abs(clT - (lastClosed.system_expected_total || 0)) < 1) document.getElementById('congrats-banner').style.display = 'block';
         }
         renderHistory(allShifts, transData, searchQuery);
     }
@@ -588,8 +557,8 @@
             const tIn = shiftTrans.filter(t => t.type === 'Money In').reduce((a, b) => a + b.amount, 0);
             const tOut = shiftTrans.filter(t => t.type === 'Money Out').reduce((a, b) => a + b.amount, 0);
             
-            const opTotal = h.open_mpesa + h.open_kcb + h.open_equity + (h.open_kcb_bank || 0) + h.open_cash;
-            const clTotal = (h.close_mpesa||0) + (h.close_kcb||0) + (h.close_equity||0) + (h.close_kcb_bank || 0) + (h.close_cash||0);
+            const opTotal = h.open_cash + h.open_mpesa + h.open_kcb + h.open_equity;
+            const clTotal = (h.close_cash||0) + (h.close_mpesa||0) + (h.close_kcb||0) + (h.close_equity||0) + (h.close_kcb_bank || 0);
             const varVal = h.status === 'Open' ? 0 : clTotal - (h.system_expected_total || opTotal);
             
             return `<tr>
@@ -609,7 +578,7 @@
                         <li><span>Cash:</span> <b>${(h.close_cash||0).toLocaleString()}</b></li>
                         <li><span>Mpesa:</span> <b>${(h.close_mpesa||0).toLocaleString()}</b></li>
                         <li><span>KCB Float:</span> <b>${(h.close_kcb||0).toLocaleString()}</b></li>
-                         <li><span>Equity Float:</span> <b>${(h.close_equity||0).toLocaleString()}</b></li>
+                        <li><span>Equity Float:</span> <b>${(h.close_equity||0).toLocaleString()}</b></li>
                         <li><span>KCB Paybill:</span> <b>${(h.close_kcb_bank||0).toLocaleString()}</b></li>
                     </ul>
                     <div class="total-cell"><span>Total Closing:</span> <b>${clTotal.toLocaleString()}</b></div>
@@ -624,7 +593,6 @@
 
     document.getElementById('history-search').oninput = (e) => loadHistory(e.target.value);
     document.getElementById('load-more-btn').onclick = () => { historyLimit += 10; loadHistory(); };
-    
     document.getElementById('record-expense-btn').onclick = async () => {
         const amt = parseFloat(document.getElementById('exp-amt').value);
         const desc = document.getElementById('exp-desc').value;
