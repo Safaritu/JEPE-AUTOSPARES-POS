@@ -50,7 +50,6 @@
         }
         .nav-link.active { background: var(--admin-accent); color: white; }
 
-        /* --- MAIN LAYOUT --- */
         .main-wrapper { width: 100%; }
         .mobile-header {
             background: var(--admin-dark); color: white; padding: 15px 20px;
@@ -60,7 +59,6 @@
 
         .container { padding: 20px; max-width: 1200px; margin: auto; }
 
-        /* --- STATS --- */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 25px; }
         .stat-card { 
             background: var(--white); padding: 20px; border-radius: 16px; 
@@ -70,17 +68,12 @@
         .stat-card h4 { margin: 0; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
         .stat-card p { margin: 8px 0 0; font-size: 1.4rem; font-weight: 800; }
 
-        /* --- CARDS & TABLES --- */
-        .card { 
-            background: var(--white); border-radius: 20px; border: 1px solid var(--border); 
-            padding: 24px; margin-bottom: 25px; 
-        }
+        .card { background: var(--white); border-radius: 20px; border: 1px solid var(--border); padding: 24px; margin-bottom: 25px; }
         .table-container { width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid #f1f5f9; }
         table { width: 100%; border-collapse: collapse; min-width: 700px; }
         th { text-align: left; padding: 14px; background: #f8fafc; font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); font-weight: 800; }
         td { padding: 14px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; }
 
-        /* --- BUTTONS --- */
         .btn { padding: 10px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; border: none; font-size: 0.75rem; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-add { background: var(--admin-accent); color: white; }
         .btn-pay { background: var(--orange); color: white; }
@@ -91,12 +84,12 @@
         .bg-debt { background: #fee2e2; color: #991b1b; }
         .bg-clear { background: #dcfce7; color: #166534; }
 
-        /* --- MODALS --- */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 3000; padding: 20px; }
-        .modal-content { background: white; padding: 30px; border-radius: 24px; width: 100%; max-width: 420px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
-        .modal label { font-size: 0.7rem; font-weight: 800; color: var(--text-dim); display: block; margin-top: 15px; margin-bottom: 5px; }
-        .modal input, .modal select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 12px; font-family: inherit; font-size: 1rem; outline: none; }
-
+        .modal-content { background: white; padding: 25px; border-radius: 24px; width: 100%; max-width: 480px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); overflow-y: auto; max-height: 90vh; }
+        .modal label { font-size: 0.65rem; font-weight: 800; color: var(--text-dim); display: block; margin-top: 12px; margin-bottom: 4px; text-transform: uppercase; }
+        .modal input, .modal select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 0.95rem; outline: none; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; z-index: 1500; }
         .overlay.active { display: block; }
         
@@ -111,21 +104,12 @@
 <div class="sidebar" id="sidebar">
     <div style="padding: 10px 0 30px 10px; font-weight: 800; font-size: 1.4rem; color:white;">JEPE ADMIN</div>
     <nav>
-   <a href="admin.html" class="nav-link">📊 Dashboard view</a>
-            <a href="admin.html" class="nav-link ">📊 Dashboard view</a>
+        <a href="admin.html" class="nav-link">📊 Dashboard</a>
         <a href="shift-history.html" class="nav-link">📋 Daily Shift Audit</a>
         <a href="reports.html" class="nav-link">📄 Detailed Reports</a>
-        <a href="money-history.html" class="nav-link">📜 Money money IN/OUT history</a>
-        <a href="gas_hub.html" class="nav-link">🔥 Gas Hub</a>
         <a href="inventory.html" class="nav-link">➕ Add Stock</a>
-         <a href="low_stock.html" class="nav-link" id="low-stock-nav">⚠️ Low Stock Alerts</a>
-         <a href="price_audits.html" class="nav-link">📉 item sold under price</a>
-        <a href="audit_trail.html" class="nav-link ">🔍 what cashier edited</a>
-        <a href="sales_editor.html" class="nav-link">✏️ Edit Stock/Sales</a>
-        <a href="sales-history.html" class="nav-link">📜 Sales History</a>
-         <a href="suppliers.html" class="nav-link active">🤝 Suppliers</a>
+        <a href="suppliers.html" class="nav-link active">🤝 Suppliers</a>
         <a href="admin-debtors.html" class="nav-link">👥 Debtors</a>
-       <a href="Monthly Performance Report.html" class="nav-link"><span>📄</span><small>Monthly Report</small></a>
     </nav>
     <div style="margin-top: auto;">
         <a onclick="handleLogout()" class="nav-link" style="color: #fb7185; cursor:pointer;">🚪 Logout</a>
@@ -190,19 +174,6 @@
             </div>
             <button class="btn btn-load" onclick="loadMoreOrders()">View More Deliveries</button>
         </div>
-
-        <div class="section-header"><h3>Payment History</h3></div>
-        <div class="card">
-            <div class="table-container">
-                <table id="paymentTable">
-                    <thead>
-                        <tr><th>Date</th><th>Supplier</th><th>Method</th><th>Paid Amount</th><th>Remaining</th></tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-            <button class="btn btn-load" onclick="loadMorePayments()">View More Payments</button>
-        </div>
     </div>
 </div>
 
@@ -240,22 +211,52 @@
 </div></div>
 
 <div id="orderModal" class="modal"><div class="modal-content">
-    <h3 style="margin:0">Receive Delivery</h3>
+    <h3 style="margin:0; color:var(--admin-accent);">📦 Receive Stock</h3>
     <input type="hidden" id="order-sup-id">
+    
     <label>SUPPLIER</label>
     <input type="text" id="order-sup-name" readonly style="background:#f1f5f9; font-weight:800;">
-    <label>WHAT WAS DELIVERED?</label>
-    <input type="text" id="order-items" placeholder="e.g., 50 Spark Plugs">
-    <label>TOTAL COST (KSH)</label>
-    <input type="number" id="order-cost" placeholder="0.00">
-    <button class="btn btn-order" onclick="saveOrder()" style="width:100%; padding:15px; margin-top:20px;">Record Stock Debt</button>
+    
+    <label>SELECT PRODUCT</label>
+    <input type="text" id="restock-search" list="productList" placeholder="Search inventory..." onchange="handleProductSelect(this.value)">
+    <datalist id="productList"></datalist>
+    <input type="hidden" id="selected-product-id">
+
+    <div class="grid-2">
+        <div>
+            <label>QUANTITY RECEIVED</label>
+            <input type="number" id="order-qty" placeholder="0" oninput="calculateOrderCost()">
+        </div>
+        <div>
+            <label>BUY PRICE (EACH)</label>
+            <input type="number" id="order-buy-price" placeholder="0.00" oninput="calculateOrderCost()">
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div>
+            <label>NEW SELLING PRICE</label>
+            <input type="number" id="order-sell-price" placeholder="0.00">
+        </div>
+        <div>
+            <label>MIN SELLING PRICE</label>
+            <input type="number" id="order-min-price" placeholder="0.00">
+        </div>
+    </div>
+
+    <div style="background: #f1f5f9; padding: 15px; border-radius: 12px; margin-top: 15px;">
+        <label>Total Delivery Value</label>
+        <h2 id="order-total-display" style="margin:0; color:var(--danger);">Ksh 0.00</h2>
+    </div>
+
+    <button class="btn btn-order" id="saveOrderBtn" onclick="saveOrder()" style="width:100%; padding:15px; margin-top:20px;">Finalize & Update Inventory</button>
     <button class="btn" onclick="closeModals()" style="width:100%; margin-top:10px; background:none; color:var(--text-dim);">Cancel</button>
 </div></div>
 
 <script type="module">
     import { supabase } from './auth.js';
 
-    let allSuppliers = [], allOrders = [], allPayments = [];
+    let allSuppliers = [], allOrders = [], allPayments = [], allProducts = [];
     let orderLimit = 10, paymentLimit = 10;
 
     window.toggleSidebar = () => {
@@ -267,6 +268,15 @@
         await fetchSuppliers();
         await fetchOrders();
         await fetchPayments();
+        await fetchProducts();
+    }
+
+    async function fetchProducts() {
+        const { data } = await supabase.from('products').select('*').order('name');
+        allProducts = data || [];
+        document.getElementById('productList').innerHTML = allProducts.map(p => 
+            `<option value="${p.name}${p.part_type !== 'N/A' ? ' ['+p.part_type+']' : ''}" data-id="${p.id}">`
+        ).join('');
     }
 
     async function fetchSuppliers() {
@@ -295,7 +305,6 @@
             });
             document.getElementById('stat-digital-total').innerText = `Ksh ${digital.toLocaleString()}`;
             document.getElementById('stat-cash-total').innerText = `Ksh ${cash.toLocaleString()}`;
-            filterPayments();
         }
     }
 
@@ -330,25 +339,74 @@
         `).join('');
     };
 
-    window.filterPayments = () => {
-        document.querySelector('#paymentTable tbody').innerHTML = allPayments.slice(0, paymentLimit).map(p => `
-            <tr>
-                <td><small>${new Date(p.payment_date).toLocaleDateString()}</small></td>
-                <td><b>${p.suppliers?.name || '---'}</b></td>
-                <td><span class="badge" style="background:#e0f2fe; color:#0369a1">${p.payment_method}</span></td>
-                <td style="color:var(--success); font-weight:800;">Ksh ${p.amount_paid.toLocaleString()}</td>
-                <td style="color:var(--danger); font-weight:800;">Ksh ${p.balance_after.toLocaleString()}</td>
-            </tr>
-        `).join('');
+    window.handleProductSelect = (val) => {
+        const product = allProducts.find(p => (p.name + (p.part_type !== 'N/A' ? ' ['+p.part_type+']' : '')) === val);
+        if (product) {
+            document.getElementById('selected-product-id').value = product.id;
+            document.getElementById('order-buy-price').value = product.cost_price || 0;
+            document.getElementById('order-sell-price').value = product.selling_price || 0;
+            document.getElementById('order-min-price').value = product.min_selling_price || 0;
+        }
     };
 
-    window.loadMoreOrders = () => { orderLimit += 10; filterOrders(); };
-    window.loadMorePayments = () => { paymentLimit += 10; filterPayments(); };
+    window.calculateOrderCost = () => {
+        const qty = parseFloat(document.getElementById('order-qty').value) || 0;
+        const buy = parseFloat(document.getElementById('order-buy-price').value) || 0;
+        document.getElementById('order-total-display').innerText = `Ksh ${(qty * buy).toLocaleString()}`;
+    };
+
+    window.saveOrder = async () => {
+        const saveBtn = document.getElementById('saveOrderBtn');
+        const sid = document.getElementById('order-sup-id').value;
+        const pid = document.getElementById('selected-product-id').value;
+        const qty = parseInt(document.getElementById('order-qty').value) || 0;
+        const buyPrice = parseFloat(document.getElementById('order-buy-price').value) || 0;
+        const sellPrice = parseFloat(document.getElementById('order-sell-price').value) || 0;
+        const minPrice = parseFloat(document.getElementById('order-min-price').value) || 0;
+        const totalCost = qty * buyPrice;
+
+        if(!pid || qty <= 0) return alert("Select product and enter valid quantity");
+
+        saveBtn.disabled = true;
+        saveBtn.innerText = "Saving...";
+
+        // 1. Record Order History
+        await supabase.from('supplier_orders').insert([{ 
+            supplier_id: sid, 
+            items_brought: `${qty}x ${document.getElementById('restock-search').value}`, 
+            cost: totalCost 
+        }]);
+
+        // 2. Update Product Inventory & Prices
+        const targetProduct = allProducts.find(p => p.id === pid);
+        await supabase.from('products').update({ 
+            stock_quantity: (targetProduct.stock_quantity || 0) + qty,
+            cost_price: buyPrice,
+            selling_price: sellPrice,
+            min_selling_price: minPrice,
+            min_price: minPrice
+        }).eq('id', pid);
+
+        // 3. Update Supplier Balance
+        const supplier = allSuppliers.find(x => x.id === sid);
+        await supabase.from('suppliers').update({ balance_owed: (supplier.balance_owed || 0) + totalCost }).eq('id', sid);
+
+        closeModals();
+        saveBtn.disabled = false;
+        saveBtn.innerText = "Finalize & Update Inventory";
+        init();
+    };
 
     window.openPaymentModal = (id, name) => {
         document.getElementById('pay-sup-id').value = id;
         document.getElementById('pay-sup-name').value = name;
         document.getElementById('paymentModal').style.display = "flex";
+    };
+
+    window.openOrderModal = (id, name) => {
+        document.getElementById('order-sup-id').value = id;
+        document.getElementById('order-sup-name').value = name;
+        document.getElementById('orderModal').style.display = "flex";
     };
 
     window.openSupplierModal = () => {
@@ -357,12 +415,6 @@
         document.getElementById('sup-balance').value = 0;
         document.getElementById('sup-phone').value = "";
         document.getElementById('supplierModal').style.display = "flex";
-    };
-
-    window.openOrderModal = (id, name) => {
-        document.getElementById('order-sup-id').value = id;
-        document.getElementById('order-sup-name').value = name;
-        document.getElementById('orderModal').style.display = "flex";
     };
 
     window.closeModals = () => document.querySelectorAll('.modal').forEach(m => m.style.display = "none");
@@ -375,27 +427,13 @@
             phone: document.getElementById('sup-phone').value,
             balance_owed: parseFloat(document.getElementById('sup-balance').value) || 0
         };
-        const { error } = id ? await supabase.from('suppliers').update(payload).eq('id', id) : await supabase.from('suppliers').insert([payload]);
-        if (error) alert(error.message); else { closeModals(); init(); }
-    };
-
-    window.saveOrder = async () => {
-        const sid = document.getElementById('order-sup-id').value;
-        const items = document.getElementById('order-items').value;
-        const cost = parseFloat(document.getElementById('order-cost').value) || 0;
-        if(cost <= 0) return alert("Please enter cost");
-
-        await supabase.from('supplier_orders').insert([{ supplier_id: sid, items_brought: items, cost: cost }]);
-        const supplier = allSuppliers.find(x => x.id === sid);
-        await supabase.from('suppliers').update({ balance_owed: (supplier.balance_owed || 0) + cost }).eq('id', sid);
-        closeModals();
-        init();
+        id ? await supabase.from('suppliers').update(payload).eq('id', id) : await supabase.from('suppliers').insert([payload]);
+        closeModals(); init();
     };
 
     window.processPayment = async () => {
         const sid = document.getElementById('pay-sup-id').value;
         const amount = parseFloat(document.getElementById('pay-amount').value);
-        const method = document.getElementById('pay-method').value;
         if(!amount || amount <= 0) return alert("Enter valid amount");
 
         const supplier = allSuppliers.find(x => x.id === sid);
@@ -404,10 +442,9 @@
         await supabase.from('suppliers').update({ balance_owed: newBalance }).eq('id', sid);
         await supabase.from('supplier_payments').insert([{
             supplier_id: sid, amount_paid: amount, balance_before: supplier.balance_owed,
-            balance_after: newBalance, payment_method: method
+            balance_after: newBalance, payment_method: document.getElementById('pay-method').value
         }]);
-        closeModals();
-        init();
+        closeModals(); init();
     };
 
     window.editSupplier = (id) => {
@@ -420,10 +457,7 @@
         document.getElementById('supplierModal').style.display = "flex";
     };
 
-    window.handleLogout = async () => {
-        await supabase.auth.signOut();
-        window.location.href = 'index.html';
-    };
+    window.handleLogout = async () => { await supabase.auth.signOut(); window.location.href = 'index.html'; };
 
     init();
 </script>
