@@ -123,7 +123,7 @@
 <div class="sidebar" id="sidebar">
     <div style="padding: 10px 0 30px 10px; font-weight: 800; font-size: 1.4rem;">JEPE ADMIN</div>
     <nav>
-            <a href="admin.html" class="nav-link ">📊 Dashboard view</a>
+        <a href="admin.html" class="nav-link ">📊 Dashboard view</a>
         <a href="shift-history.html" class="nav-link">📋 Daily Shift Audit</a>
         <a href="reports.html" class="nav-link active">📄 Detailed Reports</a>
         <a href="money-history.html" class="nav-link">📜 Money money IN/OUT history</a>
@@ -182,7 +182,7 @@
             <div class="metric-card">
                 <span class="metric-label">Total Revenue</span>
                 <span class="metric-val" id="total-revenue">Ksh 0</span>
-                <span id="revenue-split" class="text-small">Cash vs Mpesa</span>
+                <span id="revenue-split" class="text-small">Cash vs KCB Paybill</span>
             </div>
             <div class="metric-card">
                 <span class="metric-label">Gas Status</span>
@@ -190,8 +190,6 @@
                 <span class="text-small" id="gas-empty">0 Empty</span>
             </div>
         </div>
-
-        
 
         <div class="dual-grid">
             <div class="card">
@@ -304,7 +302,7 @@
 
     function calculateMetrics() {
         let invVal = 0, origStk = 0, copyStk = 0, gasFull = 0, gasEmpty = 0;
-        let totalRevenue = 0, cashRev = 0, mpesaRev = 0, totalProfit = 0;
+        let totalRevenue = 0, cashRev = 0, kcbRev = 0, totalProfit = 0;
 
         allProducts.forEach(p => {
             invVal += (p.stock_quantity * p.cost_price);
@@ -317,14 +315,19 @@
             const p = allProducts.find(prod => prod.id === s.product_id) || { cost_price: 0 };
             totalRevenue += s.total_amount;
             totalProfit += (s.unit_price - p.cost_price) * s.quantity;
-            if (s.payment_method === 'Cash') cashRev += s.total_amount; else mpesaRev += s.total_amount;
+            // Logic updated to check for KCB Paybill
+            if (s.payment_method === 'Cash') {
+                cashRev += s.total_amount;
+            } else {
+                kcbRev += s.total_amount;
+            }
         });
 
         document.getElementById('total-profit').innerText = `Ksh ${totalProfit.toLocaleString()}`;
         document.getElementById('total-val').innerText = `Ksh ${invVal.toLocaleString()}`;
         document.getElementById('stock-split').innerText = `Orig: ${origStk} | Copy: ${copyStk}`;
         document.getElementById('total-revenue').innerText = `Ksh ${totalRevenue.toLocaleString()}`;
-        document.getElementById('revenue-split').innerText = `Cash: ${cashRev.toLocaleString()} | M-Pesa: ${mpesaRev.toLocaleString()}`;
+        document.getElementById('revenue-split').innerText = `Cash: ${cashRev.toLocaleString()} | KCB Paybill: ${kcbRev.toLocaleString()}`;
         document.getElementById('gas-count').innerText = `${gasFull} Full Cylinders`;
         document.getElementById('gas-empty').innerText = `${gasEmpty} Empty Cylinders`;
 
