@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="google-site-verification" content="z9W_FPOFrRGdymnV1YFROIFmGlzp4CKub_YgkpWyVGA" />
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="robots" content="noindex, nofollow">
@@ -97,7 +96,7 @@
         input, select, button { 
             width: 100%; padding: 12px; margin: 8px 0; 
             border-radius: 10px; border: 1px solid var(--border); 
-            box-sizing: border-box; font-size: 0.95rem; transition: 0.3s;
+            box-sizing: border-box; font-size: 1rem; transition: 0.3s;
         }
 
         input, select { background: rgba(15, 23, 42, 0.6); color: white; outline: none; }
@@ -108,17 +107,42 @@
             cursor: pointer; border: none; margin-top: 10px;
             text-transform: uppercase; letter-spacing: 1px;
         }
+        
+        button:disabled {
+            background: #475569;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Adjusted Reset Link Style */
+        .reset-link-container {
+            display: flex;
+            justify-content: flex-end;
+            width: 100%;
+            margin: -2px 0 12px 0;
+        }
+
+        .forgot-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 0.9rem; /* Increased size */
+            cursor: pointer;
+            padding: 5px;
+            font-family: inherit;
+        }
+
+        .forgot-btn b { color: var(--primary); text-decoration: underline; }
 
         .banking-section {
             margin-top: 20px;
             padding-top: 15px;
             border-top: 1px solid var(--border);
         }
-        /* IMPORTANT: Replaced bank images with plain text to avoid phishing flags */
         .banking-label { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
         .bank-text { font-size: 0.8rem; font-weight: 600; color: #818cf8; opacity: 0.8; }
 
-        .toggle-link { text-align: center; font-size: 0.85rem; margin-top: 15px; cursor: pointer; color: #94a3b8; }
+        .toggle-link { text-align: center; font-size: 0.95rem; margin-top: 15px; cursor: pointer; color: #94a3b8; }
         .toggle-link b { color: var(--primary); text-decoration: underline; }
 
         .saftech-footer {
@@ -149,6 +173,12 @@
         <input type="email" id="email" placeholder="Staff Email">
         <input type="password" id="password" placeholder="Access Code">
         
+        <div id="forgot-link" class="reset-link-container">
+            <button type="button" class="forgot-btn" onclick="handleForgotPassword()">
+                Forgot code? <b>Reset</b>
+            </button>
+        </div>
+
         <div id="register-fields" class="hidden">
             <select id="role">
                 <option value="cashier">Cashier Access</option>
@@ -164,7 +194,7 @@
 
         <div class="banking-section">
             <div class="banking-label">Accepted Channels</div>
-            <div class="bank-text">M-PESA | KCB | EQUITY</div>
+            <div class="bank-text">CASH | KCB PAYBILL | EQUITY</div>
         </div>
     </div>
 
@@ -180,42 +210,85 @@
 
     let isLogin = true;
 
+    // Mobile Recovery: Refresh if the library fails to init
+    window.addEventListener('load', () => {
+        if (!window.supabase) {
+            console.warn("Retrying connection...");
+            setTimeout(() => { location.reload(); }, 2000);
+        }
+    });
+
     window.toggleMode = () => {
         isLogin = !isLogin;
         document.getElementById('auth-title').innerText = isLogin ? "Staff Sign In" : "New Registration";
         document.getElementById('register-fields').classList.toggle('hidden', isLogin);
+        document.getElementById('forgot-link').classList.toggle('hidden', !isLogin);
         document.getElementById('main-btn').innerText = isLogin ? "Sign In" : "Register Now";
         document.getElementById('toggle-text').innerHTML = isLogin ? 
             "New staff? <b>Create Account</b>" : "Already a member? <b>Sign In</b>";
     };
 
+    window.handleForgotPassword = async () => {
+        const email = document.getElementById('email').value;
+        if (!email) return alert("Please enter your staff email first.");
+
+        const btn = document.getElementById('main-btn');
+        const oldText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = "Sending Reset...";
+
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.origin + '/reset-password.html',
+            });
+            if (error) throw error;
+            alert("A reset link has been sent to your email. Please check your inbox and spam folder.");
+        } catch (err) {
+            alert("Reset Error: " + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = oldText;
+        }
+    };
+
     window.handleAuth = async () => {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
-        const role = document.getElementById('role').value;
+        const role = document.getElementById('role') ? document.getElementById('role').value : 'cashier';
         const btn = document.getElementById('main-btn');
 
-        if (!email || !password) return alert("Please fill in all fields.");
-        
+        if (!email || !password) return alert("Fill in both fields.");
+        if (!supabase) return alert("System connecting... try again in 3 seconds.");
+
         btn.disabled = true;
-        btn.innerText = "Verifying...";
+        btn.innerText = isLogin ? "Verifying..." : "Registering...";
 
         try {
             if (isLogin) {
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
+                
+                btn.innerText = "Opening Portal...";
                 await checkRoleAndRedirect(data.user.id);
             } else {
                 const { data, error } = await supabase.auth.signUp({ 
                     email, password, options: { data: { role: role } } 
                 });
                 if (error) throw error;
-                await supabase.from('profiles').upsert({ id: data.user.id, role: role, email: email });
-                alert("Registration successful! You may now sign in.");
+                
+                // Ensure profile is created
+                const { error: profileError } = await supabase.from('profiles').upsert({ 
+                    id: data.user.id, 
+                    role: role, 
+                    email: email 
+                });
+                if (profileError) throw profileError;
+
+                alert("Account created! You can now Sign In.");
                 toggleMode();
             }
         } catch (err) {
-            alert(err.message);
+            alert("Alert: " + err.message);
         } finally {
             btn.disabled = false;
             btn.innerText = isLogin ? "Sign In" : "Register Now";
@@ -223,12 +296,16 @@
     };
 
     async function checkRoleAndRedirect(userId) {
-        const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
-        if (data) {
+        try {
+            const { data, error } = await supabase.from('profiles').select('role').eq('id', userId).single();
+            if (error || !data) {
+                alert("Access Denied: Profile error. Contact Admin.");
+                await supabase.auth.signOut();
+                return;
+            }
             window.location.href = (data.role === 'admin') ? 'admin.html' : 'cashier.html';
-        } else {
-            alert("Setting up profile...");
-            await supabase.auth.signOut();
+        } catch (e) {
+            alert("System error. Please refresh.");
         }
     }
 </script>
