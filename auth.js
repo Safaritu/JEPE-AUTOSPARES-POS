@@ -2,17 +2,18 @@
 const supabaseUrl = 'https://hoqenpnkmnsfyqsvfvab.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhvcWVucG5rbW5zZnlxc3ZmdmFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzk5MTUsImV4cCI6MjA4MjUxNTkxNX0.qKqv6NEyCU5ZMNj6Z34kpCiY7NoUzzBggiPSRJdTz0Y';
 
-const initSupabase = () => {
-    if (!window.supabase) {
-        console.error("Supabase library not detected. Waiting...");
-        return null;
-    }
-    return window.supabase.createClient(supabaseUrl, supabaseKey, {
+// Create the client directly to ensure it is exported immediately
+export const supabase = window.supabase 
+    ? window.supabase.createClient(supabaseUrl, supabaseKey, {
         auth: {
             persistSession: true,
-            autoRefreshToken: true
+            autoRefreshToken: true,
+            detectSessionInUrl: true // Crucial for reset password links
         }
-    });
-};
+    })
+    : null;
 
-export const supabase = initSupabase();
+// Fallback for slow connections
+if (!supabase) {
+    console.warn("Supabase not initialized yet. Page may need a refresh.");
+}
