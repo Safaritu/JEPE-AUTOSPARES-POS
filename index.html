@@ -26,21 +26,8 @@
             align-items: center; 
             height: 100vh; 
             width: 100vw;
-            overflow: hidden; /* Strictly no scrolling */
+            overflow: hidden; 
             position: relative;
-        }
-
-        /* WELCOME SPLASH SCREEN */
-        #welcome-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #0b1120;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            text-align: center;
         }
 
         /* BACKGROUND DECOR */
@@ -70,19 +57,20 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-between; /* Pushes Footer to bottom, Card to center */
+            justify-content: space-between; 
             width: 95%;
-            height: 98vh; /* Use almost full height */
+            height: 94vh; /* Slightly reduced to prevent bottom clipping */
             max-width: 450px;
             padding: 10px 0;
             z-index: 10;
             box-sizing: border-box;
+            margin-bottom: 10px; /* Safety margin */
         }
 
-        /* ENLARGED MAIN CARD */
+        /* MAIN CARD */
         .auth-card { 
             background: var(--glass); 
-            padding: 30px 25px;
+            padding: 25px 22px; /* Slightly tighter padding */
             border-radius: 32px; 
             width: 100%; 
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); 
@@ -90,62 +78,58 @@
             border: 1px solid var(--border);
             text-align: center;
             box-sizing: border-box;
-            flex-grow: 0; /* Don't stretch, just sit in the middle */
-            margin-top: auto;
-            margin-bottom: auto;
+            margin: auto 0; /* Keeps it vertically centered */
         }
 
         .logo-container {
-            width: 85px; height: 85px;
-            margin: 0 auto 10px;
+            width: 75px; height: 75px; /* Scaled down slightly */
+            margin: 0 auto 8px;
         }
 
         .brand-name {
-            font-size: 1.8rem; font-weight: 800; letter-spacing: -1px; margin: 0;
+            font-size: 1.7rem; font-weight: 800; letter-spacing: -1px; margin: 0;
             background: linear-gradient(to right, #ffffff, #818cf8, #ffffff);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             text-transform: uppercase;
         }
 
-        h2 { font-weight: 600; margin: 8px 0 2px 0; font-size: 1.1rem; color: #f8fafc; }
-        .tagline { color: #94a3b8; font-size: 0.8rem; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+        h2 { font-weight: 600; margin: 5px 0 2px 0; font-size: 1rem; color: #f8fafc; }
+        .tagline { color: #94a3b8; font-size: 0.75rem; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
 
         input, select, button { 
-            width: 100%; padding: 15px; margin: 8px 0; 
+            width: 100%; padding: 14px; margin: 6px 0; 
             border-radius: 14px; border: 1px solid var(--border); 
-            box-sizing: border-box; font-size: 1rem;
+            box-sizing: border-box; font-size: 0.95rem;
         }
 
         input, select { background: rgba(15, 23, 42, 0.6); color: white; outline: none; }
-        input:focus { border-color: var(--primary); background: rgba(15, 23, 42, 0.8); }
-
         button { 
             background: linear-gradient(135deg, var(--primary), #4f46e5); 
             color: white; font-weight: 800; cursor: pointer; border: none; 
-            text-transform: uppercase; letter-spacing: 1px;
+            text-transform: uppercase;
             box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
         }
 
-        .banking-section { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border); }
-        .banking-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; margin-bottom: 5px; }
-        .bank-text { font-size: 0.85rem; font-weight: 700; color: #818cf8; }
+        .banking-section { margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--border); }
+        .banking-label { font-size: 0.65rem; color: #64748b; text-transform: uppercase; margin-bottom: 3px; }
+        .bank-text { font-size: 0.8rem; font-weight: 700; color: #818cf8; }
 
-        .toggle-link { text-align: center; font-size: 0.95rem; margin-top: 15px; cursor: pointer; color: #94a3b8; }
+        .toggle-link { text-align: center; font-size: 0.9rem; margin-top: 12px; cursor: pointer; color: #94a3b8; }
         .toggle-link b { color: var(--primary); }
 
-        /* ENLARGED FOOTER CARD */
+        /* ADJUSTED FOOTER CARD */
         .saftech-footer {
             text-align: center; 
-            padding: 18px;
+            padding: 15px 15px calc(15px + env(safe-area-inset-bottom)); /* Dynamic bottom padding for phones */
             border-radius: 24px; 
             background: rgba(255, 255, 255, 0.05);
             width: 100%; 
             box-sizing: border-box; 
             border: 1px solid var(--border);
-            margin-bottom: 10px;
+            margin-top: 10px;
         }
-        .saftech-footer h4 { font-size: 0.75rem; text-transform: uppercase; color: var(--primary); margin: 0 0 5px 0; letter-spacing: 1.5px; }
-        .contact-info { font-weight: 800; color: #ffffff; margin-top: 5px; font-size: 1rem; letter-spacing: 0.5px; }
+        .saftech-footer h4 { font-size: 0.7rem; text-transform: uppercase; color: var(--primary); margin: 0 0 3px 0; letter-spacing: 1.2px; }
+        .contact-info { font-weight: 800; color: #ffffff; margin-top: 4px; font-size: 0.95rem; }
 
         .hidden { display: none !important; }
     </style>
@@ -195,7 +179,7 @@
 
     <div class="saftech-footer">
         <h4>System by SAFTECH SOLUTIONS</h4>
-        <p style="font-size: 0.8rem; margin:0; color: #94a3b8;">Engineered by <b>ALEX SAFARI</b></p>
+        <p style="font-size: 0.75rem; margin:0; color: #94a3b8;">Engineered by <b>ALEX SAFARI</b></p>
         <p class="contact-info">📞 0794963537 | 0707441702</p>
     </div>
 </div>
@@ -214,12 +198,9 @@
     };
 
     window.handleAuth = async () => {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
         const btn = document.getElementById('main-btn');
-        if (!email || !password) return alert("Fill in both fields.");
         btn.innerText = "Connecting...";
-        // Auth logic goes here (same as your original)
+        // Auth logic...
     };
 </script>
 </body>
