@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow">
     <title>JEPE AUTOSPARES | Internal Portal</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -55,8 +55,7 @@
         }
 
         .spinner {
-            width: 50px;
-            height: 50px;
+            width: 50px; height: 50px;
             border: 5px solid rgba(99, 102, 241, 0.2);
             border-top: 5px solid var(--primary);
             border-radius: 50%;
@@ -83,103 +82,105 @@
             opacity: 0.2;
         }
 
-        .img-bike { top: 5%; left: -10%; width: 200px; --rot: -10deg; }
-        .img-exhaust { bottom: 10%; right: -5%; width: 150px; --rot: 20deg; animation-delay: 3s; }
+        .img-bike { top: 5%; left: -10%; width: 220px; --rot: -10deg; }
+        .img-exhaust { bottom: 10%; right: -5%; width: 180px; --rot: 20deg; animation-delay: 3s; }
 
         @keyframes float {
             0%, 100% { transform: translateY(0) rotate(var(--rot)); }
             50% { transform: translateY(-20px) rotate(calc(var(--rot) + 5deg)); }
         }
 
-        /* DYNAMIC SCALING CONTAINER */
+        /* MAIN CONTAINER */
         .container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between; /* Pushes card to center and footer to bottom */
             width: 100%;
-            max-width: 400px;
-            padding: 10px;
+            height: 100%; /* Take full height */
+            max-width: 450px;
+            padding: 20px 15px;
+            padding-bottom: env(safe-area-inset-bottom, 20px);
             z-index: 10;
             box-sizing: border-box;
-            transition: transform 0.3s ease;
-        }
-
-        /* Shrink content on small mobile screens to prevent blocking */
-        @media screen and (max-height: 740px) and (max-width: 500px) {
-            .container {
-                transform: scale(0.85);
-                transform-origin: center center;
-            }
         }
 
         .auth-card { 
             background: var(--glass); 
-            padding: 25px 20px;
-            border-radius: 28px; 
+            padding: 30px 25px;
+            border-radius: 32px; 
             width: 100%; 
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); 
-            backdrop-filter: blur(15px); 
+            backdrop-filter: blur(20px); 
             border: 1px solid var(--border);
             text-align: center;
             box-sizing: border-box;
+            margin: auto 0; /* Keeps it centered vertically */
         }
 
         .logo-container {
-            width: 80px; height: 80px;
-            margin: 0 auto 10px;
+            width: 90px; height: 90px;
+            margin: 0 auto 15px;
             display: flex; align-items: center; justify-content: center;
         }
 
-        .logo-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.5)); }
+        .logo-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.4)); }
 
         .brand-name {
-            font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; margin: 0;
+            font-size: 1.8rem; font-weight: 800; letter-spacing: -1px; margin: 0;
             background: linear-gradient(to right, #ffffff, #818cf8, #ffffff);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             text-transform: uppercase;
         }
 
-        h2 { font-weight: 600; margin: 5px 0 2px 0; font-size: 1rem; color: #f8fafc; }
-        .tagline { color: #94a3b8; font-size: 0.75rem; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        h2 { font-weight: 600; margin: 8px 0 2px 0; font-size: 1.1rem; color: #f8fafc; }
+        .tagline { color: #94a3b8; font-size: 0.8rem; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
 
         input, select, button { 
-            width: 100%; padding: 12px; margin: 6px 0; 
-            border-radius: 12px; border: 1px solid var(--border); 
-            box-sizing: border-box; font-size: 0.9rem; transition: 0.3s;
+            width: 100%; padding: 14px; margin: 8px 0; 
+            border-radius: 14px; border: 1px solid var(--border); 
+            box-sizing: border-box; font-size: 1rem; transition: 0.3s;
         }
 
         input, select { background: rgba(15, 23, 42, 0.6); color: white; outline: none; }
-        input:focus { border-color: var(--primary); background: rgba(15, 23, 42, 0.8); }
+        input:focus { border-color: var(--primary); background: rgba(15, 23, 42, 0.8); box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
 
         button { 
             background: linear-gradient(135deg, var(--primary), #4f46e5); 
             color: white; font-weight: 800; cursor: pointer; border: none; 
-            margin-top: 8px; text-transform: uppercase;
+            margin-top: 10px; text-transform: uppercase; letter-spacing: 1px;
         }
         
-        button:active { transform: scale(0.98); }
+        button:active { transform: scale(0.97); }
 
-        .reset-link-container { display: flex; justify-content: flex-end; width: 100%; margin-bottom: 5px; }
-        .forgot-btn { background: none; border: none; color: #94a3b8; font-size: 0.75rem; cursor: pointer; width: auto; padding: 2px; }
+        .reset-link-container { display: flex; justify-content: flex-end; width: 100%; margin: -4px 0 8px 0; }
+        .forgot-btn { background: none; border: none; color: #94a3b8; font-size: 0.85rem; cursor: pointer; width: auto; padding: 4px; }
         .forgot-btn b { color: var(--accent); }
 
-        .banking-section { margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--border); }
-        .banking-label { font-size: 0.6rem; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
-        .bank-text { font-size: 0.75rem; font-weight: 700; color: #818cf8; }
+        .banking-section { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border); }
+        .banking-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 5px; }
+        .bank-text { font-size: 0.85rem; font-weight: 700; color: #818cf8; }
 
-        .toggle-link { text-align: center; font-size: 0.85rem; margin-top: 12px; cursor: pointer; color: #94a3b8; }
+        .toggle-link { text-align: center; font-size: 0.95rem; margin-top: 15px; cursor: pointer; color: #94a3b8; }
         .toggle-link b { color: var(--primary); }
 
+        /* FOOTER - FIXED AT BOTTOM */
         .saftech-footer {
-            margin-top: 15px; text-align: center; padding: 10px;
-            border-radius: 20px; background: rgba(255, 255, 255, 0.03);
+            text-align: center; padding: 15px;
+            border-radius: 24px; background: rgba(255, 255, 255, 0.03);
             width: 100%; box-sizing: border-box; border: 1px solid var(--border);
+            margin-top: 10px;
         }
-        .saftech-footer h4 { font-size: 0.6rem; text-transform: uppercase; color: var(--primary); margin: 0 0 2px 0; }
-        .contact-info { font-weight: 700; color: #ffffff; margin-top: 2px; font-size: 0.8rem; }
+        .saftech-footer h4 { font-size: 0.7rem; text-transform: uppercase; color: var(--primary); margin: 0 0 4px 0; letter-spacing: 1px; }
+        .contact-info { font-weight: 700; color: #ffffff; margin-top: 4px; font-size: 0.9rem; }
 
         .hidden { display: none !important; }
+
+        /* DESKTOP ADJUSTMENTS */
+        @media screen and (min-width: 1024px) {
+            .container { max-width: 400px; }
+            .brand-name { font-size: 2rem; }
+        }
     </style>
 </head>
 <body>
@@ -223,7 +224,7 @@
         
         <div id="forgot-link" class="reset-link-container">
             <button type="button" class="forgot-btn" onclick="handleForgotPassword()">
-                Forgot Password? <b>Reset</b>
+                Forgot? <b>Reset</b>
             </button>
         </div>
 
@@ -248,7 +249,7 @@
 
     <div class="saftech-footer">
         <h4>System by SAFTECH SOLUTIONS</h4>
-        <p style="font-size: 0.7rem; margin:0; color: #94a3b8;">Engineered by <b>ALEX SAFARI</b></p>
+        <p style="font-size: 0.75rem; margin:0; color: #94a3b8;">Engineered by <b>ALEX SAFARI</b></p>
         <p class="contact-info">📞 0794963537 | 0707441702</p>
     </div>
 </div>
