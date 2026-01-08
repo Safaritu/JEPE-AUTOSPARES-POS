@@ -23,13 +23,60 @@
             margin: 0; 
             display: flex;
             justify-content: center;
-            align-items: center; /* Changed from flex-start to center */
-            height: 100vh; /* Fixed height to match screen */
+            align-items: center; 
+            height: 100vh; 
             width: 100vw;
-            overflow: hidden; /* Prevent scrolling */
+            overflow: hidden; 
             position: relative;
         }
 
+        /* WELCOME SPLASH SCREEN STYLES */
+        #welcome-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #0b1120;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            text-align: center;
+            transition: opacity 0.5s ease;
+        }
+
+        .welcome-content h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #ffffff, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 20px 0 10px;
+            text-transform: uppercase;
+        }
+
+        .welcome-content p {
+            color: #94a3b8;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            margin: 0;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(99, 102, 241, 0.2);
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* BACKGROUND DECOR */
         .bg-decor {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -41,7 +88,7 @@
             filter: brightness(0.4) contrast(1.2);
             border-radius: 20px;
             animation: float 8s ease-in-out infinite;
-            opacity: 0.3;
+            opacity: 0.2;
         }
 
         .img-bike { top: 5%; left: -10%; width: 200px; --rot: -10deg; }
@@ -52,6 +99,7 @@
             50% { transform: translateY(-20px) rotate(calc(var(--rot) + 5deg)); }
         }
 
+        /* MAIN CARD STYLES */
         .container {
             display: flex;
             flex-direction: column;
@@ -62,13 +110,12 @@
             padding: 15px;
             z-index: 10;
             box-sizing: border-box;
-            height: 100%; /* Fill the 100vh body */
         }
 
         .auth-card { 
             background: var(--glass); 
             padding: 25px 20px;
-            border-radius: 24px; 
+            border-radius: 28px; 
             width: 100%; 
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); 
             backdrop-filter: blur(15px); 
@@ -77,46 +124,56 @@
             box-sizing: border-box;
         }
 
-        .logo-box { 
-            background: linear-gradient(135deg, var(--primary), #4f46e5); 
-            width: 50px; height: 50px; line-height: 50px; 
-            border-radius: 15px; margin: 0 auto 10px; 
-            font-size: 24px; font-weight: 800; 
-            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.4);
+        .logo-container {
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.5));
         }
 
         .brand-name {
-            font-size: 1.4rem; font-weight: 800; letter-spacing: -1px; margin: 0;
-            background: linear-gradient(to right, #ffffff, #94a3b8);
+            font-size: 1.6rem; font-weight: 800; letter-spacing: -1px; margin: 0;
+            background: linear-gradient(to right, #ffffff, #818cf8, #ffffff);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             text-transform: uppercase;
         }
 
-        h2 { font-weight: 600; margin: 5px 0 2px 0; font-size: 1.1rem; color: #f8fafc; }
-        .tagline { color: #94a3b8; font-size: 0.8rem; margin-bottom: 15px; }
+        h2 { font-weight: 600; margin: 8px 0 2px 0; font-size: 1.1rem; color: #f8fafc; }
+        .tagline { color: #94a3b8; font-size: 0.8rem; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
 
         input, select, button { 
-            width: 100%; padding: 11px; margin: 6px 0; 
-            border-radius: 10px; border: 1px solid var(--border); 
+            width: 100%; padding: 13px; margin: 7px 0; 
+            border-radius: 12px; border: 1px solid var(--border); 
             box-sizing: border-box; font-size: 0.95rem; transition: 0.3s;
         }
 
         input, select { background: rgba(15, 23, 42, 0.6); color: white; outline: none; }
-        input:focus { border-color: var(--primary); background: rgba(15, 23, 42, 0.8); }
+        input:focus { border-color: var(--primary); background: rgba(15, 23, 42, 0.8); box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
 
         button { 
-            background: var(--primary); color: white; font-weight: 800; 
-            cursor: pointer; border: none; margin-top: 8px;
+            background: linear-gradient(135deg, var(--primary), #4f46e5); 
+            color: white; font-weight: 800; 
+            cursor: pointer; border: none; margin-top: 10px;
             text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
         }
         
+        button:active { transform: scale(0.98); }
         button:disabled { background: #475569; cursor: not-allowed; opacity: 0.7; }
 
         .reset-link-container {
             display: flex;
             justify-content: flex-end;
             width: 100%;
-            margin: -4px 0 8px 0;
+            margin: -2px 0 10px 0;
         }
 
         .forgot-btn {
@@ -130,31 +187,39 @@
             width: auto;
         }
 
-        .forgot-btn b { color: var(--primary); text-decoration: underline; }
+        .forgot-btn b { color: var(--accent); text-decoration: none; }
 
         .banking-section {
-            margin-top: 15px;
-            padding-top: 10px;
+            margin-top: 20px;
+            padding-top: 15px;
             border-top: 1px solid var(--border);
         }
-        .banking-label { font-size: 0.6rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
-        .bank-text { font-size: 0.75rem; font-weight: 600; color: #818cf8; opacity: 0.8; }
+        .banking-label { font-size: 0.65rem; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 5px; }
+        .bank-text { font-size: 0.8rem; font-weight: 700; color: #818cf8; letter-spacing: 0.5px; }
 
-        .toggle-link { text-align: center; font-size: 0.9rem; margin-top: 12px; cursor: pointer; color: #94a3b8; }
-        .toggle-link b { color: var(--primary); text-decoration: underline; }
+        .toggle-link { text-align: center; font-size: 0.9rem; margin-top: 15px; cursor: pointer; color: #94a3b8; }
+        .toggle-link b { color: var(--primary); text-decoration: none; }
 
         .saftech-footer {
-            margin-top: 15px; text-align: center; padding: 10px;
-            border-radius: 18px; background: rgba(255, 255, 255, 0.03);
-            width: 100%; box-sizing: border-box;
+            margin-top: 20px; text-align: center; padding: 12px;
+            border-radius: 20px; background: rgba(255, 255, 255, 0.03);
+            width: 100%; box-sizing: border-box; border: 1px solid var(--border);
         }
-        .saftech-footer h4 { font-size: 0.6rem; text-transform: uppercase; color: var(--primary); margin: 0 0 2px 0; }
-        .contact-info { font-weight: 600; color: #ffffff; margin-top: 2px; font-size: 0.75rem; }
+        .saftech-footer h4 { font-size: 0.65rem; text-transform: uppercase; color: var(--primary); margin: 0 0 4px 0; letter-spacing: 1px; }
+        .contact-info { font-weight: 700; color: #ffffff; margin-top: 4px; font-size: 0.85rem; }
 
-        .hidden { display: none; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
+
+<div id="welcome-overlay" class="hidden">
+    <div class="welcome-content">
+        <div class="spinner"></div>
+        <h1 id="welcome-name">WELCOME</h1>
+        <p id="welcome-role">Initializing Workspace...</p>
+    </div>
+</div>
 
 <div class="bg-decor">
     <img src="https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=600" class="bg-img img-bike" alt="Decor">
@@ -163,17 +228,31 @@
 
 <div class="container">
     <div class="auth-card">
-        <div class="logo-box">J</div>
+        <div class="logo-container">
+            <svg class="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="45" stroke="#1e293b" stroke-width="8" fill="none"/>
+                <circle cx="50" cy="50" r="35" stroke="#94a3b8" stroke-width="2" fill="none" stroke-dasharray="10 5"/>
+                <path d="M60 30H45V60C45 68 52 70 55 70C60 70 65 65 65 60V55" stroke="url(#logo-grad)" stroke-width="10" stroke-linecap="round" fill="none"/>
+                <circle cx="65" cy="30" r="4" fill="#818cf8"/>
+                <defs>
+                    <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#818cf8;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+
         <h1 class="brand-name">JEPE AUTOSPARES</h1>
         <h2 id="auth-title">Staff Sign In</h2>
-        <p class="tagline" id="auth-subtitle">Internal Business Management System</p>
+        <p class="tagline" id="auth-subtitle">Premium Parts Management</p>
         
-        <input type="email" id="email" placeholder="Staff Email">
-        <input type="password" id="password" placeholder="Access Code">
+        <input type="email" id="email" placeholder="Your Email">
+        <input type="password" id="password" placeholder="Password">
         
         <div id="forgot-link" class="reset-link-container">
             <button type="button" class="forgot-btn" onclick="handleForgotPassword()">
-                Forgot code? <b>Reset</b>
+                Forgot Password? <b>Reset</b>
             </button>
         </div>
 
@@ -192,14 +271,14 @@
 
         <div class="banking-section">
             <div class="banking-label">Accepted Channels</div>
-            <div class="bank-text">CASH | MPESA | KCB PAYBILL | EQUITY</div>
+            <div class="bank-text">M-PESA | CASH | KCB | EQUITY</div>
         </div>
     </div>
 
     <div class="saftech-footer">
         <h4>System by SAFTECH</h4>
-        <p style="font-size: 0.75rem; margin:0;">Engineered by <b>Alex Safari</b></p>
-        <p class="contact-info">📞 0794963537</p>
+        <p style="font-size: 0.75rem; margin:0; color: #94a3b8;">Engineered by <b>ALEX SAFARI</b></p>
+        <p class="contact-info">📞 0794963537 | 0707441702</p>
     </div>
 </div>
 
@@ -207,12 +286,6 @@
     import { supabase } from './auth.js';
 
     let isLogin = true;
-
-    window.addEventListener('load', () => {
-        if (!window.supabase) {
-            setTimeout(() => { location.reload(); }, 2000);
-        }
-    });
 
     window.toggleMode = () => {
         isLogin = !isLogin;
@@ -227,11 +300,9 @@
     window.handleForgotPassword = async () => {
         const email = document.getElementById('email').value;
         if (!email) return alert("Please enter your staff email first.");
-
         const btn = document.getElementById('main-btn');
         btn.disabled = true;
         btn.innerText = "Sending Reset...";
-
         try {
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
                 redirectTo: window.location.origin + '/reset-password.html',
@@ -263,12 +334,16 @@
                 await checkRoleAndRedirect(data.user.id);
             } else {
                 const { data, error } = await supabase.auth.signUp({ 
-                    email, password, options: { data: { role: role } } 
+                    email, 
+                    password, 
+                    options: { 
+                        data: { role: role },
+                        emailRedirectTo: window.location.origin + '/index.html'
+                    } 
                 });
                 if (error) throw error;
-                
                 await supabase.from('profiles').upsert({ id: data.user.id, role: role, email: email });
-                alert("Account created! Now Sign In.");
+                alert("Account created! Check your email to confirm registration.");
                 toggleMode();
             }
         } catch (err) {
@@ -280,8 +355,32 @@
     };
 
     async function checkRoleAndRedirect(userId) {
-        const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
-        if (data) window.location.href = (data.role === 'admin') ? 'admin.html' : 'cashier.html';
+        const { data, error } = await supabase.from('profiles').select('role').eq('id', userId).single();
+        if (data) {
+            // SHOW WELCOME SPLASH
+            const overlay = document.getElementById('welcome-overlay');
+            const welcomeName = document.getElementById('welcome-name');
+            const welcomeRole = document.getElementById('welcome-role');
+            
+            overlay.classList.remove('hidden');
+            
+            if (data.role === 'admin') {
+                welcomeName.innerText = "WELCOME ADMIN, JEPE AUTOSPARES MANAGER ";
+                welcomeRole.innerText = "Accessing Management Dashboard...";
+            } else {
+                welcomeName.innerText = "WELCOME   SAMUEL SYENGO, JEPE AUTOSPARES CASHIER ";
+                welcomeRole.innerText = "Opening Sales Terminal...";
+            }
+
+            // DELAY REDIRECT FOR EFFECT
+            setTimeout(() => {
+                window.location.href = (data.role === 'admin') ? 'admin.html' : 'cashier.html';
+            }, 2500);
+
+        } else {
+            alert("Profile not found. Please verify your email.");
+            await supabase.auth.signOut();
+        }
     }
 </script>
 </body>
