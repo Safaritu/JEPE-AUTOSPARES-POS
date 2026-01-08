@@ -30,7 +30,7 @@
             position: relative;
         }
 
-        /* WELCOME SPLASH SCREEN STYLES */
+        /* WELCOME SPLASH SCREEN */
         #welcome-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -45,21 +45,13 @@
         }
 
         .welcome-content h1 {
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: 800;
             background: linear-gradient(to right, #ffffff, #6366f1);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin: 20px 0 10px;
+            margin: 20px 15px 10px;
             text-transform: uppercase;
-        }
-
-        .welcome-content p {
-            color: #94a3b8;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            margin: 0;
         }
 
         .spinner {
@@ -99,7 +91,7 @@
             50% { transform: translateY(-20px) rotate(calc(var(--rot) + 5deg)); }
         }
 
-        /* MAIN CARD STYLES */
+        /* DYNAMIC SCALING CONTAINER */
         .container {
             display: flex;
             flex-direction: column;
@@ -107,9 +99,18 @@
             justify-content: center;
             width: 100%;
             max-width: 400px;
-            padding: 15px;
+            padding: 10px;
             z-index: 10;
             box-sizing: border-box;
+            transition: transform 0.3s ease;
+        }
+
+        /* Shrink content on small mobile screens to prevent blocking */
+        @media screen and (max-height: 740px) and (max-width: 500px) {
+            .container {
+                transform: scale(0.85);
+                transform-origin: center center;
+            }
         }
 
         .auth-card { 
@@ -125,88 +126,58 @@
         }
 
         .logo-container {
-            width: 90px;
-            height: 90px;
-            margin: 0 auto 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 80px; height: 80px;
+            margin: 0 auto 10px;
+            display: flex; align-items: center; justify-content: center;
         }
 
-        .logo-svg {
-            width: 100%;
-            height: 100%;
-            filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.5));
-        }
+        .logo-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.5)); }
 
         .brand-name {
-            font-size: 1.6rem; font-weight: 800; letter-spacing: -1px; margin: 0;
+            font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; margin: 0;
             background: linear-gradient(to right, #ffffff, #818cf8, #ffffff);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             text-transform: uppercase;
         }
 
-        h2 { font-weight: 600; margin: 8px 0 2px 0; font-size: 1.1rem; color: #f8fafc; }
-        .tagline { color: #94a3b8; font-size: 0.8rem; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+        h2 { font-weight: 600; margin: 5px 0 2px 0; font-size: 1rem; color: #f8fafc; }
+        .tagline { color: #94a3b8; font-size: 0.75rem; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
 
         input, select, button { 
-            width: 100%; padding: 13px; margin: 7px 0; 
+            width: 100%; padding: 12px; margin: 6px 0; 
             border-radius: 12px; border: 1px solid var(--border); 
-            box-sizing: border-box; font-size: 0.95rem; transition: 0.3s;
+            box-sizing: border-box; font-size: 0.9rem; transition: 0.3s;
         }
 
         input, select { background: rgba(15, 23, 42, 0.6); color: white; outline: none; }
-        input:focus { border-color: var(--primary); background: rgba(15, 23, 42, 0.8); box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
+        input:focus { border-color: var(--primary); background: rgba(15, 23, 42, 0.8); }
 
         button { 
             background: linear-gradient(135deg, var(--primary), #4f46e5); 
-            color: white; font-weight: 800; 
-            cursor: pointer; border: none; margin-top: 10px;
-            text-transform: uppercase; letter-spacing: 1px;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            color: white; font-weight: 800; cursor: pointer; border: none; 
+            margin-top: 8px; text-transform: uppercase;
         }
         
         button:active { transform: scale(0.98); }
-        button:disabled { background: #475569; cursor: not-allowed; opacity: 0.7; }
 
-        .reset-link-container {
-            display: flex;
-            justify-content: flex-end;
-            width: 100%;
-            margin: -2px 0 10px 0;
-        }
+        .reset-link-container { display: flex; justify-content: flex-end; width: 100%; margin-bottom: 5px; }
+        .forgot-btn { background: none; border: none; color: #94a3b8; font-size: 0.75rem; cursor: pointer; width: auto; padding: 2px; }
+        .forgot-btn b { color: var(--accent); }
 
-        .forgot-btn {
-            background: none;
-            border: none;
-            color: #94a3b8;
-            font-size: 0.85rem;
-            cursor: pointer;
-            padding: 4px;
-            font-family: inherit;
-            width: auto;
-        }
+        .banking-section { margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--border); }
+        .banking-label { font-size: 0.6rem; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .bank-text { font-size: 0.75rem; font-weight: 700; color: #818cf8; }
 
-        .forgot-btn b { color: var(--accent); text-decoration: none; }
-
-        .banking-section {
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid var(--border);
-        }
-        .banking-label { font-size: 0.65rem; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 5px; }
-        .bank-text { font-size: 0.8rem; font-weight: 700; color: #818cf8; letter-spacing: 0.5px; }
-
-        .toggle-link { text-align: center; font-size: 0.9rem; margin-top: 15px; cursor: pointer; color: #94a3b8; }
-        .toggle-link b { color: var(--primary); text-decoration: none; }
+        .toggle-link { text-align: center; font-size: 0.85rem; margin-top: 12px; cursor: pointer; color: #94a3b8; }
+        .toggle-link b { color: var(--primary); }
 
         .saftech-footer {
-            margin-top: 20px; text-align: center; padding: 12px;
+            margin-top: 15px; text-align: center; padding: 10px;
             border-radius: 20px; background: rgba(255, 255, 255, 0.03);
             width: 100%; box-sizing: border-box; border: 1px solid var(--border);
         }
-        .saftech-footer h4 { font-size: 0.65rem; text-transform: uppercase; color: var(--primary); margin: 0 0 4px 0; letter-spacing: 1px; }
-        .contact-info { font-weight: 700; color: #ffffff; margin-top: 4px; font-size: 0.85rem; }
+        .saftech-footer h4 { font-size: 0.6rem; text-transform: uppercase; color: var(--primary); margin: 0 0 2px 0; }
+        .contact-info { font-weight: 700; color: #ffffff; margin-top: 2px; font-size: 0.8rem; }
 
         .hidden { display: none !important; }
     </style>
@@ -276,8 +247,8 @@
     </div>
 
     <div class="saftech-footer">
-        <h4>System by SAFTECH</h4>
-        <p style="font-size: 0.75rem; margin:0; color: #94a3b8;">Engineered by <b>ALEX SAFARI</b></p>
+        <h4>System by SAFTECH SOLUTIONS</h4>
+        <p style="font-size: 0.7rem; margin:0; color: #94a3b8;">Engineered by <b>ALEX SAFARI</b></p>
         <p class="contact-info">📞 0794963537 | 0707441702</p>
     </div>
 </div>
@@ -334,8 +305,7 @@
                 await checkRoleAndRedirect(data.user.id);
             } else {
                 const { data, error } = await supabase.auth.signUp({ 
-                    email, 
-                    password, 
+                    email, password, 
                     options: { 
                         data: { role: role },
                         emailRedirectTo: window.location.origin + '/index.html'
@@ -343,7 +313,7 @@
                 });
                 if (error) throw error;
                 await supabase.from('profiles').upsert({ id: data.user.id, role: role, email: email });
-                alert("Account created! Check your email to confirm registration.");
+                alert("Account created! Check email.");
                 toggleMode();
             }
         } catch (err) {
@@ -357,28 +327,22 @@
     async function checkRoleAndRedirect(userId) {
         const { data, error } = await supabase.from('profiles').select('role').eq('id', userId).single();
         if (data) {
-            // SHOW WELCOME SPLASH
             const overlay = document.getElementById('welcome-overlay');
             const welcomeName = document.getElementById('welcome-name');
             const welcomeRole = document.getElementById('welcome-role');
-            
             overlay.classList.remove('hidden');
-            
             if (data.role === 'admin') {
-                welcomeName.innerText = "WELCOME ADMIN, JEPE AUTOSPARES MANAGER ";
+                welcomeName.innerText = "WELCOME ADMIN, JEPE AUTOSPARES MANAGER";
                 welcomeRole.innerText = "Accessing Management Dashboard...";
             } else {
-                welcomeName.innerText = "WELCOME   SAMUEL SYENGO, JEPE AUTOSPARES CASHIER ";
+                welcomeName.innerText = "WELCOME SAMUEL SYENGO, JEPE CASHIER";
                 welcomeRole.innerText = "Opening Sales Terminal...";
             }
-
-            // DELAY REDIRECT FOR EFFECT
             setTimeout(() => {
                 window.location.href = (data.role === 'admin') ? 'admin.html' : 'cashier.html';
             }, 2500);
-
         } else {
-            alert("Profile not found. Please verify your email.");
+            alert("Profile not found.");
             await supabase.auth.signOut();
         }
     }
