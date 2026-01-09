@@ -112,7 +112,7 @@
 
     <div class="slide-indicator" id="scrollHint">
     <span class="hand-icon">👉</span>
-    <span style="letter-spacing: 1px;">SLIDE TABLE BELOW TO VIEW ALL DETAILS</span>
+    <span style="letter-spacing: 1px;">SLIDE TABLE TO VIEW ALL DETAILS</span>
     
 </div>
 
@@ -136,6 +136,99 @@
             </table>
         </div>
     </div>
+    <div class="slide-indicator" id="scrollHint">
+    <span class="swipe-hand">👋</span>
+    <span style="letter-spacing: 1px;">SWIPE TABLE SIDEWAYS TO VIEW ALL DETAILS</span>
+    <span class="swipe-hand">👋</span>
+</div>
+
+<style>
+/* Swiping Hand Animation */
+.swipe-hand { 
+    font-size: 1.5rem; 
+    display: inline-block;
+    animation: swipeGesture 2s infinite ease-in-out; 
+}
+
+@keyframes swipeGesture {
+    0% { transform: translateX(15px) rotate(0deg); opacity: 0; }
+    20% { opacity: 1; }
+    80% { transform: translateX(-15px) rotate(-20deg); opacity: 1; }
+    100% { transform: translateX(-20px) rotate(-20deg); opacity: 0; }
+}
+
+.slide-indicator {
+    background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #fff;
+    padding: 16px;
+    border-radius: 14px;
+    display: none; 
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    font-weight: 800;
+    font-size: 0.75rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+@media (max-width: 1024px) {
+    .slide-indicator { display: flex; }
+}
+</style>
+
+<script type="module">
+    // ... inside your render function loop ...
+    const startD = new Date(sh.start_time);
+    
+    tableHtml += `
+        <tr>
+            <td class="date-cell">
+                <b style="color:var(--primary)">${startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'})}</b>
+                <span class="time-pill">IN: ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span><br>
+                <span class="time-pill">${sh.end_time ? 'OUT: '+new Date(sh.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'ACTIVE'}</span>
+            </td>
+            <td>
+                <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash||0).toLocaleString()}</span></div>
+                <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa||0).toLocaleString()}</span></div>
+                <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb||0).toLocaleString()}</span></div>
+                <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity||0).toLocaleString()}</span></div>
+                <div class="total-row">Total: ${openTotal.toLocaleString()}</div>
+            </td>
+            <td>
+                <a href="sales-history.html" class="revenue-card">
+                    <div class="account-line"><span class="account-label">Cash Sales</span><span class="account-val" style="color:var(--success)">+${cashSales.toLocaleString()}</span></div>
+                    <div class="account-line"><span class="account-label">KCB Paybill</span><span class="account-val" style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span></div>
+                    <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">VIEW SALES ➔</div>
+                </a>
+            </td>
+            <td>
+                <div class="adj-box">
+                    <div class="account-line"><span class="account-label">Money In</span><span class="account-val" style="color:var(--success)">+${moneyIn.toLocaleString()}</span></div>
+                    <div class="account-line"><span class="account-label">Money Out</span><span class="account-val" style="color:var(--danger)">-${moneyOut.toLocaleString()}</span></div>
+                </div>
+            </td>
+            <td>
+                <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.close_cash||0).toLocaleString()}</span></div>
+                <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa||0).toLocaleString()}</span></div>
+                <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.close_kcb||0).toLocaleString()}</span></div>
+                <div class="account-line"><span class="account-label">Paybill</span><span class="account-val">${(sh.close_kcb_bank||0).toLocaleString()}</span></div>
+                <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.close_equity||0).toLocaleString()}</span></div>
+                <div class="total-row" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>
+            </td>
+            <td>
+                <span class="status-badge ${statusClass}">
+                    ${isClosed ? 'VAR: ' + variance.toLocaleString() : 'SHIFT ACTIVE'}
+                </span>
+                <div style="font-size: 0.65rem; color: var(--dim); margin-top: 8px; text-align: center; font-weight: 600;">
+                    Expected: ${expected.toLocaleString()}
+                </div>
+            </td>
+            <td><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--dim); font-style: italic;">${sh.variance_note || '—'}</div></td>
+        </tr>`;
+</script>
 </main>
 
 <script type="module">
