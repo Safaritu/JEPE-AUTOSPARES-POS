@@ -3,22 +3,21 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Inventory Master | JEPE ADMIN</title>
+    <title>Add Stock | JEPE ADMIN</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root { 
-            --admin-dark: #1e293b;
-            --admin-accent: #6366f1;
-            --bg: #f8fafc;
+            --admin-dark: #0f172a;
+            --admin-accent: #1e3a8a;
+            --bg: #f1f5f9;
             --white: #ffffff;
             --text: #1e293b;
             --text-dim: #64748b;
             --green: #10b981; 
             --blue: #2563eb; 
-            --purple: #8b5cf6; 
             --danger: #ef4444; 
-            --orange: #f59e0b;
+            --warning: #f59e0b;
             --sidebar-width: 260px;
         }
 
@@ -54,89 +53,116 @@
         .sidebar.active { left: 0 !important; }
 
         .close-sidebar-btn {
-            display: none; 
             position: absolute;
             right: 15px;
             top: 15px;
-            background: none;
+            background: rgba(255,255,255,0.1);
             border: none;
-            color: #94a3b8;
-            font-size: 1.5rem;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            font-size: 1.2rem;
             cursor: pointer;
             z-index: 2001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         @media (min-width: 1024px) {
             .sidebar { left: 0; }
             .main-wrapper { margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)); }
-            body.sidebar-closed .sidebar { left: -260px; }
-            body.sidebar-closed .main-wrapper { margin-left: 0; width: 100%; }
-            body.sidebar-closed .mobile-header { display: flex !important; }
-            .mobile-header { display: none; }
-            .close-sidebar-btn { display: block; } 
+            .close-sidebar-btn { display: none; }
         }
 
-        .sidebar h2 { color: white; font-weight: 800; font-size: 1.2rem; margin-bottom: 25px; letter-spacing: 1px; }
+        .sidebar h2 { color: white; font-weight: 800; font-size: 1.2rem; margin-bottom: 25px; letter-spacing: 1px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; }
         
         .nav-link {
-            display: flex; align-items: center; padding: 10px 15px;
+            display: flex; align-items: center; padding: 12px 15px;
             color: #94a3b8; text-decoration: none; font-weight: 600;
-            border-radius: 10px; margin-bottom: 2px; transition: 0.2s; font-size: 0.8rem;
+            border-radius: 10px; margin-bottom: 5px; transition: 0.2s; font-size: 0.8rem;
+            gap: 10px;
         }
         .nav-link:hover { background: rgba(255,255,255,0.05); color: white; }
         .nav-link.active { background: var(--admin-accent); color: white; }
+        .nav-link.switch-link { background: #0ea5e9; color: white; margin-bottom: 15px; font-weight: 800; }
 
         /* --- MAIN CONTENT --- */
         .main-wrapper { width: 100%; transition: 0.3s; }
         .mobile-header {
-            background: var(--admin-dark); color: white; padding: 15px 20px;
+            background: white; color: var(--admin-dark); padding: 15px 20px;
             display: flex; justify-content: space-between; align-items: center;
-            position: sticky; top: 0; z-index: 1000;
+            position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid #e2e8f0;
         }
 
-        .container { padding: 20px; max-width: 1400px; margin: auto; }
+        .container { padding: 15px; max-width: 1200px; margin: auto; }
 
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
-        .stat-box { padding: 15px; border-radius: 12px; color: white; }
-        .stat-box small { font-size: 0.65rem; text-transform: uppercase; font-weight: 700; opacity: 0.8; }
-        .stat-box div { font-size: 1.1rem; font-weight: 800; margin-top: 4px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+        @media (min-width: 768px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+        
+        .stat-box { padding: 15px; border-radius: 16px; color: white; }
+        .stat-box small { font-size: 0.6rem; text-transform: uppercase; font-weight: 700; opacity: 0.8; display: block; }
+        .stat-box div { font-size: 1rem; font-weight: 800; margin-top: 4px; }
 
         .card { 
-            background: var(--white); padding: 20px; border-radius: 16px; 
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; 
+            background: var(--white); padding: 20px; border-radius: 20px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #eef2f6; 
             margin-bottom: 20px; 
         }
 
         /* --- FORM --- */
-        .form-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
+        .form-row { display: grid; grid-template-columns: repeat(1, 1fr); gap: 12px; margin-bottom: 12px; }
+        @media (min-width: 768px) { .form-row { grid-template-columns: repeat(3, 1fr); } }
+        
         input, select { 
-            padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; 
-            font-size: 0.85rem; width: 100%; font-family: inherit;
+            padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 10px; 
+            font-size: 0.85rem; width: 100%; font-family: inherit; outline: none;
         }
+        input:focus { border-color: var(--admin-accent); }
+        
         .btn-add { 
-            background: var(--green); color: white; border: none; padding: 10px; 
-            border-radius: 8px; font-weight: 800; cursor: pointer;
+            background: var(--admin-accent); color: white; border: none; padding: 12px; 
+            border-radius: 10px; font-weight: 800; cursor: pointer; font-size: 0.85rem;
         }
 
-        /* --- TABLE --- */
-        .table-container { width: 100%; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        /* --- TABLE & SCROLL INDICATOR --- */
+        .scroll-hint { 
+            display: flex; align-items: center; gap: 5px; color: var(--text-dim); 
+            font-size: 0.65rem; font-weight: 700; margin-bottom: 8px; justify-content: flex-end;
+        }
+        @media (min-width: 1024px) { .scroll-hint { display: none; } }
+
+        .table-container { 
+            width: 100%; overflow-x: auto; position: relative;
+            border-radius: 10px; border: 1px solid #f1f5f9;
+        }
+        /* Visual cue for scrolling */
+        .table-container::after {
+            content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 20px;
+            background: linear-gradient(to left, rgba(0,0,0,0.05), transparent);
+            pointer-events: none;
+        }
+
+        table { width: 100%; border-collapse: collapse; min-width: 700px; }
         th { text-align: left; padding: 12px; background: #f8fafc; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; }
         td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; }
 
         .onetouch-flex { display: flex; gap: 5px; align-items: center; }
-        .onetouch-input { width: 50px !important; text-align: center; padding: 5px !important; }
-        .btn-touch { background: var(--admin-accent); color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.7rem; }
+        .onetouch-input { width: 60px !important; text-align: center; padding: 8px !important; }
+        .btn-touch { background: var(--admin-dark); color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.7rem; }
 
-        .badge { background: #f1f5f9; padding: 3px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: 700; color: var(--text-dim); }
+        .badge { background: #f1f5f9; padding: 4px 8px; border-radius: 6px; font-size: 0.6rem; font-weight: 700; color: var(--text-dim); }
         .low-stock-row { background: #fff1f2; }
 
-        @media (max-width: 1023px) {
-            .stats-grid { grid-template-columns: 1fr 1fr; }
-            .form-row { grid-template-columns: 1fr; }
+        .load-more-btn {
+            width: 100%; padding: 15px; background: white; border: 2px dashed #cbd5e1;
+            border-radius: 12px; color: var(--text-dim); font-weight: 800; cursor: pointer;
+            margin-top: 15px; transition: 0.2s;
         }
+        .load-more-btn:hover { background: #f8fafc; border-color: var(--admin-accent); color: var(--admin-accent); }
 
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; z-index: 1500; }
+        .overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); display: none; z-index: 1500; }
         .overlay.active { display: block; }
     </style>
 </head>
@@ -148,30 +174,31 @@
     <button class="close-sidebar-btn" onclick="toggleSidebar()">✕</button>
     <h2>JEPE ADMIN</h2>
     <nav>
-      <a href="admin.html" class="nav-link ">📊 Dashboard view</a>
-        <a href="shift-history.html" class="nav-link">📋 Daily Shift Audit</a>
-        <a href="reports.html" class="nav-link">📄 Detailed Reports</a>
-        <a href="money-history.html" class="nav-link">📜 Money money IN/OUT history</a>
-        <a href="gas_hub.html" class="nav-link">🔥 Gas Hub</a>
-        <a href="inventory.html" class="nav-link active">➕ Add Stock</a>
-         <a href="low_stock.html" class="nav-link" id="low-stock-nav">⚠️ Low Stock Alerts</a>
-         <a href="price_audits.html" class="nav-link">📉 item sold under price</a>
-        <a href="audit_trail.html" class="nav-link ">🔍 what cashier edited</a>
-        <a href="sales_editor.html" class="nav-link">✏️ Edit Stock/Sales</a>
-        <a href="sales-history.html" class="nav-link">📜 Sales History</a>
-         <a href="suppliers.html" class="nav-link">🤝 Suppliers</a>
-        <a href="admin-debtors.html" class="nav-link">👥 Debtors</a>
-       <a href="Monthly Performance Report.html" class="nav-link"><span>📄</span><small>Monthly Report</small></a>
+        <a href="#" onclick="confirmSwitchToCashier(event)" class="nav-link switch-link"><span>🔄</span> SWITCH TO CASHIER</a>
+        <a href="admin.html" class="nav-link"><span>📊</span> Dashboard</a>
+        <a href="inventory.html" class="nav-link active"><span>➕</span> Add Stock</a>
+        <a href="sales_editor.html" class="nav-link"><span>✏️</span> Edit Stock</a>
+        <a href="gas_hub.html" class="nav-link"><span>🔥</span> Gas Hub</a>
+        <a href="shift-history.html" class="nav-link"><span>📋</span> Daily Shifts Records</a>
+        <a href="sales-history.html" class="nav-link"><span>📜</span> Sales History</a>
+        <a href="money-history.html" class="nav-link"><span>💰</span> Money IN/OUT</a>
+        <a href="admin-debtors.html" class="nav-link"><span>👥</span> Debtors</a>
+        <a href="low_stock.html" class="nav-link"><span>⚠️</span> Low Stock</a>
+        <a href="audit_trail.html" class="nav-link"><span>🔍</span> Inventory Track</a>
+        <a href="reports.html" class="nav-link"><span>📄</span> Reports</a>
+        <a href="price_audits.html" class="nav-link"><span>📉</span> Underpriced</a>
+        <a href="suppliers.html" class="nav-link"><span>🤝</span> Suppliers</a>
+        <a href="Monthly Performance Report.html" class="nav-link"><span>📅</span> Monthly report</a>
     </nav>
     <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-        <a onclick="handleLogout()" class="nav-link" style="color: #fb7185; cursor:pointer;">🚪 Logout</a>
+        <a onclick="handleLogout()" class="nav-link" style="color: #fb7185; cursor:pointer;">🚪 Logout System</a>
     </div>
 </div>
 
 <div class="main-wrapper">
     <div class="mobile-header">
-        <button onclick="toggleSidebar()" style="background:none; border:none; color:white; font-size:1.5rem;">☰</button>
-        <div style="font-weight:800; font-size: 0.9rem;">INVENTORY MASTER</div>
+        <button onclick="toggleSidebar()" style="background:none; border:none; color:var(--admin-dark); font-size:1.5rem; cursor:pointer;">☰</button>
+        <div style="font-weight:800; font-size: 1rem; color: var(--admin-accent);">ADD STOCK HUB</div>
         <div style="width:24px;"></div>
     </div>
 
@@ -179,15 +206,17 @@
         <div class="stats-grid">
             <div class="stat-box" style="background:var(--blue);"><small>Today Rev</small><div id="total-rev">Ksh 0</div></div>
             <div class="stat-box" style="background:var(--green);"><small>Today Profit</small><div id="total-profit">Ksh 0</div></div>
-            <div class="stat-box" style="background:var(--purple);"><small>Total Items</small><div id="total-items">0</div></div>
-            <div class="stat-box" style="background:var(--orange);"><small>Suppliers</small><div id="total-sups">0</div></div>
+            <div class="stat-box" style="background:var(--admin-dark);"><small>Total Items</small><div id="total-items">0</div></div>
+            <div class="stat-box" style="background:var(--warning);"><small>Suppliers</small><div id="total-sups">0</div></div>
         </div>
 
         <div class="card">
-            <h3 style="margin: 0 0 15px 0; font-size: 1rem;">Register New Item</h3>
+            <h3 style="margin: 0 0 15px 0; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                <span>📦</span> Register New Item
+            </h3>
             <form id="admin-form">
                 <div class="form-row">
-                    <input type="text" id="name" placeholder="Item Name" required>
+                    <input type="text" id="name" placeholder="Item Name (e.g. Brake Pads)" required>
                     <select id="cat" onchange="toggleGas()">
                         <option value="Spare Part">Spare Part</option>
                         <option value="Motorbike">Motorbike</option>
@@ -224,8 +253,11 @@
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
                 <h3 style="margin:0; font-size: 1rem;">Live Stock List</h3>
-                <input type="text" id="adminSearch" placeholder="Search item or supplier..." style="max-width:250px;">
+                <input type="text" id="adminSearch" placeholder="Search item or supplier..." style="max-width:250px; margin-bottom: 0;">
             </div>
+            
+            <div class="scroll-hint">Slide left to see more info ⮕</div>
+
             <div class="table-container">
                 <table>
                     <thead>
@@ -242,6 +274,7 @@
                     <tbody id="inv-table-body"></tbody>
                 </table>
             </div>
+            <button id="loadMoreBtn" class="load-more-btn">LOAD MORE ITEMS</button>
         </div>
     </div>
 </div>
@@ -250,6 +283,7 @@
     import { supabase } from './auth.js';
     let allProducts = [];
     let allSuppliers = [];
+    let displayLimit = 10;
 
     window.toggleSidebar = () => {
         if (window.innerWidth >= 1024) {
@@ -260,11 +294,20 @@
         }
     };
 
+    window.confirmSwitchToCashier = (e) => {
+        e.preventDefault();
+        const msg = "Are you sure you want to switch to Cashier Mode?\n\nNote: If you want to come back to the Admin Hub, you can click 'Back' on your device or sign in again.";
+        if(confirm(msg)) {
+            window.location.href = "cashier.html";
+        }
+    };
+
     window.toggleGas = () => {
         document.getElementById('gas-row').style.display = (document.getElementById('cat').value === 'Gas') ? 'grid' : 'none';
     };
 
     async function load() {
+        // Today Stats
         const today = new Date().toISOString().split('T')[0];
         const { data: sales } = await supabase.from('sales').select('*').gte('created_at', today);
         let rev = 0, prof = 0;
@@ -275,20 +318,30 @@
         document.getElementById('total-rev').innerText = `Ksh ${rev.toLocaleString()}`;
         document.getElementById('total-profit').innerText = `Ksh ${prof.toLocaleString()}`;
 
+        // Suppliers
         const { data: sups } = await supabase.from('suppliers').select('id, name').order('name');
         allSuppliers = sups || [];
         document.getElementById('total-sups').innerText = allSuppliers.length;
         document.getElementById('prod-supplier').innerHTML = '<option value="">-- Select Supplier --</option>' + 
             allSuppliers.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
 
+        // Products
         const { data: items } = await supabase.from('products').select('*, suppliers(name)').order('name');
         allProducts = items || [];
         document.getElementById('total-items').innerText = allProducts.length;
-        render(allProducts);
+        render();
     }
 
-    function render(data) {
-        document.getElementById('inv-table-body').innerHTML = data.map(p => `
+    function render() {
+        const searchTerm = document.getElementById('adminSearch').value.toLowerCase();
+        const filtered = allProducts.filter(p => 
+            p.name.toLowerCase().includes(searchTerm) || 
+            (p.suppliers?.name && p.suppliers.name.toLowerCase().includes(searchTerm))
+        );
+
+        const visible = filtered.slice(0, displayLimit);
+        
+        document.getElementById('inv-table-body').innerHTML = visible.map(p => `
             <tr class="${p.stock_quantity < 5 ? 'low-stock-row' : ''}">
                 <td>
                     <div style="font-weight:700;">${p.name}</div>
@@ -307,6 +360,9 @@
                 </td>
             </tr>
         `).join('');
+
+        // Show/Hide Load More
+        document.getElementById('loadMoreBtn').style.display = (displayLimit >= filtered.length) ? 'none' : 'block';
     }
 
     window.quickAdd = async (id, name, current) => {
@@ -336,12 +392,14 @@
         else { document.getElementById('admin-form').reset(); load(); }
     };
 
-    document.getElementById('adminSearch').oninput = (e) => {
-        const term = e.target.value.toLowerCase();
-        render(allProducts.filter(p => p.name.toLowerCase().includes(term) || (p.suppliers?.name && p.suppliers.name.toLowerCase().includes(term))));
+    document.getElementById('adminSearch').oninput = render;
+    document.getElementById('loadMoreBtn').onclick = () => {
+        displayLimit += 15;
+        render();
     };
 
-    window.handleLogout = async () => { if(confirm("Logout?")) { await supabase.auth.signOut(); window.location.href = 'index.html'; } };
+    window.handleLogout = async () => { if(confirm("Logout from System?")) { await supabase.auth.signOut(); window.location.href = 'index.html'; } };
+    
     load();
 </script>
 </body>
