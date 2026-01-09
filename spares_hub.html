@@ -16,16 +16,23 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); margin: 0; display: flex; color: var(--text); min-height: 100vh; }
         
         /* Sidebar Styles */
-        .sidebar { width: var(--sidebar-collapsed); height: 100vh; background: var(--admin-dark); color: white; padding: 20px 10px; position: fixed; transition: 0.3s; overflow-x: hidden; z-index: 1000; }
+        .sidebar { width: var(--sidebar-collapsed); height: 100vh; background: var(--admin-dark); color: white; padding: 20px 10px; position: fixed; transition: 0.3s; overflow-x: hidden; z-index: 2000; }
         .sidebar:hover, .sidebar.mobile-active { width: var(--sidebar-width); }
-        .sidebar h2 { font-size: 1.2rem; margin-bottom: 30px; white-space: nowrap; opacity: 0; transition: 0.3s; padding-left: 10px; }
+        .sidebar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; padding: 0 10px; }
+        .sidebar h2 { font-size: 1.2rem; margin: 0; white-space: nowrap; opacity: 0; transition: 0.3s; }
         .sidebar:hover h2, .sidebar.mobile-active h2 { opacity: 1; }
+        
+        .close-btn { display: none; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+
         .nav-link { display: flex; align-items: center; padding: 12px; color: #94a3b8; text-decoration: none; border-radius: 8px; margin-bottom: 5px; transition: 0.3s; }
         .nav-link span:first-child { min-width: 30px; font-size: 1.2rem; text-align: center; }
         .nav-link span:last-child { opacity: 0; white-space: nowrap; transition: 0.3s; margin-left: 15px; }
         .sidebar:hover .nav-link span:last-child, .sidebar.mobile-active .nav-link span:last-child { opacity: 1; }
         .nav-link:hover, .nav-link.active { background: var(--admin-accent); color: white; }
         
+        /* Menu Trigger */
+        .menu-trigger { display: none; position: fixed; top: 15px; left: 15px; z-index: 1500; background: var(--admin-dark); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
         .main-content { margin-left: var(--sidebar-collapsed); padding: 30px; width: calc(100% - var(--sidebar-collapsed)); transition: 0.3s; box-sizing: border-box; }
         
         /* Stats Grid */
@@ -57,20 +64,28 @@
         .btn-load:hover { background: var(--admin-accent); color: white; }
 
         @media (max-width: 768px) {
-            .main-content { margin-left: 0; width: 100%; padding: 20px; }
-            .sidebar { transform: translateX(-100%); }
-            .sidebar.mobile-active { transform: translateX(0); width: var(--sidebar-width); }
+            .menu-trigger { display: block; }
+            .sidebar { transform: translateX(-100%); width: var(--sidebar-width); }
+            .sidebar.mobile-active { transform: translateX(0); }
+            .sidebar:hover { width: var(--sidebar-width); }
+            .close-btn { display: block; }
+            .main-content { margin-left: 0; width: 100%; padding: 70px 20px 20px 20px; }
             .charts-container { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
+    <button class="menu-trigger" onclick="toggleSidebar()">☰ MENU</button>
+
     <div class="sidebar" id="sidebar">
-        <h2>JEPE ADMIN</h2>
+        <div class="sidebar-header">
+            <h2>JEPE ADMIN</h2>
+            <button class="close-btn" onclick="toggleSidebar()">×</button>
+        </div>
         <nav>
-                   <a href="admin.html" class="nav-link"><span>📊</span> <span>Dashboard</span></a>
-            <a href="gas_hub.html" class="nav-link "><span>🔥</span> <span>Gas Hub</span></a>
-            <a href="spares_hub.html" class="nav-link active"><span>📋</span> <span>Spare Parts Hub</span></a>
+            <a href="admin.html" class="nav-link"><span>📊</span> <span>Dashboard</span></a>
+            <a href="gas_hub.html" class="nav-link"><span>🔥</span> <span>Gas Hub</span></a>
+            <a href="spares_hub.html" class="nav-link active"><span>⚙️</span> <span>Spare Parts Hub</span></a>
             <a href="motorbike_hub.html" class="nav-link"><span>🏍️</span> <span>Motorbike Hub</span></a>
             <a href="shift-history.html" class="nav-link"><span>📋</span> <span>Daily Shifts</span></a>
             <a href="money-history.html" class="nav-link"><span>💰</span> <span>Money IN/OUT</span></a>
@@ -81,11 +96,9 @@
             <a href="low_stock.html" class="nav-link"><span>⚠️</span> <span>Low Stock</span></a>
             <a href="audit_trail.html" class="nav-link"><span>🔍</span> <span>Inventory Track</span></a>
             <a href="reports.html" class="nav-link"><span>📄</span> <span>Reports</span></a>
-            <a href="price_audits.html" class="nav-link"><span>📉</span> <span>Underpriced</span></a>
+            <a href="price_audits.html" class="nav-item"><span>📉</span> <span>Underpriced</span></a>
             <a href="suppliers.html" class="nav-link"><span>🤝</span> <span>Suppliers</span></a>
             <a href="admin.html" class="nav-link"><span>🏠</span> <span>HOME</span></a>
-            
-           
         </nav>
     </div>
 
@@ -160,12 +173,14 @@
         let allPerformanceData = [];
         let charts = {};
 
+        // Sidebar Toggle for Mobile
+        window.toggleSidebar = function() {
+            document.getElementById('sidebar').classList.toggle('mobile-active');
+        }
+
         async function init() {
-            // Fetch Products (Spares only)
             const { data: products } = await supabase.from('products').select('*').eq('category', 'Spare Part');
-            // Fetch Sales
             const { data: sales } = await supabase.from('sales').select('*');
-            
             if (products) render(products, sales || []);
         }
 
@@ -181,35 +196,27 @@
             let todaySales = 0, todayProfit = 0, totalStockValue = 0;
             const perfMap = {};
 
-            // 1. Process Products
             products.forEach(p => {
                 const type = p.part_type === 'N/A' || !p.part_type ? 'General' : p.part_type;
                 productTypeMap[p.id] = type;
-                
                 const stockVal = (p.stock_quantity || 0) * (p.cost_price || 0);
                 stats[type].cost += stockVal;
                 stats[type].count++;
                 totalStockValue += stockVal;
-
                 perfMap[p.id] = { name: p.name, type: type, stock: p.stock_quantity, sold: 0, rev: 0, prof: 0 };
             });
 
-            // 2. Process Sales
             sales.forEach(s => {
-                // Link sale to product to get correct Type (Copy/Original)
                 if (productTypeMap[s.product_id] || s.category === 'Spare Part') {
                     const type = productTypeMap[s.product_id] || 'General';
                     const amt = s.total_amount || 0;
                     const profit = amt - ((s.cost_price || 0) * (s.quantity || 0));
-
                     stats[type].sales += amt;
                     stats[type].profit += profit;
-
                     if (new Date(s.created_at).toLocaleDateString() === today) {
                         todaySales += amt;
                         todayProfit += profit;
                     }
-
                     if (perfMap[s.product_id]) {
                         perfMap[s.product_id].sold += (s.quantity || 0);
                         perfMap[s.product_id].rev += amt;
@@ -218,7 +225,6 @@
                 }
             });
 
-            // 3. Update UI
             document.getElementById('shift-sales').innerText = `Ksh ${todaySales.toLocaleString()}`;
             document.getElementById('shift-profit').innerText = `Ksh ${todayProfit.toLocaleString()}`;
             document.getElementById('total-items').innerText = products.length;
@@ -254,8 +260,6 @@
 
         function updateCharts(stats) {
             const labels = ['Original', 'Copy', 'General'];
-            
-            // Profit Chart
             new Chart(document.getElementById('profitChart'), {
                 type: 'bar',
                 data: {
@@ -269,7 +273,6 @@
                 options: { responsive: true, plugins: { legend: { display: false } } }
             });
 
-            // Inventory Chart
             new Chart(document.getElementById('invChart'), {
                 type: 'doughnut',
                 data: {
