@@ -43,7 +43,6 @@
         /* --- MAIN CONTENT --- */
         .main-content { margin-left: var(--sidebar-width); flex-grow: 1; padding: 40px; width: 100%; overflow-x: hidden; }
 
-        /* Mobile Summary Scroll */
         .report-summary { 
             display: flex; gap: 15px; margin-bottom: 30px; overflow-x: auto; 
             padding-bottom: 10px; scrollbar-width: none;
@@ -60,16 +59,15 @@
         .grid { display: grid; grid-template-columns: 380px 1fr; gap: 30px; }
         .card { background: var(--card); border-radius: 24px; border: 1px solid var(--border); padding: 20px; }
         
-        input { 
+        input, select { 
             width: 100%; padding: 14px; border: 1px solid var(--border); 
-            border-radius: 12px; font-size: 16px; background: #fcfcfc;
+            border-radius: 12px; font-size: 16px; background: #fcfcfc; outline: none;
         }
         .btn-primary { 
             width: 100%; padding: 16px; background: var(--primary); color: white; 
-            border: none; border-radius: 14px; font-weight: 700; font-size: 1rem;
+            border: none; border-radius: 14px; font-weight: 700; font-size: 1rem; cursor: pointer;
         }
 
-        /* Responsive Table to Cards */
         .table-container { width: 100%; }
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; padding: 15px; background: #f8fafc; font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; }
@@ -85,6 +83,16 @@
 
         .overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); display: none; z-index: 2500; backdrop-filter: blur(4px); }
 
+        /* Modal Styles */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 4000; padding: 20px; }
+        .modal-content { background: white; padding: 30px; border-radius: 20px; width: 100%; max-width: 400px; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+
         @media (max-width: 1100px) {
             .sidebar { transform: translateX(-100%); }
             .sidebar.active { transform: translateX(0); }
@@ -92,43 +100,41 @@
             .mobile-header { display: flex; }
             .overlay.active { display: block; }
             .grid { grid-template-columns: 1fr; }
-
-            /* Table Transformation */
             thead { display: none; }
-            tr { 
-                display: block; background: white; border: 1px solid var(--border); 
-                border-radius: 16px; margin-bottom: 15px; padding: 15px;
-            }
-            td { 
-                display: flex; justify-content: space-between; align-items: center; 
-                padding: 8px 0; border: none; text-align: right;
-            }
+            tr { display: block; background: white; border: 1px solid var(--border); border-radius: 16px; margin-bottom: 15px; padding: 15px; }
+            td { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border: none; text-align: right; }
             td::before { content: attr(data-label); font-weight: 700; color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase; text-align: left; }
-            td:last-child { border-top: 1px solid #f1f5f9; margin-top: 10px; padding-top: 15px; }
         }
     </style>
 </head>
 <body>
 
+<div id="print-area"></div>
 <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
 <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">JEPE ADMIN</div>
     <div class="nav-list">
-        <a href="admin.html" class="nav-item">📊 Dashboard</a>
-        <a href="shift-history.html" class="nav-item">📋 Daily Shift Audit</a>
-        <a href="reports.html" class="nav-item">📄 Reports</a>
-         <a href="gas_hub.html" class="nav-item">🔥 Gas Hub</a>
-         <a href="money-history.html" class="nav-item">💰 Money IN/OUT History</a>
-        <a href="inventory.html" class="nav-item">➕ Add Stock</a>
-        <a href="audit_trail.html" class="nav-item">🔍 Track Stock Edits</a>
-        <a href="sales_editor.html" class="nav-item">✏️ Edit Stock/Sales</a>
-        <a href="sales-history.html" class="nav-item">📜 Sales History</a>
-         <a href="low_stock.html" class="nav-item">⚠️ Low Stock Alerts</a>
-         <a href="suppliers.html" class="nav-item">🤝 Suppliers</a>
-          <a href="price_audits.html" class="nav-item">📉 Price Audits</a>
-          <a href="admin-debtors.html" class="nav-item active">👥 Debtors Hub</a>
-        <a href="Monthly Performance Report.html" class="nav-item"><span>📄</span><small>Monthly Report</small></a>
+        <a href="admin.html" class="nav-item"><span>📊</span> Dashboard</a>
+        <a href="gas_hub.html" class="nav-item"><span>🔥</span> Gas Hub</a>
+        <a href="spares_hub.html" class="nav-item"><span>⚙️</span> Spare Parts Hub</a>
+        <a href="motorbike_hub.html" class="nav-item"><span>🏍️</span> Motorbike Hub</a>
+
+        <a href="shift-history.html" class="nav-item "><span>📋</span> Daily Shifts</a>
+        <a href="money-history.html" class="nav-item"><span>💰</span> Money IN/OUT</a>
+        <a href="sales-history.html" class="nav-item"><span>📜</span> Sales History</a>
+
+        <a href="inventory.html" class="nav-item"><span>➕</span> Add Stock</a>
+        <a href="sales_editor.html" class="nav-item"><span>✏️</span> Edit Stock</a>
+        <a href="admin-debtors.html" class="nav-item active"><span>👥</span> Debtors</a>
+        <a href="low_stock.html" class="nav-item"><span>⚠️</span> Low Stock</a>
+        <a href="audit_trail.html" class="nav-item"><span>🔍</span> Inventory Track</a>
+
+        <a href="reports.html" class="nav-item"><span>📄</span> Reports</a>
+        <a href="price_audits.html" class="nav-item"><span>📉</span> Underpriced</a>
+        <a href="suppliers.html" class="nav-item"><span>🤝</span> Suppliers</a>
+        <a href="admin.html" class="nav-item"><span>🏠</span> HOME</a>
+        
         <div style="margin-top: 20px; padding-bottom: 20px;">
             <a href="#" onclick="handleLogout()" class="nav-item" style="color: var(--danger);">🚪 Logout</a>
         </div>
@@ -182,7 +188,7 @@
                 </div>
 
                 <input type="number" id="debt-amt" placeholder="Debt Amount (Ksh)" step="0.01" required>
-                <button type="submit" class="btn-primary" style="margin-top: 20px;">RECORD ENTRY</button>
+                <button type="submit" id="submit-btn" class="btn-primary" style="margin-top: 20px;">RECORD ENTRY</button>
             </form>
         </div>
 
@@ -214,11 +220,29 @@
     </div>
 </main>
 
+<div class="modal" id="settle-modal">
+    <div class="modal-content">
+        <h3 style="margin-top:0;">Settle Debt</h3>
+        <p id="modal-info" style="color: var(--text-dim); margin-bottom: 20px; font-size: 0.9rem;"></p>
+        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase;">Payment Method</label>
+        <select id="settle-method" style="margin: 10px 0 20px 0;">
+            <option value="Cash">Cash</option>
+            <option value="Mpesa">Mpesa</option>
+            <option value="Bank">Bank Transfer</option>
+            <option value="KCB Paybill">KCB Paybill</option>
+        </select>
+        <button class="btn-primary" id="confirm-settle-btn">CLEAR & PRINT RECEIPT</button>
+        <button onclick="closeModal()" style="width:100%; background:none; border:none; color:var(--text-dim); font-weight:700; margin-top:15px; cursor:pointer;">Cancel</button>
+    </div>
+</div>
+
 <script type="module">
     import { supabase } from './auth.js';
 
     let allDebts = [];
     let currentFilter = 'All';
+    let currentShift = null;
+    let selectedDebt = null;
 
     window.toggleMenu = () => {
         document.getElementById('sidebar').classList.toggle('active');
@@ -226,13 +250,21 @@
     };
 
     async function init() {
-        const { data: prods } = await supabase.from('products').select('*');
+        const [prodRes, shiftRes] = await Promise.all([
+            supabase.from('products').select('*'),
+            supabase.from('daily_shifts').select('*').eq('status', 'Open').maybeSingle()
+        ]);
+
+        const prods = prodRes.data || [];
+        currentShift = shiftRes.data;
+
         const dList = document.getElementById('prod-list');
         dList.innerHTML = prods.map(p => `
             <option value="${p.name}" 
                 data-id="${p.id}" 
                 data-price="${p.selling_price}" 
                 data-stock="${p.stock_quantity}" 
+                data-cost="${p.buying_price || 0}"
                 data-min="${p.min_price || 0}">
         `).join('');
         loadLedger();
@@ -248,7 +280,7 @@
     };
 
     async function loadLedger() {
-        const { data } = await supabase.from('debtors').select('*, products(name, cost_price)').order('created_at', { ascending: false });
+        const { data } = await supabase.from('debtors').select('*, products(*)').order('created_at', { ascending: false });
         allDebts = data || [];
         renderLedger();
     }
@@ -262,12 +294,11 @@
             return matchesFilter && matchesSearch;
         });
 
-        // Update Summaries
         let out = 0, rec = 0, prof = 0;
         allDebts.forEach(d => {
             if(d.status === 'Unpaid') {
                 out += d.amount_owed;
-                prof += (d.amount_owed - (d.products?.cost_price || 0));
+                prof += (d.amount_owed - (d.products?.buying_price || 0));
             } else { rec += d.amount_owed; }
         });
 
@@ -283,16 +314,81 @@
                 <td data-label="Item">${d.products?.name || 'Manual Entry'}</td>
                 <td data-label="Amount" style="font-weight:800">Ksh ${d.amount_owed.toLocaleString()}</td>
                 <td data-label="Status"><span class="badge ${d.status === 'Unpaid' ? 'bg-unpaid' : 'bg-paid'}">${d.status}</span></td>
-                <td data-label="Action">${d.status === 'Unpaid' ? `<button onclick="settleDebt('${d.id}')" style="background:var(--success); color:white; border:none; padding:8px 15px; border-radius:10px; cursor:pointer; font-weight:700; width:100%;">SETTLE</button>` : '✅ Fully Paid'}</td>
+                <td data-label="Action">${d.status === 'Unpaid' ? `<button onclick="openSettleModal('${d.id}', ${d.amount_owed}, '${d.customer_name}', '${d.products?.name}')" style="background:var(--success); color:white; border:none; padding:8px 15px; border-radius:10px; cursor:pointer; font-weight:700; width:100%;">SETTLE</button>` : '✅ Fully Paid'}</td>
             </tr>
         `).join('');
     }
 
-    window.settleDebt = async (id) => {
-        if(!confirm("Mark as paid?")) return;
-        const { error } = await supabase.from('debtors').update({ status: 'Paid' }).eq('id', id);
-        if(!error) loadLedger();
+    window.openSettleModal = (id, amt, name, item) => {
+        if (!currentShift) return alert("You must have an open shift to settle debts!");
+        selectedDebt = { id, amt, name, item };
+        document.getElementById('modal-info').innerText = `Settling Ksh ${amt.toLocaleString()} for ${name}`;
+        document.getElementById('settle-modal').style.display = 'flex';
     };
+
+    window.closeModal = () => {
+        document.getElementById('settle-modal').style.display = 'none';
+        selectedDebt = null;
+    };
+
+    document.getElementById('confirm-settle-btn').onclick = async () => {
+        const method = document.getElementById('settle-method').value;
+        const btn = document.getElementById('confirm-settle-btn');
+        btn.disabled = true;
+
+        try {
+            // 1. Update Debt Status
+            await supabase.from('debtors').update({ status: 'Paid' }).eq('id', selectedDebt.id);
+
+            // 2. Update Sales Record for specifically this unpaid entry
+            await supabase.from('sales')
+                .update({ 
+                    payment_method: method,
+                    discount_reason: `Debt for ${selectedDebt.name} [SOLVED]` 
+                })
+                .eq('payment_method', 'Debt')
+                .eq('discount_reason', `Debt for ${selectedDebt.name} [UNPAID]`);
+
+            // 3. Log recovery into Cash transactions
+            await supabase.from('cash_transactions').insert([{
+                shift_id: currentShift.id,
+                type: 'Money In',
+                category: (method === 'Cash') ? 'Cash' : 'Mpesa',
+                amount: selectedDebt.amt,
+                description: `Debt recovery: ${selectedDebt.name}`
+            }]);
+
+            generateReceipt(selectedDebt, method);
+            alert("Debt cleared successfully!");
+            closeModal();
+            loadLedger();
+        } catch (err) {
+            alert("Error: " + err.message);
+        } finally {
+            btn.disabled = false;
+        }
+    };
+
+    function generateReceipt(debt, method) {
+        const area = document.getElementById('print-area');
+        area.innerHTML = `
+            <div style="text-align:center; font-family: 'Courier New', monospace; padding: 20px; border: 1px dashed #000; width: 300px; margin: auto;">
+                <h2 style="margin:0;">JEPE ADMIN</h2>
+                <p>OFFICIAL DEBT RECEIPT</p>
+                <hr>
+                <p style="text-align:left;">Date: ${new Date().toLocaleString()}</p>
+                <p style="text-align:left;">Customer: ${debt.name}</p>
+                <p style="text-align:left;">Item: ${debt.item}</p>
+                <hr>
+                <h3 style="margin:10px 0;">PAID: Ksh ${debt.amt.toLocaleString()}</h3>
+                <p>Method: ${method}</p>
+                <hr>
+                <p>Payment Received & Verified</p>
+            </div>
+        `;
+        window.print();
+        area.innerHTML = '';
+    }
 
     window.filterTable = (status, btn) => {
         currentFilter = status;
@@ -310,25 +406,51 @@
 
     document.getElementById('debt-form').onsubmit = async (e) => {
         e.preventDefault();
+        if (!currentShift) return alert("Please open a shift first!");
+        
         const searchVal = document.getElementById('prod-search').value;
         const opt = document.querySelector(`#prod-list option[value="${searchVal}"]`);
-        
-        const payload = {
-            customer_name: document.getElementById('cust-name').value,
-            customer_phone: document.getElementById('cust-phone').value,
-            product_id: opt ? opt.dataset.id : null,
-            amount_owed: parseFloat(document.getElementById('debt-amt').value),
-            status: 'Unpaid'
-        };
+        if(!opt) return alert("Please select a valid product");
 
-        const { error } = await supabase.from('debtors').insert([payload]);
-        if(!error) {
-            if(opt) {
-                const newStock = parseInt(opt.dataset.stock) - 1;
-                await supabase.from('products').update({ stock_quantity: newStock }).eq('id', opt.dataset.id);
-            }
-            alert("Entry Saved");
+        const btn = document.getElementById('submit-btn');
+        btn.disabled = true;
+
+        const customer = document.getElementById('cust-name').value;
+        const amount = parseFloat(document.getElementById('debt-amt').value);
+
+        try {
+            // 1. Save to Debtors
+            await supabase.from('debtors').insert([{
+                customer_name: customer,
+                customer_phone: document.getElementById('cust-phone').value,
+                product_id: opt.dataset.id,
+                amount_owed: amount,
+                status: 'Unpaid'
+            }]);
+
+            // 2. Save to Sales (Marked as Debt/Unpaid)
+            await supabase.from('sales').insert([{
+                product_id: opt.dataset.id,
+                item_name: searchVal,
+                quantity: 1,
+                unit_price: amount,
+                amount: amount,
+                payment_method: 'Debt',
+                cost_price: parseFloat(opt.dataset.cost),
+                shift_id: currentShift.id,
+                discount_reason: `Debt for ${customer} [UNPAID]`
+            }]);
+
+            // 3. Update Inventory
+            const newStock = parseInt(opt.dataset.stock) - 1;
+            await supabase.from('products').update({ stock_quantity: newStock }).eq('id', opt.dataset.id);
+
+            alert("Debt Recorded & Stock Updated!");
             location.reload();
+        } catch (err) {
+            alert("Error: " + err.message);
+        } finally {
+            btn.disabled = false;
         }
     };
 
