@@ -41,39 +41,35 @@
 
         .search-input { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; font-size: 0.9rem; outline: none; background: white; }
 
-        /* --- TABLE & SLIDE INDICATOR --- */
-        .table-outer { position: relative; border-radius: 16px; overflow: hidden; border: 1px solid var(--border); background: white; }
-        
+        /* --- MAGICAL SLIDE INDICATOR (TOP VERSION) --- */
         .slide-indicator {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(15, 23, 42, 0.9);
+            background: #0f172a;
             color: white;
-            padding: 15px 25px;
-            border-radius: 50px;
+            padding: 12px;
+            border-radius: 12px;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 10px;
-            z-index: 100;
-            pointer-events: none;
-            transition: opacity 0.5s ease;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+            transition: all 0.5s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
-        .hand-icon { font-size: 2rem; animation: slideHand 2s infinite; }
+        .hand-icon { font-size: 1.5rem; animation: slideHand 1.5s infinite; }
         
         @keyframes slideHand {
-            0% { transform: translateX(20px); opacity: 0; }
-            50% { transform: translateX(-20px); opacity: 1; }
-            100% { transform: translateX(-40px); opacity: 0; }
+            0% { transform: translateX(10px); }
+            50% { transform: translateX(-10px); }
+            100% { transform: translateX(10px); }
         }
 
-        /* Only show indicator on mobile */
+        /* Hide on desktop, only show on mobile */
         @media (min-width: 1025px) { .slide-indicator { display: none; } }
 
+        /* --- TABLE --- */
+        .table-outer { position: relative; border-radius: 16px; overflow: hidden; border: 1px solid var(--border); background: white; }
         .table-container { background: white; overflow-x: auto; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: collapse; min-width: 1300px; }
         th { background: #f8fafc; padding: 15px; font-size: 0.7rem; text-transform: uppercase; color: var(--dim); border-bottom: 1px solid var(--border); text-align: left; }
@@ -132,23 +128,24 @@
 
     <input type="text" id="auditSearch" class="search-input" placeholder="Search by date (e.g. 09 Jan 2026)...">
 
-    <div class="table-outer">
-        <div class="slide-indicator" id="magicIndicator">
-            <span class="hand-icon">👈</span>
-            <span style="font-weight: 700; font-size: 0.8rem;">SLIDE TO VIEW MORE</span>
-        </div>
+    <div class="slide-indicator" id="magicIndicator">
+        <span class="hand-icon">👈</span>
+        <span style="font-weight: 700; font-size: 0.85rem; letter-spacing: 0.5px;">SLIDE TABLE TO SEE ALL COLUMNS</span>
+        <span class="hand-icon">👉</span>
+    </div>
 
+    <div class="table-outer">
         <div class="table-container" id="scrollContainer">
             <table>
                 <thead>
                     <tr>
-                        <th>Shift Timing</th>
-                        <th>Opening Balances</th>
-                        <th>Revenue</th>
-                        <th>In/Out Adjustments</th>
-                        <th>Closing (Physical)</th>
-                        <th>Variance</th>
-                        <th>Audit Notes</th>
+                        <th>TIME/DATE</th>
+                        <th>OPENING FLOATS</th>
+                        <th>PAYMENT METHOD</th>
+                        <th>MONEY IN/OUT</th>
+                        <th>CLOSING FLOATS</th>
+                        <th>VARIANCE</th>
+                        <th>VARIANCE REASON</th>
                     </tr>
                 </thead>
                 <tbody id="audit-body-desktop"></tbody>
@@ -162,14 +159,17 @@
     
     let allShifts = [], allTransactions = [], allSales = [];
 
-    // MAGIC SCROLL LOGIC: Hide indicator when user scrolls
+    // MAGIC LOGIC: Hide top indicator when user interacts with the table
     const scrollContainer = document.getElementById('scrollContainer');
     const magicIndicator = document.getElementById('magicIndicator');
 
     scrollContainer.addEventListener('scroll', () => {
-        if (scrollContainer.scrollLeft > 20) {
+        if (scrollContainer.scrollLeft > 15) {
             magicIndicator.style.opacity = '0';
-            setTimeout(() => magicIndicator.style.display = 'none', 500);
+            magicIndicator.style.transform = 'translateY(-20px)';
+            setTimeout(() => {
+                magicIndicator.style.display = 'none';
+            }, 500);
         }
     });
 
@@ -246,7 +246,7 @@
                         <a href="money-history.html" class="clickable-adj">
                             <span style="color:var(--success); font-weight:800;">IN: +${moneyIn.toLocaleString()}</span><br>
                             <span style="color:var(--danger); font-weight:800;">OUT: -${moneyOut.toLocaleString()}</span>
-                            <div style="font-size:0.65rem; color:var(--dim); margin-top:6px;">VIEW DETAILS ➔</div>
+                            <div style="font-size:0.65rem; color:var(--dim); margin-top:6px;">CLICK TO VIEW DETAILS ➔</div>
                         </a>
                     </td>
                     <td>
@@ -267,7 +267,7 @@
                 </tr>`;
         });
 
-        tbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px; color:var(--dim);">No records found.</td></tr>';
+        tbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px; color:var(--dim);">No records found matching your search.</td></tr>';
     }
 
     document.getElementById('auditSearch').addEventListener('input', (e) => {
