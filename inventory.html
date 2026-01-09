@@ -51,6 +51,8 @@
         }
 
         .sidebar.active { left: 0 !important; }
+        .sidebar-hidden { left: -260px !important; }
+        .wrapper-full { margin-left: 0 !important; width: 100% !important; }
 
         .close-sidebar-btn {
             position: absolute;
@@ -111,7 +113,12 @@
             margin-bottom: 20px; 
         }
 
-        /* --- FORM --- */
+        .financial-summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 10px; }
+        @media (min-width: 768px) { .financial-summary { grid-template-columns: repeat(4, 1fr); } }
+        .summary-item { border-left: 3px solid #e2e8f0; padding-left: 10px; }
+        .summary-item label { font-size: 0.65rem; color: var(--text-dim); display: block; font-weight: 700; text-transform: uppercase; }
+        .summary-item span { font-size: 0.9rem; font-weight: 800; color: var(--admin-dark); }
+
         .form-row { display: grid; grid-template-columns: repeat(1, 1fr); gap: 12px; margin-bottom: 12px; }
         @media (min-width: 768px) { .form-row { grid-template-columns: repeat(3, 1fr); } }
         
@@ -119,31 +126,13 @@
             padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 10px; 
             font-size: 0.85rem; width: 100%; font-family: inherit; outline: none;
         }
-        input:focus { border-color: var(--admin-accent); }
         
         .btn-add { 
             background: var(--admin-accent); color: white; border: none; padding: 12px; 
             border-radius: 10px; font-weight: 800; cursor: pointer; font-size: 0.85rem;
         }
 
-        /* --- TABLE & SCROLL INDICATOR --- */
-        .scroll-hint { 
-            display: flex; align-items: center; gap: 5px; color: var(--text-dim); 
-            font-size: 0.65rem; font-weight: 700; margin-bottom: 8px; justify-content: flex-end;
-        }
-        @media (min-width: 1024px) { .scroll-hint { display: none; } }
-
-        .table-container { 
-            width: 100%; overflow-x: auto; position: relative;
-            border-radius: 10px; border: 1px solid #f1f5f9;
-        }
-        /* Visual cue for scrolling */
-        .table-container::after {
-            content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 20px;
-            background: linear-gradient(to left, rgba(0,0,0,0.05), transparent);
-            pointer-events: none;
-        }
-
+        .table-container { width: 100%; overflow-x: auto; border-radius: 10px; border: 1px solid #f1f5f9; }
         table { width: 100%; border-collapse: collapse; min-width: 700px; }
         th { text-align: left; padding: 12px; background: #f8fafc; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; }
         td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; }
@@ -151,7 +140,6 @@
         .onetouch-flex { display: flex; gap: 5px; align-items: center; }
         .onetouch-input { width: 60px !important; text-align: center; padding: 8px !important; }
         .btn-touch { background: var(--admin-dark); color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.7rem; }
-
         .badge { background: #f1f5f9; padding: 4px 8px; border-radius: 6px; font-size: 0.6rem; font-weight: 700; color: var(--text-dim); }
         .low-stock-row { background: #fff1f2; }
 
@@ -160,7 +148,6 @@
             border-radius: 12px; color: var(--text-dim); font-weight: 800; cursor: pointer;
             margin-top: 15px; transition: 0.2s;
         }
-        .load-more-btn:hover { background: #f8fafc; border-color: var(--admin-accent); color: var(--admin-accent); }
 
         .overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); display: none; z-index: 1500; }
         .overlay.active { display: block; }
@@ -195,19 +182,44 @@
     </div>
 </div>
 
-<div class="main-wrapper">
+<div class="main-wrapper" id="main-wrapper">
     <div class="mobile-header">
         <button onclick="toggleSidebar()" style="background:none; border:none; color:var(--admin-dark); font-size:1.5rem; cursor:pointer;">☰</button>
-        <div style="font-weight:800; font-size: 1rem; color: var(--admin-accent);">ADD STOCK HUB</div>
+        <div style="font-weight:800; font-size: 1rem; color: var(--admin-accent);">STOCK & PERFORMANCE</div>
         <div style="width:24px;"></div>
     </div>
 
     <div class="container">
         <div class="stats-grid">
-            <div class="stat-box" style="background:var(--blue);"><small>Today Rev</small><div id="total-rev">Ksh 0</div></div>
-            <div class="stat-box" style="background:var(--green);"><small>Today Profit</small><div id="total-profit">Ksh 0</div></div>
+            <div class="stat-box" style="background:var(--blue);"><small id="shift-label">Shift Sales</small><div id="total-rev">Ksh 0</div></div>
+            <div class="stat-box" style="background:var(--green);"><small id="profit-label">Shift Profit</small><div id="total-profit">Ksh 0</div></div>
             <div class="stat-box" style="background:var(--admin-dark);"><small>Total Items</small><div id="total-items">0</div></div>
             <div class="stat-box" style="background:var(--warning);"><small>Suppliers</small><div id="total-sups">0</div></div>
+        </div>
+
+        
+        <div class="card" style="border-top: 4px solid var(--admin-accent);">
+            <h3 style="margin: 0 0 15px 0; font-size: 0.85rem; color: var(--admin-accent); font-weight: 800;">
+                📈 STOCK VALUATION & ALL-TIME SALES
+            </h3>
+            <div class="financial-summary">
+                <div class="summary-item">
+                    <label>Inventory Cost (All)</label>
+                    <span id="global-cost">Ksh 0</span>
+                </div>
+                <div class="summary-item" style="border-left-color: var(--green);">
+                    <label>Expected Profit</label>
+                    <span id="expected-profit" style="color: var(--green);">Ksh 0</span>
+                </div>
+                <div class="summary-item">
+                    <label>Total Sales So Far</label>
+                    <span id="all-time-sales">Ksh 0</span>
+                </div>
+                <div class="summary-item" style="border-left-color: var(--blue);">
+                    <label>Total Profit So Far</label>
+                    <span id="all-time-profit" style="color: var(--blue);">Ksh 0</span>
+                </div>
+            </div>
         </div>
 
         <div class="card">
@@ -216,7 +228,7 @@
             </h3>
             <form id="admin-form">
                 <div class="form-row">
-                    <input type="text" id="name" placeholder="Item Name (e.g. Brake Pads)" required>
+                    <input type="text" id="name" placeholder="Item Name" required>
                     <select id="cat" onchange="toggleGas()">
                         <option value="Spare Part">Spare Part</option>
                         <option value="Motorbike">Motorbike</option>
@@ -253,11 +265,8 @@
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
                 <h3 style="margin:0; font-size: 1rem;">Live Stock List</h3>
-                <input type="text" id="adminSearch" placeholder="Search item or supplier..." style="max-width:250px; margin-bottom: 0;">
+                <input type="text" id="adminSearch" placeholder="Search items..." style="max-width:250px;">
             </div>
-            
-            <div class="scroll-hint">Slide left to see more info ⮕</div>
-
             <div class="table-container">
                 <table>
                     <thead>
@@ -282,24 +291,24 @@
 <script type="module">
     import { supabase } from './auth.js';
     let allProducts = [];
-    let allSuppliers = [];
     let displayLimit = 10;
 
     window.toggleSidebar = () => {
+        const sidebar = document.getElementById('sidebar');
+        const wrapper = document.getElementById('main-wrapper');
+        const overlay = document.getElementById('overlay');
         if (window.innerWidth >= 1024) {
-            document.body.classList.toggle('sidebar-closed');
+            sidebar.classList.toggle('sidebar-hidden');
+            wrapper.classList.toggle('wrapper-full');
         } else {
-            document.getElementById('sidebar').classList.toggle('active');
-            document.getElementById('overlay').classList.toggle('active');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
         }
     };
 
     window.confirmSwitchToCashier = (e) => {
         e.preventDefault();
-        const msg = "Are you sure you want to switch to Cashier Mode?\n\nNote: If you want to come back to the Admin Hub, you can click 'Back' on your device or sign in again.";
-        if(confirm(msg)) {
-            window.location.href = "cashier.html";
-        }
+        if(confirm("Switch to Cashier Mode?")) window.location.href = "cashier.html";
     };
 
     window.toggleGas = () => {
@@ -307,38 +316,86 @@
     };
 
     async function load() {
-        // Today Stats
-        const today = new Date().toISOString().split('T')[0];
-        const { data: sales } = await supabase.from('sales').select('*').gte('created_at', today);
-        let rev = 0, prof = 0;
-        sales?.forEach(s => { 
-            rev += s.total_amount; 
-            prof += (s.unit_price - (s.cost_price || 0)) * s.quantity; 
-        });
-        document.getElementById('total-rev').innerText = `Ksh ${rev.toLocaleString()}`;
-        document.getElementById('total-profit').innerText = `Ksh ${prof.toLocaleString()}`;
+        try {
+            // Logic to find a shift that actually has sales
+            let shiftToDisplay = null;
+            let labelPrefix = "Active Shift";
 
-        // Suppliers
+            // 1. Check if there is currently an OPEN shift
+            const { data: openShift } = await supabase.from('daily_shifts').select('id').eq('status', 'open').limit(1).maybeSingle();
+
+            if (openShift) {
+                // Check if this open shift has any sales
+                const { count } = await supabase.from('sales').select('id', { count: 'exact', head: true }).eq('shift_id', openShift.id);
+                if (count > 0) {
+                    shiftToDisplay = openShift.id;
+                }
+            }
+
+            // 2. If no open shift or open shift is empty, find the ABSOLUTE LATEST shift that has sales
+            if (!shiftToDisplay) {
+                const { data: latestSale } = await supabase.from('sales').select('shift_id').order('created_at', { ascending: false }).limit(1).maybeSingle();
+                if (latestSale) {
+                    shiftToDisplay = latestSale.shift_id;
+                    labelPrefix = "Latest Record";
+                }
+            }
+
+            // 3. Update Boxes
+            if (shiftToDisplay) {
+                const { data: shiftSales } = await supabase.from('sales').select('total_amount, unit_price, cost_price, quantity').eq('shift_id', shiftToDisplay);
+                let rev = 0, prof = 0;
+                shiftSales?.forEach(s => {
+                    rev += Number(s.total_amount || 0);
+                    prof += (Number(s.unit_price) - Number(s.cost_price || 0)) * s.quantity;
+                });
+                document.getElementById('shift-label').innerText = labelPrefix + " Sales";
+                document.getElementById('profit-label').innerText = labelPrefix + " Profit";
+                document.getElementById('total-rev').innerText = `Ksh ${rev.toLocaleString()}`;
+                document.getElementById('total-profit').innerText = `Ksh ${prof.toLocaleString()}`;
+            }
+
+            // 4. Load Global Totals
+            const { data: allSales } = await supabase.from('sales').select('total_amount, unit_price, cost_price, quantity');
+            let totalRev = 0, totalProf = 0;
+            allSales?.forEach(s => {
+                totalRev += Number(s.total_amount || 0);
+                totalProf += (Number(s.unit_price) - Number(s.cost_price || 0)) * s.quantity;
+            });
+            document.getElementById('all-time-sales').innerText = `Ksh ${totalRev.toLocaleString()}`;
+            document.getElementById('all-time-profit').innerText = `Ksh ${totalProf.toLocaleString()}`;
+
+        } catch (e) { console.error("Stats Error:", e); }
+
+        // Suppliers List
         const { data: sups } = await supabase.from('suppliers').select('id, name').order('name');
-        allSuppliers = sups || [];
-        document.getElementById('total-sups').innerText = allSuppliers.length;
+        document.getElementById('total-sups').innerText = sups?.length || 0;
         document.getElementById('prod-supplier').innerHTML = '<option value="">-- Select Supplier --</option>' + 
-            allSuppliers.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            (sups || []).map(s => `<option value="${s.id}">${s.name}</option>`).join('');
 
-        // Products
+        // Products List & Valuation
         const { data: items } = await supabase.from('products').select('*, suppliers(name)').order('name');
         allProducts = items || [];
+        
+        let globalCostVal = 0, expectedProfVal = 0;
+        allProducts.forEach(p => {
+            const cost = Number(p.cost_price || 0);
+            const sell = Number(p.selling_price || 0);
+            const stock = Number(p.stock_quantity || 0);
+            globalCostVal += (cost * stock);
+            expectedProfVal += ((sell - cost) * stock);
+        });
+
         document.getElementById('total-items').innerText = allProducts.length;
+        document.getElementById('global-cost').innerText = `Ksh ${globalCostVal.toLocaleString()}`;
+        document.getElementById('expected-profit').innerText = `Ksh ${expectedProfVal.toLocaleString()}`;
+        
         render();
     }
 
     function render() {
         const searchTerm = document.getElementById('adminSearch').value.toLowerCase();
-        const filtered = allProducts.filter(p => 
-            p.name.toLowerCase().includes(searchTerm) || 
-            (p.suppliers?.name && p.suppliers.name.toLowerCase().includes(searchTerm))
-        );
-
+        const filtered = allProducts.filter(p => p.name.toLowerCase().includes(searchTerm));
         const visible = filtered.slice(0, displayLimit);
         
         document.getElementById('inv-table-body').innerHTML = visible.map(p => `
@@ -349,9 +406,9 @@
                 </td>
                 <td><small>${p.suppliers?.name || '---'}</small></td>
                 <td style="font-weight:800; color:${p.stock_quantity < 5 ? 'var(--danger)' : 'inherit'}">${p.stock_quantity}</td>
-                <td>${p.cost_price.toLocaleString()}</td>
-                <td>${p.selling_price.toLocaleString()}</td>
-                <td style="color:var(--danger); font-weight:600;">${p.min_price?.toLocaleString() || 'N/A'}</td>
+                <td>${Number(p.cost_price).toLocaleString()}</td>
+                <td>${Number(p.selling_price).toLocaleString()}</td>
+                <td style="color:var(--danger); font-weight:600;">${Number(p.min_price || p.min_selling_price || 0).toLocaleString()}</td>
                 <td>
                     <div class="onetouch-flex">
                         <input type="number" id="add-${p.id}" class="onetouch-input" value="1" min="1">
@@ -361,7 +418,6 @@
             </tr>
         `).join('');
 
-        // Show/Hide Load More
         document.getElementById('loadMoreBtn').style.display = (displayLimit >= filtered.length) ? 'none' : 'block';
     }
 
@@ -393,12 +449,8 @@
     };
 
     document.getElementById('adminSearch').oninput = render;
-    document.getElementById('loadMoreBtn').onclick = () => {
-        displayLimit += 15;
-        render();
-    };
-
-    window.handleLogout = async () => { if(confirm("Logout from System?")) { await supabase.auth.signOut(); window.location.href = 'index.html'; } };
+    document.getElementById('loadMoreBtn').onclick = () => { displayLimit += 15; render(); };
+    window.handleLogout = async () => { if(confirm("Logout?")) { await supabase.auth.signOut(); window.location.href = 'index.html'; } };
     
     load();
 </script>
