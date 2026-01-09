@@ -34,35 +34,53 @@
 
         /* --- MAIN CONTENT --- */
         .main-content { flex-grow: 1; padding: 20px; width: 100%; margin-left: var(--sidebar-width); }
-        @media (max-width: 1024px) { .sidebar { display: none; } .main-content { margin-left: 0; } }
         
-        .page-header { background: white; padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .page-header { background: white; padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 20px; }
         .logic-banner { background: #eff6ff; border: 1px solid #bfdbfe; padding: 15px; border-radius: 12px; margin-bottom: 20px; font-size: 0.85rem; color: #1e40af; line-height: 1.5; }
-
         .search-input { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; font-size: 0.9rem; outline: none; background: white; }
 
-        /* --- TABLE --- */
-        .table-container { background: white; border-radius: 16px; border: 1px solid var(--border); overflow-x: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        table { width: 100%; border-collapse: collapse; min-width: 1300px; }
+        /* --- TABLE (DESKTOP) --- */
+        .table-wrapper { background: white; border-radius: 16px; border: 1px solid var(--border); overflow: hidden; position: relative; }
+        .table-container { overflow-x: auto; width: 100%; }
+        
+        /* Slide Hint for Desktop/Tablet */
+        .scroll-hint { display: none; background: #334155; color: white; padding: 5px 12px; font-size: 0.7rem; border-radius: 50px; position: absolute; right: 20px; top: 15px; z-index: 10; animation: bounce 2s infinite; }
+
+        table { width: 100%; border-collapse: collapse; min-width: 1200px; }
         th { background: #f8fafc; padding: 15px; font-size: 0.7rem; text-transform: uppercase; color: var(--dim); border-bottom: 1px solid var(--border); text-align: left; }
         td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 0.85rem; vertical-align: top; }
 
-        /* --- UI HELPERS --- */
-        .total-row { font-weight: 800; border-top: 1.5px solid #eee; margin-top: 8px; padding-top: 5px; color: var(--primary); font-size: 0.9rem; }
-        .status-badge { font-weight: 800; padding: 6px 12px; border-radius: 8px; font-size: 0.7rem; display: inline-block; }
+        /* --- CARD VIEW (MOBILE) --- */
+        #mobile-cards { display: none; flex-direction: column; gap: 15px; }
+        .shift-card { background: white; border-radius: 16px; border: 1px solid var(--border); padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 10px; }
+        .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .card-stat { background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #f1f5f9; }
+        .stat-label { font-size: 0.65rem; color: var(--dim); font-weight: 700; text-transform: uppercase; display: block; }
+        .stat-val { font-size: 0.85rem; font-weight: 700; color: var(--text); }
+
+        /* --- REUSABLE UI --- */
+        .total-row { font-weight: 800; border-top: 1px solid #eee; margin-top: 5px; padding-top: 5px; color: var(--primary); }
+        .status-badge { font-weight: 800; padding: 6px 10px; border-radius: 8px; font-size: 0.7rem; }
         .balanced { background: #dcfce7; color: #15803d; }
         .mismatch { background: #fee2e2; color: #b91c1c; }
         .active-shift { background: #e0e7ff; color: #4338ca; }
+        .revenue-box, .clickable-adj { text-decoration: none; display: block; border-radius: 8px; padding: 8px; font-size: 0.8rem; background: #f1f5f9; border-left: 3px solid var(--primary); margin-top: 5px; color: inherit; }
 
-        .revenue-box { background: #f1f5f9; padding: 10px; border-radius: 8px; margin-top: 5px; border-left: 4px solid var(--primary); color: inherit; text-decoration: none; display: block; transition: 0.2s; }
-        .revenue-box:hover { background: #e2e8f0; }
-        
-        .clickable-adj { text-decoration: none; display: block; transition: 0.2s; border-radius: 8px; padding: 8px; color: inherit; background: #fafafa; border: 1px solid #f0f0f0; }
-        .clickable-adj:hover { background: #f1f5f9; }
+        /* --- RESPONSIVE LOGIC --- */
+        @media (max-width: 1024px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; }
+            .scroll-hint { display: block; }
+        }
 
-        .time-group { margin-top: 8px; }
-        .time-label { color: var(--dim); font-size: 0.65rem; font-weight: 700; display: block; margin-bottom: 2px; }
-        .time-val { font-weight: 700; color: var(--text); font-size: 0.8rem; }
+        @media (max-width: 600px) {
+            .table-wrapper { display: none; }
+            #mobile-cards { display: flex; }
+            .scroll-hint { display: none; }
+        }
+
+        @keyframes bounce { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-10px); } }
     </style>
 </head>
 <body>
@@ -88,34 +106,37 @@
 
 <main class="main-content">
     <div class="page-header">
-        <h1 style="margin:0; font-size: 1.4rem;">Daily Shift Audit Hub</h1>
-        <p style="margin:5px 0 0; color: var(--dim);">Track performance and reconciliations with specific account accuracy.</p>
+        <h1 style="margin:0; font-size: 1.4rem;">Daily Shift Audit</h1>
+        <p style="margin:5px 0 0; color: var(--dim);">Reconciliation for Cash, M-Pesa, KCB, and Equity.</p>
     </div>
 
     <div class="logic-banner">
-        <b>💡 Reconciliation Logic:</b>
-        Calculation: <i>(Opening + Sales + Money In - Money Out) vs Physical Closing.</i> 
-        <br><b>Accounts Tracked:</b> Cash, M-Pesa, KCB Paybill, KCB Bank, and Equity Bank.
+        <b>💡 Logic:</b> (Opening + Sales + In - Out) vs Physical Closing.
     </div>
 
     <input type="text" id="auditSearch" class="search-input" placeholder="Search by date (e.g. 09 Jan 2026)...">
 
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Shift Timing</th>
-                    <th>Opening Balances</th>
-                    <th>Revenue (Click to View)</th>
-                    <th>In/Out Adjustments</th>
-                    <th>Closing (Physical)</th>
-                    <th>Variance</th>
-                    <th>Audit Notes</th>
-                </tr>
-            </thead>
-            <tbody id="audit-body-desktop"></tbody>
-        </table>
+    <div class="table-wrapper">
+        <div class="scroll-hint">Slide left to see more ➔</div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Timing</th>
+                        <th>Opening Balances</th>
+                        <th>Revenue</th>
+                        <th>Adjustments</th>
+                        <th>Closing Actual</th>
+                        <th>Variance</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody id="audit-body-desktop"></tbody>
+            </table>
+        </div>
     </div>
+
+    <div id="mobile-cards"></div>
 </main>
 
 <script type="module">
@@ -136,7 +157,9 @@
 
     function render(data = allShifts) {
         const tbody = document.getElementById('audit-body-desktop');
+        const mobileContainer = document.getElementById('mobile-cards');
         let tableHtml = '';
+        let cardHtml = '';
 
         data.forEach(sh => {
             const shiftLogs = allTransactions.filter(t => t.shift_id === sh.id);
@@ -144,12 +167,11 @@
 
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
-            
             const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount), 0);
-            const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount), 0);
+            const kcbPaybill = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount), 0);
 
-            const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_equity||0) + (sh.open_kcb_bank||0);
-            const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_equity||0) + (sh.close_kcb_bank||0);
+            const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
+            const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
             const isClosed = sh.status === 'Closed';
             const expected = sh.system_expected_total || (openTotal + cashSales + moneyIn - moneyOut);
@@ -158,75 +180,45 @@
 
             const startD = new Date(sh.start_time);
             const dateStr = startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'});
-            const openTime = startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-            const closeTime = sh.end_time ? new Date(sh.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'Still Open';
+            const openT = startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            const closeT = sh.end_time ? new Date(sh.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'Active';
 
+            // Desktop Row
             tableHtml += `
                 <tr>
-                    <td>
-                        <b style="font-size: 0.95rem; color:var(--text)">${dateStr}</b>
-                        <div class="time-group">
-                            <span class="time-label">OPENED:</span>
-                            <span class="time-val">${openTime}</span>
-                        </div>
-                        <div class="time-group">
-                            <span class="time-label">CLOSED:</span>
-                            <span class="time-val">${closeTime}</span>
-                        </div>
-                    </td>
-                    <td>
-                        <div style="font-size:0.75rem; color:var(--dim); line-height:1.6">
-                            Cash: ${sh.open_cash||0}<br>
-                            M-Pesa: ${sh.open_mpesa||0}<br>
-                            KCB Bank: ${sh.open_kcb_bank||0}<br>
-                            Equity: ${sh.open_equity||0}
-                        </div>
-                        <div class="total-row">Total: ${openTotal.toLocaleString()}</div>
-                    </td>
-                    <td>
-                        <a href="sales-history.html" class="revenue-box">
-                            <div style="font-size:0.75rem;">
-                                <b>Cash:</b> +${cashSales.toLocaleString()}<br>
-                                <b>KCB Paybill:</b> +${kcbPaybillSales.toLocaleString()}
-                            </div>
-                            <div style="font-size:0.65rem; color:var(--primary); margin-top:8px; font-weight:800; text-transform:uppercase">Audit Sales ➔</div>
-                        </a>
-                    </td>
-                    <td>
-                        <a href="money-history.html" class="clickable-adj">
-                            <span style="color:var(--success); font-weight:800;">IN: +${moneyIn.toLocaleString()}</span><br>
-                            <span style="color:var(--danger); font-weight:800;">OUT: -${moneyOut.toLocaleString()}</span>
-                            <div style="font-size:0.65rem; color:var(--dim); margin-top:6px;">VIEW DETAILS ➔</div>
-                        </a>
-                    </td>
-                    <td>
-                        <div style="font-size:0.75rem; color:var(--dim); line-height:1.6">
-                            Cash: ${sh.close_cash||0}<br>
-                            M-Pesa: ${sh.close_mpesa||0}<br>
-                            KCB Bank: ${sh.close_kcb_bank||0}<br>
-                            Equity: ${sh.close_equity||0}
-                        </div>
-                        <div class="total-row">Total: ${closeTotal.toLocaleString()}</div>
-                    </td>
-                    <td>
-                        <span class="status-badge ${statusClass}">
-                            ${isClosed ? 'VAR: ' + variance.toLocaleString() : 'SHIFT ACTIVE'}
-                        </span>
-                    </td>
-                    <td><small style="color:var(--dim); font-style:italic;">${sh.variance_note || 'No notes'}</small></td>
+                    <td><b>${dateStr}</b><br><small>${openT} - ${closeT}</small></td>
+                    <td><small>Cash: ${sh.open_cash||0}<br>M-Pesa: ${sh.open_mpesa||0}<br>KCB: ${sh.open_kcb_bank||0}</small><div class="total-row">${openTotal.toLocaleString()}</div></td>
+                    <td><a href="sales-history.html" class="revenue-box">Cash: +${cashSales.toLocaleString()}<br>KCB PB: +${kcbPaybill.toLocaleString()}</a></td>
+                    <td><a href="money-history.html" class="clickable-adj">In: +${moneyIn}<br>Out: -${moneyOut}</a></td>
+                    <td><small>Cash: ${sh.close_cash||0}<br>M-Pesa: ${sh.close_mpesa||0}<br>KCB: ${sh.close_kcb_bank||0}</small><div class="total-row">${closeTotal.toLocaleString()}</div></td>
+                    <td><span class="status-badge ${statusClass}">${isClosed ? 'Ksh '+variance : 'OPEN'}</span></td>
+                    <td><small>${sh.variance_note || '-'}</small></td>
                 </tr>`;
+
+            // Mobile Card
+            cardHtml += `
+                <div class="shift-card">
+                    <div class="card-header">
+                        <div><b>${dateStr}</b><br><small>${openT} to ${closeT}</small></div>
+                        <span class="status-badge ${statusClass}">${isClosed ? 'VAR: '+variance : 'ACTIVE'}</span>
+                    </div>
+                    <div class="card-grid">
+                        <div class="card-stat"><span class="stat-label">Opening</span><span class="stat-val">${openTotal.toLocaleString()}</span></div>
+                        <div class="card-stat"><span class="stat-label">Closing</span><span class="stat-val">${closeTotal.toLocaleString()}</span></div>
+                    </div>
+                    <a href="sales-history.html" class="revenue-box"><b>Sales:</b> Cash (+${cashSales}), KCB PB (+${kcbPaybill})</a>
+                    <a href="money-history.html" class="clickable-adj"><b>In/Out:</b> +${moneyIn} / -${moneyOut}</a>
+                    <div style="margin-top:10px; font-size:0.75rem; color:var(--dim)">Note: ${sh.variance_note || 'None'}</div>
+                </div>`;
         });
 
-        tbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px; color:var(--dim);">No records found matching your search.</td></tr>';
+        tbody.innerHTML = tableHtml || '<tr><td colspan="7">No records</td></tr>';
+        mobileContainer.innerHTML = cardHtml || '<p>No records</p>';
     }
 
     document.getElementById('auditSearch').addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
-        const filtered = allShifts.filter(sh => {
-            const d = new Date(sh.start_time).toLocaleDateString('en-GB').toLowerCase();
-            return d.includes(term);
-        });
-        render(filtered);
+        render(allShifts.filter(sh => new Date(sh.start_time).toLocaleDateString('en-GB').toLowerCase().includes(term)));
     });
 
     fetchData();
