@@ -8,90 +8,71 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root { 
-            --primary: #4f46e5; 
-            --bg: #f8fafc; 
-            --card: #ffffff; 
-            --border: #e2e8f0; 
-            --text-main: #1e293b; 
-            --text-dim: #64748b;
-            --success: #10b981; 
-            --danger: #ef4444; 
-            --sidebar-width: 280px;
+            --primary: #4f46e5; --bg: #f8fafc; --card: #ffffff; 
+            --border: #e2e8f0; --text-main: #1e293b; --text-dim: #64748b;
+            --success: #10b981; --danger: #ef4444; --sidebar-width: 280px;
             --sidebar-bg: #0f172a; 
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background: var(--bg); color: var(--text-main); margin: 0; 
-            display: flex; min-height: 100vh;
-        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; display: flex; min-height: 100vh; }
 
         /* --- SIDEBAR --- */
         .sidebar {
             width: var(--sidebar-width); background: var(--sidebar-bg);
             display: flex; flex-direction: column; position: fixed; 
-            height: 100vh; z-index: 2000;
-            transition: transform 0.3s ease;
+            height: 100vh; z-index: 2000; transition: 0.3s ease;
         }
         .sidebar-header { padding: 30px 25px; font-weight: 800; color: #fff; font-size: 1.3rem; }
-        .nav-list { list-style: none; padding: 0 15px; flex-grow: 1; }
+        .nav-list { list-style: none; padding: 0 15px; flex-grow: 1; overflow-y: auto; }
         .nav-item {
-            display: flex; align-items: center; padding: 14px 18px; text-decoration: none;
-            color: #94a3b8; font-weight: 600; font-size: 0.85rem; border-radius: 12px; margin-bottom: 6px;
+            display: flex; align-items: center; padding: 12px 18px; text-decoration: none;
+            color: #94a3b8; font-weight: 600; font-size: 0.85rem; border-radius: 12px; margin-bottom: 4px;
             transition: 0.2s; gap: 12px;
         }
         .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
         .nav-item.active { background: var(--primary); color: #fff; }
 
         /* --- CONTENT --- */
-        .main-content { margin-left: var(--sidebar-width); flex-grow: 1; padding: 40px; width: 100%; }
-        
+        .main-content { margin-left: var(--sidebar-width); flex-grow: 1; padding: 40px; width: 100%; transition: 0.3s; }
         .mobile-nav {
-            display: none; background: var(--sidebar-bg); color: white;
-            padding: 0 20px; align-items: center; justify-content: space-between;
-            position: fixed; top: 0; width: 100%; height: 64px; z-index: 1000;
+            display: none; background: var(--sidebar-bg); color: white; padding: 0 20px; 
+            align-items: center; justify-content: space-between; position: fixed; 
+            top: 0; width: 100%; height: 64px; z-index: 1000;
         }
 
+        /* --- TOOLS & SUMMARY --- */
         .summary-banner {
             background: white; border: 1px solid var(--border); border-radius: 24px;
-            padding: 24px; display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.04);
+            padding: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px; margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.04);
         }
+        .search-bar { width: 100%; padding: 14px 20px; border-radius: 15px; border: 1px solid var(--border); font-family: inherit; font-size: 0.9rem; margin-bottom: 20px; outline: none; }
+        .search-bar:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
 
         .card { background: var(--card); border-radius: 24px; border: 1px solid var(--border); overflow: hidden; }
-        
         .table-responsive { width: 100%; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 700px; }
-        th { text-align: left; padding: 18px 20px; background: #f8fafc; font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th { text-align: left; padding: 18px 20px; background: #f8fafc; font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border); }
         td { padding: 18px 20px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
 
-        /* --- MOBILE LIST --- */
-        .mobile-list { display: none; }
-        .transaction-card { padding: 20px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
-        .mobile-desc { 
-            font-size: 0.8rem; 
-            color: var(--text-dim); 
-            background: #f1f5f9; 
-            padding: 8px 12px; 
-            border-radius: 8px; 
-            margin-top: 4px;
-            font-style: italic;
-        }
-
-        .type-pill { padding: 4px 10px; border-radius: 6px; font-size: 0.6rem; font-weight: 800; text-transform: uppercase; }
+        /* --- PILLS --- */
+        .type-pill { padding: 4px 10px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; }
         .type-in { background: #dcfce7; color: #166534; }
         .type-out { background: #fee2e2; color: #991b1b; }
 
-        .btn-load { 
-            width: 100%; padding: 20px; background: #fff; border: none; 
-            color: var(--primary); font-weight: 800; cursor: pointer;
-        }
+        .mobile-list { display: none; }
+        .transaction-card { padding: 20px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+
+        .btn-load { width: 100%; padding: 20px; background: #fff; border: none; color: var(--primary); font-weight: 800; cursor: pointer; transition: 0.2s; }
+        .btn-load:hover { background: #f8fafc; }
+
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; z-index: 1500; }
 
         @media (max-width: 1100px) {
             .sidebar { transform: translateX(-100%); }
             .sidebar.active { transform: translateX(0); }
+            .overlay.active { display: block; }
             .main-content { margin-left: 0; padding: 90px 20px 40px; }
             .mobile-nav { display: flex; }
         }
@@ -99,35 +80,32 @@
         @media (max-width: 768px) {
             .table-responsive { display: none; }
             .mobile-list { display: block; }
-            .summary-banner { flex-direction: column; gap: 15px; text-align: center; }
         }
     </style>
 </head>
 <body>
 
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
 <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">JEPE ADMIN</div>
     <div class="nav-list">
         <a href="admin.html" class="nav-item">📊 Dashboard</a>
-        <a href="shift-history.html" class="nav-item">📋 Daily Shift Audit</a>
-        <a href="reports.html" class="nav-item">📄 Reports</a>
-         <a href="gas_hub.html" class="nav-item">🔥 Gas Hub</a>
-         <a href="money-history.html" class="nav-item active">💰 Money IN/OUT History</a>
-        <a href="inventory.html" class="nav-item">➕ Add Stock</a>
-        <a href="audit_trail.html" class="nav-item">🔍 Track Stock Edits</a>
-        <a href="sales_editor.html" class="nav-item">✏️ Edit Stock/Sales</a>
+        <a href="reports.html" class="nav-item">📄 Master Reports</a>
+        <a href="gas_hub.html" class="nav-item">🔥 Gas Hub</a>
+        <a href="spares_hub.html" class="nav-item">⚙️ Spares Hub</a>
+        <a href="motorbike_hub.html" class="nav-item">🏍️ Motorbike Hub</a>
+        <a href="money-history.html" class="nav-item active">💰 Money IN/OUT</a>
+        <a href="shift-history.html" class="nav-item">📋 Shift Audit</a>
         <a href="sales-history.html" class="nav-item">📜 Sales History</a>
-         <a href="low_stock.html" class="nav-item">⚠️ Low Stock Alerts</a>
-         <a href="suppliers.html" class="nav-item">🤝 Suppliers</a>
-          <a href="price_audits.html" class="nav-item">📉 Price Audits</a>
-          <a href="admin-debtors.html" class="nav-item ">👥 Debtors Hub</a>
-        <a href="Monthly Performance Report.html" class="nav-item"><span>📄</span><small>Monthly Report</small></a>
+        <a href="inventory.html" class="nav-item">➕ Add Stock</a>
+        <a href="admin-debtors.html" class="nav-item">👥 Debtors</a>
         <a href="index.html" class="nav-item" style="color: var(--danger); margin-top: 20px;">🚪 Logout</a>
     </div>
 </nav>
 
 <div class="mobile-nav">
-    <button onclick="toggleSidebar()" style="background:none; border:none; color:white; font-size:1.5rem;">☰</button>
+    <button onclick="toggleSidebar()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">☰</button>
     <div style="font-weight:800;">CASH FLOW</div>
     <div style="width:24px;"></div>
 </div>
@@ -135,11 +113,20 @@
 <main class="main-content">
     <div class="summary-banner">
         <div>
-            <small style="color:var(--text-dim); font-weight:800; text-transform:uppercase; font-size:0.7rem;">Ledger Balance</small>
+            <small class="text-dim" style="font-weight:800; text-transform:uppercase; font-size:0.7rem;">Net Ledger Balance</small>
             <span id="net-balance" style="font-size:1.8rem; font-weight:800; display:block;">Ksh 0</span>
         </div>
-        <div id="record-count" style="font-weight:700; color:var(--primary); font-size:0.8rem;">0 Records</div>
+        <div>
+            <small class="text-dim" style="font-weight:800; text-transform:uppercase; font-size:0.7rem;">Total Cash In</small>
+            <span id="total-in" style="font-size:1.2rem; font-weight:700; color:var(--success); display:block;">Ksh 0</span>
+        </div>
+        <div>
+            <small class="text-dim" style="font-weight:800; text-transform:uppercase; font-size:0.7rem;">Total Cash Out</small>
+            <span id="total-out" style="font-size:1.2rem; font-weight:700; color:var(--danger); display:block;">Ksh 0</span>
+        </div>
     </div>
+
+    <input type="text" id="txnSearch" class="search-bar" placeholder="Search by category or description (e.g. 'Rent' or 'Refund')...">
 
     <div class="card">
         <div class="table-responsive">
@@ -164,58 +151,81 @@
 <script type="module">
     import { supabase } from './auth.js';
     let limit = 20;
+    let allTransactions = [];
 
-    window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('active');
+    window.toggleSidebar = () => {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
+    };
 
     async function fetchData() {
+        // We fetch a larger pool to allow local filtering
         const { data, error } = await supabase
             .from('cash_transactions')
             .select('*')
             .order('created_at', { ascending: false })
             .limit(limit);
 
-        if (error) return;
+        if (error) {
+            console.error("Fetch error:", error);
+            return;
+        }
 
-        let net = 0;
+        allTransactions = data;
+        renderTransactions(allTransactions);
+    }
+
+    function renderTransactions(transactions) {
+        let net = 0, totalIn = 0, totalOut = 0;
         let desktopHTML = '';
         let mobileHTML = '';
 
-        data.forEach(t => {
-            const isMoneyIn = t.type === 'Money In' || t.type === 'In';
-            const amount = parseFloat(t.amount);
-            net += isMoneyIn ? amount : -amount;
+        transactions.forEach(t => {
+            const isMoneyIn = t.type.toLowerCase().includes('in');
+            const amount = parseFloat(t.amount || 0);
             
-            const date = new Date(t.created_at).toLocaleDateString();
-            const time = new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-            const description = t.description || 'No description provided';
+            if (isMoneyIn) {
+                totalIn += amount;
+                net += amount;
+            } else {
+                totalOut += amount;
+                net -= amount;
+            }
+            
+            const dateObj = new Date(t.created_at);
+            const date = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            desktopHTML += `
+            const rowHTML = `
                 <tr>
                     <td><b>${date}</b><br><small style="color:var(--text-dim)">${time}</small></td>
                     <td><span class="type-pill ${isMoneyIn ? 'type-in' : 'type-out'}">${t.type}</span></td>
-                    <td><b>${t.category || 'Other'}</b></td>
+                    <td><b>${t.category || 'General'}</b></td>
                     <td style="color:${isMoneyIn ? 'var(--success)' : 'var(--danger)'}; font-weight:800;">
                         ${isMoneyIn ? '+' : '-'} Ksh ${amount.toLocaleString()}
                     </td>
-                    <td style="color:var(--text-dim); font-size:0.8rem;">${t.description || '-'}</td>
+                    <td style="color:var(--text-dim); font-size:0.85rem; max-width: 250px;">${t.description || '-'}</td>
                 </tr>`;
 
-            mobileHTML += `
+            const mHTML = `
                 <div class="transaction-card">
-                    <div style="display:flex; justify-content:space-between; align-items: center;">
+                    <div style="display:flex; justify-content:space-between;">
                         <span class="type-pill ${isMoneyIn ? 'type-in' : 'type-out'}">${t.type}</span>
-                        <small style="color:var(--text-dim); font-weight: 600;">${date} • ${time}</small>
+                        <small style="color:var(--text-dim); font-weight:600;">${date} • ${time}</small>
                     </div>
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-weight:700; font-size: 1rem;">${t.category || 'General'}</span>
-                        <span style="font-weight:800; font-size: 1.1rem; color:${isMoneyIn ? 'var(--success)' : 'var(--danger)'}">
+                        <span style="font-weight:700;">${t.category || 'General'}</span>
+                        <span style="font-weight:800; color:${isMoneyIn ? 'var(--success)' : 'var(--danger)'}">
                             ${isMoneyIn ? '+' : '-'} Ksh ${amount.toLocaleString()}
                         </span>
                     </div>
-                    <div class="mobile-desc">
-                        📝 ${description}
+                    <div style="background:#f1f5f9; padding:10px; border-radius:10px; font-size:0.8rem; color:var(--text-dim);">
+                        ${t.description || 'No description'}
                     </div>
                 </div>`;
+
+            desktopHTML += rowHTML;
+            mobileHTML += mHTML;
         });
 
         document.getElementById('data-body-desktop').innerHTML = desktopHTML;
@@ -224,10 +234,26 @@
         const netEl = document.getElementById('net-balance');
         netEl.innerText = `Ksh ${net.toLocaleString()}`;
         netEl.style.color = net >= 0 ? 'var(--success)' : 'var(--danger)';
-        document.getElementById('record-count').innerText = `${data.length} Transactions Loaded`;
+        
+        document.getElementById('total-in').innerText = `Ksh ${totalIn.toLocaleString()}`;
+        document.getElementById('total-out').innerText = `Ksh ${totalOut.toLocaleString()}`;
     }
 
-    document.getElementById('loadMore').onclick = () => { limit += 20; fetchData(); };
+    // Search Logic
+    document.getElementById('txnSearch').oninput = (e) => {
+        const term = e.target.value.toLowerCase();
+        const filtered = allTransactions.filter(t => 
+            (t.category && t.category.toLowerCase().includes(term)) || 
+            (t.description && t.description.toLowerCase().includes(term))
+        );
+        renderTransactions(filtered);
+    };
+
+    document.getElementById('loadMore').onclick = () => { 
+        limit += 20; 
+        fetchData(); 
+    };
+
     fetchData();
 </script>
 </body>
