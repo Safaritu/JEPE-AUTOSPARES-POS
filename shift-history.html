@@ -19,6 +19,7 @@
             --sidebar-width: 260px;
             --sidebar-bg: #0f172a; 
             --sidebar-text: #94a3b8;
+            --header-height: 64px;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -41,135 +42,68 @@
             position: fixed;
             left: 0; top: 0; height: 100vh;
             z-index: 3000;
-            transition: transform 0.3s ease;
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        @media (max-width: 1024px) {
-            .sidebar { transform: translateX(-100%); }
-            .main-content { margin-left: 0 !important; }
-            .sidebar.active { transform: translateX(0); }
+        @media (min-width: 1025px) {
+            .sidebar { transform: translateX(0); }
+            .main-content { margin-left: var(--sidebar-width); }
         }
 
-        .sidebar-header {
-            padding: 25px;
-            font-weight: 800;
-            font-size: 1.1rem;
-            color: #ffffff;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-
+        .sidebar.active { transform: translateX(0); }
+        .sidebar-header { padding: 25px; font-weight: 800; font-size: 1.1rem; color: #ffffff; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .nav-list { list-style: none; padding: 15px; margin: 0; flex-grow: 1; overflow-y: auto;}
-        .nav-item {
-            display: flex; align-items: center; padding: 12px 15px;
-            text-decoration: none; color: var(--sidebar-text);
-            font-weight: 600; font-size: 0.9rem; border-radius: 10px;
-            margin-bottom: 4px; transition: 0.2s;
-        }
+        .nav-item { display: flex; align-items: center; padding: 12px 15px; text-decoration: none; color: var(--sidebar-text); font-weight: 600; font-size: 0.9rem; border-radius: 10px; margin-bottom: 4px; transition: 0.2s; }
         .nav-item:hover { background: rgba(255,255,255,0.05); color: #ffffff; }
         .nav-item.active { background: var(--primary); color: #ffffff; }
 
         /* --- MAIN CONTENT --- */
-        .main-content {
-            flex-grow: 1;
-            padding: 25px;
-            margin-left: var(--sidebar-width);
-            width: 100%;
+        .main-content { flex-grow: 1; padding: 20px; width: 100%; transition: 0.3s; }
+        .page-header { background: white; padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 20px; }
+        .page-header h1 { margin: 0; font-size: 1.4rem; font-weight: 800; }
+        .page-header p { margin: 5px 0 0 0; color: var(--dim); font-size: 0.85rem; }
+
+        /* --- MOBILE SLIDE INDICATOR --- */
+        .slide-indicator {
+            display: none;
+            background: #eef2ff;
+            color: var(--primary);
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            align-items: center;
+            gap: 8px;
         }
 
-        .page-header {
-            margin-bottom: 25px;
+        @media (max-width: 768px) {
+            .slide-indicator { display: inline-flex; }
         }
 
-        .page-header h1 { margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px; }
-        .page-header p { margin: 5px 0 0 0; color: var(--dim); font-size: 0.95rem; }
-
-        .search-input {
-            width: 100%; padding: 16px; border: 1px solid var(--border); border-radius: 14px; 
-            margin-bottom: 25px; font-family: inherit; font-size: 1rem; outline: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        /* --- TABLE --- */
+        .table-view { 
+            background: white; 
+            border-radius: 16px; 
+            border: 1px solid var(--border); 
+            overflow-x: auto; /* Enables horizontal scroll */
+            -webkit-overflow-scrolling: touch;
         }
 
-        /* --- AUDIT CARDS --- */
-        .audit-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-            gap: 20px;
-        }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        th { background: #f8fafc; text-align: left; padding: 18px; font-size: 0.7rem; text-transform: uppercase; color: var(--dim); border-bottom: 1px solid var(--border); }
+        td { padding: 18px; border-bottom: 1px solid var(--border); font-size: 0.85rem; vertical-align: top; white-space: nowrap; }
 
-        @media (max-width: 480px) {
-            .audit-grid { grid-template-columns: 1fr; }
-        }
-
-        .audit-card {
-            background: white;
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 1px dashed var(--border);
-        }
-
-        .shift-date { font-weight: 800; font-size: 1.1rem; color: var(--text); }
-        .time-info { font-size: 0.75rem; color: var(--dim); margin-top: 4px; font-weight: 600; }
-
-        .variance-badge {
-            font-weight: 800; padding: 6px 12px; border-radius: 10px; font-size: 0.75rem;
-        }
+        .total-row { font-weight: 700; border-top: 1px solid #eee; margin-top: 8px; padding-top: 4px; color: var(--text); }
+        .variance-status { font-weight: 800; padding: 6px 12px; border-radius: 8px; font-size: 0.7rem; }
         .balanced { background: #dcfce7; color: #15803d; }
         .mismatch { background: #fee2e2; color: #b91c1c; }
-        .active-shift { background: #e0e7ff; color: #4338ca; }
-
-        .stats-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .stat-box {
-            background: #f8fafc;
-            padding: 12px;
-            border-radius: 12px;
-        }
-
-        .stat-label { font-size: 0.65rem; text-transform: uppercase; color: var(--dim); font-weight: 700; margin-bottom: 5px; }
-        .stat-value { font-size: 0.95rem; font-weight: 700; }
-
-        .breakdown {
-            font-size: 0.75rem;
-            color: var(--dim);
-            line-height: 1.6;
-            margin-top: 5px;
-        }
-
-        .adjustments {
-            display: flex;
-            gap: 15px;
-            padding: 10px 0;
-            border-top: 1px solid #f1f5f9;
-        }
-
-        .adj-item { display: flex; align-items: center; gap: 5px; font-size: 0.85rem; font-weight: 700; }
-
-        .notes-box {
-            margin-top: auto;
-            padding-top: 12px;
-            font-size: 0.8rem;
-            color: var(--dim);
-            font-style: italic;
-            border-top: 1px solid #f1f5f9;
-        }
+        .status-active { background: #e0e7ff; color: #4338ca; }
+        .time-tag { font-size: 0.7rem; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-weight: 600; display: inline-block; margin-bottom: 2px; }
+        
+        .search-input { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; font-family: inherit; font-size: 0.9rem; outline: none; }
+        .search-input:focus { border-color: var(--primary); }
     </style>
 </head>
 <body>
@@ -184,6 +118,7 @@
         <a href="money-history.html" class="nav-item">💰 Money History</a>
         <a href="inventory.html" class="nav-item">➕ Add Stock</a>
         <a href="sales-history.html" class="nav-item">📜 Sales History</a>
+        <a href="low_stock.html" class="nav-item">⚠️ Low Stock Alerts</a>
         <a href="suppliers.html" class="nav-item">🤝 Suppliers</a>
     </div>
 </nav>
@@ -196,8 +131,26 @@
 
     <input type="text" id="auditSearch" class="search-input" placeholder="Search by date (e.g. 09 Jan 2026)...">
 
-    <div class="audit-grid" id="audit-container">
-        <p style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--dim);">Loading audit records...</p>
+    <div class="slide-indicator">
+        <span>👈 Slide left to see more columns</span>
+    </div>
+
+    <div class="table-view">
+        <table>
+            <thead>
+                <tr>
+                    <th>Shift Timing</th>
+                    <th>Opening Floats</th>
+                    <th>Adjustments (In/Out)</th>
+                    <th>Closing Actuals</th>
+                    <th>Variance</th>
+                    <th>Notes / Reason</th>
+                </tr>
+            </thead>
+            <tbody id="audit-body-desktop">
+                <tr><td colspan="6" style="text-align:center; padding:50px;">Fetching records...</td></tr>
+            </tbody>
+        </table>
     </div>
 </main>
 
@@ -221,7 +174,7 @@
     }
 
     function render(dataToRender) {
-        const container = document.getElementById('audit-container');
+        const tbody = document.getElementById('audit-body-desktop');
         let html = '';
 
         dataToRender.forEach(sh => {
@@ -236,62 +189,50 @@
             const expected = sh.system_expected_total || openTotal;
             const varianceVal = isClosed ? (physicalClose - expected) : 0;
             
-            const statusClass = !isClosed ? 'active-shift' : (Math.abs(varianceVal) < 1 ? 'balanced' : 'mismatch');
-            const statusText = !isClosed ? 'SESSION ACTIVE' : (Math.abs(varianceVal) < 1 ? 'BALANCED' : `VAR: Ksh ${varianceVal.toLocaleString()}`);
+            const statusClass = !isClosed ? 'status-active' : (Math.abs(varianceVal) < 1 ? 'balanced' : 'mismatch');
+            const statusText = !isClosed ? 'ACTIVE' : (Math.abs(varianceVal) < 1 ? 'BALANCED' : `Ksh ${varianceVal.toLocaleString()}`);
 
             const startD = new Date(sh.start_time);
             const endD = sh.end_time ? new Date(sh.end_time) : null;
 
             html += `
-                <div class="audit-card">
-                    <div class="card-header">
-                        <div>
-                            <div class="shift-date">${startD.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})}</div>
-                            <div class="time-info">
-                                🕒 ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} — 
-                                ${endD ? endD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '<span style="color:var(--primary)">NOW</span>'}
+                <tr>
+                    <td>
+                        <b style="color:var(--primary)">${startD.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})}</b><br>
+                        <span class="time-tag">IN: ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span><br>
+                        <span class="time-tag" style="color:var(--danger)">OUT: ${endD ? endD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'Active'}</span>
+                    </td>
+                    <td>
+                        <div style="font-size:0.75rem; color:var(--dim)">
+                            Cash: ${(sh.open_cash||0).toLocaleString()}<br>
+                            M-Pesa: ${(sh.open_mpesa||0).toLocaleString()}<br>
+                            KCB: ${(sh.open_kcb||0).toLocaleString()}<br>
+                            Equity: ${(sh.open_equity||0).toLocaleString()}
+                        </div>
+                        <div class="total-row">Total: Ksh ${openTotal.toLocaleString()}</div>
+                    </td>
+                    <td>
+                        <span style="color:var(--success); font-weight:700;">+${moneyIn.toLocaleString()}</span><br>
+                        <span style="color:var(--danger); font-weight:700;">-${moneyOut.toLocaleString()}</span>
+                    </td>
+                    <td>
+                        ${isClosed ? `
+                            <div style="font-size:0.75rem; color:var(--dim)">
+                                Cash: ${(sh.close_cash||0).toLocaleString()}<br>
+                                M-Pesa: ${(sh.close_mpesa||0).toLocaleString()}<br>
+                                KCB: ${(sh.close_kcb||0).toLocaleString()}<br>
+                                Equity: ${(sh.close_equity||0).toLocaleString()}<br>
+                                <span style="color:var(--primary)">Paybill: +${(sh.close_kcb_bank||0).toLocaleString()}</span>
                             </div>
-                        </div>
-                        <span class="variance-badge ${statusClass}">${statusText}</span>
-                    </div>
-
-                    <div class="stats-row">
-                        <div class="stat-box">
-                            <div class="stat-label">Opening Float</div>
-                            <div class="stat-value">Ksh ${openTotal.toLocaleString()}</div>
-                            <div class="breakdown">
-                                Cash: ${sh.open_cash || 0} | M-Pesa: ${sh.open_mpesa || 0}<br>
-                                Bank: ${(sh.open_kcb || 0) + (sh.open_equity || 0)}
-                            </div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-label">Closing Actual</div>
-                            <div class="stat-value">${isClosed ? `Ksh ${physicalClose.toLocaleString()}` : '---'}</div>
-                            <div class="breakdown">
-                                ${isClosed ? `Cash: ${sh.close_cash} | M-Pesa: ${sh.close_mpesa}<br>
-                                Paybill: ${sh.close_kcb_bank || 0}` : 'Shift still running'}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="adjustments">
-                        <div class="adj-item" style="color:var(--success)">
-                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"></path></svg>
-                            Ksh ${moneyIn.toLocaleString()}
-                        </div>
-                        <div class="adj-item" style="color:var(--danger)">
-                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M20 12H4"></path></svg>
-                            Ksh ${moneyOut.toLocaleString()}
-                        </div>
-                    </div>
-
-                    <div class="notes-box">
-                        <b>Note:</b> ${sh.variance_note || (isClosed ? 'No reasons provided' : 'Shift currently in progress')}
-                    </div>
-                </div>`;
+                            <div class="total-row">Total: Ksh ${physicalClose.toLocaleString()}</div>
+                        ` : '<span style="color:var(--dim); font-style:italic;">Shift in progress...</span>'}
+                    </td>
+                    <td><span class="variance-status ${statusClass}">${statusText}</span></td>
+                    <td style="white-space: normal; min-width: 200px;"><small style="color:var(--dim)">${sh.variance_note || (isClosed ? 'No notes' : '-')}</small></td>
+                </tr>`;
         });
 
-        container.innerHTML = html || '<p style="text-align:center; padding:40px; color:var(--dim);">No records match your search.</p>';
+        tbody.innerHTML = html || '<tr><td colspan="6" style="text-align:center">No records found.</td></tr>';
     }
 
     // Search Logic
