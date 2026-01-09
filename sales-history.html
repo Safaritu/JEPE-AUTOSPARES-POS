@@ -54,17 +54,16 @@
         .search-input {
             width: 100%; padding: 16px; border-radius: 14px; border: 1px solid var(--border);
             font-size: 16px; margin-bottom: 20px; outline: none; background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
         }
 
         /* --- DATA PRESENTATION --- */
         .data-card-container { width: 100%; }
         
-        /* Table View (Desktop) */
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 16px; overflow: hidden; border: 1px solid var(--border); }
         th { text-align: left; padding: 15px; background: #f8fafc; font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; }
         td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; }
 
-        /* Card View (Mobile) */
         @media (max-width: 1024px) {
             .container { padding-top: 84px; }
             table, thead, tbody, th, td, tr { display: block; }
@@ -82,7 +81,6 @@
                 content: attr(data-label); font-weight: 800; color: var(--text-dim); 
                 font-size: 0.7rem; text-transform: uppercase; text-align: left;
             }
-            /* Style for the Item Name specifically in mobile card */
             td[data-label="Item Details"] { 
                 flex-direction: column; align-items: flex-start; border-bottom: 1px solid #f1f5f9; 
                 margin-bottom: 8px; padding-bottom: 12px;
@@ -100,7 +98,9 @@
             width: 100%; margin-top: 10px; background: white; 
             border: 2px solid var(--admin-accent); color: var(--admin-accent); 
             padding: 15px; border-radius: 14px; font-weight: 800; cursor: pointer;
+            transition: 0.2s;
         }
+        .btn-load:hover { background: var(--admin-accent); color: white; }
     </style>
 </head>
 <body>
@@ -110,20 +110,22 @@
 <div class="sidebar" id="sidebar">
     <h2>JEPE ADMIN</h2>
     <nav>
-            <a href="admin.html" class="nav-link ">📊 Dashboard view</a>
-        <a href="shift-history.html" class="nav-link">📋 Daily Shift Audit</a>
-        <a href="reports.html" class="nav-link">📄 Detailed Reports</a>
-        <a href="money-history.html" class="nav-link">📜 Money money IN/OUT history</a>
-        <a href="gas_hub.html" class="nav-link">🔥 Gas Hub</a>
-        <a href="inventory.html" class="nav-link">➕ Add Stock</a>
-         <a href="low_stock.html" class="nav-link" id="low-stock-nav">⚠️ Low Stock Alerts</a>
-         <a href="price_audits.html" class="nav-link">📉 item sold under price</a>
-        <a href="audit_trail.html" class="nav-link ">🔍 what cashier edited</a>
-        <a href="sales_editor.html" class="nav-link">✏️ Edit Stock/Sales</a>
-        <a href="sales-history.html" class="nav-link active">📜 Sales History</a>
-         <a href="suppliers.html" class="nav-link">🤝 Suppliers</a>
-        <a href="admin-debtors.html" class="nav-link">👥 Debtors</a>
-       <a href="Monthly Performance Report.html" class="nav-link"><span>📄</span><small>Monthly Report</small></a>a>
+       <a href="admin.html" class="nav-link"><span>📊</span> <span>Dashboard</span></a>
+            <a href="gas_hub.html" class="nav-link active"><span>🔥</span> <span>Gas Hub</span></a>
+            <a href="spares_hub.html" class="nav-link"><span>📋</span> <span>Spare Parts Hub</span></a>
+            <a href="motorbike_hub.html" class="nav-link"><span>🏍️</span> <span>Motorbike Hub</span></a>
+            <a href="shift-history.html" class="nav-link"><span>📋</span> <span>Daily Shifts</span></a>
+            <a href="money-history.html" class="nav-link"><span>💰</span> <span>Money IN/OUT</span></a>
+            <a href="sales-history.html" class="nav-link"><span>📜</span> <span>Sales History</span></a>
+            <a href="inventory.html" class="nav-link"><span>➕</span> <span>Add Stock</span></a>
+            <a href="sales_editor.html" class="nav-link"><span>✏️</span> <span>Edit Stock</span></a>
+            <a href="admin-debtors.html" class="nav-link"><span>👥</span> <span>Debtors</span></a>
+            <a href="low_stock.html" class="nav-link"><span>⚠️</span> <span>Low Stock</span></a>
+            <a href="audit_trail.html" class="nav-link"><span>🔍</span> <span>Inventory Track</span></a>
+            <a href="reports.html" class="nav-link"><span>📄</span> <span>Reports</span></a>
+            <a href="price_audits.html" class="nav-link"><span>📉</span> <span>Underpriced</span></a>
+            <a href="suppliers.html" class="nav-link"><span>🤝</span> <span>Suppliers</span></a>
+            <a href="admin.html" class="nav-link"><span>🏠</span> <span>HOME</span></a>
     </nav>
     <div style="margin-top: auto; padding-top: 20px;">
         <a onclick="handleLogout()" class="nav-link" style="color: #fb7185; cursor:pointer;">🚪 Logout</a>
@@ -140,7 +142,7 @@
     <div class="container">
         <div style="margin-bottom: 25px;">
             <h2 style="margin:0; font-weight:800; font-size: 1.5rem; letter-spacing: -1px;">Recent Transactions</h2>
-            <p style="color:var(--text-dim); margin-top:5px;">Full history of items sold and profits.</p>
+            <p style="color:var(--text-dim); margin-top:5px;">Full history of items sold across all categories.</p>
         </div>
 
         <input type="text" id="salesSearch" class="search-input" placeholder="Search by item, payment, or staff...">
@@ -175,9 +177,10 @@
     };
 
     async function fetchSales() {
+        // We fetch sales and join products to get the fallback cost_price
         const { data, error } = await supabase
             .from('sales')
-            .select('*, products(cost_price)')
+            .select('*, products(cost_price, category)')
             .order('created_at', {ascending: false})
             .limit(limit);
 
@@ -189,9 +192,14 @@
     function renderSales(data) {
         const tbody = document.getElementById('data-body');
         tbody.innerHTML = data.map(s => {
-            const cost = s.products?.cost_price || 0;
-            const profit = s.total_amount - (cost * s.quantity);
+            // Logic: Use cost_price from sale record if available, else from product record
+            const saleCost = s.cost_price || s.products?.cost_price || 0;
+            const revenue = s.total_amount || 0;
+            const profit = revenue - (saleCost * s.quantity);
             const date = new Date(s.created_at);
+            
+            // Helpful category badge (handles the NULL category issue visually)
+            const category = s.category || s.products?.category || 'General';
             
             return `
                 <tr>
@@ -201,10 +209,12 @@
                     </td>
                     <td data-label="Item Details">
                         <div style="font-weight:700; color:var(--admin-dark);">${s.item_name}</div>
-                        <div style="font-size:0.7rem; color:var(--text-dim)">Sold by: ${s.sold_by || 'System'}</div>
+                        <div style="font-size:0.7rem; color:var(--text-dim)">
+                            Cat: ${category} | Sold by: ${s.sold_by || 'System'}
+                        </div>
                     </td>
                     <td data-label="Quantity" style="font-weight:700;">${s.quantity}</td>
-                    <td data-label="Total Amount" style="font-weight:800;">Ksh ${s.total_amount.toLocaleString()}</td>
+                    <td data-label="Total Amount" style="font-weight:800;">Ksh ${revenue.toLocaleString()}</td>
                     <td data-label="Est. Profit">
                         <span class="profit-text">+Ksh ${profit.toLocaleString()}</span>
                     </td>
@@ -221,7 +231,8 @@
         const filtered = allSales.filter(s => 
             s.item_name.toLowerCase().includes(term) || 
             s.payment_method.toLowerCase().includes(term) ||
-            (s.sold_by && s.sold_by.toLowerCase().includes(term))
+            (s.sold_by && s.sold_by.toLowerCase().includes(term)) ||
+            (s.category && s.category.toLowerCase().includes(term))
         );
         renderSales(filtered);
     });
@@ -232,10 +243,11 @@
     };
 
     window.handleLogout = async () => {
-        await supabase.auth.signOut();
+        const { error } = await supabase.auth.signOut();
         window.location.href = 'index.html';
     };
 
+    // Initial load
     fetchSales();
 </script>
 </body>
