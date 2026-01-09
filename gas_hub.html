@@ -97,20 +97,21 @@
         <h2>JEPE ADMIN</h2>
         <nav>
             <a href="admin.html" class="nav-link"><span>📊</span> <span>Dashboard</span></a>
-            <a href="inventory.html" class="nav-link"><span>➕</span> <span>Add Stock</span></a>
-            <a href="sales_editor.html" class="nav-link"><span>✏️</span> <span>Edit Stock</span></a>
             <a href="gas_hub.html" class="nav-link active"><span>🔥</span> <span>Gas Hub</span></a>
-            <a href="spares_hub.html" class="nav-link"><span>📋</span> <span>Spare Hub</span></a>
+            <a href="spares_hub.html" class="nav-link"><span>📋</span> <span>Spare Parts Hub</span></a>
             <a href="motorbike_hub.html" class="nav-link"><span>🏍️</span> <span>Motorbike Hub</span></a>
             <a href="shift-history.html" class="nav-link"><span>📋</span> <span>Daily Shifts</span></a>
-            <a href="sales-history.html" class="nav-link"><span>📜</span> <span>Sales History</span></a>
             <a href="money-history.html" class="nav-link"><span>💰</span> <span>Money IN/OUT</span></a>
+            <a href="sales-history.html" class="nav-link"><span>📜</span> <span>Sales History</span></a>
+            <a href="inventory.html" class="nav-link"><span>➕</span> <span>Add Stock</span></a>
+            <a href="sales_editor.html" class="nav-link"><span>✏️</span> <span>Edit Stock</span></a>
             <a href="admin-debtors.html" class="nav-link"><span>👥</span> <span>Debtors</span></a>
             <a href="low_stock.html" class="nav-link"><span>⚠️</span> <span>Low Stock</span></a>
             <a href="audit_trail.html" class="nav-link"><span>🔍</span> <span>Inventory Track</span></a>
             <a href="reports.html" class="nav-link"><span>📄</span> <span>Reports</span></a>
             <a href="price_audits.html" class="nav-link"><span>📉</span> <span>Underpriced</span></a>
             <a href="suppliers.html" class="nav-link"><span>🤝</span> <span>Suppliers</span></a>
+            <a href="admin.html" class="nav-link"><span>🏠</span> <span>HOME</span></a>
         </nav>
     </div>
 
@@ -182,24 +183,16 @@
 
         async function init() {
             try {
-                // 1. Fetch products only for Gas
                 const { data: products } = await supabase.from('products').select('*').eq('category', 'Gas');
-                
-                // 2. Fetch the latest shift ID
                 const { data: latestShift } = await supabase.from('daily_shifts').select('id').order('start_time', { ascending: false }).limit(1);
-                
-                // 3. Fetch ALL sales (we will filter manually to handle the NULL category issue)
                 const { data: allSales } = await supabase.from('sales').select('*');
-                
                 const { count: supplierCount } = await supabase.from('suppliers').select('*', { count: 'exact', head: true });
 
                 if (products) {
-                    // Filter sales where either category is 'Gas' OR the product_id exists in our Gas products list
                     const gasProductIds = products.map(p => p.id);
                     const filteredGasSales = (allSales || []).filter(s => 
                         s.category === 'Gas' || gasProductIds.includes(s.product_id)
                     );
-
                     renderDashboard(products, filteredGasSales, latestShift?.[0]?.id, supplierCount || 0);
                 }
             } catch (err) { console.error(err); }
@@ -210,7 +203,6 @@
             const brandPerfMap = {};
             const groupedInventory = {};
 
-            // Map products
             products.forEach(p => {
                 const stock = Number(p.stock_quantity) || 0;
                 const empty = Number(p.empty_quantity) || 0;
@@ -222,7 +214,7 @@
                 
                 brandPerfMap[p.id] = { 
                     name: p.name, 
-                    weight: p.weight_category || '-', 
+                    weight: p.weight_category || '', 
                     stock, 
                     sold: 0, 
                     revenue: 0, 
@@ -234,13 +226,10 @@
                 groupedInventory[brandName].push({ weight: p.weight_category, full: stock, empty: empty });
             });
 
-            // Process filtered sales
             sales.forEach(s => {
                 const qty = Number(s.quantity) || 0;
                 const revenue = Number(s.total_amount) || Number(s.amount) || 0; 
                 const cost = Number(s.cost_price) || 0;
-                
-                // If sale record cost is 0, try to find the cost from the products map
                 const actualCost = cost > 0 ? cost : (products.find(p => p.id === s.product_id)?.cost_price || 0);
                 const profit = revenue - (actualCost * qty);
 
@@ -259,7 +248,6 @@
                 }
             });
 
-            // Update UI
             document.getElementById('shift-sales').innerText = `Ksh ${sSales.toLocaleString()}`;
             document.getElementById('shift-profit').innerText = `Ksh ${sProfit.toLocaleString()}`;
             document.getElementById('all-inv-cost').innerText = `Ksh ${invCost.toLocaleString()}`;
@@ -272,7 +260,6 @@
             allBrandPerf = Object.values(brandPerfMap).sort((a, b) => b.revenue - a.revenue);
             updateTable();
 
-            // Render Brand Cards
             document.getElementById('brand-cards-container').innerHTML = Object.entries(groupedInventory).map(([brand, weights]) => `
                 <div class="brand-card">
                     <h4 style="margin:0 0 10px 0;">${brand}</h4>
@@ -295,7 +282,7 @@
             const tableBody = document.getElementById('performance-table-body');
             tableBody.innerHTML = allBrandPerf.slice(0, itemsToShow).map(b => `
                 <tr>
-                    <td><strong>${b.name}</strong></td>
+                    <td><strong>${b.name} ${b.weight}</strong></td>
                     <td>${b.stock}</td>
                     <td>${b.sold}</td>
                     <td>Ksh ${b.revenue.toLocaleString()}</td>
@@ -322,7 +309,9 @@
                 <tr><td>${s.w}</td><td>${s.full}</td><td>${s.empty}</td><td>${s.total}</td></tr>
             `).join('');
 
-            new Chart(document.getElementById('weightChart'), {
+            const ctx = document.getElementById('weightChart').getContext('2d');
+            if (window.myChart) window.myChart.destroy();
+            window.myChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: weights,
