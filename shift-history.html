@@ -33,64 +33,49 @@
         .nav-item.active { background: var(--primary); color: white; }
 
         /* --- MAIN CONTENT --- */
-        .main-content { flex-grow: 1; padding: 20px; width: 100%; margin-left: var(--sidebar-width); position: relative; }
+        .main-content { flex-grow: 1; padding: 25px; width: 100%; margin-left: var(--sidebar-width); position: relative; }
         @media (max-width: 1024px) { .sidebar { display: none; } .main-content { margin-left: 0; } }
         
-        .page-header { background: white; padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .logic-banner { background: #eff6ff; border: 1px solid #bfdbfe; padding: 15px; border-radius: 12px; margin-bottom: 20px; font-size: 0.85rem; color: #1e40af; line-height: 1.5; }
+        .page-header { background: white; padding: 24px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
 
-        .search-input { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; font-size: 0.9rem; outline: none; background: white; }
-
-        /* --- MAGICAL SLIDE INDICATOR (TOP VERSION) --- */
-        .slide-indicator {
-            background: #0f172a;
-            color: white;
-            padding: 12px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 10px;
-            transition: all 0.5s ease;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            border: 1px solid rgba(255,255,255,0.1);
+        /* --- MOBILE SLIDE INDICATOR --- */
+        .slide-indicator { 
+            background: #0f172a; color: white; padding: 14px; border-radius: 12px; 
+            display: none; align-items: center; justify-content: center; gap: 12px; 
+            margin-bottom: 15px; font-size: 0.8rem; font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
+        .hand-icon { font-size: 1.2rem; animation: tapSide 1.5s infinite; }
+        @keyframes tapSide { 0%, 100% { transform: translateX(5px); } 50% { transform: translateX(-5px); } }
+        @media (max-width: 1024px) { .slide-indicator { display: flex; } }
 
-        .hand-icon { font-size: 1.5rem; animation: slideHand 1.5s infinite; }
+        .search-input { width: 100%; padding: 14px 20px; border: 1px solid var(--border); border-radius: 14px; margin-bottom: 24px; font-size: 0.95rem; outline: none; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+
+        .table-outer { border-radius: 16px; overflow: hidden; border: 1px solid var(--border); background: white; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
+        .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         
-        @keyframes slideHand {
-            0% { transform: translateX(10px); }
-            50% { transform: translateX(-10px); }
-            100% { transform: translateX(10px); }
-        }
+        table { width: 100%; border-collapse: collapse; min-width: 1250px; }
+        th { background: #f8fafc; padding: 18px 15px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--dim); border-bottom: 1px solid var(--border); text-align: left; }
+        td { padding: 20px 15px; border-bottom: 1px solid var(--border); font-size: 0.9rem; vertical-align: top; }
 
-        /* Hide on desktop, only show on mobile */
-        @media (min-width: 1025px) { .slide-indicator { display: none; } }
+        .account-line { display: flex; justify-content: space-between; margin-bottom: 4px; border-bottom: 1px dashed #f1f5f9; padding-bottom: 2px; }
+        .account-label { color: var(--dim); font-size: 0.75rem; font-weight: 500; }
+        .account-val { font-weight: 600; color: var(--text); font-size: 0.8rem; }
 
-        /* --- TABLE --- */
-        .table-outer { position: relative; border-radius: 16px; overflow: hidden; border: 1px solid var(--border); background: white; }
-        .table-container { background: white; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        table { width: 100%; border-collapse: collapse; min-width: 1300px; }
-        th { background: #f8fafc; padding: 15px; font-size: 0.7rem; text-transform: uppercase; color: var(--dim); border-bottom: 1px solid var(--border); text-align: left; }
-        td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 0.85rem; vertical-align: top; }
-
-        /* --- UI HELPERS --- */
-        .total-row { font-weight: 800; border-top: 1.5px solid #eee; margin-top: 8px; padding-top: 5px; color: var(--primary); font-size: 0.9rem; }
-        .status-badge { font-weight: 800; padding: 6px 12px; border-radius: 8px; font-size: 0.7rem; display: inline-block; }
-        .balanced { background: #dcfce7; color: #15803d; }
-        .mismatch { background: #fee2e2; color: #b91c1c; }
-        .active-shift { background: #e0e7ff; color: #4338ca; }
-
-        .revenue-box { background: #f1f5f9; padding: 10px; border-radius: 8px; margin-top: 5px; border-left: 4px solid var(--primary); color: inherit; text-decoration: none; display: block; transition: 0.2s; }
-        .revenue-box:hover { background: #e2e8f0; }
+        .total-row { font-weight: 800; margin-top: 10px; padding: 8px; background: #f5f3ff; color: var(--primary); border-radius: 6px; text-align: center; }
         
-        .clickable-adj { text-decoration: none; display: block; transition: 0.2s; border-radius: 8px; padding: 8px; color: inherit; background: #fafafa; border: 1px solid #f0f0f0; }
-        .clickable-adj:hover { background: #f1f5f9; }
+        .status-badge { font-weight: 800; padding: 10px 15px; border-radius: 10px; font-size: 0.85rem; display: block; text-align: center; min-width: 140px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .balanced { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+        .mismatch { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        .active-shift { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
 
-        .time-group { margin-top: 8px; }
-        .time-label { color: var(--dim); font-size: 0.65rem; font-weight: 700; display: block; margin-bottom: 2px; }
-        .time-val { font-weight: 700; color: var(--text); font-size: 0.8rem; }
+        .revenue-card { background: #fff; border: 1px solid var(--border); padding: 12px; border-radius: 10px; text-decoration: none; display: block; transition: 0.2s; }
+        .revenue-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+        
+        .adj-box { padding: 12px; border-radius: 10px; background: #fafafa; border: 1px solid #f0f0f0; text-decoration: none; display: block; }
+
+        .date-cell b { display: block; margin-bottom: 8px; font-size: 1rem; }
+        .time-pill { background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; color: var(--dim); display: inline-block; margin-top: 4px; }
     </style>
 </head>
 <body>
@@ -98,11 +83,14 @@
 <nav class="sidebar">
     <div class="sidebar-header">JEPE ADMIN</div>
     <div class="nav-list">
+       <a href="#" onclick="confirmSwitchToCashier(event)" class="nav-item switch-link"><span>🔄</span> SWITCH TO CASHIER</a>
         <a href="admin.html" class="nav-item"><span>📊</span> Dashboard</a>
-        <a href="inventory.html" class="nav-item"><span>➕</span> Add Stock</a>
+        <a href="inventory.html" class="nav-item active"><span>➕</span> Add Stock</a>
         <a href="sales_editor.html" class="nav-item"><span>✏️</span> Edit Stock</a>
         <a href="gas_hub.html" class="nav-item"><span>🔥</span> Gas Hub</a>
-        <a href="shift-history.html" class="nav-item active"><span>📋</span> Daily Shifts Records</a>
+        <a href="spares_hub.html" class="nav-item"><span>📋</span> Spare Hub</a>
+        <a href="motorbike_hub.html" class="nav-item"><span>🏍️</span> Motorbike Hub</a>
+        <a href="shift-history.html" class="nav-item"><span>📋</span> Daily Shifts Records</a>
         <a href="sales-history.html" class="nav-item"><span>📜</span> Sales History</a>
         <a href="money-history.html" class="nav-item"><span>💰</span> Money IN/OUT</a>
         <a href="admin-debtors.html" class="nav-item"><span>👥</span> Debtors</a>
@@ -111,41 +99,36 @@
         <a href="reports.html" class="nav-item"><span>📄</span> Reports</a>
         <a href="price_audits.html" class="nav-item"><span>📉</span> Underpriced</a>
         <a href="suppliers.html" class="nav-item"><span>🤝</span> Suppliers</a>
+        <a href="admin.html" class="nav-item"><span>🏠</span> HOME</a>
+        
     </div>
 </nav>
 
 <main class="main-content">
     <div class="page-header">
-        <h1 style="margin:0; font-size: 1.4rem;">Daily Shift Audit Hub</h1>
-        <p style="margin:5px 0 0; color: var(--dim);">Track performance and reconciliations with account accuracy.</p>
+        <h1 style="margin:0; font-size: 1.6rem;">DAILY SHIFT HISTORY</h1>
+        <p style="margin:6px 0 0; color: var(--dim);">Comprehensive reconciliation of all physical and system balances.</p>
     </div>
 
-    <div class="logic-banner">
-        <b>💡 Reconciliation Logic:</b>
-        (Opening + Sales + In - Out) vs Physical Closing.
-        <br><b>Accounts:</b> Cash, M-Pesa, KCB Paybill, KCB Bank, Equity.
+    <div class="slide-indicator" id="scrollHint">
+        <span class="hand-icon">↔️</span>
+        <span>SLIDE TABLE TO VIEW ALL DETAILS</span>
     </div>
 
-    <input type="text" id="auditSearch" class="search-input" placeholder="Search by date (e.g. 09 Jan 2026)...">
-
-    <div class="slide-indicator" id="magicIndicator">
-        <span class="hand-icon">👈</span>
-        <span style="font-weight: 700; font-size: 0.85rem; letter-spacing: 0.5px;">SLIDE TABLE TO SEE ALL COLUMNS</span>
-        <span class="hand-icon">👉</span>
-    </div>
+    <input type="text" id="auditSearch" class="search-input" placeholder="Search by date (e.g. 10 Jan 2026)...">
 
     <div class="table-outer">
         <div class="table-container" id="scrollContainer">
             <table>
                 <thead>
                     <tr>
-                        <th>TIME/DATE</th>
-                        <th>OPENING FLOATS</th>
-                        <th>PAYMENT METHOD</th>
-                        <th>MONEY IN/OUT</th>
-                        <th>CLOSING FLOATS</th>
-                        <th>VARIANCE</th>
-                        <th>VARIANCE REASON</th>
+                        <th width="160">DATE</th>
+                        <th width="210">OPENING FLOATS</th>
+                        <th width="210">PAYMENT METHOD</th>
+                        <th width="190">MONEY IN/OUT</th>
+                        <th width="210">CLOSING FLOATS</th>
+                        <th width="190">VARIANCE</th>
+                        <th width="200">VARIANCE REASON</th>
                     </tr>
                 </thead>
                 <tbody id="audit-body-desktop"></tbody>
@@ -159,17 +142,13 @@
     
     let allShifts = [], allTransactions = [], allSales = [];
 
-    // MAGIC LOGIC: Hide top indicator when user interacts with the table
+    // Hide indicator on scroll
     const scrollContainer = document.getElementById('scrollContainer');
-    const magicIndicator = document.getElementById('magicIndicator');
-
+    const scrollHint = document.getElementById('scrollHint');
     scrollContainer.addEventListener('scroll', () => {
-        if (scrollContainer.scrollLeft > 15) {
-            magicIndicator.style.opacity = '0';
-            magicIndicator.style.transform = 'translateY(-20px)';
-            setTimeout(() => {
-                magicIndicator.style.display = 'none';
-            }, 500);
+        if (scrollContainer.scrollLeft > 20) {
+            scrollHint.style.opacity = '0';
+            setTimeout(() => scrollHint.style.display = 'none', 500);
         }
     });
 
@@ -194,86 +173,76 @@
 
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
-            
             const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount), 0);
             const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount), 0);
 
-            const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
-            const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
+            const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
+            const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
             const isClosed = sh.status === 'Closed';
-            const expected = sh.system_expected_total || (openTotal + cashSales + moneyIn - moneyOut);
+            const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount), 0);
+            const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             const variance = isClosed ? (closeTotal - expected) : 0;
             const statusClass = !isClosed ? 'active-shift' : (Math.abs(variance) < 1 ? 'balanced' : 'mismatch');
 
             const startD = new Date(sh.start_time);
-            const dateStr = startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'});
-            const openTime = startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-            const closeTime = sh.end_time ? new Date(sh.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'Still Open';
-
+            
             tableHtml += `
                 <tr>
-                    <td>
-                        <b style="font-size: 0.95rem; color:var(--text)">${dateStr}</b>
-                        <div class="time-group">
-                            <span class="time-label">OPENED:</span>
-                            <span class="time-val">${openTime}</span>
-                        </div>
-                        <div class="time-group">
-                            <span class="time-label">CLOSED:</span>
-                            <span class="time-val">${closeTime}</span>
-                        </div>
+                    <td class="date-cell">
+                        <b>${startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'})}</b>
+                        <span class="time-pill">IN: ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span><br>
+                        <span class="time-pill">${sh.end_time ? 'OUT: '+new Date(sh.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'ACTIVE'}</span>
                     </td>
                     <td>
-                        <div style="font-size:0.75rem; color:var(--dim); line-height:1.6">
-                            Cash: ${sh.open_cash||0}<br>
-                            M-Pesa: ${sh.open_mpesa||0}<br>
-                            KCB Bank: ${sh.open_kcb_bank||0}<br>
-                            Equity: ${sh.open_equity||0}
-                        </div>
+                        <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash||0).toLocaleString()}</span></div>
+                        <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa||0).toLocaleString()}</span></div>
+                        <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb||0).toLocaleString()}</span></div>
+                        <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity||0).toLocaleString()}</span></div>
                         <div class="total-row">Total: ${openTotal.toLocaleString()}</div>
                     </td>
                     <td>
-                        <a href="sales-history.html" class="revenue-box">
-                            <div style="font-size:0.75rem;">
-                                <b>Cash:</b> +${cashSales.toLocaleString()}<br>
-                                <b>KCB Paybill:</b> +${kcbPaybillSales.toLocaleString()}
-                            </div>
-                            <div style="font-size:0.65rem; color:var(--primary); margin-top:8px; font-weight:800; text-transform:uppercase">CLICK TO VIEW DETAILS ➔</div>
+                        <a href="sales-history.html" class="revenue-card">
+                            <div class="account-line"><span class="account-label">Cash Sales</span><span class="account-val" style="color:var(--success)">+${cashSales.toLocaleString()}</span></div>
+                            <div class="account-line"><span class="account-label">KCB Paybill</span><span class="account-val" style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span></div>
+                            <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW ➔</div>
                         </a>
                     </td>
                     <td>
-                        <a href="money-history.html" class="clickable-adj">
-                            <span style="color:var(--success); font-weight:800;">IN: +${moneyIn.toLocaleString()}</span><br>
-                            <span style="color:var(--danger); font-weight:800;">OUT: -${moneyOut.toLocaleString()}</span>
-                            <div style="font-size:0.65rem; color:var(--dim); margin-top:6px;">CLICK TO VIEW DETAILS ➔</div>
+                        <a href="money-history.html" class="revenue-card">
+                        
+                            <div class="account-line"><span class="account-label">In</span><span class="account-val" style="color:var(--success)">+${moneyIn.toLocaleString()}</span></div>
+                            <div class="account-line"><span class="account-label">Out</span><span class="account-val" style="color:var(--danger)">-${moneyOut.toLocaleString()}</span></div>
+                            <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW ➔</div>
                         </a>
                     </td>
                     <td>
-                        <div style="font-size:0.75rem; color:var(--dim); line-height:1.6">
-                            Cash: ${sh.close_cash||0}<br>
-                            M-Pesa: ${sh.close_mpesa||0}<br>
-                            KCB Bank: ${sh.close_kcb_bank||0}<br>
-                            Equity: ${sh.close_equity||0}
-                        </div>
-                        <div class="total-row">Total: ${closeTotal.toLocaleString()}</div>
+                        <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.close_cash||0).toLocaleString()}</span></div>
+                        <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa||0).toLocaleString()}</span></div>
+                        <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.close_kcb||0).toLocaleString()}</span></div>
+                        <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.close_equity||0).toLocaleString()}</span></div>
+                        <div class="account-line"><span class="account-label">Paybill</span><span class="account-val">${(sh.close_kcb_bank||0).toLocaleString()}</span></div>
+                        <div class="total-row" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>
                     </td>
                     <td>
                         <span class="status-badge ${statusClass}">
                             ${isClosed ? 'VAR: ' + variance.toLocaleString() : 'SHIFT ACTIVE'}
                         </span>
+                        <div style="font-size: 0.65rem; color: var(--dim); margin-top: 8px; text-align: center;">
+                            Expected: ${expected.toLocaleString()}
+                        </div>
                     </td>
-                    <td><small style="color:var(--dim); font-style:italic;">${sh.variance_note || 'No notes'}</small></td>
+                    <td><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--dim); font-style: italic;">${sh.variance_note || 'No notes added.'}</div></td>
                 </tr>`;
         });
 
-        tbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px; color:var(--dim);">No records found matching your search.</td></tr>';
+        tbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.</td></tr>';
     }
 
     document.getElementById('auditSearch').addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
         const filtered = allShifts.filter(sh => {
-            const d = new Date(sh.start_time).toLocaleDateString('en-GB').toLowerCase();
+            const d = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'}).toLowerCase();
             return d.includes(term);
         });
         render(filtered);
