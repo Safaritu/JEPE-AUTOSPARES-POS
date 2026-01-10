@@ -19,6 +19,7 @@
             --danger: #ef4444;
             --orange: #f59e0b;
             --sidebar-width: 260px;
+            --sidebar-bg: #0f172a; 
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -26,38 +27,52 @@
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
             background: var(--bg); margin: 0; color: var(--text);
-            display: flex; overflow-x: hidden; min-height: 100vh;
+            display: flex; min-height: 100vh;
         }
 
         /* --- SIDEBAR --- */
-        .sidebar {
-            position: fixed; left: -260px; top: 0; width: var(--sidebar-width);
-            height: 100vh; background: var(--admin-dark); z-index: 2000;
-            padding: 25px; display: flex; flex-direction: column;
-            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); color: white;
+        .sidebar { 
+            width: var(--sidebar-width); background: var(--sidebar-bg); position: fixed; 
+            left: 0; top: 0; height: 100vh; z-index: 3000; overflow-y: auto; 
+            transition: transform 0.3s ease; display: flex; flex-direction: column;
         }
-        @media (min-width: 1024px) {
-            .sidebar { left: 0; }
-            .main-wrapper { margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)); }
-            .mobile-header { display: none !important; }
+        .sidebar-header { 
+            padding: 25px; font-weight: 800; color: white; 
+            border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 1.2rem; 
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .sidebar.active { left: 0; }
-
-        .nav-link {
-            display: flex; align-items: center; padding: 12px 15px;
-            color: #94a3b8; text-decoration: none; font-weight: 600;
-            border-radius: 10px; margin-bottom: 5px; transition: 0.2s; font-size: 0.9rem;
+        .close-menu { display: none; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+        
+        .nav-list { padding: 15px; list-style: none; margin: 0; flex-grow: 1; }
+        .nav-link { 
+            display: flex; align-items: center; padding: 12px 15px; 
+            text-decoration: none; color: #94a3b8; font-weight: 600; 
+            border-radius: 10px; margin-bottom: 4px; transition: 0.2s; font-size: 0.9rem; 
         }
+        .nav-link span:first-child { margin-right: 12px; font-size: 1.1rem; }
+        .nav-link:hover { background: rgba(255,255,255,0.05); color: white; }
         .nav-link.active { background: var(--admin-accent); color: white; }
 
-        .main-wrapper { width: 100%; }
-        .mobile-header {
-            background: var(--admin-dark); color: white; padding: 15px 20px;
-            display: flex; justify-content: space-between; align-items: center;
-            position: sticky; top: 0; z-index: 1000;
+        /* --- MENU TRIGGER --- */
+        .menu-trigger {
+            display: none; position: fixed; top: 15px; left: 15px; z-index: 2500;
+            background: var(--sidebar-bg); color: white; border: none; padding: 10px 15px;
+            border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
-        .container { padding: 20px; max-width: 1200px; margin: auto; }
+        /* --- MAIN CONTENT --- */
+        .main-wrapper { flex-grow: 1; width: 100%; margin-left: var(--sidebar-width); position: relative; }
+        
+        @media (max-width: 1024px) { 
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.active { transform: translateX(0); }
+            .main-wrapper { margin-left: 0; padding-top: 60px; }
+            .menu-trigger { display: block; }
+            .close-menu { display: block; }
+        }
+
+        .container { padding: 25px; max-width: 1200px; margin: auto; }
 
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 25px; }
         .stat-card { 
@@ -70,7 +85,7 @@
 
         .card { background: var(--white); border-radius: 20px; border: 1px solid var(--border); padding: 24px; margin-bottom: 25px; }
         .table-container { width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid #f1f5f9; }
-        table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        table { width: 100%; border-collapse: collapse; min-width: 750px; }
         th { text-align: left; padding: 14px; background: #f8fafc; font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); font-weight: 800; }
         td { padding: 14px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; }
 
@@ -84,55 +99,52 @@
         .bg-debt { background: #fee2e2; color: #991b1b; }
         .bg-clear { background: #dcfce7; color: #166534; }
 
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 3000; padding: 20px; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 4000; padding: 20px; }
         .modal-content { background: white; padding: 25px; border-radius: 24px; width: 100%; max-width: 480px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); overflow-y: auto; max-height: 90vh; }
         .modal label { font-size: 0.65rem; font-weight: 800; color: var(--text-dim); display: block; margin-top: 12px; margin-bottom: 4px; text-transform: uppercase; }
         .modal input, .modal select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 0.95rem; outline: none; }
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; z-index: 1500; }
-        .overlay.active { display: block; }
-        
         .section-header { display: flex; justify-content: space-between; align-items: center; margin: 30px 0 15px; }
         .section-header h3 { margin: 0; font-weight: 800; font-size: 1.1rem; }
     </style>
 </head>
 <body>
 
-<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+<button class="menu-trigger" onclick="toggleMenu()">☰ MENU</button>
 
-<div class="sidebar" id="sidebar">
-    <div style="padding: 10px 0 30px 10px; font-weight: 800; font-size: 1.4rem; color:white;">JEPE ADMIN</div>
-    <nav>
-       <a href="admin.html" class="nav-link"><span>📊</span> <span>Dashboard</span></a>
-            <a href="gas_hub.html" class="nav-link "><span>🔥</span> <span>Gas Hub</span></a>
-            <a href="spares_hub.html" class="nav-link"><span>📋</span> <span>Spare Parts Hub</span></a>
-            <a href="motorbike_hub.html" class="nav-link"><span>🏍️</span> <span>Motorbike Hub</span></a>
-            <a href="shift-history.html" class="nav-link"><span>📋</span> <span>Daily Shifts</span></a>
-            <a href="money-history.html" class="nav-link"><span>💰</span> <span>Money IN/OUT</span></a>
-            <a href="sales-history.html" class="nav-link"><span>📜</span> <span>Sales History</span></a>
-            <a href="inventory.html" class="nav-link"><span>➕</span> <span>Add Stock</span></a>
-            <a href="sales_editor.html" class="nav-link"><span>✏️</span> <span>Edit Stock</span></a>
-            <a href="admin-debtors.html" class="nav-link"><span>👥</span> <span>Debtors</span></a>
-            <a href="low_stock.html" class="nav-link"><span>⚠️</span> <span>Low Stock</span></a>
-            <a href="audit_trail.html" class="nav-link"><span>🔍</span> <span>Inventory Track</span></a>
-            <a href="reports.html" class="nav-link"><span>📄</span> <span>Reports</span></a>
-            <a href="price_audits.html" class="nav-link"><span>📉</span> <span>Underpriced</span></a>
-            <a href="suppliers.html" class="nav-link active"><span>🤝</span> <span>Suppliers</span></a>
-            <a href="admin.html" class="nav-link"><span>🏠</span> <span>HOME</span></a>
-    </nav>
-    <div style="margin-top: auto;">
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        JEPE ADMIN
+        <button class="close-menu" onclick="toggleMenu()">×</button>
+    </div>
+    <div class="nav-list">
+        <a href="admin.html" class="nav-link"><span>📊</span> <span>Dashboard</span></a>
+        <a href="gas_hub.html" class="nav-link"><span>🔥</span> <span>Gas Hub</span></a>
+        <a href="spares_hub.html" class="nav-link"><span>⚙️</span> <span>Spare Parts Hub</span></a>
+        <a href="motorbike_hub.html" class="nav-link"><span>🏍️</span> <span>Motorbike Hub</span></a>
+
+        <a href="shift-history.html" class="nav-link"><span>📋</span> <span>Daily Shifts</span></a>
+        <a href="money-history.html" class="nav-link"><span>💰</span> <span>Money IN/OUT</span></a>
+        <a href="sales-history.html" class="nav-link"><span>📜</span> <span>Sales History</span></a>
+
+        <a href="inventory.html" class="nav-link"><span>➕</span> <span>Add Stock</span></a>
+        <a href="sales_editor.html" class="nav-link"><span>✏️</span> <span>Edit Stock</span></a>
+        <a href="admin-debtors.html" class="nav-link"><span>👥</span> <span>Debtors</span></a>
+        <a href="low_stock.html" class="nav-link"><span>⚠️</span> <span>Low Stock</span></a>
+        <a href="audit_trail.html" class="nav-link"><span>🔍</span> <span>Inventory Track</span></a>
+
+        <a href="reports.html" class="nav-link"><span>📄</span> <span>Reports</span></a>
+        <a href="price_audits.html" class="nav-link"><span>📉</span> <span>Underpriced</span></a>
+        <a href="suppliers.html" class="nav-link active"><span>🤝</span> <span>Suppliers</span></a>
+        <a href="admin.html" class="nav-link"><span>🏠</span> <span>HOME</span></a>
+    </div>
+    <div style="padding: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
         <a onclick="handleLogout()" class="nav-link" style="color: #fb7185; cursor:pointer;">🚪 Logout</a>
     </div>
-</div>
+</nav>
 
 <div class="main-wrapper">
-    <div class="mobile-header">
-        <button onclick="toggleSidebar()" style="background:none; border:none; color:white; font-size:1.5rem;">☰</button>
-        <div style="font-weight:800; letter-spacing: 1px;">LOGISTICS</div>
-        <div style="width:24px;"></div>
-    </div>
-
     <div class="container">
         <div class="stats-grid">
             <div class="stat-card" style="border-left-color: var(--danger);">
@@ -155,7 +167,7 @@
         </div>
 
         <div class="card">
-            <input type="text" style="width:100%; padding:14px; margin-bottom:20px; border-radius:12px; border:1px solid #e2e8f0;" id="searchSupplier" placeholder="Search by name or category..." onkeyup="filterSuppliers()">
+            <input type="text" id="searchSupplier" style="width:100%; padding:14px; margin-bottom:20px; border-radius:12px; border:1px solid #e2e8f0;" placeholder="Search by name or category..." onkeyup="filterSuppliers()">
             <div class="table-container">
                 <table id="supplierTable">
                     <thead>
@@ -223,43 +235,25 @@
 <div id="orderModal" class="modal"><div class="modal-content">
     <h3 style="margin:0; color:var(--admin-accent);">📦 Receive Stock</h3>
     <input type="hidden" id="order-sup-id">
-    
     <label>SUPPLIER</label>
     <input type="text" id="order-sup-name" readonly style="background:#f1f5f9; font-weight:800;">
-    
     <label>SELECT PRODUCT</label>
     <input type="text" id="restock-search" list="productList" placeholder="Search inventory..." onchange="handleProductSelect(this.value)">
     <datalist id="productList"></datalist>
     <input type="hidden" id="selected-product-id">
-
     <div class="grid-2">
-        <div>
-            <label>QUANTITY RECEIVED</label>
-            <input type="number" id="order-qty" placeholder="0" oninput="calculateOrderCost()">
-        </div>
-        <div>
-            <label>BUY PRICE (EACH)</label>
-            <input type="number" id="order-buy-price" placeholder="0.00" oninput="calculateOrderCost()">
-        </div>
+        <div><label>QUANTITY</label><input type="number" id="order-qty" placeholder="0" oninput="calculateOrderCost()"></div>
+        <div><label>BUY PRICE</label><input type="number" id="order-buy-price" placeholder="0.00" oninput="calculateOrderCost()"></div>
     </div>
-
     <div class="grid-2">
-        <div>
-            <label>NEW SELLING PRICE</label>
-            <input type="number" id="order-sell-price" placeholder="0.00">
-        </div>
-        <div>
-            <label>MIN SELLING PRICE</label>
-            <input type="number" id="order-min-price" placeholder="0.00">
-        </div>
+        <div><label>NEW SELL PRICE</label><input type="number" id="order-sell-price" placeholder="0.00"></div>
+        <div><label>MIN SELL PRICE</label><input type="number" id="order-min-price" placeholder="0.00"></div>
     </div>
-
     <div style="background: #f1f5f9; padding: 15px; border-radius: 12px; margin-top: 15px;">
         <label>Total Delivery Value</label>
         <h2 id="order-total-display" style="margin:0; color:var(--danger);">Ksh 0.00</h2>
     </div>
-
-    <button class="btn btn-order" id="saveOrderBtn" onclick="saveOrder()" style="width:100%; padding:15px; margin-top:20px;">Finalize & Update Inventory</button>
+    <button class="btn btn-order" id="saveOrderBtn" onclick="saveOrder()" style="width:100%; padding:15px; margin-top:20px;">Finalize Update</button>
     <button class="btn" onclick="closeModals()" style="width:100%; margin-top:10px; background:none; color:var(--text-dim);">Cancel</button>
 </div></div>
 
@@ -267,11 +261,11 @@
     import { supabase } from './auth.js';
 
     let allSuppliers = [], allOrders = [], allPayments = [], allProducts = [];
-    let orderLimit = 10, paymentLimit = 10;
+    let orderLimit = 10;
 
-    window.toggleSidebar = () => {
+    // Sidebar Toggle
+    window.toggleMenu = function() {
         document.getElementById('sidebar').classList.toggle('active');
-        document.getElementById('overlay').classList.toggle('active');
     };
 
     async function init() {
@@ -380,14 +374,12 @@
         saveBtn.disabled = true;
         saveBtn.innerText = "Saving...";
 
-        // 1. Record Order History
         await supabase.from('supplier_orders').insert([{ 
             supplier_id: sid, 
             items_brought: `${qty}x ${document.getElementById('restock-search').value}`, 
             cost: totalCost 
         }]);
 
-        // 2. Update Product Inventory & Prices
         const targetProduct = allProducts.find(p => p.id === pid);
         await supabase.from('products').update({ 
             stock_quantity: (targetProduct.stock_quantity || 0) + qty,
@@ -397,13 +389,12 @@
             min_price: minPrice
         }).eq('id', pid);
 
-        // 3. Update Supplier Balance
         const supplier = allSuppliers.find(x => x.id === sid);
         await supabase.from('suppliers').update({ balance_owed: (supplier.balance_owed || 0) + totalCost }).eq('id', sid);
 
         closeModals();
         saveBtn.disabled = false;
-        saveBtn.innerText = "Finalize & Update Inventory";
+        saveBtn.innerText = "Finalize Update";
         init();
     };
 
@@ -442,7 +433,6 @@
         closeModals(); init();
     };
 
-    // --- UPDATED PROCESS PAYMENT ---
     window.processPayment = async () => {
         const sid = document.getElementById('pay-sup-id').value;
         const sname = document.getElementById('pay-sup-name').value;
@@ -456,20 +446,11 @@
         btn.innerText = "Processing...";
 
         try {
-            // 1. Get the current active shift (to link to cash_transactions)
-            const { data: activeShift } = await supabase
-                .from('daily_shifts')
-                .select('id')
-                .eq('status', 'Open')
-                .maybeSingle();
-
+            const { data: activeShift } = await supabase.from('daily_shifts').select('id').eq('status', 'Open').maybeSingle();
             const supplier = allSuppliers.find(x => x.id === sid);
             const newBalance = (supplier.balance_owed || 0) - amount;
             
-            // 2. Update Supplier Balance Owed
             await supabase.from('suppliers').update({ balance_owed: newBalance }).eq('id', sid);
-            
-            // 3. Log into Supplier Payment History
             await supabase.from('supplier_payments').insert([{
                 supplier_id: sid, 
                 amount_paid: amount, 
@@ -478,7 +459,6 @@
                 payment_method: method
             }]);
 
-            // 4. Log into Money IN/OUT (cash_transactions table)
             await supabase.from('cash_transactions').insert([{
                 type: 'Money Out',
                 category: 'Supplier Payment',
@@ -488,11 +468,7 @@
             }]);
 
             alert(`Payment of Ksh ${amount.toLocaleString()} recorded.`);
-            closeModals(); 
-            init();
-        } catch (err) {
-            console.error(err);
-            alert("An error occurred during payment processing.");
+            closeModals(); init();
         } finally {
             btn.disabled = false;
             btn.innerText = "Confirm Payment";
