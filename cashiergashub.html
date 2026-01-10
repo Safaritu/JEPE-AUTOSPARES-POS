@@ -80,6 +80,7 @@
             text-align: center; text-decoration: none; display: block;
         }
         .btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+        
         .btn-buy { 
             background: #f1f5f9; color: var(--text); border: 1px dashed var(--border);
             padding: 10px; font-size: 0.7rem; margin-top: 15px; border-radius: 10px;
@@ -96,6 +97,14 @@
         .brand-tag { background: #eef2ff; color: #4338ca; padding: 4px 10px; border-radius: 8px; font-weight: 700; font-size: 0.7rem; }
 
         .price-warning { color: var(--danger); font-size: 0.75rem; font-weight: 800; margin-top: -10px; margin-bottom: 10px; display: none; background: #fff1f2; padding: 5px; border-radius: 5px; text-align: center; }
+
+        .exchange-box {
+            background: #fdf2f2;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #fee2e2;
+            margin-bottom: 15px;
+        }
 
         @media (max-width: 1024px) {
             .sidebar { left: -260px; }
@@ -149,9 +158,18 @@
             <div class="action-grid">
                 <div class="card" style="border-top: 4px solid var(--primary);">
                     <h3 style="color: var(--primary);">Refill Sale</h3>
-                    <label>Select Gas</label>
+                    
+                    <label>Gas Customer is TAKING (Outgoing)</label>
                     <select class="gas-dropdown" id="sale-select" onchange="autoFillPrice('refill')"></select>
                     
+                    <div class="exchange-box">
+                        <label style="color: var(--danger);">Gas Customer BROUGHT (Incoming Empty)</label>
+                        <select class="gas-dropdown" id="incoming-select">
+                            <option value="same">-- Same as Outgoing Brand --</option>
+                        </select>
+                        <small style="color: var(--text-dim); font-size: 0.7rem;">Use this if customer brought a different brand for exchange.</small>
+                    </div>
+
                     <label>Negotiated Unit Price (Ksh)</label>
                     <input type="number" id="sale-price" placeholder="0.00" oninput="calculateTotal('refill')">
                     <div id="refill-warn" class="price-warning">⚠️ BELOW MINIMUM PRICE GUARDRAIL</div>
@@ -257,7 +275,14 @@
         function updateDropdowns() {
             const opts = `<option value="" disabled selected>Choose Brand...</option>` + 
                 gasItems.map(g => `<option value="${g.id}">${g.name} (${g.weight_category})</option>`).join('');
-            document.querySelectorAll('.gas-dropdown').forEach(el => el.innerHTML = opts);
+            
+            document.querySelectorAll('.gas-dropdown').forEach(el => {
+                if(el.id === 'incoming-select') {
+                    el.innerHTML = `<option value="same">-- Same as Outgoing Brand --</option>` + opts;
+                } else {
+                    el.innerHTML = opts;
+                }
+            });
         }
 
         window.autoFillPrice = (type) => {
@@ -288,19 +313,29 @@
         };
 
         async function processSale(btnId, type) {
-            const id = document.getElementById(type === 'refill' ? 'sale-select' : 'complete-select').value;
+            const outgoingId = document.getElementById(type === 'refill' ? 'sale-select' : 'complete-select').value;
             const qty = parseInt(document.getElementById(type === 'refill' ? 'sale-qty' : 'complete-qty').value);
             const price = parseFloat(document.getElementById(type === 'refill' ? 'sale-price' : 'complete-price').value);
-            const item = gasItems.find(g => g.id == id);
+            const outgoingItem = gasItems.find(g => g.id == outgoingId);
             const btn = document.getElementById(btnId);
 
-            if (!id || !qty || !price || qty <= 0) return alert("Fill all details");
+            if (!outgoingId || !qty || !price || qty <= 0) return alert("Fill all details");
             if (!activeShift) return alert("No open shift! Open shift first.");
-            if (item.stock_quantity < qty) return alert("Insufficient full cylinders in stock!");
+            if (outgoingItem.stock_quantity < qty) return alert("Insufficient full cylinders in stock!");
+
+            // Brand Exchange Logic
+            let incomingId = outgoingId;
+            if (type === 'refill') {
+                const exchangeVal = document.getElementById('incoming-select').value;
+                if (exchangeVal !== "same" && exchangeVal !== "") {
+                    incomingId = exchangeVal;
+                }
+            }
+            const incomingItem = gasItems.find(g => g.id == incomingId);
 
             // --- PRICE AUDIT ENFORCEMENT ---
             let auditReason = null;
-            const minAllowed = type === 'refill' ? (item.min_selling_price || item.selling_price) : ((item.min_selling_price || item.selling_price) + (item.cylinder_price || 0));
+            const minAllowed = type === 'refill' ? (outgoingItem.min_selling_price || outgoingItem.selling_price) : ((outgoingItem.min_selling_price || outgoingItem.selling_price) + (outgoingItem.cylinder_price || 0));
             
             if (price < minAllowed) {
                 auditReason = prompt(`Price (Ksh ${price}) is below authorized minimum (Ksh ${minAllowed}).\n\nEnter REASON for this discount (Required for Audit):`);
@@ -314,27 +349,38 @@
 
             try {
                 const total = price * qty;
+                const saleName = incomingId !== outgoingId ? 
+                    `${outgoingItem.name} (Exchanged for empty ${incomingItem.name})` : 
+                    `${outgoingItem.name} (${outgoingItem.weight_category})`;
+
                 const { error: saleErr } = await supabase.from('sales').insert([{
                     shift_id: activeShift.id,
-                    product_id: item.id,
-                    item_name: `${item.name} (${item.weight_category}) - ${type}`,
+                    product_id: outgoingItem.id,
+                    item_name: `${saleName} - ${type}`,
                     quantity: qty,
                     unit_price: price,
                     total_amount: total,
                     amount: total,
                     payment_method: 'Cash',
-                    cost_price: item.cost_price || 0,
+                    cost_price: outgoingItem.cost_price || 0,
                     discount_reason: auditReason 
                 }]);
 
                 if (saleErr) throw saleErr;
 
-                const stockUpdate = { stock_quantity: item.stock_quantity - qty };
-                if (type === 'refill') {
-                    stockUpdate.empty_quantity = (item.empty_quantity || 0) + qty;
-                }
+                // Update Outgoing Stock (Full cylinders decrease)
+                await supabase.from('products').update({ 
+                    stock_quantity: outgoingItem.stock_quantity - qty 
+                }).eq('id', outgoingId);
 
-                await supabase.from('products').update(stockUpdate).eq('id', id);
+                // Update Incoming Stock (Empty cylinders increase)
+                if (type === 'refill') {
+                    // We fetch current incoming item again to avoid race conditions
+                    const { data: latestIncoming } = await supabase.from('products').select('empty_quantity').eq('id', incomingId).single();
+                    await supabase.from('products').update({ 
+                        empty_quantity: (latestIncoming.empty_quantity || 0) + qty 
+                    }).eq('id', incomingId);
+                }
 
                 alert("Sale recorded and stock updated!");
                 loadAll();
