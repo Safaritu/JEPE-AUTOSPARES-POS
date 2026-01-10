@@ -258,43 +258,41 @@
 
     let isLogin = true;
 
-    // --- 1. THE GATEKEEPER (Run immediately) ---
+    // --- 1. THE HARD SECURITY GATEKEEPER ---
     const init = async () => {
         const hash = window.location.hash;
-        
-        // Check if user is arriving from a Supabase Email Link
-        if (hash.includes('access_token=') || hash.includes('type=signup') || hash.includes('type=recovery')) {
-            
-            // SECURITY STEP 1: Immediately sign out to kill the auto-session
+
+        // IF ARRIVING FROM EMAIL (Verification or Password Reset)
+        if (hash.includes('access_token=') || hash.includes('type=signup')) {
+            // Kill the session that Supabase creates automatically from the link
             await supabase.auth.signOut();
             
-            // SECURITY STEP 2: Wipe LocalStorage so the browser "forgets" the user
+            // Wipe browser memory so the "delay-and-open" cannot happen
             localStorage.clear();
             sessionStorage.clear();
 
-            // SECURITY STEP 3: Clear the sensitive token from the URL bar
+            // Remove the token from the URL bar for security
             window.history.replaceState(null, null, window.location.pathname);
             
-            // SECURITY STEP 4: Alert the user and update UI
+            // Show message to user
             const subtitle = document.getElementById('auth-subtitle');
-            subtitle.innerText = "VERIFICATION SUCCESSFUL! PLEASE SIGN IN MANUALLY.";
-            subtitle.style.color = "#10b981"; // Success Green
-            subtitle.style.fontWeight = "800";
-            
-            // STOP: Do not let the script check for sessions or redirect
-            return; 
+            subtitle.innerText = "VERIFICATION SUCCESS! SIGN IN MANUALLY BELOW.";
+            subtitle.style.color = "#10b981";
+            subtitle.style.fontWeight = "bold";
+            return; // STOP everything here.
         }
 
-        // Standard Session Check: Only redirect if they have a valid, manually created session
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-            await checkRoleAndRedirect(session.user.id);
-        }
+        // FORCE LOGOUT ON EVERY REFRESH/FILE OPEN
+        // This prevents the system from "remembering" the last person who used the device.
+        await supabase.auth.signOut();
+        localStorage.clear();
+        console.log("System Secured: All previous sessions cleared.");
     };
 
+    // Run security check immediately
     init();
 
-    // --- 2. AUTHENTICATION HANDLERS ---
+    // --- 2. MANUAL AUTHENTICATION ---
     window.handleAuth = async () => {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
@@ -308,12 +306,11 @@
 
         try {
             if (isLogin) {
-                // Manual Sign In (The only way to get in)
+                // The ONLY way to enter the system is this manual call
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
                 if (data.user) await checkRoleAndRedirect(data.user.id);
             } else {
-                // Registration
                 const { data, error } = await supabase.auth.signUp({ 
                     email, password, 
                     options: { 
@@ -322,41 +319,38 @@
                     } 
                 });
                 if (error) throw error;
-                alert("Account Created! Check your email and click the link to verify. You will then be asked to sign in manually.");
+                alert("Account created! Check your email to verify, then log in here.");
                 toggleMode();
             }
         } catch (err) {
-            alert("Auth Error: " + err.message);
+            alert("Login Failed: " + err.message);
         } finally {
             btn.disabled = false;
             btn.innerText = isLogin ? "Sign In" : "Register Now";
         }
     };
 
-    // --- 3. REDIRECT LOGIC ---
+    // --- 3. SECURE REDIRECT ---
     async function checkRoleAndRedirect(userId) {
         let profile = null;
-        // Retry loop to ensure the Database Trigger has finished creating the profile
+        // Wait for the background trigger to create the profile row
         for (let i = 0; i < 5; i++) {
             const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
             if (data) {
                 profile = data;
                 break;
             }
-            await new Promise(res => setTimeout(res, 1200)); 
+            await new Promise(res => setTimeout(res, 1000));
         }
 
         if (profile) {
             document.getElementById('welcome-overlay').classList.remove('hidden');
-            document.getElementById('welcome-name').innerText = "ACCESS GRANTED";
-            
             setTimeout(() => {
                 window.location.href = (profile.role === 'admin') ? 'admin.html' : 'cashier.html';
             }, 1500);
         } else {
-            alert("Verification error: Profile not found. Please try logging in again.");
+            alert("Error: Profile not ready. Please try signing in again.");
             await supabase.auth.signOut();
-            localStorage.clear();
         }
     }
 
