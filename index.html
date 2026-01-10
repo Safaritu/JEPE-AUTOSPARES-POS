@@ -260,19 +260,22 @@
 
     // --- 1. SECURE INITIAL SESSION CHECK ---
     const init = async () => {
-        // Check if the URL contains the confirmation token (#access_token=...)
         const isReturningFromEmail = window.location.hash.includes('access_token=');
 
         if (isReturningFromEmail) {
-            // Force sign out immediately so they can't "auto-entry"
+            // Silently sign out to clear the auto-session from the email link
             await supabase.auth.signOut();
-            // Clear the URL hash so the screen looks clean
+            
+            // Clean up the URL bar
             window.history.replaceState(null, null, window.location.pathname);
-            alert("Email confirmed successfully! Please sign in with your credentials to access your account.");
+            
+            // Show a friendly message instead of an error alert
+            document.getElementById('auth-subtitle').innerText = "Email Verified! Please Sign In Below.";
+            document.getElementById('auth-subtitle').style.color = "#10b981"; // Success green
             return;
         }
 
-        // Standard session check for users who are already logged in (Persistent Session)
+        // Auto-redirect ONLY if they already have a valid session (not a fresh email click)
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
             await checkRoleAndRedirect(session.user.id);
@@ -297,6 +300,7 @@
         const btn = document.getElementById('main-btn');
 
         if (!email || !password) return alert("Fill in both fields.");
+        
         btn.disabled = true;
         btn.innerText = "Connecting...";
 
@@ -314,10 +318,11 @@
                     } 
                 });
                 if (error) throw error;
-                alert("Account created! Please check your email and click the confirmation link.");
+                alert("Registration successful! Check your email to confirm.");
                 toggleMode();
             }
         } catch (err) {
+            // Ignore the "Abort" error during redirects
             if (err.message !== 'signal is aborted without reason') {
                 alert(err.message);
             }
@@ -328,14 +333,21 @@
     };
 
     async function checkRoleAndRedirect(userId) {
+        // Retry logic to wait for the database trigger to finish
         let profile = null;
-        for (let i = 0; i < 3; i++) {
-            const { data, error } = await supabase.from('profiles').select('role').eq('id', userId).single();
+        for (let i = 0; i < 5; i++) {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', userId)
+                .single();
+            
             if (data) {
                 profile = data;
                 break;
             }
-            await new Promise(res => setTimeout(res, 1500));
+            console.log("Waiting for profile creation...");
+            await new Promise(res => setTimeout(res, 1000));
         }
 
         if (profile) {
@@ -355,9 +367,9 @@
 
             setTimeout(() => {
                 window.location.href = (profile.role === 'admin') ? 'admin.html' : 'cashier.html';
-            }, 2500);
+            }, 2000);
         } else {
-            alert("Profile not found. Please contact the administrator.");
+            alert("Security Error: Profile data not ready. Try logging in again in 5 seconds.");
             await supabase.auth.signOut();
         }
     }
