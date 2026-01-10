@@ -258,6 +258,17 @@
 
     let isLogin = true;
 
+    // --- 1. INITIAL SESSION CHECK ---
+    // This runs immediately when the page loads to catch users returning from email confirmation
+    const init = async () => {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (session) {
+            console.log("Session detected, checking profile...");
+            await checkRoleAndRedirect(session.user.id);
+        }
+    };
+    init();
+
     window.toggleMode = () => {
         isLogin = !isLogin;
         document.getElementById('auth-title').innerText = isLogin ? "Staff Sign In" : "New Registration";
@@ -268,30 +279,10 @@
             "New staff? <b>Create Account</b>" : "Already a member? <b>Sign In</b>";
     };
 
-    window.handleForgotPassword = async () => {
-        const email = document.getElementById('email').value;
-        if (!email) return alert("Please enter your registered email first.");
-        const btn = document.getElementById('main-btn');
-        btn.disabled = true;
-        btn.innerText = "Sending Reset...";
-        try {
-            const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: window.location.origin + '/reset-password.html',
-            });
-            if (error) throw error;
-            alert("Reset link sent! Check your inbox.");
-        } catch (err) {
-            alert("Error: " + err.message);
-        } finally {
-            btn.disabled = false;
-            btn.innerText = isLogin ? "Sign In" : "Register Now";
-        }
-    };
-
     window.handleAuth = async () => {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
-        const role = document.getElementById('role') ? document.getElementById('role').value : 'cashier';
+        const role = document.getElementById('role')?.value || 'cashier';
         const btn = document.getElementById('main-btn');
 
         if (!email || !password) return alert("Fill in both fields.");
@@ -302,8 +293,10 @@
             if (isLogin) {
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
-                await checkRoleAndRedirect(data.user.id);
+                if (data.user) await checkRoleAndRedirect(data.user.id);
             } else {
+                // SIGN UP: We no longer manually 'upsert' to profiles here.
+                // The SQL Trigger we created in Step 1 handles it.
                 const { data, error } = await supabase.auth.signUp({ 
                     email, password, 
                     options: { 
@@ -312,12 +305,14 @@
                     } 
                 });
                 if (error) throw error;
-                await supabase.from('profiles').upsert({ id: data.user.id, role: role, email: email });
-                alert("Account created! Check email.");
+                alert("Account created! Please check your email and click the confirmation link.");
                 toggleMode();
             }
         } catch (err) {
-            alert(err.message);
+            // Suppress the 'abort' error which is a harmless browser side-effect of redirects
+            if (err.message !== 'signal is aborted without reason') {
+                alert(err.message);
+            }
         } finally {
             btn.disabled = false;
             btn.innerText = isLogin ? "Sign In" : "Register Now";
@@ -325,24 +320,38 @@
     };
 
     async function checkRoleAndRedirect(userId) {
-        const { data, error } = await supabase.from('profiles').select('role').eq('id', userId).single();
-        if (data) {
+        // Try fetching profile up to 3 times (gives trigger time to work)
+        let profile = null;
+        for (let i = 0; i < 3; i++) {
+            const { data, error } = await supabase.from('profiles').select('role').eq('id', userId).single();
+            if (data) {
+                profile = data;
+                break;
+            }
+            console.log("Profile not ready, retrying...");
+            await new Promise(res => setTimeout(res, 1500)); // Wait 1.5 seconds
+        }
+
+        if (profile) {
             const overlay = document.getElementById('welcome-overlay');
             const welcomeName = document.getElementById('welcome-name');
             const welcomeRole = document.getElementById('welcome-role');
+            
             overlay.classList.remove('hidden');
-            if (data.role === 'admin') {
+            
+            if (profile.role === 'admin') {
                 welcomeName.innerText = "WELCOME ADMIN, JEPE AUTOSPARES MANAGER";
                 welcomeRole.innerText = "Accessing Management Dashboard...";
             } else {
-                welcomeName.innerText = "WELCOME SAMUEL SYENGO, JEPE AUTOSPARES CASHIER";
+                welcomeName.innerText = "WELCOME STAFF, JEPE AUTOSPARES";
                 welcomeRole.innerText = "Opening Sales Terminal...";
             }
+
             setTimeout(() => {
-                window.location.href = (data.role === 'admin') ? 'admin.html' : 'cashier.html';
+                window.location.href = (profile.role === 'admin') ? 'admin.html' : 'cashier.html';
             }, 2500);
         } else {
-            alert("Profile not found.");
+            alert("Profile sync in progress. Please refresh or sign in again.");
             await supabase.auth.signOut();
         }
     }
