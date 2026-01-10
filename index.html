@@ -258,86 +258,61 @@
 
     let isLogin = true;
 
-    const init = async () => {
+    // --- 1. THE SECURITY GATEKEEPER ---
+    async function runSecurityCheck() {
         const hash = window.location.hash;
 
-        // 1. If returning from email confirmation, kill the auto-session
+        // A. Handle Email Confirmation/Reset Links
         if (hash.includes('access_token=') || hash.includes('type=signup')) {
             await supabase.auth.signOut();
             localStorage.clear();
+            sessionStorage.clear();
             window.history.replaceState(null, null, window.location.pathname);
             
             const subtitle = document.getElementById('auth-subtitle');
-            subtitle.innerText = "ACCOUNT VERIFIED! PLEASE SIGN IN MANUALLY.";
-            subtitle.style.color = "#10b981";
-            subtitle.style.fontWeight = "bold";
-            return; 
+            if(subtitle) {
+                subtitle.innerText = "VERIFIED! PLEASE SIGN IN MANUALLY.";
+                subtitle.style.color = "#10b981";
+            }
+            return; // This return is now valid because it's inside a function
         }
 
-        // 2. If it's a password recovery link, DON'T kill the session here.
-        // Redirect them immediately to your reset page with the token intact.
-        if (hash.includes('type=recovery')) {
-            window.location.href = 'reset-password.html' + hash;
-            return;
-        }
-
-        // 3. For normal visits, ensure no "ghost" sessions are left over
+        // B. FORCE LOGOUT ON REFRESH (To prevent auto-login)
+        // If we are NOT coming from an email link and just opening the page
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-            // Only redirect if they have an existing, valid session
-            await checkRoleAndRedirect(session.user.id);
+            await supabase.auth.signOut();
+            localStorage.clear();
+            console.log("Previous session cleared for security.");
         }
-    };
-    init();
+    }
 
+    // Initialize security
+    runSecurityCheck();
+
+    // --- 2. AUTHENTICATION HANDLERS ---
+    // We attach these to 'window' so the HTML buttons can find them
     window.handleAuth = async () => {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         const role = document.getElementById('role')?.value || 'cashier';
         const btn = document.getElementById('main-btn');
 
-        if (!email || !password) return alert("All fields are required.");
+        if (!email || !password) return alert("Please enter both email and password.");
         
         btn.disabled = true;
-        btn.innerText = "PROCESSING...";
+        btn.innerText = "VERIFYING...";
 
         try {
-            if (isLogin) {
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-                if (error) throw error;
-                if (data.user) await checkRoleAndRedirect(data.user.id);
-            } else {
-                // SIGN UP LOGIC
-                const { data, error } = await supabase.auth.signUp({ 
-                    email, password, 
-                    options: { 
-                        data: { role: role },
-                        emailRedirectTo: window.location.origin + '/index.html'
-                    } 
-                });
-                if (error) throw error;
-                alert("Success! Check your email to verify. You must click the link before you can log in.");
-                toggleMode();
-            }
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) throw error;
+            if (data.user) await checkRoleAndRedirect(data.user.id);
         } catch (err) {
-            alert(err.message);
+            alert("Login Failed: " + err.message);
         } finally {
             btn.disabled = false;
-            btn.innerText = isLogin ? "Sign In" : "Register Now";
+            btn.innerText = "Sign In";
         }
-    };
-
-    // Add this specifically for the "Forgot Password" button in your HTML
-    window.handleForgotPassword = async () => {
-        const email = document.getElementById('email').value;
-        if (!email) return alert("Enter your email address first.");
-        
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: window.location.origin + '/reset-password.html',
-        });
-        
-        if (error) alert(error.message);
-        else alert("Password reset link sent to your email!");
     };
 
     async function checkRoleAndRedirect(userId) {
@@ -347,13 +322,14 @@
             if (data) { profile = data; break; }
             await new Promise(res => setTimeout(res, 1000));
         }
+
         if (profile) {
             document.getElementById('welcome-overlay').classList.remove('hidden');
             setTimeout(() => {
                 window.location.href = (profile.role === 'admin') ? 'admin.html' : 'cashier.html';
             }, 1500);
         } else {
-            alert("Profile sync error. Try signing in again.");
+            alert("Profile not ready. Try again.");
             await supabase.auth.signOut();
         }
     }
@@ -361,8 +337,6 @@
     window.toggleMode = () => {
         isLogin = !isLogin;
         document.getElementById('auth-title').innerText = isLogin ? "Staff Sign In" : "New Registration";
-        document.getElementById('register-fields').classList.toggle('hidden', isLogin);
-        document.getElementById('forgot-link').classList.toggle('hidden', !isLogin);
         document.getElementById('main-btn').innerText = isLogin ? "Sign In" : "Register Now";
     };
 </script>
