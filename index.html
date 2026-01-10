@@ -262,14 +262,21 @@
         const hash = window.location.hash;
 
         // 1. HANDLE EMAIL CONFIRMATION (Signup)
-        if (hash.includes('access_token=') && hash.includes('type=signup')) {
+        if (hash.includes('access_token=') && (hash.includes('type=signup') || hash.includes('type=invite'))) {
+            // Force logout to ensure they start fresh
             await supabase.auth.signOut();
             localStorage.clear();
             sessionStorage.clear();
+            
+            // Clean the URL
             window.history.replaceState(null, null, window.location.pathname);
             
-            document.getElementById('auth-subtitle').innerText = "ACCOUNT VERIFIED! PLEASE SIGN IN MANUALLY.";
-            document.getElementById('auth-subtitle').style.color = "#10b981";
+            const subtitle = document.getElementById('auth-subtitle');
+            if (subtitle) {
+                subtitle.innerText = "ACCOUNT VERIFIED! PLEASE SIGN IN MANUALLY.";
+                subtitle.style.color = "#10b981";
+                subtitle.style.fontWeight = "bold";
+            }
             return; 
         }
 
@@ -279,14 +286,16 @@
             return;
         }
 
-        // 3. FORCE MANUAL LOGIN (Kill any existing session on refresh)
+        // 3. SECURITY GATEKEEPER: If user is already logged in and just "refreshed" or "went back"
+        // We check if they have a session. If they do, we let them stay ONLY if they are on the right page.
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-            await supabase.auth.signOut();
-            localStorage.clear();
-            sessionStorage.clear();
+            // If they are on index.html but have a session, send them back to their dashboard
+            await checkRoleAndRedirect(session.user.id);
         }
     };
+
+    // Run init on load
     init();
 
     window.handleAuth = async () => {
@@ -310,12 +319,13 @@
                     email, password, 
                     options: { 
                         data: { role: role },
+                        // Force the redirect to the LIVE site
                         emailRedirectTo: 'https://jepe-autospares-pos.pages.dev/index.html'
                     } 
                 });
                 if (error) throw error;
-                alert("Verify your email first, then come back to sign in.");
-                toggleMode();
+                alert("Success! Check your email to confirm your account.");
+                location.reload(); // Refresh to show the login state
             }
         } catch (err) {
             alert(err.message);
@@ -325,34 +335,39 @@
         }
     };
 
-    // FIXED REDIRECT: Increased retries and wait time for "Profile Sync"
     async function checkRoleAndRedirect(userId) {
         let profile = null;
-        for (let i = 0; i < 7; i++) { // Increased to 7 retries
+        // Increased retries to handle the "Profile Sync Error" in your image
+        for (let i = 0; i < 10; i++) { 
             const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
-            if (data) { profile = data; break; }
-            await new Promise(res => setTimeout(res, 1500)); // Wait 1.5 seconds per try
+            if (data) { 
+                profile = data; 
+                break; 
+            }
+            await new Promise(res => setTimeout(res, 1000)); 
         }
 
         if (profile) {
-            document.getElementById('welcome-overlay').classList.remove('hidden');
+            // Only show overlay if we aren't already redirecting
+            const overlay = document.getElementById('welcome-overlay');
+            if (overlay) overlay.classList.remove('hidden');
+            
             setTimeout(() => {
                 window.location.href = (profile.role === 'admin') ? 'admin.html' : 'cashier.html';
             }, 1000);
         } else {
-            alert("System still syncing. Please wait 5 seconds and Sign In again.");
+            alert("Profile not found. If you just confirmed your email, please try signing in again.");
             await supabase.auth.signOut();
         }
     }
 
-    window.handleForgotPassword = async () => {
-        const email = document.getElementById('email').value;
-        if (!email) return alert("Enter email first.");
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: 'https://jepe-autospares-pos.pages.dev/reset-password.html',
-        });
-        if (error) alert(error.message);
-        else alert("Reset link sent!");
+    // Toggle between Login and Signup
+    window.toggleMode = () => {
+        isLogin = !isLogin;
+        document.getElementById('auth-title').innerText = isLogin ? "Staff Sign In" : "New Registration";
+        const regFields = document.getElementById('register-fields');
+        if(regFields) regFields.classList.toggle('hidden', isLogin);
+        document.getElementById('main-btn').innerText = isLogin ? "Sign In" : "Register Now";
     };
 </script>
 </body>
