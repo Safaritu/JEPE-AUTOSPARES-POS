@@ -258,38 +258,108 @@
 
     let isLogin = true;
 
-    // --- 1. THE STRICT SECURITY INITIALIZER ---
+    // --- 1. THE GATEKEEPER (Run immediately) ---
     const init = async () => {
         const hash = window.location.hash;
         
-        // IF RETURNING FROM EMAIL LINK
-        if (hash.includes('access_token=') || hash.includes('type=signup')) {
-            // 1. Kill any session Supabase tried to start
+        // Check if user is arriving from a Supabase Email Link
+        if (hash.includes('access_token=') || hash.includes('type=signup') || hash.includes('type=recovery')) {
+            
+            // SECURITY STEP 1: Immediately sign out to kill the auto-session
             await supabase.auth.signOut();
-            // 2. Clear local storage entirely to be safe
-            localStorage.clear(); 
-            // 3. Wipe the URL hash
+            
+            // SECURITY STEP 2: Wipe LocalStorage so the browser "forgets" the user
+            localStorage.clear();
+            sessionStorage.clear();
+
+            // SECURITY STEP 3: Clear the sensitive token from the URL bar
             window.history.replaceState(null, null, window.location.pathname);
             
-            // 4. Update UI
+            // SECURITY STEP 4: Alert the user and update UI
             const subtitle = document.getElementById('auth-subtitle');
-            subtitle.innerText = "EMAIL VERIFIED! PLEASE SIGN IN MANUALLY.";
-            subtitle.style.color = "#10b981";
-            subtitle.style.fontWeight = "bold";
-            return; // STOP HERE. Do not proceed to auto-login check.
+            subtitle.innerText = "VERIFICATION SUCCESSFUL! PLEASE SIGN IN MANUALLY.";
+            subtitle.style.color = "#10b981"; // Success Green
+            subtitle.style.fontWeight = "800";
+            
+            // STOP: Do not let the script check for sessions or redirect
+            return; 
         }
 
-        // AUTO-REDIRECT CHECK (Only for users who manually logged in previously)
+        // Standard Session Check: Only redirect if they have a valid, manually created session
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-            console.log("Existing session found, verifying...");
             await checkRoleAndRedirect(session.user.id);
         }
     };
 
     init();
 
-    // --- 2. UI TOGGLE ---
+    // --- 2. AUTHENTICATION HANDLERS ---
+    window.handleAuth = async () => {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const role = document.getElementById('role')?.value || 'cashier';
+        const btn = document.getElementById('main-btn');
+
+        if (!email || !password) return alert("Please enter both email and password.");
+        
+        btn.disabled = true;
+        btn.innerText = "VERIFYING...";
+
+        try {
+            if (isLogin) {
+                // Manual Sign In (The only way to get in)
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                if (data.user) await checkRoleAndRedirect(data.user.id);
+            } else {
+                // Registration
+                const { data, error } = await supabase.auth.signUp({ 
+                    email, password, 
+                    options: { 
+                        data: { role: role },
+                        emailRedirectTo: window.location.origin + '/index.html'
+                    } 
+                });
+                if (error) throw error;
+                alert("Account Created! Check your email and click the link to verify. You will then be asked to sign in manually.");
+                toggleMode();
+            }
+        } catch (err) {
+            alert("Auth Error: " + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = isLogin ? "Sign In" : "Register Now";
+        }
+    };
+
+    // --- 3. REDIRECT LOGIC ---
+    async function checkRoleAndRedirect(userId) {
+        let profile = null;
+        // Retry loop to ensure the Database Trigger has finished creating the profile
+        for (let i = 0; i < 5; i++) {
+            const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
+            if (data) {
+                profile = data;
+                break;
+            }
+            await new Promise(res => setTimeout(res, 1200)); 
+        }
+
+        if (profile) {
+            document.getElementById('welcome-overlay').classList.remove('hidden');
+            document.getElementById('welcome-name').innerText = "ACCESS GRANTED";
+            
+            setTimeout(() => {
+                window.location.href = (profile.role === 'admin') ? 'admin.html' : 'cashier.html';
+            }, 1500);
+        } else {
+            alert("Verification error: Profile not found. Please try logging in again.");
+            await supabase.auth.signOut();
+            localStorage.clear();
+        }
+    }
+
     window.toggleMode = () => {
         isLogin = !isLogin;
         document.getElementById('auth-title').innerText = isLogin ? "Staff Sign In" : "New Registration";
@@ -299,75 +369,6 @@
         document.getElementById('toggle-text').innerHTML = isLogin ? 
             "New staff? <b>Create Account</b>" : "Already a member? <b>Sign In</b>";
     };
-
-    // --- 3. MANUAL LOGIN HANDLER ---
-    window.handleAuth = async () => {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const role = document.getElementById('role')?.value || 'cashier';
-        const btn = document.getElementById('main-btn');
-
-        if (!email || !password) return alert("Fill in both fields.");
-        
-        btn.disabled = true;
-        btn.innerText = "AUTHENTICATING...";
-
-        try {
-            if (isLogin) {
-                // MANUAL SIGN IN
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-                if (error) throw error;
-                if (data.user) await checkRoleAndRedirect(data.user.id);
-            } else {
-                // REGISTRATION
-                const { data, error } = await supabase.auth.signUp({ 
-                    email, password, 
-                    options: { 
-                        data: { role: role },
-                        emailRedirectTo: window.location.origin + '/index.html'
-                    } 
-                });
-                if (error) throw error;
-                alert("SUCCESS! Please check your email to verify your account before signing in.");
-                toggleMode();
-            }
-        } catch (err) {
-            alert(err.message);
-        } finally {
-            btn.disabled = false;
-            btn.innerText = isLogin ? "Sign In" : "Register Now";
-        }
-    };
-
-    // --- 4. ROLE CHECK & REDIRECT ---
-    async function checkRoleAndRedirect(userId) {
-        // Retry logic: the database trigger can take 1-2 seconds
-        let profile = null;
-        for (let i = 0; i < 5; i++) {
-            const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
-            if (data) {
-                profile = data;
-                break;
-            }
-            console.log("Waiting for profile sync...");
-            await new Promise(res => setTimeout(res, 1200)); 
-        }
-
-        if (profile) {
-            document.getElementById('welcome-overlay').classList.remove('hidden');
-            document.getElementById('welcome-name').innerText = "ACCESS GRANTED";
-            document.getElementById('welcome-role').innerText = `Role: ${profile.role.toUpperCase()}`;
-
-            setTimeout(() => {
-                window.location.href = (profile.role === 'admin') ? 'admin.html' : 'cashier.html';
-            }, 1500);
-        } else {
-            // This happens if the user confirms email but the trigger failed
-            alert("Verification error: Profile not found in system. Contact Admin.");
-            await supabase.auth.signOut();
-            localStorage.clear();
-        }
-    }
 </script>
 </body>
 </html>
