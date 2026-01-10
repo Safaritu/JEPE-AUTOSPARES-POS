@@ -188,11 +188,11 @@
         <a href="debtors.html" class="menu-item">👥 Debtors</a>
         <a href="supplierscashier.html" class="menu-item">🤝 Suppliers</a>
         <a href="cashier_inventory.html" class="menu-item">🛒 Add Items</a>
-        <a href="moneyinout.html" class="menu-item">💸 Transactions</a>
+        <a href="moneyinout.html" class="menu-item">💸 Money IN/OUT list</a>
         <a href="shift history cashier.html" class="menu-item">⏳ Shift History</a>
         <a href="sales_reports.html" class="menu-item">📈 Sales History</a>
-        <a href="pos.html" class="menu-item">🛒 View Stock</a>
-        <a href="gas_delivery.html" class="menu-item">🏍 Delivery</a>
+        <a href="pos.html" class="menu-item">🛒 View cart Stock</a>
+        <a href="gas_delivery.html" class="menu-item">🏍 Delivery records</a>
         <a href="cashier_report.html" class="menu-item">📝 Today's Report</a>
         <a href="sale edit cashier.html" class="menu-item">📝 Edit sales</a>
         <a href="#" onclick="logoutUser()" class="menu-item" style="background: var(--danger); grid-column: span 2;">🚪 Log Out</a>
@@ -203,11 +203,11 @@
 
 <div class="container">
     <header>
-        <div class="logo">JEPE POS <span>/ Terminal</span></div>
+        <div class="logo">CASHIERS DASHBOARD <span>/ Terminal</span></div>
         <div id="shift-action-container"></div>
     </header>
 
-    <div class="section-label">Opening Floats & Live Sales Tracker</div>
+    <div class="section-label">Opening Floats & paybill Sales Tracker</div>
     <div class="float-status-card">
         <div class="float-item"><label>Cash</label><span id="float-cash">0.00</span></div>
         <div class="float-item"><label>Mpesa</label><span id="float-mpesa">0.00</span></div>
@@ -329,7 +329,6 @@
         <button class="btn btn-danger" style="margin-top:20px; width:100%" id="confirm-close">FINALIZE & CLOSE</button>
     </div>
 </div>
-
 <script type="module">
     import { supabase } from './auth.js';
 
@@ -368,7 +367,6 @@
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return window.location.href = 'index.html';
 
-        // Optimized: Concurrent fetching
         const [prodRes, shiftRes] = await Promise.all([
             supabase.from('products').select('*'),
             supabase.from('daily_shifts').select('*').eq('status', 'Open').maybeSingle()
@@ -442,7 +440,6 @@
 
         if (qty > selectedItem.stock_quantity) return alert("Insufficient stock!");
 
-        // Prevent double submit
         btn.disabled = true;
         btn.innerText = "RECORDING...";
 
@@ -466,17 +463,26 @@
         const { data: sData, error } = await supabase.from('sales').insert(salesToInsert).select();
         
         if (!error) {
+            // UPDATED: Proper prompt and insertion for Debtors table
             if(method === "Debt") {
-                const dName = prompt("Customer Name:");
-                if(dName) await supabase.from('debtors').insert([{ customer_name: dName, amount_owed: total, sale_id: sData[0].id }]);
+                const dName = prompt("Enter Customer Name:");
+                const dPhone = prompt("Enter Customer Phone (Optional):") || "";
+                if(dName) {
+                    await supabase.from('debtors').insert([{ 
+                        customer_name: dName, 
+                        customer_phone: dPhone,
+                        amount_owed: total, 
+                        product_id: selectedItem.id,
+                        status: 'Unpaid'
+                    }]);
+                }
             }
-            // Update stock locally and remotely
+
             await supabase.from('products').update({ 
                 stock_quantity: selectedItem.stock_quantity - qty,
                 empty_quantity: selectedItem.category === 'Gas' ? (selectedItem.empty_quantity || 0) + qty : selectedItem.empty_quantity
             }).eq('id', selectedItem.id);
             
-            // Fast UI update instead of reload
             document.getElementById('sale-form').reset();
             document.getElementById('hint-stock').style.display = 'none';
             document.getElementById('hint-min').style.display = 'none';
@@ -527,6 +533,7 @@
         const clB = currentKcbSalesTotal;
         const clC = parseFloat(document.getElementById('c-cash').value || 0);
 
+        // Calculate expected: Don't include debts in sales total, but include "Money In" (which now includes debt collection)
         const { data: sales } = await supabase.from('sales').select('total_amount').eq('shift_id', currentShift.id).neq('payment_method','Debt');
         const { data: trans } = await supabase.from('cash_transactions').select('amount, type').eq('shift_id', currentShift.id);
         
