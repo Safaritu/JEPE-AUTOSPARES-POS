@@ -4,7 +4,7 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 export const supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
     auth: {
-        persistSession: true, // CHANGE THIS TO FALSE
+        persistSession: false, // CHANGE THIS TO FALSE
         autoRefreshToken: true,
         detectSessionInUrl: true 
     }
