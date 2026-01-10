@@ -261,31 +261,30 @@
     const init = async () => {
         const hash = window.location.hash;
 
-        // 1. If returning from email confirmation, kill the auto-session
-        if (hash.includes('access_token=') || hash.includes('type=signup')) {
+        // 1. HANDLE EMAIL CONFIRMATION (Signup)
+        if (hash.includes('access_token=') && hash.includes('type=signup')) {
             await supabase.auth.signOut();
             localStorage.clear();
+            sessionStorage.clear();
             window.history.replaceState(null, null, window.location.pathname);
             
-            const subtitle = document.getElementById('auth-subtitle');
-            subtitle.innerText = "ACCOUNT VERIFIED! PLEASE SIGN IN MANUALLY.";
-            subtitle.style.color = "#10b981";
-            subtitle.style.fontWeight = "bold";
+            document.getElementById('auth-subtitle').innerText = "ACCOUNT VERIFIED! PLEASE SIGN IN MANUALLY.";
+            document.getElementById('auth-subtitle').style.color = "#10b981";
             return; 
         }
 
-        // 2. If it's a password recovery link, DON'T kill the session here.
-        // Redirect them immediately to your reset page with the token intact.
+        // 2. HANDLE PASSWORD RECOVERY
         if (hash.includes('type=recovery')) {
             window.location.href = 'reset-password.html' + hash;
             return;
         }
 
-        // 3. For normal visits, ensure no "ghost" sessions are left over
+        // 3. FORCE MANUAL LOGIN (Kill any existing session on refresh)
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-            // Only redirect if they have an existing, valid session
-            await checkRoleAndRedirect(session.user.id);
+            await supabase.auth.signOut();
+            localStorage.clear();
+            sessionStorage.clear();
         }
     };
     init();
@@ -299,7 +298,7 @@
         if (!email || !password) return alert("All fields are required.");
         
         btn.disabled = true;
-        btn.innerText = "PROCESSING...";
+        btn.innerText = "AUTHENTICATING...";
 
         try {
             if (isLogin) {
@@ -307,16 +306,15 @@
                 if (error) throw error;
                 if (data.user) await checkRoleAndRedirect(data.user.id);
             } else {
-                // SIGN UP LOGIC
                 const { data, error } = await supabase.auth.signUp({ 
                     email, password, 
                     options: { 
                         data: { role: role },
-                        emailRedirectTo: window.location.origin + '/index.html'
+                        emailRedirectTo: 'https://jepe-autospares-pos.pages.dev/index.html'
                     } 
                 });
                 if (error) throw error;
-                alert("Success! Check your email to verify. You must click the link before you can log in.");
+                alert("Verify your email first, then come back to sign in.");
                 toggleMode();
             }
         } catch (err) {
@@ -327,43 +325,34 @@
         }
     };
 
-    // Add this specifically for the "Forgot Password" button in your HTML
-    window.handleForgotPassword = async () => {
-        const email = document.getElementById('email').value;
-        if (!email) return alert("Enter your email address first.");
-        
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: window.location.origin + '/reset-password.html',
-        });
-        
-        if (error) alert(error.message);
-        else alert("Password reset link sent to your email!");
-    };
-
+    // FIXED REDIRECT: Increased retries and wait time for "Profile Sync"
     async function checkRoleAndRedirect(userId) {
         let profile = null;
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 7; i++) { // Increased to 7 retries
             const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
             if (data) { profile = data; break; }
-            await new Promise(res => setTimeout(res, 1000));
+            await new Promise(res => setTimeout(res, 1500)); // Wait 1.5 seconds per try
         }
+
         if (profile) {
             document.getElementById('welcome-overlay').classList.remove('hidden');
             setTimeout(() => {
                 window.location.href = (profile.role === 'admin') ? 'admin.html' : 'cashier.html';
-            }, 1500);
+            }, 1000);
         } else {
-            alert("Profile sync error. Try signing in again.");
+            alert("System still syncing. Please wait 5 seconds and Sign In again.");
             await supabase.auth.signOut();
         }
     }
 
-    window.toggleMode = () => {
-        isLogin = !isLogin;
-        document.getElementById('auth-title').innerText = isLogin ? "Staff Sign In" : "New Registration";
-        document.getElementById('register-fields').classList.toggle('hidden', isLogin);
-        document.getElementById('forgot-link').classList.toggle('hidden', !isLogin);
-        document.getElementById('main-btn').innerText = isLogin ? "Sign In" : "Register Now";
+    window.handleForgotPassword = async () => {
+        const email = document.getElementById('email').value;
+        if (!email) return alert("Enter email first.");
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: 'https://jepe-autospares-pos.pages.dev/reset-password.html',
+        });
+        if (error) alert(error.message);
+        else alert("Reset link sent!");
     };
 </script>
 </body>
