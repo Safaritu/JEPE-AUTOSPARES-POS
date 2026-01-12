@@ -167,6 +167,21 @@
         .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; width: 100%; max-width: 450px; }
         .menu-item { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 18px; color: white; text-decoration: none; text-align: center; font-weight: 700; font-size: 0.8rem; display: flex; flex-direction: column; gap: 8px; align-items: center; transition: 0.2s; }
         .congrats-msg { background: #dcfce7; color: #166534; padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center; font-weight: 700; font-size: 0.85rem; display: none; }
+    /* Low Stock Pulse Animation */
+.low-stock-alert {
+    color: #ff4d4d !important; /* Bright Red */
+    font-weight: 800;
+    animation: pulse-red 1.5s infinite;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: rgba(255, 77, 77, 0.1);
+}
+
+@keyframes pulse-red {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+}
     </style>
 </head>
 <body>
@@ -188,11 +203,11 @@
         <a href="debtors.html" class="menu-item">👥 Debtors</a>
         <a href="supplierscashier.html" class="menu-item">🤝 Suppliers</a>
         <a href="cashier_inventory.html" class="menu-item">🛒 Add Items</a>
-        <a href="moneyinout.html" class="menu-item">💸 Money IN/OUT list</a>
+        <a href="moneyinout.html" class="menu-item">💸 Transactions</a>
         <a href="shift history cashier.html" class="menu-item">⏳ Shift History</a>
         <a href="sales_reports.html" class="menu-item">📈 Sales History</a>
-        <a href="pos.html" class="menu-item">🛒 View cart Stock</a>
-        <a href="gas_delivery.html" class="menu-item">🏍 Delivery records</a>
+        <a href="pos.html" class="menu-item">🛒 View Stock</a>
+        <a href="gas_delivery.html" class="menu-item">🏍 Delivery</a>
         <a href="cashier_report.html" class="menu-item">📝 Today's Report</a>
         <a href="sale edit cashier.html" class="menu-item">📝 Edit sales</a>
         <a href="#" onclick="logoutUser()" class="menu-item" style="background: var(--danger); grid-column: span 2;">🚪 Log Out</a>
@@ -203,11 +218,11 @@
 
 <div class="container">
     <header>
-        <div class="logo">CASHIERS DASHBOARD <span>/ Terminal</span></div>
+        <div class="logo">JEPE POS <span>/ Terminal</span></div>
         <div id="shift-action-container"></div>
     </header>
 
-    <div class="section-label">Opening Floats & paybill Sales Tracker</div>
+    <div class="section-label">Opening Floats & Live Sales Tracker</div>
     <div class="float-status-card">
         <div class="float-item"><label>Cash</label><span id="float-cash">0.00</span></div>
         <div class="float-item"><label>Mpesa</label><span id="float-mpesa">0.00</span></div>
@@ -329,6 +344,7 @@
         <button class="btn btn-danger" style="margin-top:20px; width:100%" id="confirm-close">FINALIZE & CLOSE</button>
     </div>
 </div>
+
 <script type="module">
     import { supabase } from './auth.js';
 
@@ -338,6 +354,53 @@
     let historyLimit = 10;
     let allShifts = [];
     let currentKcbSalesTotal = 0;
+
+    // --- REALTIME: Sync Inventory Automatically ---
+    // This ensures stock numbers update instantly if an admin changes them
+    const productSubscription = supabase
+        .channel('inventory-sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload) => {
+            console.log("Database Change Detected. Syncing...");
+            fetchInventory(); 
+        })
+        .subscribe();
+
+    async function fetchInventory() {
+        const { data } = await supabase.from('products').select('*');
+        if (data) {
+            inventory = data;
+            refreshProductDatalist();
+            
+            // If an item is currently selected, refresh its stock hint immediately
+            if (selectedItem) {
+                const updated = inventory.find(p => p.id === selectedItem.id);
+                if (updated) {
+                    selectedItem = updated;
+                    updateStockDisplay(updated);
+                }
+            }
+        }
+    }
+
+    // Helper to handle the Red Pulsing Logic
+    function updateStockDisplay(item) {
+        const hStock = document.getElementById('hint-stock');
+        hStock.innerText = `Stock: ${item.stock_quantity}`;
+        hStock.style.display = 'inline-block';
+
+        if (item.stock_quantity <= 0) {
+            hStock.innerText = "OUT OF STOCK";
+            hStock.classList.add('low-stock-alert');
+        } else if (item.stock_quantity < 5) {
+            hStock.classList.add('low-stock-alert');
+        } else {
+            hStock.classList.remove('low-stock-alert');
+        }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') init();
+    });
 
     window.toggleFullMenu = () => {
         const menu = document.getElementById('full-menu');
@@ -373,7 +436,7 @@
         ]);
 
         inventory = prodRes.data || [];
-        document.getElementById('pList').innerHTML = inventory.map(p => `<option value="${formatItemName(p)}">`).join('');
+        refreshProductDatalist();
 
         const actionBtnContainer = document.getElementById('shift-action-container');
         if (shiftRes.data) {
@@ -390,6 +453,10 @@
         loadHistory();
     }
 
+    function refreshProductDatalist() {
+        document.getElementById('pList').innerHTML = inventory.map(p => `<option value="${formatItemName(p)}">`).join('');
+    }
+
     function formatItemName(p) {
         let name = p.name;
         if (p.category === 'Gas' && p.weight_category) name += ` (${p.weight_category})`;
@@ -401,12 +468,9 @@
         selectedItem = inventory.find(p => formatItemName(p) === e.target.value);
         if (selectedItem) {
             document.getElementById('pPrice').value = selectedItem.selling_price;
-            const hStock = document.getElementById('hint-stock');
-            const hMin = document.getElementById('hint-min');
-            hStock.innerText = `Stock: ${selectedItem.stock_quantity}`;
-            hStock.style.display = 'inline-block';
-            hMin.innerText = `Min: ${selectedItem.min_price || 0}`;
-            hMin.style.display = 'inline-block';
+            document.getElementById('hint-min').innerText = `Min: ${selectedItem.min_price || 0}`;
+            document.getElementById('hint-min').style.display = 'inline-block';
+            updateStockDisplay(selectedItem);
             updateTotal();
         }
     };
@@ -447,8 +511,11 @@
         const baseSale = {
             shift_id: currentShift.id,
             product_id: selectedItem.id,
-            quantity: qty, unit_price: price, cost_price: selectedItem.cost_price || 0,
-            part_type: selectedItem.part_type || 'N/A', discount_reason: selectedItem.tempReason || ""
+            quantity: qty, 
+            unit_price: price, 
+            cost_price: selectedItem.cost_price || 0,
+            part_type: selectedItem.part_type || 'N/A', 
+            discount_reason: selectedItem.tempReason || ""
         };
 
         if (method === 'Split') {
@@ -463,35 +530,29 @@
         const { data: sData, error } = await supabase.from('sales').insert(salesToInsert).select();
         
         if (!error) {
-            // UPDATED: Proper prompt and insertion for Debtors table
             if(method === "Debt") {
-                const dName = prompt("Enter Customer Name:");
-                const dPhone = prompt("Enter Customer Phone (Optional):") || "";
-                if(dName) {
-                    await supabase.from('debtors').insert([{ 
-                        customer_name: dName, 
-                        customer_phone: dPhone,
-                        amount_owed: total, 
-                        product_id: selectedItem.id,
-                        status: 'Unpaid'
-                    }]);
-                }
+                const dName = prompt("Customer Name:");
+                if(dName) await supabase.from('debtors').insert([{ customer_name: dName, amount_owed: total, sale_id: sData[0].id }]);
             }
 
-            await supabase.from('products').update({ 
-                stock_quantity: selectedItem.stock_quantity - qty,
-                empty_quantity: selectedItem.category === 'Gas' ? (selectedItem.empty_quantity || 0) + qty : selectedItem.empty_quantity
-            }).eq('id', selectedItem.id);
+            // Sync UI without full page reload
+            await fetchInventory(); 
+            await loadShiftData();
             
+            // Reset Form
             document.getElementById('sale-form').reset();
+            document.getElementById('pSearch').value = '';
             document.getElementById('hint-stock').style.display = 'none';
             document.getElementById('hint-min').style.display = 'none';
-            loadShiftData(); 
+            document.getElementById('total-text').innerText = '0';
+            
             btn.disabled = false;
-            btn.innerHTML = `RECORD ITEM Ksh <span id="total-text">0.00</span>`;
+            btn.innerText = "SUBMIT SALE";
+            alert("Sale Saved!");
         } else { 
             alert("Error: " + error.message); 
             btn.disabled = false;
+            btn.innerText = "SUBMIT SALE";
         }
     };
 
@@ -506,7 +567,9 @@
 
         currentKcbSalesTotal = sales.filter(s => s.payment_method === 'KCB Paybill').reduce((a, b) => a + b.total_amount, 0);
         document.getElementById('live-kcb-box').innerText = currentKcbSalesTotal.toLocaleString();
-        document.getElementById('c-bank').value = currentKcbSalesTotal;
+        
+        const closeKcbInput = document.getElementById('c-bank');
+        if (closeKcbInput) closeKcbInput.value = currentKcbSalesTotal;
 
         document.getElementById('live-sales-body').innerHTML = sales.map(s => `<tr><td data-label="Time">${new Date(s.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Item"><b>${s.item_name}</b></td><td data-label="Qty">${s.quantity}</td><td data-label="Total">Ksh ${s.total_amount.toLocaleString()}</td><td data-label="Method">${s.payment_method}</td></tr>`).join('');
         document.getElementById('live-trans-body').innerHTML = trans.map(t => `<tr><td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Reason">${t.description}</td><td data-label="Amt">Ksh ${t.amount.toLocaleString()}</td><td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">${t.type}</td><td data-label="Wallet">${t.category}</td></tr>`).join('');
@@ -533,7 +596,6 @@
         const clB = currentKcbSalesTotal;
         const clC = parseFloat(document.getElementById('c-cash').value || 0);
 
-        // Calculate expected: Don't include debts in sales total, but include "Money In" (which now includes debt collection)
         const { data: sales } = await supabase.from('sales').select('total_amount').eq('shift_id', currentShift.id).neq('payment_method','Debt');
         const { data: trans } = await supabase.from('cash_transactions').select('amount, type').eq('shift_id', currentShift.id);
         
@@ -565,13 +627,17 @@
         const lastClosed = allShifts.find(s => s.status === 'Closed');
         if (lastClosed) {
             const clT = (lastClosed.close_cash||0) + (lastClosed.close_mpesa||0) + (lastClosed.close_kcb||0) + (lastClosed.close_equity||0) + (lastClosed.close_kcb_bank || 0);
-            if (Math.abs(clT - (lastClosed.system_expected_total || 0)) < 1) document.getElementById('congrats-banner').style.display = 'block';
+            if (Math.abs(clT - (lastClosed.system_expected_total || 0)) < 1) {
+                const banner = document.getElementById('congrats-banner');
+                if(banner) banner.style.display = 'block';
+            }
         }
         renderHistory(allShifts, transData, searchQuery);
     }
 
     function renderHistory(shifts, transData, query = "") {
         const tbody = document.getElementById('history-body');
+        if(!tbody) return;
         const filtered = shifts.filter(h => new Date(h.start_time).toLocaleDateString().includes(query));
         tbody.innerHTML = filtered.map(h => {
             const shiftTrans = (transData || []).filter(t => t.shift_id === h.id);
