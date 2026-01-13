@@ -65,6 +65,11 @@
         .float-item label { display: block; font-size: 0.6rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 2px; }
         .float-item span { font-size: 0.85rem; font-weight: 800; color: var(--admin-dark); }
 
+        /* Special KCB Paybill styling */
+        .kcb-special { border: 1px solid var(--blue); background: #f0f7ff; }
+        .kcb-special label { color: var(--blue); }
+        .kcb-profit { display: block; font-size: 0.65rem; color: var(--success); font-weight: 800; margin-top: 2px; }
+
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .stat-box { padding: 14px 12px; border-radius: 16px; color: white; }
         .stat-box small { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; opacity: 0.85; }
@@ -96,7 +101,7 @@
 
 <div class="guide-hand" id="onboardingHand">
     <div class="guide-label">CLICK FOR MENU</div>
-<span>👇</span>
+    <span>👇</span>
 </div>
 
 <div class="nav-overlay" id="navBanner">
@@ -115,7 +120,7 @@
         <a href="sales-history.html" class="nav-card"><span>📜</span><small>Sales History</small></a>
         <a href="inventory.html" class="nav-card"><span>➕</span><small>Add Stock/Inventory view</small></a>
         <a href="sales_editor.html" class="nav-card"><span>✏️</span><small>Edit Stock</small></a>
-       <a href="admin-debtors.html" class="nav-card"><span>👥</span><small>Debtors</small></a>
+        <a href="admin-debtors.html" class="nav-card"><span>👥</span><small>Debtors</small></a>
         <a href="low_stock.html" class="nav-card"><span>⚠️</span><small>Low Stock</small></a>
         <a href="audit_trail.html" class="nav-card"><span>🔍</span><small>Inventory Track</small></a>
         <a href="reports.html" class="nav-card"><span>📄</span><small>Summarized Reports</small></a>
@@ -154,6 +159,11 @@
             <div class="float-item"><label>Cash balanced</label><span id="f-cash">Ksh 0</span></div>
             <div class="float-item"><label>KCB Float</label><span id="f-kcb">Ksh 0</span></div>
             <div class="float-item"><label>Equity Float</label><span id="f-equity">Ksh 0</span></div>
+            <div class="float-item kcb-special" style="grid-column: span 2; margin-top: 5px;">
+                <label>KCB Paybill (Total Bank Balance)</label>
+                <span id="f-kcb-bank-total" style="font-size: 1rem; color: var(--admin-accent);">Ksh 0</span>
+                <span id="f-kcb-bank-profit" class="kcb-profit">Total Profit on Paybill: Ksh 0</span>
+            </div>
         </div>
     </div>
 
@@ -211,11 +221,16 @@
     };
 
     async function init() {
-        // Set dynamic greeting based on time
         const hour = new Date().getHours();
         const greetText = hour < 12 ? "GOOD MORNING!" : hour < 17 ? "GOOD AFTERNOON!" : "GOOD EVENING!";
         document.getElementById('greeting-text').innerText = `${greetText} WELCOME BACK, ADMIN 👋`;
 
+        // Load Month Data when picker changes
+        document.getElementById('month-picker').addEventListener('change', (e) => {
+            loadMonthlyFlow(e.target.value);
+        });
+
+        // 1. Fetch Current Shift
         const { data: shift } = await supabase
             .from('daily_shifts')
             .select('*')
@@ -240,11 +255,12 @@
                 document.getElementById('disp-end').innerText = `Closed: ${closeTime}`;
             }
 
+            // TODAY'S REVENUE LOGIC
             const { data: shiftSales } = await supabase.from('sales').select('*').eq('shift_id', shift.id);
             let rev = 0, prof = 0;
             shiftSales?.forEach(s => {
                 rev += (s.total_amount || 0);
-                prof += (s.unit_price - (s.cost_price || 0)) * s.quantity;
+                prof += (s.total_amount - ((s.cost_price || 0) * (s.quantity || 1)));
             });
             document.getElementById('t-rev').innerText = `Ksh ${rev.toLocaleString()}`;
             document.getElementById('t-prof').innerText = `Ksh ${prof.toLocaleString()}`;
@@ -259,10 +275,35 @@
             document.getElementById('t-in').innerText = `Ksh ${mIn.toLocaleString()}`;
         }
 
+        // 2. KCB PAYBILL ALL-TIME LOGIC
+        const { data: allPaybillSales } = await supabase
+            .from('sales')
+            .select('*')
+            .eq('payment_method', 'KCB Paybill');
+
+        let totalPaybillBal = 0;
+        let totalPaybillProf = 0;
+
+        allPaybillSales?.forEach(s => {
+            const amt = parseFloat(s.total_amount || 0);
+            const cost = parseFloat(s.cost_price || 0) * (s.quantity || 1);
+            totalPaybillBal += amt;
+            totalPaybillProf += (amt - cost);
+        });
+
+        document.getElementById('f-kcb-bank-total').innerText = `Ksh ${totalPaybillBal.toLocaleString()}`;
+        document.getElementById('f-kcb-bank-profit').innerText = `Total Profit on Paybill: Ksh ${totalPaybillProf.toLocaleString()}`;
+
+        // 3. Load Products & Summary
         const { data: products } = await supabase.from('products').select('*').order('name');
         allProducts = products || [];
         calculateGasSummary();
         renderLists();
+    }
+
+    async function loadMonthlyFlow(monthString) {
+        // Implementation for monthly filter if needed
+        console.log("Filtering for month:", monthString);
     }
 
     function calculateGasSummary() {
