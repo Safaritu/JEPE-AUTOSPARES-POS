@@ -125,14 +125,14 @@
 
         <div class="report-grid">
             <div class="metric-card">
-                <span class="metric-label">Net Profit</span>
+                <span class="metric-label">Net Profit (Grand Total)</span>
                 <span class="metric-val text-profit" id="total-profit">Ksh 0</span>
-                <span class="text-small">Realized Earnings</span>
+                <span class="text-small" id="profit-split">Cash: 0 | Paybill: 0</span>
             </div>
             <div class="metric-card">
                 <span class="metric-label">Total Revenue</span>
                 <span class="metric-val" id="total-revenue">Ksh 0</span>
-                <span class="text-small" id="revenue-split">Cash: 0 | KCB: 0</span>
+                <span class="text-small" id="revenue-split">Cash: 0 | KCB PAYBILL: 0</span>
             </div>
             <div class="metric-card">
                 <span class="metric-label">Inv. Value (Cost)</span>
@@ -245,6 +245,7 @@
 
     function renderUI() {
         let totalRev = 0, totalProf = 0, cashRev = 0, kcbRev = 0;
+        let cashProf = 0, kcbProf = 0;
         let invVal = 0, origQty = 0, copyQty = 0, gasFull = 0, gasEmpty = 0;
 
         // Inventory Stats
@@ -269,7 +270,15 @@
 
             totalRev += s.total_amount;
             totalProf += itemProfit;
-            if (s.payment_method === 'Cash') cashRev += s.total_amount; else kcbRev += s.total_amount;
+            
+            // Profit and Revenue Splitting Logic
+            if (s.payment_method === 'Cash') {
+                cashRev += s.total_amount;
+                cashProf += itemProfit;
+            } else {
+                kcbRev += s.total_amount;
+                kcbProf += itemProfit;
+            }
 
             // Category Logic
             let catKey = 'Other';
@@ -287,8 +296,11 @@
 
         // Update Top Cards
         document.getElementById('total-profit').innerText = `Ksh ${totalProf.toLocaleString()}`;
+        document.getElementById('profit-split').innerText = `Cash: ${cashProf.toLocaleString()} | Paybill: ${kcbProf.toLocaleString()}`;
+        
         document.getElementById('total-revenue').innerText = `Ksh ${totalRev.toLocaleString()}`;
         document.getElementById('revenue-split').innerText = `Cash: ${cashRev.toLocaleString()} | KCB: ${kcbRev.toLocaleString()}`;
+        
         document.getElementById('total-val').innerText = `Ksh ${invVal.toLocaleString()}`;
         document.getElementById('stock-split').innerText = `Original: ${origQty} | Copy: ${copyQty}`;
         document.getElementById('gas-count').innerText = `${gasFull} Full Cylinders`;
