@@ -148,31 +148,18 @@
         }
         .search-input:focus { border-color: var(--primary); }
 
-        .float-row { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px dashed #f1f5f9; }
-        .float-label { color: var(--text-dim); font-size: 0.75rem; }
-        .float-val { font-weight: 700; color: var(--text-main); font-size: 0.8rem; }
-
-        .mobile-cards-view { display: none; }
-        
-        @media (max-width: 1024px) {
-            .table-card { display: none; }
-            .mobile-cards-view { display: block; }
-        }
-
-        .audit-card {
-            background: white; 
-            border-radius: 18px; 
-            padding: 20px;
-            margin-bottom: 20px; 
-            border: 1px solid var(--border);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-        .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; }
-        .card-details { padding: 12px; background: #f8fafc; border-radius: 12px; margin: 8px 0; font-size: 0.8rem; }
-        
-        .label-xs { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 4px;}
-        .time-tag { font-size: 0.75rem; background: #e2e8f0; padding: 4px 8px; border-radius: 6px; color: #1e293b; font-weight: 700; }
-        .status-active { background: #e0e7ff; color: #4338ca; }
+        .account-line { display: flex; justify-content: space-between; margin-bottom: 4px; border-bottom: 1px dashed #f1f5f9; padding-bottom: 2px; }
+        .account-label { color: var(--text-dim); font-size: 0.75rem; font-weight: 500; }
+        .account-val { font-weight: 600; color: var(--text-main); font-size: 0.8rem; }
+        .total-row { font-weight: 800; margin-top: 10px; padding: 8px; background: #f5f3ff; color: var(--primary); border-radius: 6px; text-align: center; }
+        .status-badge { font-weight: 800; padding: 10px 15px; border-radius: 10px; font-size: 0.85rem; display: block; text-align: center; min-width: 140px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .balanced { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+        .mismatch { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        .active-shift { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
+        .date-cell b { display: block; margin-bottom: 8px; font-size: 1rem; }
+        .time-pill { background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; color: var(--text-dim); display: inline-block; margin-top: 4px; }
+        .revenue-card { background: #fff; border: 1px solid var(--border); padding: 12px; border-radius: 10px; text-decoration: none; display: block; transition: 0.2s; }
+        .revenue-card:hover { border-color: var(--primary); transform: translateY(-2px); }
         
         /* --- NAVIGATION --- */
         .nav-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(15px); z-index: 3000; display: none; flex-direction: column; padding: 60px 20px 40px 20px; overflow-y: auto; }
@@ -192,7 +179,55 @@
         .guide-hand span { font-size: 1.8rem; }
         .guide-label { background: var(--admin-dark); color: white; padding: 3px 8px; border-radius: 6px; font-size: 0.55rem; font-weight: 800; margin-bottom: 2px; border: 1px solid var(--admin-accent); }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-        .congrats-msg { background: #dcfce7; color: #166534; padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center; font-weight: 700; font-size: 0.85rem; display: none; }
+        .congrats-msg { 
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); 
+            color: #166534; 
+            padding: 18px 24px; 
+            border-radius: 12px; 
+            margin-bottom: 20px; 
+            text-align: center; 
+            font-weight: 800; 
+            font-size: 1rem; 
+            display: none; 
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+            border: 2px solid #86efac;
+            letter-spacing: 0.5px;
+            animation: slideDown 0.5s ease;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .greeting-banner {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            color: white;
+            padding: 20px 24px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .greeting-text h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        .greeting-text p {
+            margin: 5px 0 0 0;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        .greeting-time {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            font-weight: 600;
+        }
     /* Low Stock Pulse Animation */
 .low-stock-alert {
     color: #ff4d4d !important; /* Bright Red */
@@ -241,9 +276,17 @@
 
 <button class="fab-menu" onclick="toggleNav()">☰</button>
 
-<div id="congrats-banner" class="congrats-msg">🎉 Well done! Your last shift was perfectly balanced! ✔ </div>
+<div id="congrats-banner" class="congrats-msg">🎉 WELL DONE! YOUR LAST SHIFT WAS PERFECTLY BALANCED! ✔</div>
 
 <div class="container">
+    <div class="greeting-banner" id="greeting-banner">
+        <div class="greeting-text">
+            <h2 id="greeting-title">Welcome Back!</h2>
+            <p id="greeting-subtitle">Ready to start your shift?</p>
+        </div>
+        <div class="greeting-time" id="greeting-time"></div>
+    </div>
+    
     <header>
         <div class="logo">JEPE POS <span>/ Terminal</span></div>
         <div id="shift-action-container"></div>
@@ -327,25 +370,24 @@
     </div>
 
     <div class="section-label">WORK HISTORY</div>
-    <input type="text" id="history-search" class="search-input" placeholder="🔍 Search by date (e.g. 03 Jan 2026)..." style="max-width: 500px;">
+    <input type="text" id="history-search" class="search-input" placeholder="🔍 Search by date (e.g. 10 Jan 2026)..." style="max-width: 500px;">
     
     <div class="table-card" style="overflow-x: auto;">
-        <table style="min-width: 1000px;">
+        <table style="min-width: 1250px;">
             <thead class="mobile-hide-header">
                 <tr>
-                    <th>Shift Timing</th>
-                    <th>Opening Floats</th>
-                    <th>Adjustments (In/Out)</th>
-                    <th>Closing Actuals</th>
-                    <th>Variance</th>
-                    <th>Notes</th>
+                    <th width="160">DATE</th>
+                    <th width="210">OPENING FLOATS</th>
+                    <th width="210">PAYMENT METHOD</th>
+                    <th width="190">MONEY IN/OUT</th>
+                    <th width="210">CLOSING FLOATS</th>
+                    <th width="190">VARIANCE</th>
+                    <th width="200">VARIANCE REASON</th>
                 </tr>
             </thead>
             <tbody id="history-body"></tbody>
         </table>
     </div>
-
-    <div id="history-body-mobile" class="mobile-cards-view"></div>
 
     <div style="text-align: center; padding: 20px;">
         <button id="load-more-btn" class="btn" style="background: #e2e8f0; color: #1e293b; margin: auto;">LOAD MORE HISTORY</button>
@@ -391,6 +433,7 @@
     let historyLimit = 15;
     let allShifts = [];
     let allTransactions = [];
+    let allSales = [];
     let currentKcbSalesTotal = 0;
 
     // --- REALTIME: Sync Inventory Automatically ---
@@ -464,9 +507,47 @@
         document.getElementById('split-online').value = (total - cash).toFixed(2);
     };
 
+    function updateGreeting() {
+        const hour = new Date().getHours();
+        const greetingTitle = document.getElementById('greeting-title');
+        const greetingSubtitle = document.getElementById('greeting-subtitle');
+        const greetingTime = document.getElementById('greeting-time');
+        
+        let greeting = '';
+        if (hour < 12) {
+            greeting = 'Good Morning';
+        } else if (hour < 17) {
+            greeting = 'Good Afternoon';
+        } else {
+            greeting = 'Good Evening';
+        }
+        
+        if (greetingTitle) greetingTitle.textContent = greeting + '!';
+        if (greetingSubtitle) {
+            if (currentShift) {
+                greetingSubtitle.textContent = 'Your shift is active. Keep up the great work!';
+            } else {
+                greetingSubtitle.textContent = 'Ready to start your shift?';
+            }
+        }
+        if (greetingTime) {
+            greetingTime.textContent = new Date().toLocaleString('en-GB', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    }
+
     async function init() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return window.location.href = 'index.html';
+
+        updateGreeting();
+        setInterval(updateGreeting, 60000); // Update every minute
 
         const [prodRes, shiftRes] = await Promise.all([
             supabase.from('products').select('*'),
@@ -485,6 +566,7 @@
             document.getElementById('float-kcb').innerText = (currentShift.open_kcb || 0).toLocaleString();
             document.getElementById('float-equity').innerText = (currentShift.open_equity || 0).toLocaleString();
             loadShiftData();
+            updateGreeting();
         } else {
             actionBtnContainer.innerHTML = `<button class="btn btn-primary special-action-btn" onclick="document.getElementById('open-modal').style.display='flex'">🟢 START SHIFT</button>`;
         }
@@ -685,27 +767,28 @@
                 .limit(historyLimit);
 
             const { data: transactions } = await supabase.from('cash_transactions').select('shift_id, amount, type');
+            const { data: sales } = await supabase.from('sales').select('shift_id, total_amount, payment_method');
 
-        allShifts = shifts || [];
+            allShifts = shifts || [];
             allTransactions = transactions || [];
-
-        const lastClosed = allShifts.find(s => s.status === 'Closed');
-        if (lastClosed) {
-            const clT = (lastClosed.close_cash||0) + (lastClosed.close_mpesa||0) + (lastClosed.close_kcb||0) + (lastClosed.close_equity||0) + (lastClosed.close_kcb_bank || 0);
-            if (Math.abs(clT - (lastClosed.system_expected_total || 0)) < 1) {
-                const banner = document.getElementById('congrats-banner');
-                if(banner) banner.style.display = 'block';
+            allSales = sales || [];
+            
+            const lastClosed = allShifts.find(s => s.status === 'Closed');
+            if (lastClosed) {
+                const clT = (lastClosed.close_cash||0) + (lastClosed.close_mpesa||0) + (lastClosed.close_kcb||0) + (lastClosed.close_equity||0) + (lastClosed.close_kcb_bank || 0);
+                if (Math.abs(clT - (lastClosed.system_expected_total || 0)) < 1) {
+                    const banner = document.getElementById('congrats-banner');
+                    if(banner) banner.style.display = 'block';
+                }
             }
-        }
-            renderHistory(allShifts, allTransactions, searchQuery);
+            renderHistory(allShifts, allTransactions, allSales, searchQuery);
         } catch (error) {
             console.error("Fetch Error:", error);
         }
     }
 
-    function renderHistory(shifts, transData, query = "") {
+    function renderHistory(shifts, transData, salesData, query = "") {
         const desktopTbody = document.getElementById('history-body');
-        const mobileContainer = document.getElementById('history-body-mobile');
         if(!desktopTbody) return;
         
         const filtered = shifts.filter(sh => {
@@ -713,104 +796,75 @@
             return dateStr.includes(query.toLowerCase());
         });
         
-        let desktopHTML = '';
-        let mobileHTML = '';
+        let tableHtml = '';
 
         filtered.forEach(sh => {
             const shiftLogs = (transData || []).filter(t => t.shift_id === sh.id);
-            const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((sum, t) => sum + (t.amount || 0), 0);
-            const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((sum, t) => sum + (t.amount || 0), 0);
-            
+            const shiftSales = (salesData || []).filter(s => s.shift_id === sh.id);
+
+            const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
+            const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
+            const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount || 0), 0);
+
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_equity||0);
-            const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_equity||0) + (sh.close_kcb_bank||0);
-            const expected = sh.system_expected_total || openTotal;
-            const varianceVal = sh.status === 'Open' ? 0 : closeTotal - expected;
+            const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
+
             const isClosed = sh.status === 'Closed';
-            
-            const statusClass = Math.abs(varianceVal) < 1 ? 'balanced' : 'mismatch';
-            const statusText = Math.abs(varianceVal) < 1 ? 'BALANCED' : `Ksh ${varianceVal.toLocaleString()}`;
+            const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
+            const variance = isClosed ? (closeTotal - expected) : 0;
+            const statusClass = !isClosed ? 'active-shift' : (Math.abs(variance) < 1 ? 'balanced' : 'mismatch');
 
             const startD = new Date(sh.start_time);
-            const endD = sh.end_time ? new Date(sh.end_time) : null;
-            const dateStr = startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
-
-            const floatBreakdown = (prefix) => `
-                <div class="float-row"><span class="float-label">Cash</span><span class="float-val">${(sh[prefix+'_cash']||0).toLocaleString()}</span></div>
-                <div class="float-row"><span class="float-label">M-Pesa</span><span class="float-val">${(sh[prefix+'_mpesa']||0).toLocaleString()}</span></div>
-                <div class="float-row"><span class="float-label">KCB Float</span><span class="float-val">${(sh[prefix+'_kcb']||0).toLocaleString()}</span></div>
-                <div class="float-row"><span class="float-label">Equity Float</span><span class="float-val">${(sh[prefix+'_equity']||0).toLocaleString()}</span></div>
-            `;
-
-            desktopHTML += `
+            
+            tableHtml += `
                 <tr>
+                    <td class="date-cell">
+                        <b>${startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'})}</b>
+                        <span class="time-pill">IN: ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span><br>
+                        <span class="time-pill">${sh.end_time ? 'OUT: '+new Date(sh.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'ACTIVE'}</span>
+                    </td>
                     <td>
-                        <b style="color:var(--primary)">${dateStr}</b><br>
-                        <div style="margin-top:8px;">
-                            <span class="time-tag">IN: ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span><br>
-                            <span class="time-tag" style="background:#fff1f2; color:#be123c; margin-top:4px; display:inline-block;">OUT: ${endD ? endD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'Active'}</span>
+                        <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash||0).toLocaleString()}</span></div>
+                        <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa||0).toLocaleString()}</span></div>
+                        <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb||0).toLocaleString()}</span></div>
+                        <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity||0).toLocaleString()}</span></div>
+                        <div class="total-row">Total: ${openTotal.toLocaleString()}</div>
+                    </td>
+                    <td>
+                        <div class="revenue-card">
+                            <div class="account-line"><span class="account-label">Cash Sales</span><span class="account-val" style="color:var(--success)">+${cashSales.toLocaleString()}</span></div>
+                            <div class="account-line"><span class="account-label">KCB Paybill</span><span class="account-val" style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span></div>
                         </div>
                     </td>
                     <td>
-                        ${floatBreakdown('open')}
-                        <div style="font-weight:800; text-align:right; margin-top:5px; border-top:1px solid #e2e8f0; padding-top:5px;">Total: Ksh ${openTotal.toLocaleString()}</div>
+                        <div class="revenue-card">
+                            <div class="account-line"><span class="account-label">In</span><span class="account-val" style="color:var(--success)">+${moneyIn.toLocaleString()}</span></div>
+                            <div class="account-line"><span class="account-label">Out</span><span class="account-val" style="color:var(--danger)">-${moneyOut.toLocaleString()}</span></div>
+                        </div>
                     </td>
                     <td>
-                        <div style="color:var(--success); font-weight:700;">+${moneyIn.toLocaleString()}</div>
-                        <div style="color:var(--danger); font-weight:700;">-${moneyOut.toLocaleString()}</div>
-                </td>
-                <td>
-                        ${isClosed ? `
-                            ${floatBreakdown('close')}
-                            <div class="float-row" style="border-top: 1px solid #e2e8f0; margin-top:5px; padding-top:5px;">
-                                <span class="float-label" style="color:var(--primary)">KCB Paybill (Bank)</span>
-                                <span class="float-val" style="color:var(--primary)">+${(sh.close_kcb_bank||0).toLocaleString()}</span>
-                            </div>
-                            <div style="font-weight:800; text-align:right; margin-top:5px; color:#000;">Total: Ksh ${closeTotal.toLocaleString()}</div>
-                        ` : '<span class="variance-status status-active">SHIFT ACTIVE</span>'}
-                </td>
-                    <td><span class="variance-status ${isClosed ? statusClass : 'status-active'}">${isClosed ? statusText : 'N/A'}</span></td>
-                    <td><small style="color:var(--text-dim)">${sh.variance_note || '-'}</small></td>
-            </tr>`;
-
-            mobileHTML += `
-                <div class="audit-card">
-                    <div class="card-top">
-                        <div><span class="label-xs">${dateStr}</span><span class="time-tag">${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span></div>
-                        <span class="variance-status ${isClosed ? statusClass : 'status-active'}">${isClosed ? statusText : 'ACTIVE'}</span>
-                    </div>
-                    <span class="label-xs">Opening Breakdown</span>
-                    <div class="card-details">
-                        ${floatBreakdown('open')}
-                        <div class="float-row" style="font-weight:800; border-top:1px solid #d1d5db; margin-top:5px; padding-top:5px;">
-                            <span>Opening Total</span><span>Ksh ${openTotal.toLocaleString()}</span>
+                        <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.close_cash||0).toLocaleString()}</span></div>
+                        <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa||0).toLocaleString()}</span></div>
+                        <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.close_kcb||0).toLocaleString()}</span></div>
+                        <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.close_equity||0).toLocaleString()}</span></div>
+                        <div class="account-line"><span class="account-label">Paybill</span><span class="account-val">${(sh.close_kcb_bank||0).toLocaleString()}</span></div>
+                        <div class="total-row" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>
+                    </td>
+                    <td>
+                        <span class="status-badge ${statusClass}">
+                            ${isClosed ? 'VAR: ' + variance.toLocaleString() : 'SHIFT ACTIVE'}
+                        </span>
+                        <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 8px; text-align: center;">
+                            Expected: ${expected.toLocaleString()}
                         </div>
-                    </div>
-                    
-                    <div style="display:flex; gap:10px; margin: 10px 0;">
-                        <div style="flex:1; background:#f0fdf4; padding:8px; border-radius:10px; text-align:center;">
-                            <span class="label-xs">In</span><b style="color:var(--success)">+${moneyIn.toLocaleString()}</b>
-                        </div>
-                        <div style="flex:1; background:#fef2f2; padding:8px; border-radius:10px; text-align:center;">
-                            <span class="label-xs">Out</span><b style="color:var(--danger)">-${moneyOut.toLocaleString()}</b>
-                        </div>
-                    </div>
-
-                    ${isClosed ? `
-                    <span class="label-xs">Closing Actuals</span>
-                    <div class="card-details" style="background:#eef2ff">
-                        ${floatBreakdown('close')}
-                        <div class="float-row" style="color:var(--primary); font-weight:700; border-top:1px solid #d1d5db; margin-top:5px; padding-top:5px;">
-                            <span>Paybill Sales</span><span>+${(sh.close_kcb_bank||0).toLocaleString()}</span>
-                        </div>
-                        <div class="float-row" style="font-weight:800; font-size:1rem; padding-top:5px;">
-                            <span>Total Final</span><span>Ksh ${closeTotal.toLocaleString()}</span>
-                        </div>
-                    </div>` : ''}
-                </div>`;
+                    </td>
+                    <td><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim); font-style: italic;">${sh.variance_note || 'No notes added.'}</div></td>
+                </tr>`;
         });
 
-        desktopTbody.innerHTML = desktopHTML || '<tr><td colspan="6" style="text-align:center">No records found.</td></tr>';
-        mobileContainer.innerHTML = mobileHTML || '<div style="text-align:center; padding: 20px;">No records found.</div>';
+        desktopTbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.</td></tr>';
     }
 
     document.getElementById('history-search').addEventListener('input', (e) => {
@@ -819,7 +873,7 @@
             const dateStr = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }).toLowerCase();
             return dateStr.includes(term);
         });
-        renderHistory(filtered, allTransactions, term);
+        renderHistory(filtered, allTransactions, allSales, term);
     });
     document.getElementById('load-more-btn').onclick = () => { historyLimit += 15; loadHistory(); };
     
