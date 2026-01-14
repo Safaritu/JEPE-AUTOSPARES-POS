@@ -134,6 +134,46 @@
         .float-list li b { color: var(--text-main); }
         .total-cell { font-weight: 800; color: var(--primary); border-top: 2px solid var(--border); margin-top: 5px; padding-top: 5px; font-size: 0.85rem; display: flex; justify-content: space-between; }
         
+        .search-input {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid var(--border);
+            border-radius: 15px;
+            font-size: 16px;
+            outline: none;
+            font-family: inherit;
+            transition: border-color 0.2s;
+            background: white;
+            margin-bottom: 25px;
+        }
+        .search-input:focus { border-color: var(--primary); }
+
+        .float-row { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px dashed #f1f5f9; }
+        .float-label { color: var(--text-dim); font-size: 0.75rem; }
+        .float-val { font-weight: 700; color: var(--text-main); font-size: 0.8rem; }
+
+        .mobile-cards-view { display: none; }
+        
+        @media (max-width: 1024px) {
+            .table-card { display: none; }
+            .mobile-cards-view { display: block; }
+        }
+
+        .audit-card {
+            background: white; 
+            border-radius: 18px; 
+            padding: 20px;
+            margin-bottom: 20px; 
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; }
+        .card-details { padding: 12px; background: #f8fafc; border-radius: 12px; margin: 8px 0; font-size: 0.8rem; }
+        
+        .label-xs { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 4px;}
+        .time-tag { font-size: 0.75rem; background: #e2e8f0; padding: 4px 8px; border-radius: 6px; color: #1e293b; font-weight: 700; }
+        .status-active { background: #e0e7ff; color: #4338ca; }
+        
         /* --- NAVIGATION --- */
         .nav-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(15px); z-index: 3000; display: none; flex-direction: column; padding: 60px 20px 40px 20px; overflow-y: auto; }
         .nav-overlay.active { display: flex; animation: fadeIn 0.3s ease forwards; }
@@ -181,20 +221,19 @@
     <button style="position:fixed; top:20px; right:20px; background:rgba(255,255,255,0.1); border:none; color:white; width:45px; height:45px; border-radius:50%; font-size:1.2rem; z-index: 3100;" onclick="toggleNav()">✕</button>
     <div class="nav-header-title">CASHIER HUB</div>
     <div class="nav-grid">
-        <a href="#" onclick="confirmSwitchToAdmin(event)" class="nav-card switch-card"><span>🔄</span><small>SWITCH TO ADMIN MODE</small></a>
         <a href="cashier.html" class="nav-card" style="background: var(--admin-accent)"><span>📊</span><small>Dashboard</small></a>
         <a href="cashiergashub.html" class="nav-card"><span>⛽</span><small>Gas Hub</small></a>
-        <a href="low-stock-cashier.html" class="nav-card"><span>⚠️</span><small>Low Stock</small></a>
-        <a href="debtors.html" class="nav-card"><span>👥</span><small>Debtors</small></a>
-        <a href="supplierscashier.html" class="nav-card"><span>🤝</span><small>Suppliers</small></a>
-        <a href="cashier_inventory.html" class="nav-card"><span>🛒</span><small>Add Items</small></a>
-        <a href="moneyinout.html" class="nav-card"><span>💸</span><small>Transactions</small></a>
-        <a href="shift history cashier.html" class="nav-card"><span>⏳</span><small>Shift History</small></a>
+        <a href="cashier_inventory.html" class="nav-card"><span>➕</span><small>Add/Update Items</small></a>
+        <a href="moneyinout.html" class="nav-card"><span>💸</span><small>MONEY IN/OUT</small></a>
+        <a href="shift history cashier.html" class="nav-card"><span>⏳</span><small>Daily Shift History</small></a>
         <a href="sales_reports.html" class="nav-card"><span>📈</span><small>Sales History</small></a>
-        <a href="pos.html" class="nav-card"><span>🛒</span><small>View Stock</small></a>
+        <a href="low-stock-cashier.html" class="nav-card"><span>⚠️</span><small>View Low Stock</small></a>
+        <a href="debtors.html" class="nav-card"><span>👥</span><small>Record Debtors</small></a>
+        <a href="supplierscashier.html" class="nav-card"><span>🤝</span><small>Pay/View Suppliers</small></a>
+        <a href="pos.html" class="nav-card"><span>🛒</span><small>General Shopping</small></a>
         <a href="gas_delivery.html" class="nav-card"><span>🏍️</span><small>Delivery</small></a>
-        <a href="cashier_report.html" class="nav-card"><span>📝</span><small>Today's Report</small></a>
         <a href="sale edit cashier.html" class="nav-card"><span>✏️</span><small>Edit sales</small></a>
+        <a href="cashier_report.html" class="nav-card"><span>📝</span><small>Today's Report</small></a>
         <a href="cashier.html" class="nav-card"><span>🏠</span><small>HOME</small></a>
         <button onclick="logoutUser()" style="grid-column: span 2; margin-top:20px; background:var(--danger); color:white; border:none; padding:18px; border-radius:15px; font-weight:800;">🚪 LOGOUT SYSTEM</button>
     </div>
@@ -288,31 +327,41 @@
     </div>
 
     <div class="section-label">WORK HISTORY</div>
-    <div class="search-container" style="margin-bottom: 15px;">
-        <input type="text" id="history-search" placeholder="Search history by date..." style="width: 100%; max-width: 400px; padding: 10px; border-radius: 10px;">
-    </div>
+    <input type="text" id="history-search" class="search-input" placeholder="🔍 Search by date (e.g. 03 Jan 2026)..." style="max-width: 500px;">
     
-    <div class="table-card">
-        <table>
+    <div class="table-card" style="overflow-x: auto;">
+        <table style="min-width: 1000px;">
             <thead class="mobile-hide-header">
-                <tr><th>Date</th><th>Opening List</th><th>Closing List</th><th>MONEY IN/OUT</th><th>Variance</th><th>Reason</th></tr>
+                <tr>
+                    <th>Shift Timing</th>
+                    <th>Opening Floats</th>
+                    <th>Adjustments (In/Out)</th>
+                    <th>Closing Actuals</th>
+                    <th>Variance</th>
+                    <th>Notes</th>
+                </tr>
             </thead>
             <tbody id="history-body"></tbody>
         </table>
     </div>
-    <div style="text-align: center; padding: 20px;"><button id="load-more-btn" class="btn" style="background: #e2e8f0; color: #1e293b; margin: auto;">LOAD MORE HISTORY</button></div>
+
+    <div id="history-body-mobile" class="mobile-cards-view"></div>
+
+    <div style="text-align: center; padding: 20px;">
+        <button id="load-more-btn" class="btn" style="background: #e2e8f0; color: #1e293b; margin: auto;">LOAD MORE HISTORY</button>
+    </div>
 </div>
 
 <div id="open-modal" class="overlay">
     <div class="modal">
-        <h3>🚀 Start Day</h3>
+        <h3>🚀 Start Shift</h3>
         <div class="grid-inputs" style="grid-template-columns: 1fr 1fr;">
             <div class="input-group"><label>Actual Cash</label><input type="number" id="o-cash" value="0"></div>
             <div class="input-group"><label>Mpesa Float</label><input type="number" id="o-mpesa" value="0"></div>
             <div class="input-group"><label>KCB Float</label><input type="number" id="o-kcb" value="0"></div>
             <div class="input-group"><label>Equity Float</label><input type="number" id="o-equity" value="0"></div>
         </div>
-        <button class="btn btn-primary" style="margin-top:20px; width:100%" id="confirm-open">START DAY</button>
+        <button class="btn btn-primary" style="margin-top:20px; width:100%" id="confirm-open">START SHIFT</button>
     </div>
 </div>
 
@@ -339,8 +388,9 @@
     let inventory = [];
     let currentShift = null;
     let selectedItem = null;
-    let historyLimit = 10;
+    let historyLimit = 15;
     let allShifts = [];
+    let allTransactions = [];
     let currentKcbSalesTotal = 0;
 
     // --- REALTIME: Sync Inventory Automatically ---
@@ -396,12 +446,6 @@
         sessionStorage.setItem('menuClicked', 'true');
     };
 
-    window.confirmSwitchToAdmin = (e) => {
-        e.preventDefault();
-        if(confirm("Are you sure you want to switch to Admin Mode?")) {
-            window.location.href = "admin.html";
-        }
-    };
 
     window.logoutUser = async () => { 
         await supabase.auth.signOut(); 
@@ -442,7 +486,7 @@
             document.getElementById('float-equity').innerText = (currentShift.open_equity || 0).toLocaleString();
             loadShiftData();
         } else {
-            actionBtnContainer.innerHTML = `<button class="btn btn-primary special-action-btn" onclick="document.getElementById('open-modal').style.display='flex'">🟢 START DAY</button>`;
+            actionBtnContainer.innerHTML = `<button class="btn btn-primary special-action-btn" onclick="document.getElementById('open-modal').style.display='flex'">🟢 START SHIFT</button>`;
         }
         loadHistory();
     }
@@ -570,13 +614,33 @@
     }
 
     document.getElementById('confirm-open').onclick = async function() {
+        const cash = parseFloat(document.getElementById('o-cash').value || 0);
+        const mpesa = parseFloat(document.getElementById('o-mpesa').value || 0);
+        const kcb = parseFloat(document.getElementById('o-kcb').value || 0);
+        const equity = parseFloat(document.getElementById('o-equity').value || 0);
+        const total = cash + mpesa + kcb + equity;
+        
+        const confirmed = confirm(
+            `Are these the correct opening floats? Please confirm before starting your shift.\n\n` +
+            `Cash: Ksh ${cash.toLocaleString()}\n` +
+            `Mpesa: Ksh ${mpesa.toLocaleString()}\n` +
+            `KCB Float: Ksh ${kcb.toLocaleString()}\n` +
+            `Equity Float: Ksh ${equity.toLocaleString()}\n\n` +
+            `Total: Ksh ${total.toLocaleString()}`
+        );
+        
+        if (!confirmed) {
+            return; // User cancelled, don't proceed
+        }
+        
         this.disabled = true;
         const openData = {
-            open_cash: parseFloat(document.getElementById('o-cash').value || 0),
-            open_mpesa: parseFloat(document.getElementById('o-mpesa').value || 0),
-            open_kcb: parseFloat(document.getElementById('o-kcb').value || 0),
-            open_equity: parseFloat(document.getElementById('o-equity').value || 0),
-            status: 'Open', start_time: new Date().toISOString()
+            open_cash: cash,
+            open_mpesa: mpesa,
+            open_kcb: kcb,
+            open_equity: equity,
+            status: 'Open', 
+            start_time: new Date().toISOString()
         };
         await supabase.from('daily_shifts').insert([openData]);
         location.reload();
@@ -613,10 +677,17 @@
     };
 
     async function loadHistory(searchQuery = "") {
-        const { data: shifts } = await supabase.from('daily_shifts').select('*').order('start_time', {ascending:false}).limit(historyLimit);
+        try {
+            const { data: shifts } = await supabase
+                .from('daily_shifts')
+                .select('*')
+                .order('start_time', { ascending: false })
+                .limit(historyLimit);
+
+            const { data: transactions } = await supabase.from('cash_transactions').select('shift_id, amount, type');
+
         allShifts = shifts || [];
-        const shiftIds = allShifts.map(h => h.id);
-        const { data: transData } = await supabase.from('cash_transactions').select('shift_id, amount, type').in('shift_id', shiftIds);
+            allTransactions = transactions || [];
 
         const lastClosed = allShifts.find(s => s.status === 'Closed');
         if (lastClosed) {
@@ -626,54 +697,131 @@
                 if(banner) banner.style.display = 'block';
             }
         }
-        renderHistory(allShifts, transData, searchQuery);
+            renderHistory(allShifts, allTransactions, searchQuery);
+        } catch (error) {
+            console.error("Fetch Error:", error);
+        }
     }
 
     function renderHistory(shifts, transData, query = "") {
-        const tbody = document.getElementById('history-body');
-        if(!tbody) return;
-        const filtered = shifts.filter(h => new Date(h.start_time).toLocaleDateString().includes(query));
-        tbody.innerHTML = filtered.map(h => {
-            const shiftTrans = (transData || []).filter(t => t.shift_id === h.id);
-            const tIn = shiftTrans.filter(t => t.type === 'Money In').reduce((a, b) => a + b.amount, 0);
-            const tOut = shiftTrans.filter(t => t.type === 'Money Out').reduce((a, b) => a + b.amount, 0);
+        const desktopTbody = document.getElementById('history-body');
+        const mobileContainer = document.getElementById('history-body-mobile');
+        if(!desktopTbody) return;
+        
+        const filtered = shifts.filter(sh => {
+            const dateStr = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }).toLowerCase();
+            return dateStr.includes(query.toLowerCase());
+        });
+        
+        let desktopHTML = '';
+        let mobileHTML = '';
+
+        filtered.forEach(sh => {
+            const shiftLogs = (transData || []).filter(t => t.shift_id === sh.id);
+            const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((sum, t) => sum + (t.amount || 0), 0);
+            const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((sum, t) => sum + (t.amount || 0), 0);
             
-            const opTotal = h.open_cash + h.open_mpesa + h.open_kcb + h.open_equity;
-            const clTotal = (h.close_cash||0) + (h.close_mpesa||0) + (h.close_kcb||0) + (h.close_equity||0) + (h.close_kcb_bank || 0);
-            const varVal = h.status === 'Open' ? 0 : clTotal - (h.system_expected_total || opTotal);
+            const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_equity||0);
+            const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_equity||0) + (sh.close_kcb_bank||0);
+            const expected = sh.system_expected_total || openTotal;
+            const varianceVal = sh.status === 'Open' ? 0 : closeTotal - expected;
+            const isClosed = sh.status === 'Closed';
             
-            return `<tr>
-                <td data-label="Date">${new Date(h.start_time).toLocaleDateString()}</td>
-                <td>
-                    <ul class="float-list">
-                        <li><span>Cash:</span> <b>${h.open_cash.toLocaleString()}</b></li>
-                        <li><span>Mpesa:</span> <b>${h.open_mpesa.toLocaleString()}</b></li>
-                        <li><span>KCB Float:</span> <b>${h.open_kcb.toLocaleString()}</b></li>
-                        <li><span>Equity Float:</span> <b>${h.open_equity.toLocaleString()}</b></li>
-                    </ul>
-                    <div class="total-cell"><span>Total Opening:</span> <b>${opTotal.toLocaleString()}</b></div>
+            const statusClass = Math.abs(varianceVal) < 1 ? 'balanced' : 'mismatch';
+            const statusText = Math.abs(varianceVal) < 1 ? 'BALANCED' : `Ksh ${varianceVal.toLocaleString()}`;
+
+            const startD = new Date(sh.start_time);
+            const endD = sh.end_time ? new Date(sh.end_time) : null;
+            const dateStr = startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+
+            const floatBreakdown = (prefix) => `
+                <div class="float-row"><span class="float-label">Cash</span><span class="float-val">${(sh[prefix+'_cash']||0).toLocaleString()}</span></div>
+                <div class="float-row"><span class="float-label">M-Pesa</span><span class="float-val">${(sh[prefix+'_mpesa']||0).toLocaleString()}</span></div>
+                <div class="float-row"><span class="float-label">KCB Float</span><span class="float-val">${(sh[prefix+'_kcb']||0).toLocaleString()}</span></div>
+                <div class="float-row"><span class="float-label">Equity Float</span><span class="float-val">${(sh[prefix+'_equity']||0).toLocaleString()}</span></div>
+            `;
+
+            desktopHTML += `
+                <tr>
+                    <td>
+                        <b style="color:var(--primary)">${dateStr}</b><br>
+                        <div style="margin-top:8px;">
+                            <span class="time-tag">IN: ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span><br>
+                            <span class="time-tag" style="background:#fff1f2; color:#be123c; margin-top:4px; display:inline-block;">OUT: ${endD ? endD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'Active'}</span>
+                        </div>
+                    </td>
+                    <td>
+                        ${floatBreakdown('open')}
+                        <div style="font-weight:800; text-align:right; margin-top:5px; border-top:1px solid #e2e8f0; padding-top:5px;">Total: Ksh ${openTotal.toLocaleString()}</div>
+                    </td>
+                    <td>
+                        <div style="color:var(--success); font-weight:700;">+${moneyIn.toLocaleString()}</div>
+                        <div style="color:var(--danger); font-weight:700;">-${moneyOut.toLocaleString()}</div>
                 </td>
                 <td>
-                    ${h.status === 'Open' ? '<span class="variance-status mismatch">SHIFT ACTIVE</span>' : `
-                    <ul class="float-list">
-                        <li><span>Cash:</span> <b>${(h.close_cash||0).toLocaleString()}</b></li>
-                        <li><span>Mpesa:</span> <b>${(h.close_mpesa||0).toLocaleString()}</b></li>
-                        <li><span>KCB Float:</span> <b>${(h.close_kcb||0).toLocaleString()}</b></li>
-                        <li><span>Equity Float:</span> <b>${(h.close_equity||0).toLocaleString()}</b></li>
-                        <li><span>KCB Paybill:</span> <b>${(h.close_kcb_bank||0).toLocaleString()}</b></li>
-                    </ul>
-                    <div class="total-cell"><span>Total Closing:</span> <b>${clTotal.toLocaleString()}</b></div>
-                    `}
+                        ${isClosed ? `
+                            ${floatBreakdown('close')}
+                            <div class="float-row" style="border-top: 1px solid #e2e8f0; margin-top:5px; padding-top:5px;">
+                                <span class="float-label" style="color:var(--primary)">KCB Paybill (Bank)</span>
+                                <span class="float-val" style="color:var(--primary)">+${(sh.close_kcb_bank||0).toLocaleString()}</span>
+                            </div>
+                            <div style="font-weight:800; text-align:right; margin-top:5px; color:#000;">Total: Ksh ${closeTotal.toLocaleString()}</div>
+                        ` : '<span class="variance-status status-active">SHIFT ACTIVE</span>'}
                 </td>
-                <td><span class="text-success">+${tIn.toLocaleString()}</span> | <span class="text-danger">-${tOut.toLocaleString()}</span></td>
-                <td><span class="variance-status ${Math.abs(varVal)<1?'balanced':'mismatch'}">${varVal.toLocaleString()}</span></td>
-                <td>${h.variance_note || '-'}</td>
+                    <td><span class="variance-status ${isClosed ? statusClass : 'status-active'}">${isClosed ? statusText : 'N/A'}</span></td>
+                    <td><small style="color:var(--text-dim)">${sh.variance_note || '-'}</small></td>
             </tr>`;
-        }).join('');
+
+            mobileHTML += `
+                <div class="audit-card">
+                    <div class="card-top">
+                        <div><span class="label-xs">${dateStr}</span><span class="time-tag">${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span></div>
+                        <span class="variance-status ${isClosed ? statusClass : 'status-active'}">${isClosed ? statusText : 'ACTIVE'}</span>
+                    </div>
+                    <span class="label-xs">Opening Breakdown</span>
+                    <div class="card-details">
+                        ${floatBreakdown('open')}
+                        <div class="float-row" style="font-weight:800; border-top:1px solid #d1d5db; margin-top:5px; padding-top:5px;">
+                            <span>Opening Total</span><span>Ksh ${openTotal.toLocaleString()}</span>
+                        </div>
+                    </div>
+                    
+                    <div style="display:flex; gap:10px; margin: 10px 0;">
+                        <div style="flex:1; background:#f0fdf4; padding:8px; border-radius:10px; text-align:center;">
+                            <span class="label-xs">In</span><b style="color:var(--success)">+${moneyIn.toLocaleString()}</b>
+                        </div>
+                        <div style="flex:1; background:#fef2f2; padding:8px; border-radius:10px; text-align:center;">
+                            <span class="label-xs">Out</span><b style="color:var(--danger)">-${moneyOut.toLocaleString()}</b>
+                        </div>
+                    </div>
+
+                    ${isClosed ? `
+                    <span class="label-xs">Closing Actuals</span>
+                    <div class="card-details" style="background:#eef2ff">
+                        ${floatBreakdown('close')}
+                        <div class="float-row" style="color:var(--primary); font-weight:700; border-top:1px solid #d1d5db; margin-top:5px; padding-top:5px;">
+                            <span>Paybill Sales</span><span>+${(sh.close_kcb_bank||0).toLocaleString()}</span>
+                        </div>
+                        <div class="float-row" style="font-weight:800; font-size:1rem; padding-top:5px;">
+                            <span>Total Final</span><span>Ksh ${closeTotal.toLocaleString()}</span>
+                        </div>
+                    </div>` : ''}
+                </div>`;
+        });
+
+        desktopTbody.innerHTML = desktopHTML || '<tr><td colspan="6" style="text-align:center">No records found.</td></tr>';
+        mobileContainer.innerHTML = mobileHTML || '<div style="text-align:center; padding: 20px;">No records found.</div>';
     }
 
-    document.getElementById('history-search').oninput = (e) => loadHistory(e.target.value);
-    document.getElementById('load-more-btn').onclick = () => { historyLimit += 10; loadHistory(); };
+    document.getElementById('history-search').addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        const filtered = allShifts.filter(sh => {
+            const dateStr = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }).toLowerCase();
+            return dateStr.includes(term);
+        });
+        renderHistory(filtered, allTransactions, term);
+    });
+    document.getElementById('load-more-btn').onclick = () => { historyLimit += 15; loadHistory(); };
     
     document.getElementById('record-expense-btn').onclick = async function() {
         const amt = parseFloat(document.getElementById('exp-amt').value);
