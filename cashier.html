@@ -50,6 +50,15 @@
         .logo { font-size: 1.4rem; font-weight: 800; letter-spacing: -1px; color: #111827; }
         .logo span { color: var(--primary); font-weight: 500; font-size: 0.9rem; margin-left: 5px; opacity: 0.8; }
 
+        .special-action-btn {
+            font-size: 0.9rem !important;
+            padding: 12px 20px !important;
+            border-radius: 12px !important;
+            box-shadow: 0 0 15px rgba(79, 70, 229, 0.4) !important;
+            border: 2px solid white !important;
+            cursor: pointer;
+        }
+
         .float-status-card {
             background: #fff; padding: 20px; border-radius: 16px; border: 1px solid var(--border);
             margin-bottom: 25px; display: grid; grid-template-columns: repeat(2, 1fr);
@@ -91,13 +100,7 @@
         .table-card { border-radius: 16px; margin-bottom: 10px; width: 100%; background: #fff; border: 1px solid var(--border); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; }
         th { padding: 15px 20px; background: #f8fafc; font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); font-weight: 800; text-align: left; border-bottom: 2px solid var(--border); }
-        td { padding: 14px 20px; border-bottom: 1px solid var(--border); font-size: 0.85rem; vertical-align: top; }
-
-        /* Work History List Styling - FIXED */
-        .float-list { margin: 0; padding: 0; list-style: none; font-size: 0.75rem; color: var(--text-dim); }
-        .float-list li { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid #f8fafc; gap: 10px; }
-        .float-list li b { color: var(--text-main); }
-        .total-cell { font-weight: 800; color: var(--primary); border-top: 2px solid var(--border); margin-top: 5px; padding-top: 5px; font-size: 0.85rem; display: flex; justify-content: space-between; }
+        td { padding: 14px 20px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
 
         @media (max-width: 768px) {
             .mobile-hide-header { display: none; }
@@ -107,45 +110,94 @@
         }
 
         .btn { padding: 16px 24px; border-radius: 12px; font-weight: 800; cursor: pointer; border: none; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 8px; text-transform: uppercase; transition: 0.3s opacity; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-sync { background: var(--warning); color: white; }
 
-        .overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); display: none; align-items: center; justify-content: center; z-index: 7000; backdrop-filter: blur(8px); padding: 20px; }
+        .overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(8px); padding: 20px; }
         .modal { background: #fff; padding: 25px; border-radius: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
         
-        /* Optimized Menu - Compact Grid */
-        .menu-fab { 
-            position: fixed; bottom: 25px; right: 25px; width: 65px; height: 65px; 
-            background: var(--deep-blue); border-radius: 50%; display: flex; 
-            align-items: center; justify-content: center; color: white; 
-            font-size: 1.5rem; box-shadow: 0 10px 30px rgba(30, 58, 138, 0.4); 
-            cursor: pointer; z-index: 5000; border: 3px solid white; 
-        }
-
-        .menu-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.98); z-index: 6000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); padding: 20px; }
-        .menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; max-width: 500px; }
-        .menu-item { 
-            background: rgba(255,255,255,0.08); padding: 15px 10px; border-radius: 12px; color: white; 
-            text-decoration: none; text-align: center; font-weight: 600; font-size: 0.7rem; 
-            display: flex; flex-direction: column; gap: 5px; align-items: center; border: 1px solid rgba(255,255,255,0.1);
-        }
-        .menu-item:hover { background: rgba(255,255,255,0.2); }
-
         .dual-tables { display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; }
         @media (min-width: 1024px) { .dual-tables { grid-template-columns: 1.2fr 1fr; } }
 
-        .variance-status { font-weight: 800; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; }
+        .text-success { color: #15803d !important; font-weight: 700; }
+        .text-danger { color: #b91c1c !important; font-weight: 700; }
+        .variance-status { font-weight: 800; padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; text-align: center; }
         .balanced { background: #dcfce7; color: #166534; }
         .mismatch { background: #fee2e2; color: #991b1b; }
+
+        .float-list { margin: 0; padding: 0; list-style: none; font-size: 0.75rem; color: var(--text-dim); }
+        .float-list li { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid #f8fafc; }
+        .float-list li b { color: var(--text-main); }
+        .total-cell { font-weight: 800; color: var(--primary); border-top: 2px solid var(--border); margin-top: 5px; padding-top: 5px; font-size: 0.85rem; display: flex; justify-content: space-between; }
+        
+        .menu-fab { 
+            position: fixed; bottom: 25px; right: 25px; width: 70px; height: 70px; 
+            background: var(--deep-blue); border-radius: 50%; display: flex; 
+            align-items: center; justify-content: center; color: white; 
+            font-size: 2rem; box-shadow: 0 10px 30px rgba(30, 58, 138, 0.5); 
+            cursor: pointer; z-index: 5000; border: 4px solid white; 
+            animation: swingIcon 3s infinite ease-in-out; transform-origin: center bottom;
+        }
+
+        @keyframes swingIcon {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            20% { transform: rotate(15deg) scale(1.05); }
+            40% { transform: rotate(-15deg); }
+            60% { transform: rotate(10deg); }
+            80% { transform: rotate(-10deg); }
+        }
+
+        .guide-hand {
+            position: fixed; bottom: 105px; right: 35px; z-index: 5500;
+            pointer-events: none; display: flex; flex-direction: column;
+            align-items: center; animation: bounceHand 1.5s infinite;
+        }
+        .guide-label {
+            background: #0f172a; color: white; padding: 5px 12px;
+            border-radius: 8px; font-size: 0.7rem; font-weight: 800;
+            margin-bottom: 5px; white-space: nowrap;
+        }
+        @keyframes bounceHand {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .menu-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); z-index: 6000; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); padding: 40px; }
+        .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; width: 100%; max-width: 450px; }
+        .menu-item { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 18px; color: white; text-decoration: none; text-align: center; font-weight: 700; font-size: 0.8rem; display: flex; flex-direction: column; gap: 8px; align-items: center; transition: 0.2s; }
+        .menu-item:hover { background: rgba(255,255,255,0.2); transform: translateY(-3px); }
+        .congrats-msg { background: #dcfce7; color: #166534; padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center; font-weight: 700; font-size: 0.85rem; display: none; }
+
+        .low-stock-alert {
+            color: #ff4d4d !important;
+            font-weight: 800;
+            animation: pulse-red 1.5s infinite;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: rgba(255, 77, 77, 0.1);
+        }
+
+        @keyframes pulse-red {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
     </style>
 </head>
 <body>
 
+<div class="guide-hand" id="onboardingHand">
+    <div class="guide-label">CLICK FOR MENU</div>
+    <span style="font-size: 2.5rem;">👇</span>
+</div>
+
 <div class="menu-fab" onclick="toggleFullMenu()">☰</div>
 
 <div class="menu-overlay" id="full-menu">
-    <div style="position:absolute; top:25px; right:25px; color:white; font-size:1.5rem; cursor:pointer;" onclick="toggleFullMenu()">✕</div>
+    <div style="position:absolute; top:30px; right:30px; color:white; font-size:2rem; cursor:pointer;" onclick="toggleFullMenu()">✕</div>
+    <h2 style="color:white; margin-bottom: 30px; font-weight: 800;">Navigation Menu</h2>
     <div class="menu-grid">
         <a href="cashier.html" class="menu-item">📊 Dashboard</a>
         <a href="cashiergashub.html" class="menu-item">⛽ Gas Hub</a>
@@ -153,16 +205,18 @@
         <a href="debtors.html" class="menu-item">👥 Debtors</a>
         <a href="supplierscashier.html" class="menu-item">🤝 Suppliers</a>
         <a href="cashier_inventory.html" class="menu-item">🛒 Add Items</a>
-        <a href="moneyinout.html" class="menu-item">💸 Transact</a>
-        <a href="shift history cashier.html" class="menu-item">⏳ History</a>
-        <a href="sales_reports.html" class="menu-item">📈 Reports</a>
+        <a href="moneyinout.html" class="menu-item">💸 Transactions</a>
+        <a href="shift history cashier.html" class="menu-item">⏳ Shift History</a>
+        <a href="sales_reports.html" class="menu-item">📈 Sales History</a>
         <a href="pos.html" class="menu-item">🛒 View Stock</a>
         <a href="gas_delivery.html" class="menu-item">🏍 Delivery</a>
-        <a href="cashier_report.html" class="menu-item">📝 Reports</a>
-        <a href="sale edit cashier.html" class="menu-item">✏️ Edit Sales</a>
+        <a href="cashier_report.html" class="menu-item">📝 Today's Report</a>
+        <a href="sale edit cashier.html" class="menu-item">📝 Edit sales</a>
         <a href="#" onclick="logoutUser()" class="menu-item" style="background: var(--danger); grid-column: span 2;">🚪 Log Out</a>
     </div>
 </div>
+
+<div id="congrats-banner" class="congrats-msg">🎉 Well done! Your last shift was perfectly balanced! ✔ </div>
 
 <div class="container">
     <header>
@@ -176,7 +230,7 @@
         <div class="float-item"><label>Mpesa</label><span id="float-mpesa">0.00</span></div>
         <div class="float-item"><label>KCB Float</label><span id="float-kcb">0.00</span></div>
         <div class="float-item"><label>Equity Float</label><span id="float-equity">0.00</span></div>
-        <div class="float-item kcb-live-box"><label>Live Paybill Sales</label><span id="live-kcb-box">0.00</span></div>
+        <div class="float-item kcb-live-box"><label>Live KCB Paybill Sales</label><span id="live-kcb-box">0.00</span></div>
     </div>
 
     <div class="card">
@@ -199,18 +253,18 @@
                     <select id="pMethod" onchange="toggleSplitFields()">
                         <option value="Cash">Cash (Shop)</option>
                         <option value="KCB Paybill">KCB Paybill</option>
-                        <option value="Split">Split: Cash + KCB</option>
+                        <option value="Split">Split: Cash + KCB Paybill</option>
                         <option value="Debt">Debtor (Owed)</option>
                     </select>
                 </div>
             </div>
 
             <div id="split-fields" style="display: none; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px dashed var(--primary);">
-                <div class="input-group"><label>Cash Paid</label><input type="number" id="split-cash" oninput="calculateSplit()"></div>
+                <div class="input-group"><label>Cash Paid</label><input type="number" id="split-cash" placeholder="0.00" oninput="calculateSplit()"></div>
                 <div class="input-group"><label>Paybill Balance</label><input type="number" id="split-online" readonly style="background: #e2e8f0;"></div>
             </div>
 
-            <button type="submit" id="submit-sale-btn" class="btn btn-primary" style="margin-top: 25px; width: 100%; height: 60px;">
+            <button type="submit" id="submit-sale-btn" class="btn btn-primary" style="margin-top: 25px; width: 100%; height: 60px; font-size: 1.1rem;">
                 RECORD ITEM Ksh <span id="total-text">0.00</span>
             </button>
         </form>
@@ -239,11 +293,23 @@
         </div>
     </div>
 
+    <div class="section-label">TODAY'S MONEY IN/OUT HISTORY</div>
+    <div class="table-card">
+        <table>
+            <thead class="mobile-hide-header"><tr><th>Time</th><th>Reason</th><th>Amt</th><th>Type</th><th>Wallet</th></tr></thead>
+            <tbody id="live-trans-body"></tbody>
+        </table>
+    </div>
+
     <div class="section-label">WORK HISTORY</div>
+    <div class="search-container" style="margin-bottom: 15px;">
+        <input type="text" id="history-search" placeholder="Search history by date..." style="width: 100%; max-width: 400px; padding: 10px; border-radius: 10px;">
+    </div>
+    
     <div class="table-card">
         <table>
             <thead class="mobile-hide-header">
-                <tr><th>Date</th><th>Opening List</th><th>Closing List</th><th>Flow</th><th>Var</th><th>Reason</th></tr>
+                <tr><th>Date</th><th>Opening List</th><th>Closing List</th><th>MONEY IN/OUT</th><th>Variance</th><th>Reason</th></tr>
             </thead>
             <tbody id="history-body"></tbody>
         </table>
@@ -271,7 +337,10 @@
             <div class="input-group"><label>Actual Mpesa</label><input type="number" id="c-mpesa" value="0"></div>
             <div class="input-group"><label>Actual KCB Float</label><input type="number" id="c-kcb" value="0"></div>
             <div class="input-group"><label>Actual Equity</label><input type="number" id="c-equity" value="0"></div>
-            <div class="input-group"><label>Actual Paybill</label><input type="number" id="c-bank" value="0" readonly></div>
+            <div class="input-group">
+                <label>Actual KCB Paybill</label>
+                <input type="number" id="c-bank" value="0" readonly style="background:#f1f5f9; font-weight:bold; color:var(--primary);">
+            </div>
             <div class="input-group" style="grid-column: span 2;"><label>Actual Cash</label><input type="number" id="c-cash" value="0"></div>
         </div>
         <button class="btn btn-danger" style="margin-top:20px; width:100%" id="confirm-close">FINALIZE & CLOSE</button>
@@ -285,17 +354,12 @@
     let currentShift = null;
     let selectedItem = null;
     let historyLimit = 10;
-    let allShifts = [];
     let currentKcbSalesTotal = 0;
 
-    // --- REALTIME: Sync Inventory Automatically ---
-    // This ensures stock numbers update instantly if an admin changes them
+    // --- REALTIME SYNC ---
     const productSubscription = supabase
         .channel('inventory-sync')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload) => {
-            console.log("Database Change Detected. Syncing...");
-            fetchInventory(); 
-        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => fetchInventory())
         .subscribe();
 
     async function fetchInventory() {
@@ -303,8 +367,6 @@
         if (data) {
             inventory = data;
             refreshProductDatalist();
-            
-            // If an item is currently selected, refresh its stock hint immediately
             if (selectedItem) {
                 const updated = inventory.find(p => p.id === selectedItem.id);
                 if (updated) {
@@ -315,25 +377,13 @@
         }
     }
 
-    // Helper to handle the Red Pulsing Logic
     function updateStockDisplay(item) {
         const hStock = document.getElementById('hint-stock');
         hStock.innerText = `Stock: ${item.stock_quantity}`;
         hStock.style.display = 'inline-block';
-
-        if (item.stock_quantity <= 0) {
-            hStock.innerText = "OUT OF STOCK";
-            hStock.classList.add('low-stock-alert');
-        } else if (item.stock_quantity < 5) {
-            hStock.classList.add('low-stock-alert');
-        } else {
-            hStock.classList.remove('low-stock-alert');
-        }
+        if (item.stock_quantity < 5) hStock.classList.add('low-stock-alert');
+        else hStock.classList.remove('low-stock-alert');
     }
-
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') init();
-    });
 
     window.toggleFullMenu = () => {
         const menu = document.getElementById('full-menu');
@@ -358,6 +408,17 @@
         const cash = parseFloat(document.getElementById('split-cash').value || 0);
         document.getElementById('split-online').value = (total - cash).toFixed(2);
     };
+
+    function formatItemName(p) {
+        let name = p.name;
+        if (p.category === 'Gas' && p.weight_category) name += ` (${p.weight_category})`;
+        if (p.part_type && p.part_type !== 'N/A') name += ` [${p.part_type}]`;
+        return name;
+    }
+
+    function refreshProductDatalist() {
+        document.getElementById('pList').innerHTML = inventory.map(p => `<option value="${formatItemName(p)}">`).join('');
+    }
 
     async function init() {
         const { data: { user } } = await supabase.auth.getUser();
@@ -384,17 +445,6 @@
             actionBtnContainer.innerHTML = `<button class="btn btn-primary special-action-btn" onclick="document.getElementById('open-modal').style.display='flex'">🟢 START DAY</button>`;
         }
         loadHistory();
-    }
-
-    function refreshProductDatalist() {
-        document.getElementById('pList').innerHTML = inventory.map(p => `<option value="${formatItemName(p)}">`).join('');
-    }
-
-    function formatItemName(p) {
-        let name = p.name;
-        if (p.category === 'Gas' && p.weight_category) name += ` (${p.weight_category})`;
-        if (p.part_type && p.part_type !== 'N/A') name += ` [${p.part_type}]`;
-        return name;
     }
 
     document.getElementById('pSearch').oninput = (e) => {
@@ -467,25 +517,18 @@
                 const dName = prompt("Customer Name:");
                 if(dName) await supabase.from('debtors').insert([{ customer_name: dName, amount_owed: total, sale_id: sData[0].id }]);
             }
-
-            // Sync UI without full page reload
             await fetchInventory(); 
             await loadShiftData();
-            
-            // Reset Form
             document.getElementById('sale-form').reset();
-            document.getElementById('pSearch').value = '';
             document.getElementById('hint-stock').style.display = 'none';
             document.getElementById('hint-min').style.display = 'none';
-            document.getElementById('total-text').innerText = '0';
-            
+            document.getElementById('total-text').innerText = '0.00';
             btn.disabled = false;
-            btn.innerText = "SUBMIT SALE";
+            btn.innerText = "RECORD ITEM Ksh 0.00";
             alert("Sale Saved!");
         } else { 
             alert("Error: " + error.message); 
             btn.disabled = false;
-            btn.innerText = "SUBMIT SALE";
         }
     };
 
@@ -501,8 +544,7 @@
         currentKcbSalesTotal = sales.filter(s => s.payment_method === 'KCB Paybill').reduce((a, b) => a + b.total_amount, 0);
         document.getElementById('live-kcb-box').innerText = currentKcbSalesTotal.toLocaleString();
         
-        const closeKcbInput = document.getElementById('c-bank');
-        if (closeKcbInput) closeKcbInput.value = currentKcbSalesTotal;
+        if (document.getElementById('c-bank')) document.getElementById('c-bank').value = currentKcbSalesTotal;
 
         document.getElementById('live-sales-body').innerHTML = sales.map(s => `<tr><td data-label="Time">${new Date(s.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Item"><b>${s.item_name}</b></td><td data-label="Qty">${s.quantity}</td><td data-label="Total">Ksh ${s.total_amount.toLocaleString()}</td><td data-label="Method">${s.payment_method}</td></tr>`).join('');
         document.getElementById('live-trans-body').innerHTML = trans.map(t => `<tr><td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Reason">${t.description}</td><td data-label="Amt">Ksh ${t.amount.toLocaleString()}</td><td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">${t.type}</td><td data-label="Wallet">${t.category}</td></tr>`).join('');
@@ -553,7 +595,7 @@
 
     async function loadHistory(searchQuery = "") {
         const { data: shifts } = await supabase.from('daily_shifts').select('*').order('start_time', {ascending:false}).limit(historyLimit);
-        allShifts = shifts || [];
+        const allShifts = shifts || [];
         const shiftIds = allShifts.map(h => h.id);
         const { data: transData } = await supabase.from('cash_transactions').select('shift_id, amount, type').in('shift_id', shiftIds);
 
@@ -561,8 +603,7 @@
         if (lastClosed) {
             const clT = (lastClosed.close_cash||0) + (lastClosed.close_mpesa||0) + (lastClosed.close_kcb||0) + (lastClosed.close_equity||0) + (lastClosed.close_kcb_bank || 0);
             if (Math.abs(clT - (lastClosed.system_expected_total || 0)) < 1) {
-                const banner = document.getElementById('congrats-banner');
-                if(banner) banner.style.display = 'block';
+                document.getElementById('congrats-banner').style.display = 'block';
             }
         }
         renderHistory(allShifts, transData, searchQuery);
@@ -576,7 +617,6 @@
             const shiftTrans = (transData || []).filter(t => t.shift_id === h.id);
             const tIn = shiftTrans.filter(t => t.type === 'Money In').reduce((a, b) => a + b.amount, 0);
             const tOut = shiftTrans.filter(t => t.type === 'Money Out').reduce((a, b) => a + b.amount, 0);
-            
             const opTotal = h.open_cash + h.open_mpesa + h.open_kcb + h.open_equity;
             const clTotal = (h.close_cash||0) + (h.close_mpesa||0) + (h.close_kcb||0) + (h.close_equity||0) + (h.close_kcb_bank || 0);
             const varVal = h.status === 'Open' ? 0 : clTotal - (h.system_expected_total || opTotal);
@@ -618,7 +658,6 @@
         const amt = parseFloat(document.getElementById('exp-amt').value);
         const desc = document.getElementById('exp-desc').value;
         if (!amt || !desc || !currentShift) return alert("Fill all fields");
-        
         this.disabled = true;
         const { error } = await supabase.from('cash_transactions').insert([{
             shift_id: currentShift.id, 
@@ -627,16 +666,12 @@
             amount: amt, 
             description: desc
         }]);
-
         if(!error) {
             document.getElementById('exp-amt').value = '';
             document.getElementById('exp-desc').value = '';
             loadShiftData();
-            this.disabled = false;
-        } else {
-            alert(error.message);
-            this.disabled = false;
-        }
+        } else alert(error.message);
+        this.disabled = false;
     };
 
     init();
