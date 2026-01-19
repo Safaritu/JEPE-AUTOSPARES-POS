@@ -87,6 +87,8 @@
 
         input[type="text"], input[type="month"] { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #cbd5e1; margin-bottom: 10px; font-family: inherit; font-size: 0.85rem; }
         .load-more { width: 100%; padding: 12px; background: white; border: 2px dashed #cbd5e1; border-radius: 12px; color: var(--text-dim); font-weight: 800; cursor: pointer; margin-top: 5px; font-size: 0.8rem; }
+        
+        .btn-expense { background: var(--danger); color: white; border: none; padding: 10px; border-radius: 10px; font-size: 0.65rem; font-weight: 800; margin-top: 8px; cursor: pointer; display: inline-block; text-decoration: none; text-align: center; }
     </style>
 </head>
 <body>
@@ -102,6 +104,7 @@
     <div class="nav-grid">
         <a href="#" onclick="confirmSwitchToCashier(event)" class="nav-card switch-card"><span>🔄</span><small>SWITCH TO CASHIER MODE</small></a>
         <a href="admin.html" class="nav-card" style="background: var(--admin-accent)"><span>📊</span><small>Dashboard</small></a>
+        <a href="admin_expenses.html" class="nav-card" style="background: var(--danger)"><span>💸</span><small>Paybill Transactions </small></a>
         <a href="gas_hub.html" class="nav-card"><span>🔥</span><small>Gas Hub</small></a>
         <a href="spares_hub.html" class="nav-card"><span>📋</span><small>Spare Parts Hub</small></a>
         <a href="motorbike_hub.html" class="nav-card"><span>🏍️</span><small>Motorbike Hub</small></a>
@@ -151,8 +154,13 @@
         </div>
 
         <div class="paybill-box">
-            <label>KCB PAYBILL (ALL SALES ACCOUNT BALANCE)</label>
-            <div id="pb-total" class="paybill-main-val">Ksh 0</div>
+            <div style="display:flex; justify-content:space-between; align-items:start;">
+                <div>
+                    <label>KCB PAYBILL (NET ACCOUNT BALANCE)</label>
+                    <div id="pb-total" class="paybill-main-val">Ksh 0</div>
+                </div>
+                <a href="admin_expenses.html" class="btn-expense">CLICK TO PROCESS TRANSACTION FROM KCB PAYBILL SALES ACCOUNT</a>
+            </div>
             <div id="pb-profit" class="paybill-profit-val">Total Net Profit from Paybill: Ksh 0</div>
         </div>
     </div>
@@ -214,30 +222,35 @@
         const greetText = hour < 12 ? "GOOD MORNING!" : hour < 17 ? "GOOD AFTERNOON!" : "GOOD EVENING!";
         document.getElementById('greeting-text').innerText = `${greetText} WELCOME BACK, ADMIN 👋`;
 
-        const { data: shift } = await supabase
-            .from('daily_shifts')
-            .select('*')
-            .order('start_time', { ascending: false })
-            .limit(1)
-            .single();
+        // 1. CALCULATE NET PAYBILL BALANCE WITH FUNDING LOGIC
+        const { data: allPaybillSales } = await supabase.from('sales').select('*').eq('payment_method', 'KCB Paybill');
+        const { data: adminRecords } = await supabase.from('admin_expenses').select('*').eq('payment_source', 'KCB Paybill');
 
-        // 1. LIFETIME KCB PAYBILL CALCULATIONS (ALL SALES EVER MADE)
-        const { data: allPaybillSales } = await supabase
-            .from('sales')
-            .select('*')
-            .eq('payment_method', 'KCB Paybill');
-
-        let pbBalance = 0, pbProfit = 0;
+        let totalPaybillIncome = 0, pbProfit = 0;
         allPaybillSales?.forEach(s => {
-            const saleAmount = parseFloat(s.total_amount || 0);
-            const cost = parseFloat(s.cost_price || 0);
-            const unit = parseFloat(s.unit_price || 0);
-            const qty = parseInt(s.quantity || 0);
-            pbBalance += saleAmount;
-            pbProfit += (unit - cost) * qty;
+            totalPaybillIncome += parseFloat(s.total_amount || 0);
+            pbProfit += (parseFloat(s.unit_price || 0) - parseFloat(s.cost_price || 0)) * parseInt(s.quantity || 0);
         });
-        document.getElementById('pb-total').innerText = `Ksh ${pbBalance.toLocaleString()}`;
+
+        let manualFunding = 0;
+        let manualExpenses = 0;
+
+        adminRecords?.forEach(r => {
+            const val = parseFloat(r.amount || 0);
+            if(r.type === 'funding') {
+                manualFunding += val;
+            } else {
+                manualExpenses += val;
+            }
+        });
+
+        const netPaybillBalance = (totalPaybillIncome + manualFunding) - manualExpenses;
+
+        document.getElementById('pb-total').innerText = `Ksh ${netPaybillBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
         document.getElementById('pb-profit').innerText = `Total Net Profit from Paybill: Ksh ${pbProfit.toLocaleString()}`;
+
+        // 2. LOAD SHIFT DATA
+        const { data: shift } = await supabase.from('daily_shifts').select('*').order('start_time', { ascending: false }).limit(1).single();
 
         if (shift) {
             document.getElementById('f-mpesa').innerText = `Ksh ${shift.open_mpesa?.toLocaleString() || 0}`;
@@ -254,7 +267,7 @@
                 document.getElementById('disp-end').innerText = `Closed: ${closeTime}`;
             }
 
-            // 2. CURRENT SHIFT MONEY FLOW
+            // Money Flow Logic
             const { data: shiftSales } = await supabase.from('sales').select('*').eq('shift_id', shift.id);
             let rev = 0, prof = 0;
             shiftSales?.forEach(s => {
