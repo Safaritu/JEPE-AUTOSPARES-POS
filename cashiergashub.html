@@ -119,7 +119,9 @@
         .sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); z-index: 1999; backdrop-filter: blur(2px); }
         .sidebar-backdrop.show { display: block; }
 
-        .split-input { display: none; background: #f0f9ff; border: 1px solid #bae6fd; padding: 10px; border-radius: 10px; margin-bottom: 15px; }
+        /* SPLIT FIELDS VISIBILITY */
+        .split-input { display: none; background: #f0f9ff; border: 1px solid #bae6fd; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-left: 4px solid #0ea5e9; }
+        .split-calc-info { font-size: 0.75rem; color: #0369a1; font-weight: 700; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -198,8 +200,9 @@
                 </select>
 
                 <div id="split-fields-refill" class="split-input">
-                    <label>Cash Amount</label>
-                    <input type="number" id="split-cash-refill" placeholder="0">
+                    <label>Cash Amount (Ksh)</label>
+                    <input type="number" id="split-cash-refill" placeholder="0" oninput="updateSplitBalance('refill')">
+                    <div id="split-info-refill" class="split-calc-info">Paybill Portion: Ksh 0</div>
                 </div>
                 
                 <div class="price-badge" id="refill-preview">Total: Ksh 0</div>
@@ -227,8 +230,9 @@
                 </select>
 
                 <div id="split-fields-complete" class="split-input">
-                    <label>Cash Amount</label>
-                    <input type="number" id="split-cash-complete" placeholder="0">
+                    <label>Cash Amount (Ksh)</label>
+                    <input type="number" id="split-cash-complete" placeholder="0" oninput="updateSplitBalance('complete')">
+                    <div id="split-info-complete" class="split-calc-info">Paybill Portion: Ksh 0</div>
                 </div>
                 
                 <div class="price-badge" id="complete-preview" style="border-left-color: var(--warning);">Total: Ksh 0</div>
@@ -261,6 +265,7 @@
     let gasItems = [];
     let activeShift = null;
 
+    // --- SIDEBAR ---
     window.toggleSidebar = () => {
         document.getElementById('sidebar').classList.toggle('show');
         document.getElementById('sidebarBackdrop').classList.toggle('show');
@@ -271,15 +276,30 @@
         location.href = 'index.html'; 
     };
 
+    // --- UI LOGIC ---
     window.toggleSplitFields = (type) => {
         const method = document.getElementById(`pMethod-${type}`).value;
-        document.getElementById(`split-fields-${type}`).style.display = (method === 'Split') ? 'block' : 'none';
+        const splitDiv = document.getElementById(`split-fields-${type}`);
+        splitDiv.style.display = (method === 'Split') ? 'block' : 'none';
+        if(method === 'Split') updateSplitBalance(type);
+    };
+
+    window.updateSplitBalance = (type) => {
+        const qty = parseInt(document.getElementById(type === 'refill' ? 'sale-qty' : 'complete-qty').value) || 0;
+        const price = parseFloat(document.getElementById(type === 'refill' ? 'sale-price' : 'complete-price').value) || 0;
+        const total = qty * price;
+        const cash = parseFloat(document.getElementById(`split-cash-${type}`).value) || 0;
+        const paybill = total - cash;
+        
+        document.getElementById(`split-info-${type}`).innerText = `Paybill Portion: Ksh ${paybill.toLocaleString()}`;
     };
 
     async function init() {
         const { data: shift } = await supabase.from('daily_shifts').select('*').eq('status', 'Open').maybeSingle();
         activeShift = shift;
-        if(!activeShift) document.getElementById('last-updated').innerHTML = "<b style='color:red'>SHIFT CLOSED. Open shift to sell.</b>";
+        if(!activeShift) {
+            document.getElementById('last-updated').innerHTML = "<b style='color:red'>SHIFT CLOSED. Open shift to record sales.</b>";
+        }
         
         loadAll();
         loadSuppliers();
@@ -356,11 +376,16 @@
         const price = parseFloat(document.getElementById(type === 'refill' ? 'sale-price' : 'complete-price').value) || 0;
         const item = gasItems.find(g => g.id == id);
         if (!item) return;
+
         const minAllowed = type === 'refill' ? (item.min_selling_price || item.selling_price) : ((item.min_selling_price || item.selling_price) + (item.cylinder_price || 0));
+        
         document.getElementById(type === 'refill' ? 'refill-warn' : 'complete-warn').style.display = (price > 0 && price < minAllowed) ? 'block' : 'none';
         document.getElementById(type === 'refill' ? 'refill-preview' : 'complete-preview').innerHTML = `Stock: ${item.stock_quantity} | Total: <b>Ksh ${(price * qty).toLocaleString()}</b>`;
+        
+        if(document.getElementById(`pMethod-${type}`).value === 'Split') updateSplitBalance(type);
     };
 
+    // --- SALE PROCESSING ---
     async function processSale(btnId, type) {
         const outgoingId = document.getElementById(type === 'refill' ? 'sale-select' : 'complete-select').value;
         const qty = parseInt(document.getElementById(type === 'refill' ? 'sale-qty' : 'complete-qty').value);
@@ -370,15 +395,15 @@
         const outgoingItem = gasItems.find(g => g.id == outgoingId);
         const btn = document.getElementById(btnId);
 
-        if (!outgoingId || !qty || !price || qty <= 0) return alert("Fill all details.");
-        if (!activeShift) return alert("Shift is closed.");
-        if (outgoingItem.stock_quantity < qty) return alert("Insufficient full stock!");
+        if (!outgoingId || !qty || !price || qty <= 0) return alert("Please fill all details correctly.");
+        if (!activeShift) return alert("Shift is closed. You cannot sell.");
+        if (outgoingItem.stock_quantity < qty) return alert("Insufficient full stock for this brand.");
 
         let auditReason = null;
         const minAllowed = type === 'refill' ? (outgoingItem.min_selling_price || outgoingItem.selling_price) : ((outgoingItem.min_selling_price || outgoingItem.selling_price) + (outgoingItem.cylinder_price || 0));
         if (price < minAllowed) {
-            auditReason = prompt(`Price is below minimum. Enter reason:`);
-            if (!auditReason) return alert("Reason required for discount.");
+            auditReason = prompt(`Price is below minimum. Enter reason for discount:`);
+            if (!auditReason) return alert("Discount reason is mandatory for reduced prices.");
         }
 
         btn.disabled = true;
@@ -392,13 +417,23 @@
             }
 
             const total = price * qty;
-            const cashPart = (method === 'Split') ? (parseFloat(document.getElementById(`split-cash-${type}`).value) || 0) : (method === 'Cash' ? total : 0);
             
-            // Log Sale
+            let cashPart = 0;
+            let bankPart = 0;
+            if (method === 'Split') {
+                cashPart = parseFloat(document.getElementById(`split-cash-${type}`).value) || 0;
+                bankPart = total - cashPart;
+                if (cashPart <= 0 || cashPart >= total) throw new Error("Please enter a valid cash amount for split payment.");
+            } else if (method === 'Cash') {
+                cashPart = total;
+            } else {
+                bankPart = total; 
+            }
+            
             const { error: saleErr } = await supabase.from('sales').insert([{
                 shift_id: activeShift.id,
                 product_id: outgoingItem.id,
-                item_name: `${outgoingItem.name} (${type})`,
+                item_name: `${outgoingItem.name} (${type.toUpperCase()})`,
                 quantity: qty,
                 unit_price: price,
                 total_amount: total,
@@ -407,21 +442,36 @@
                 cost_price: outgoingItem.cost_price || 0,
                 discount_reason: auditReason,
                 cash_amount: cashPart,
-                bank_amount: total - cashPart
+                bank_amount: bankPart
             }]);
+
             if (saleErr) throw saleErr;
 
-            // Update Stock
-            await supabase.from('products').update({ stock_quantity: outgoingItem.stock_quantity - qty }).eq('id', outgoingId);
+            await supabase.from('products').update({ 
+                stock_quantity: outgoingItem.stock_quantity - qty 
+            }).eq('id', outgoingId);
+
             if (type === 'refill') {
                 const { data: incData } = await supabase.from('products').select('empty_quantity').eq('id', incomingId).single();
-                await supabase.from('products').update({ empty_quantity: (incData.empty_quantity || 0) + qty }).eq('id', incomingId);
+                await supabase.from('products').update({ 
+                    empty_quantity: (incData.empty_quantity || 0) + qty 
+                }).eq('id', incomingId);
             }
 
-            alert("Sale completed!");
+            alert("Sale completed successfully!");
             loadAll();
-        } catch (err) { alert(err.message); } 
-        finally { btn.disabled = false; btn.innerText = "Complete Sale"; }
+            
+            document.getElementById(type === 'refill' ? 'sale-qty' : 'complete-qty').value = 1;
+            document.getElementById(`split-cash-${type}`).value = "";
+            document.getElementById(`pMethod-${type}`).value = "Cash";
+            toggleSplitFields(type);
+
+        } catch (err) { 
+            alert(err.message); 
+        } finally { 
+            btn.disabled = false; 
+            btn.innerText = (type === 'refill') ? "Complete Refill" : "Complete Full Sale"; 
+        }
     }
 
     document.getElementById('btn-sell-refill').onclick = () => processSale('btn-sell-refill', 'refill');
@@ -440,21 +490,29 @@
             empty_quantity: 0,
             category: 'Gas'
         };
-        if (!payload.name) return alert("Name required");
+        if (!payload.name) return alert("Brand Name is required");
         const { error } = await supabase.from('products').insert([payload]);
-        if (!error) { loadAll(); document.getElementById('new-name').value = ""; }
+        if (!error) { 
+            loadAll(); 
+            document.getElementById('new-name').value = ""; 
+        }
     };
 
     document.getElementById('btn-instant-refill').onclick = async () => {
         const id = document.getElementById('refill-select').value;
         const qty = parseInt(document.getElementById('action-qty').value);
         const item = gasItems.find(g => g.id == id);
-        if (!item || !qty || qty <= 0 || item.empty_quantity < qty) return alert("Invalid Qty or not enough empty stock!");
+        if (!item || !qty || qty <= 0 || item.empty_quantity < qty) return alert("Invalid entry or insufficient empty stock.");
+        
         const { error } = await supabase.from('products').update({
             stock_quantity: item.stock_quantity + qty,
             empty_quantity: item.empty_quantity - qty
         }).eq('id', id);
-        if (!error) { loadAll(); document.getElementById('action-qty').value = ""; }
+        
+        if (!error) { 
+            loadAll(); 
+            document.getElementById('action-qty').value = ""; 
+        }
     };
 
     init();
