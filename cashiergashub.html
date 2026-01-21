@@ -157,7 +157,7 @@
             <h3 style="color: var(--success);">Register New Gas Brand</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
                 <div><label>Brand Name</label><input type="text" id="new-name" placeholder="e.g. K-Gas"></div>
-                <div><label>Weight Category</label><input type="text" id="new-weight" placeholder="e.g. 13kg"></div>
+                <div><label>Weight Category</label><input type="text" id="new-weight" placeholder="e.g. 6kg"></div>
                 <div><label>Select Supplier</label><select id="new-supplier-id"></select></div>
                 <div><label>Cost Price</label><input type="number" id="new-cost"></div>
                 <div><label>Refill Sell Price</label><input type="number" id="new-sell"></div>
@@ -412,7 +412,7 @@
             const total = price * qty;
             const salesToInsert = [];
             
-            // Logic for Brand Exchange tracking
+            // Fixed Item Name Logic: Appends weight so it appears in sales logs
             let exchangeInfo = "";
             let incomingId = outgoingId;
             
@@ -428,7 +428,7 @@
             const baseSale = {
                 shift_id: activeShift.id,
                 product_id: outgoingItem.id,
-                item_name: `${outgoingItem.name} (${type.toUpperCase()})${exchangeInfo}`,
+                item_name: `${outgoingItem.name} (${outgoingItem.weight_category}) (${type.toUpperCase()})${exchangeInfo}`,
                 quantity: qty,
                 unit_price: price,
                 total_amount: total,
