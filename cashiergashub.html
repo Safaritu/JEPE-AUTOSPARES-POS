@@ -397,13 +397,13 @@
 
         if (!outgoingId || !qty || !price || qty <= 0) return alert("Please fill all details correctly.");
         if (!activeShift) return alert("Shift is closed. You cannot sell.");
-        if (outgoingItem.stock_quantity < qty) return alert("Insufficient full stock for this brand.");
+        if (outgoingItem.stock_quantity < qty) return alert("Insufficient full stock.");
 
         let auditReason = null;
         const minAllowed = type === 'refill' ? (outgoingItem.min_selling_price || outgoingItem.selling_price) : ((outgoingItem.min_selling_price || outgoingItem.selling_price) + (outgoingItem.cylinder_price || 0));
         if (price < minAllowed) {
             auditReason = prompt(`Price is below minimum. Enter reason for discount:`);
-            if (!auditReason) return alert("Discount reason is mandatory for reduced prices.");
+            if (!auditReason) return alert("Discount reason is mandatory.");
         }
 
         btn.disabled = true;
@@ -413,15 +413,14 @@
             const total = price * qty;
             const salesToInsert = [];
 
-            // Helper to build a sale object matching your SQL schema
             const baseSale = {
                 shift_id: activeShift.id,
                 product_id: outgoingItem.id,
                 item_name: `${outgoingItem.name} (${type.toUpperCase()})`,
-                quantity: qty,
+                quantity: qty, // Default quantity
                 unit_price: price,
-                total_amount: total, // For legacy tracking
-                amount: total,       // Matches your Numeric(15,2) column
+                total_amount: total,
+                amount: total,
                 cost_price: outgoingItem.cost_price || 0,
                 discount_reason: auditReason,
                 category: 'Gas',
@@ -434,16 +433,15 @@
 
                 if (cashPart <= 0 || cashPart >= total) throw new Error("Invalid split amounts.");
 
-                // Insert two records for accounting
+                // Split Logic: First record holds the full quantity (1), second record holds 0 quantity.
                 salesToInsert.push(
-                    { ...baseSale, amount: cashPart, total_amount: cashPart, payment_method: 'Cash', item_name: baseSale.item_name + ' (Split-Cash)' },
-                    { ...baseSale, amount: paybillPart, total_amount: paybillPart, payment_method: 'KCB Paybill', item_name: baseSale.item_name + ' (Split-Paybill)' }
+                    { ...baseSale, quantity: qty, amount: cashPart, total_amount: cashPart, payment_method: 'Cash', item_name: baseSale.item_name + ' (Split-Cash)' },
+                    { ...baseSale, quantity: 0, amount: paybillPart, total_amount: paybillPart, payment_method: 'KCB Paybill', item_name: baseSale.item_name + ' (Split-Paybill)' }
                 );
             } else {
                 salesToInsert.push({ ...baseSale, payment_method: method });
             }
 
-            // Perform Insertion
             const { error: saleErr } = await supabase.from('sales').insert(salesToInsert);
             if (saleErr) throw saleErr;
 
@@ -466,7 +464,6 @@
             alert("Sale completed successfully!");
             loadAll();
             
-            // Reset Form
             document.getElementById(type === 'refill' ? 'sale-qty' : 'complete-qty').value = 1;
             if(document.getElementById(`split-cash-${type}`)) document.getElementById(`split-cash-${type}`).value = "";
             document.getElementById(`pMethod-${type}`).value = "Cash";
@@ -483,7 +480,7 @@
     document.getElementById('btn-sell-refill').onclick = () => processSale('btn-sell-refill', 'refill');
     document.getElementById('btn-sell-complete').onclick = () => processSale('btn-sell-complete', 'complete');
 
-    // --- OTHER ACTIONS ---
+    // --- INVENTORY ACTIONS ---
     document.getElementById('btn-add-inventory').onclick = async () => {
         const payload = {
             name: document.getElementById('new-name').value,
