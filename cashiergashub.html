@@ -119,7 +119,6 @@
         .sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); z-index: 1999; backdrop-filter: blur(2px); }
         .sidebar-backdrop.show { display: block; }
 
-        /* SPLIT FIELDS VISIBILITY */
         .split-input { display: none; background: #f0f9ff; border: 1px solid #bae6fd; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-left: 4px solid #0ea5e9; }
         .split-calc-info { font-size: 0.75rem; color: #0369a1; font-weight: 700; margin-top: 5px; }
     </style>
@@ -412,12 +411,25 @@
         try {
             const total = price * qty;
             const salesToInsert = [];
+            
+            // Logic for Brand Exchange tracking
+            let exchangeInfo = "";
+            let incomingId = outgoingId;
+            
+            if (type === 'refill') {
+                const exchangeVal = document.getElementById('incoming-select').value;
+                if (exchangeVal !== "same" && exchangeVal !== "") {
+                    incomingId = exchangeVal;
+                    const incomingItem = gasItems.find(g => g.id == incomingId);
+                    exchangeInfo = ` [Exchanged for ${incomingItem.name}]`;
+                }
+            }
 
             const baseSale = {
                 shift_id: activeShift.id,
                 product_id: outgoingItem.id,
-                item_name: `${outgoingItem.name} (${type.toUpperCase()})`,
-                quantity: qty, // Default quantity
+                item_name: `${outgoingItem.name} (${type.toUpperCase()})${exchangeInfo}`,
+                quantity: qty,
                 unit_price: price,
                 total_amount: total,
                 amount: total,
@@ -433,7 +445,6 @@
 
                 if (cashPart <= 0 || cashPart >= total) throw new Error("Invalid split amounts.");
 
-                // Split Logic: First record holds the full quantity (1), second record holds 0 quantity.
                 salesToInsert.push(
                     { ...baseSale, quantity: qty, amount: cashPart, total_amount: cashPart, payment_method: 'Cash', item_name: baseSale.item_name + ' (Split-Cash)' },
                     { ...baseSale, quantity: 0, amount: paybillPart, total_amount: paybillPart, payment_method: 'KCB Paybill', item_name: baseSale.item_name + ' (Split-Paybill)' }
@@ -445,16 +456,13 @@
             const { error: saleErr } = await supabase.from('sales').insert(salesToInsert);
             if (saleErr) throw saleErr;
 
-            // Update Stock
+            // Update Outgoing Stock (Full -> -qty)
             await supabase.from('products').update({ 
                 stock_quantity: outgoingItem.stock_quantity - qty 
             }).eq('id', outgoingId);
 
+            // Update Incoming Stock (Empty -> +qty)
             if (type === 'refill') {
-                let incomingId = outgoingId;
-                const exchangeVal = document.getElementById('incoming-select').value;
-                if (exchangeVal !== "same" && exchangeVal !== "") incomingId = exchangeVal;
-
                 const { data: incData } = await supabase.from('products').select('empty_quantity').eq('id', incomingId).single();
                 await supabase.from('products').update({ 
                     empty_quantity: (incData.empty_quantity || 0) + qty 
@@ -464,9 +472,11 @@
             alert("Sale completed successfully!");
             loadAll();
             
+            // Reset fields
             document.getElementById(type === 'refill' ? 'sale-qty' : 'complete-qty').value = 1;
             if(document.getElementById(`split-cash-${type}`)) document.getElementById(`split-cash-${type}`).value = "";
             document.getElementById(`pMethod-${type}`).value = "Cash";
+            if (type === 'refill') document.getElementById('incoming-select').value = "same";
             toggleSplitFields(type);
 
         } catch (err) { 
