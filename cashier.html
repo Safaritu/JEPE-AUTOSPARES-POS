@@ -116,6 +116,8 @@
         .btn-primary { background: var(--primary); color: white; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-sync { background: var(--warning); color: white; }
+        .btn-refund { background: #7c3aed; color: white; }
+        .btn-edit { background: #0ea5e9; color: white; }
 
         .overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(8px); padding: 20px; }
         .modal { background: #fff; padding: 25px; border-radius: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
@@ -125,13 +127,9 @@
 
         .text-success { color: #15803d !important; font-weight: 700; }
         .text-danger { color: #b91c1c !important; font-weight: 700; }
-        
-        /* Improved Variance Status Classes */
         .variance-status { font-weight: 800; padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; text-align: center; }
-        .var-positive { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-        .var-negative { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-        .var-balanced { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
-        .active-shift { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
+        .balanced { background: #dcfce7; color: #166534; }
+        .mismatch { background: #fee2e2; color: #991b1b; }
 
         .float-list { margin: 0; padding: 0; list-style: none; font-size: 0.75rem; color: var(--text-dim); }
         .float-list li { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid #f8fafc; }
@@ -159,10 +157,66 @@
         .status-badge { font-weight: 800; padding: 10px 15px; border-radius: 10px; font-size: 0.85rem; display: block; text-align: center; min-width: 140px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .balanced { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
         .mismatch { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        .active-shift { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
         .date-cell b { display: block; margin-bottom: 8px; font-size: 1rem; }
         .time-pill { background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; color: var(--text-dim); display: inline-block; margin-top: 4px; }
         .revenue-card { background: #fff; border: 1px solid var(--border); padding: 12px; border-radius: 10px; text-decoration: none; display: block; transition: 0.2s; }
         .revenue-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+        
+        /* Gas-specific styles */
+        .gas-options { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 10px; 
+            margin-top: 15px; 
+            padding: 15px; 
+            background: #f8fafc; 
+            border-radius: 12px; 
+            border: 1px solid var(--border); 
+        }
+        .gas-option-btn { 
+            padding: 12px; 
+            border: 2px solid var(--border); 
+            background: white; 
+            border-radius: 10px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            text-align: center;
+        }
+        .gas-option-btn.active { 
+            background: var(--primary); 
+            color: white; 
+            border-color: var(--primary); 
+        }
+        .gas-option-btn:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+        }
+        .gas-brand-select { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 10px; 
+            margin-top: 10px; 
+        }
+        
+        /* Action buttons in table */
+        .action-buttons { display: flex; gap: 5px; flex-wrap: wrap; }
+        .action-btn { 
+            padding: 4px 8px; 
+            border-radius: 6px; 
+            font-size: 0.7rem; 
+            font-weight: 700; 
+            cursor: pointer; 
+            border: none; 
+            transition: 0.2s; 
+        }
+        .action-btn:hover { opacity: 0.8; transform: translateY(-1px); }
+        .action-btn:disabled { 
+            opacity: 0.5; 
+            cursor: not-allowed; 
+            background: #94a3b8 !important; 
+        }
         
         /* --- NAVIGATION --- */
         .nav-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(15px); z-index: 3000; display: none; flex-direction: column; padding: 60px 20px 40px 20px; overflow-y: auto; }
@@ -246,6 +300,11 @@
             50% { transform: scale(1.05); opacity: 0.7; }
             100% { transform: scale(1); opacity: 1; }
         }
+        
+        /* Variance Status */
+        .var-positive { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .var-negative { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        .var-balanced { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
     </style>
 </head>
 <body>
@@ -330,6 +389,41 @@
                 </div>
             </div>
 
+            <!-- Gas Options Section (shown only for gas items) -->
+            <div id="gas-options-container" style="display: none;">
+                <div class="gas-options">
+                    <div class="gas-option-btn active" data-type="complete" onclick="selectGasOption('complete')">
+                        🏷️ Complete Cylinder<br>
+                        <small>Customer buys full cylinder</small>
+                    </div>
+                    <div class="gas-option-btn" data-type="refill" onclick="selectGasOption('refill')">
+                        🔄 Refill Only<br>
+                        <small>Customer brings empty cylinder</small>
+                    </div>
+                </div>
+                
+                <!-- Brand Exchange for Refills -->
+                <div id="brand-exchange-container" style="display: none; margin-top: 15px;">
+                    <div class="section-label" style="font-size: 0.65rem;">Empty Cylinder Details</div>
+                    <div class="gas-brand-select">
+                        <div class="input-group">
+                            <label>Empty Cylinder Brand</label>
+                            <select id="empty-cylinder-brand">
+                                <option value="">Select brand...</option>
+                                <!-- Options populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Empty Cylinder Weight</label>
+                            <select id="empty-cylinder-weight">
+                                <option value="">Select weight...</option>
+                                <!-- Options populated dynamically -->
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div id="split-fields" style="display: none; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px dashed var(--primary);">
                 <div class="input-group"><label>Cash Paid</label><input type="number" id="split-cash" placeholder="0.00" oninput="calculateSplit()"></div>
                 <div class="input-group"><label>Paybill Balance</label><input type="number" id="split-online" readonly style="background: #e2e8f0;"></div>
@@ -346,7 +440,16 @@
             <div class="section-label">TODAYS SALES</div>
             <div class="table-card" style="max-height: 400px; overflow-y: auto;">
                 <table>
-                    <thead class="mobile-hide-header"><tr><th>Time</th><th>Item</th><th>Qty</th><th>Total</th><th>Method</th></tr></thead>
+                    <thead class="mobile-hide-header">
+                        <tr>
+                            <th>Time</th>
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>Total</th>
+                            <th>Method</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
                     <tbody id="live-sales-body"></tbody>
                 </table>
             </div>
@@ -397,6 +500,63 @@
     </div>
 </div>
 
+<!-- Refund Modal -->
+<div id="refund-modal" class="overlay">
+    <div class="modal">
+        <h3 style="color:var(--danger)">🔄 Process Refund</h3>
+        <div id="refund-details"></div>
+        <div class="input-group" style="margin-top: 15px;">
+            <label>Refund Amount (Ksh)</label>
+            <input type="number" id="refund-amount" step="0.01" placeholder="Enter refund amount..." required>
+        </div>
+        <div class="input-group" style="margin-top: 10px;">
+            <label>Refund Method</label>
+            <select id="refund-method">
+                <option value="Cash">Cash</option>
+                <option value="Mpesa">Mpesa</option>
+                <!-- Note: KCB Paybill refunds are handled separately -->
+            </select>
+        </div>
+        <div class="input-group" style="margin-top: 10px;">
+            <label>Refund Reason</label>
+            <input type="text" id="refund-reason" placeholder="Enter reason for refund..." required>
+        </div>
+        <div id="paybill-refund-note" style="display: none; background: #fef3c7; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 0.8rem; color: #92400e;">
+            <strong>Note:</strong> KCB Paybill refunds must be processed through the bank. This will only record the refund and return items to stock.
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button class="btn btn-danger" style="flex:1" id="confirm-refund">CONFIRM REFUND</button>
+            <button class="btn" style="flex:1; background:#e2e8f0; color:#1e293b" onclick="document.getElementById('refund-modal').style.display='none'">CANCEL</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Sale Modal -->
+<div id="edit-modal" class="overlay">
+    <div class="modal">
+        <h3 style="color:var(--warning)">✏️ Edit Sale</h3>
+        <div id="edit-details"></div>
+        <div class="grid-inputs" style="grid-template-columns: 1fr 1fr; margin-top: 15px;">
+            <div class="input-group">
+                <label>Quantity</label>
+                <input type="number" id="edit-qty" min="1" required>
+            </div>
+            <div class="input-group">
+                <label>Price (Ksh)</label>
+                <input type="number" id="edit-price" step="0.01" required>
+            </div>
+        </div>
+        <div class="input-group" style="margin-top: 15px;">
+            <label>Edit Reason</label>
+            <input type="text" id="edit-reason" placeholder="Enter reason for editing..." required>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button class="btn btn-edit" style="flex:1" id="confirm-edit">UPDATE SALE</button>
+            <button class="btn" style="flex:1; background:#e2e8f0; color:#1e293b" onclick="document.getElementById('edit-modal').style.display='none'">CANCEL</button>
+        </div>
+    </div>
+</div>
+
 <div id="open-modal" class="overlay">
     <div class="modal">
         <h3>🚀 Start Shift</h3>
@@ -438,7 +598,9 @@
     let allTransactions = [];
     let allSales = [];
     let currentKcbSalesTotal = 0;
-    let gasItems = []; // Added for gas-specific items
+    let gasItems = [];
+    let gasSaleType = 'complete'; // 'complete' or 'refill'
+    let currentUserId = null;
 
     // --- REALTIME: Sync Inventory Automatically ---
     const productSubscription = supabase
@@ -500,204 +662,61 @@
         location.href = 'index.html'; 
     };
 
-    // --- GAS-SPECIFIC FUNCTIONS ---
-    window.calculateGasTotal = (type) => {
-        const id = document.getElementById(type === 'refill' ? 'sale-select' : 'complete-select')?.value;
-        const qty = parseInt(document.getElementById(type === 'refill' ? 'sale-qty' : 'complete-qty')?.value) || 0;
-        const price = parseFloat(document.getElementById(type === 'refill' ? 'sale-price' : 'complete-price')?.value) || 0;
-        const item = gasItems.find(g => g.id == id);
+    // Gas option selection
+    window.selectGasOption = (type) => {
+        gasSaleType = type;
+        document.querySelectorAll('.gas-option-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector(`.gas-option-btn[data-type="${type}"]`).classList.add('active');
         
-        if (!item) return;
-
-        const total = price * qty;
-        const previewEl = document.getElementById(type === 'refill' ? 'refill-preview' : 'complete-preview');
-        if (previewEl) {
-            previewEl.innerHTML = `In Stock: ${item.stock_quantity} | Total: <b>Ksh ${total.toLocaleString()}</b>`;
+        // Show/hide brand exchange for refills
+        const brandContainer = document.getElementById('brand-exchange-container');
+        brandContainer.style.display = type === 'refill' ? 'block' : 'none';
+        
+        // Update price based on selection
+        if (selectedItem) {
+            const price = gasSaleType === 'complete' ? 
+                (selectedItem.selling_price + (selectedItem.cylinder_price || 0)) : 
+                selectedItem.selling_price;
+            document.getElementById('pPrice').value = price;
+            updateTotal();
         }
-    };
-
-    window.autoFillGasPrice = (type) => {
-        const id = document.getElementById(type === 'refill' ? 'sale-select' : 'complete-select')?.value;
-        const item = gasItems.find(g => g.id == id);
-        if (!item) return;
-
-        const priceInput = document.getElementById(type === 'refill' ? 'sale-price' : 'complete-price');
-        if (priceInput) {
-            priceInput.value = type === 'refill' ? item.selling_price : (item.selling_price + (item.cylinder_price || 0));
-            calculateGasTotal(type);
-        }
-    };
-
-    // Process gas sale - handles both refill and complete cylinder sales
-    window.processGasSale = async (type) => {
-        if (!currentShift) return alert("No open shift! Open shift first.");
-
-        const outgoingId = document.getElementById(type === 'refill' ? 'sale-select' : 'complete-select')?.value;
-        const qty = parseInt(document.getElementById(type === 'refill' ? 'sale-qty' : 'complete-qty')?.value) || 0;
-        const price = parseFloat(document.getElementById(type === 'refill' ? 'sale-price' : 'complete-price')?.value) || 0;
-        const outgoingItem = gasItems.find(g => g.id == outgoingId);
-
-        if (!outgoingId || !qty || qty <= 0 || !price) return alert("Fill all details");
-        if (!outgoingItem) return alert("Invalid product selected");
-        if (outgoingItem.stock_quantity < qty) return alert("Insufficient full cylinders in stock!");
-
-        // Brand Exchange Logic for refills
-        let incomingId = outgoingId;
+        
+        // Populate brand options for refills
         if (type === 'refill') {
-            const exchangeVal = document.getElementById('incoming-select')?.value;
-            if (exchangeVal && exchangeVal !== "same" && exchangeVal !== "") {
-                incomingId = exchangeVal;
-            }
-        }
-        const incomingItem = gasItems.find(g => g.id == incomingId);
-
-        // Price validation
-        let auditReason = null;
-        const minPrice = outgoingItem.min_selling_price || outgoingItem.min_price || outgoingItem.selling_price;
-        if (price < minPrice) {
-            auditReason = prompt(`Price (Ksh ${price}) is below minimum (Ksh ${minPrice}). Enter reason:`);
-            if (!auditReason?.trim()) return alert("Sale cancelled: Reason required for discount.");
-        }
-
-        const btn = document.getElementById(type === 'refill' ? 'btn-sell-refill' : 'btn-sell-complete');
-        const originalBtnText = btn?.innerText || "Processing...";
-        
-        if (btn) {
-            btn.disabled = true;
-            btn.innerText = "Processing...";
-        }
-
-        try {
-            const total = price * qty;
-            const saleName = type === 'refill' 
-                ? `${outgoingItem.name} Refill (${outgoingItem.weight_category})`
-                : `${outgoingItem.name} Complete Cylinder (${outgoingItem.weight_category})`;
-
-            // Record the sale
-            const { error: saleErr } = await supabase.from('sales').insert([{
-                shift_id: currentShift.id,
-                product_id: outgoingItem.id,
-                item_name: saleName,
-                quantity: qty,
-                unit_price: price,
-                total_amount: total,
-                amount: total,
-                payment_method: 'Cash',
-                cost_price: outgoingItem.cost_price || 0,
-                discount_reason: auditReason,
-                part_type: 'N/A'
-            }]);
-
-            if (saleErr) throw saleErr;
-
-            // Update stock quantities
-            // For outgoing item: decrease full cylinders
-            const outgoingUpdate = {
-                stock_quantity: outgoingItem.stock_quantity - qty
-            };
-
-            // For refills: increase empty cylinders of incoming brand
-            // For complete sales: no empty cylinders change
-            const incomingUpdate = type === 'refill' 
-                ? { empty_quantity: (incomingItem.empty_quantity || 0) + qty }
-                : {};
-
-            // Update outgoing product
-            const { error: updateOutgoingError } = await supabase
-                .from('products')
-                .update(outgoingUpdate)
-                .eq('id', outgoingId);
-
-            if (updateOutgoingError) throw updateOutgoingError;
-
-            // Update incoming product (for refills only)
-            if (type === 'refill' && incomingId !== outgoingId) {
-                const { error: updateIncomingError } = await supabase
-                    .from('products')
-                    .update(incomingUpdate)
-                    .eq('id', incomingId);
-
-                if (updateIncomingError) throw updateIncomingError;
-            }
-
-            // For same brand refill, update empty quantity on same product
-            if (type === 'refill' && incomingId === outgoingId) {
-                const { error: updateEmptyError } = await supabase
-                    .from('products')
-                    .update({ empty_quantity: (outgoingItem.empty_quantity || 0) + qty })
-                    .eq('id', outgoingId);
-
-                if (updateEmptyError) throw updateEmptyError;
-            }
-
-            alert("Gas sale recorded successfully!");
-            
-            // Refresh all data
-            await fetchInventory();
-            await loadShiftData();
-            
-            // Reset form if elements exist
-            const qtyInput = document.getElementById(type === 'refill' ? 'sale-qty' : 'complete-qty');
-            if (qtyInput) qtyInput.value = 1;
-            
-            calculateGasTotal(type);
-
-        } catch (err) {
-            console.error("Gas Sale Error:", err);
-            alert("Error processing gas sale: " + err.message);
-        } finally {
-            if (btn) {
-                btn.disabled = false;
-                btn.innerText = originalBtnText;
-            }
+            populateBrandOptions();
         }
     };
 
-    // Instant refill from warehouse
-    window.instantGasRefill = async () => {
-        const id = document.getElementById('refill-select')?.value;
-        const qty = parseInt(document.getElementById('action-qty')?.value) || 0;
-        const item = gasItems.find(g => g.id == id);
+    function populateBrandOptions() {
+        const brandSelect = document.getElementById('empty-cylinder-brand');
+        const weightSelect = document.getElementById('empty-cylinder-weight');
         
-        if (!item || !qty || qty <= 0) return alert("Select a brand and valid quantity");
-        if ((item.empty_quantity || 0) < qty) return alert("Not enough empty cylinders to refill!");
-
-        const btn = document.getElementById('btn-instant-refill');
-        const originalBtnText = btn?.innerText || "Processing...";
+        // Clear existing options
+        brandSelect.innerHTML = '<option value="">Select brand...</option>';
+        weightSelect.innerHTML = '<option value="">Select weight...</option>';
         
-        if (btn) {
-            btn.disabled = true;
-            btn.innerText = "Processing...";
-        }
-
-        try {
-            // Update stock: increase full, decrease empty
-            const { error } = await supabase
-                .from('products')
-                .update({
-                    stock_quantity: item.stock_quantity + qty,
-                    empty_quantity: (item.empty_quantity || 0) - qty
-                })
-                .eq('id', id);
-
-            if (error) throw error;
-
-            alert("Stock refilled from warehouse!");
-            await fetchInventory();
+        // Get unique brands
+        const brands = [...new Set(gasItems.map(item => item.name))];
+        brands.forEach(brand => {
+            brandSelect.innerHTML += `<option value="${brand}">${brand}</option>`;
+        });
+        
+        // Get unique weights for selected brand
+        brandSelect.onchange = () => {
+            const selectedBrand = brandSelect.value;
+            weightSelect.innerHTML = '<option value="">Select weight...</option>';
             
-            const actionQtyInput = document.getElementById('action-qty');
-            if (actionQtyInput) actionQtyInput.value = "";
+            const weights = [...new Set(gasItems
+                .filter(item => item.name === selectedBrand)
+                .map(item => item.weight_category))];
             
-        } catch (err) {
-            console.error("Refill Error:", err);
-            alert("Error refilling stock: " + err.message);
-        } finally {
-            if (btn) {
-                btn.disabled = false;
-                btn.innerText = originalBtnText;
-            }
-        }
-    };
+            weights.forEach(weight => {
+                weightSelect.innerHTML += `<option value="${weight}">${weight}</option>`;
+            });
+        };
+    }
 
     window.toggleSplitFields = () => {
         const method = document.getElementById('pMethod').value;
@@ -752,6 +771,8 @@
     async function init() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return window.location.href = 'index.html';
+        
+        currentUserId = user.id;
 
         updateGreeting();
         setInterval(updateGreeting, 60000);
@@ -800,6 +821,20 @@
             document.getElementById('hint-min').style.display = 'inline-block';
             updateStockDisplay(selectedItem);
             updateTotal();
+            
+            // Show/hide gas options
+            const gasOptions = document.getElementById('gas-options-container');
+            if (selectedItem.category === 'Gas') {
+                gasOptions.style.display = 'block';
+                // Set default price based on selected option
+                const price = gasSaleType === 'complete' ? 
+                    (selectedItem.selling_price + (selectedItem.cylinder_price || 0)) : 
+                    selectedItem.selling_price;
+                document.getElementById('pPrice').value = price;
+                updateTotal();
+            } else {
+                gasOptions.style.display = 'none';
+            }
         }
     };
 
@@ -824,9 +859,7 @@
         const total = price * qty;
         const method = document.getElementById('pMethod').value;
 
-        // REMOVED: The block preventing gas sales from cashier page
-        // Gas items can now be sold from cashier page with proper stock management
-
+        // Price validation
         if (price < (selectedItem.min_price || 0)) {
             const discReason = prompt(`Price below Min. Reason:`);
             if (!discReason) return;
@@ -838,69 +871,139 @@
         btn.disabled = true;
         btn.innerText = "RECORDING...";
 
-        let salesToInsert = [];
-        const baseSale = {
-            shift_id: currentShift.id,
-            product_id: selectedItem.id,
-            quantity: qty, 
-            unit_price: price, 
-            cost_price: selectedItem.cost_price || 0,
-            part_type: selectedItem.part_type || 'N/A', 
-            discount_reason: selectedItem.tempReason || ""
-        };
+        try {
+            let salesToInsert = [];
+            const baseSale = {
+                shift_id: currentShift.id,
+                product_id: selectedItem.id,
+                quantity: qty, 
+                unit_price: price, 
+                cost_price: selectedItem.cost_price || 0,
+                part_type: selectedItem.part_type || 'N/A', 
+                discount_reason: selectedItem.tempReason || "",
+                user_id: currentUserId
+            };
 
-        if (method === 'Split') {
-            const cashAmt = parseFloat(document.getElementById('split-cash').value || 0);
-            const onlineAmt = total - cashAmt;
-            salesToInsert.push({ ...baseSale, item_name: `${formatItemName(selectedItem)} (Split-C)`, total_amount: cashAmt, payment_method: 'Cash' });
-            salesToInsert.push({ ...baseSale, item_name: `${formatItemName(selectedItem)} (Split-O)`, quantity: 0, total_amount: onlineAmt, payment_method: 'KCB Paybill' });
-        } else {
-            salesToInsert.push({ ...baseSale, item_name: formatItemName(selectedItem), total_amount: total, payment_method: method });
-        }
-
-        const { data: sData, error } = await supabase.from('sales').insert(salesToInsert).select();
-        
-        if (!error) {
-            // Update stock for all items (including gas)
+            // Handle gas items specially
+            let itemName = formatItemName(selectedItem);
             if (selectedItem.category === 'Gas') {
-                // For gas items: Only decrease full cylinders when sold
-                const { error: gasError } = await supabase
-                    .from('products')
-                    .update({ stock_quantity: selectedItem.stock_quantity - qty })
-                    .eq('id', selectedItem.id);
-                
-                if (gasError) console.error("Gas stock update error:", gasError);
+                if (gasSaleType === 'refill') {
+                    itemName = `${selectedItem.name} Refill (${selectedItem.weight_category})`;
+                    
+                    // Get empty cylinder details
+                    const emptyBrand = document.getElementById('empty-cylinder-brand').value;
+                    const emptyWeight = document.getElementById('empty-cylinder-weight').value;
+                    if (!emptyBrand || !emptyWeight) {
+                        alert("Please select empty cylinder brand and weight for refill");
+                        btn.disabled = false;
+                        btn.innerText = "RECORD ITEM";
+                        return;
+                    }
+                    
+                    // Add refill note
+                    baseSale.discount_reason = (baseSale.discount_reason || '') + 
+                        ` | Refill: Customer brought ${emptyBrand} ${emptyWeight} empty`;
+                } else {
+                    itemName = `${selectedItem.name} Complete Cylinder (${selectedItem.weight_category})`;
+                }
+            }
+
+            if (method === 'Split') {
+                const cashAmt = parseFloat(document.getElementById('split-cash').value || 0);
+                const onlineAmt = total - cashAmt;
+                salesToInsert.push({ ...baseSale, item_name: `${itemName} (Split-C)`, total_amount: cashAmt, payment_method: 'Cash' });
+                salesToInsert.push({ ...baseSale, item_name: `${itemName} (Split-O)`, quantity: 0, total_amount: onlineAmt, payment_method: 'KCB Paybill' });
             } else {
-                // For non-gas items
-                await supabase
-                    .from('products')
-                    .update({ stock_quantity: selectedItem.stock_quantity - qty })
-                    .eq('id', selectedItem.id);
+                salesToInsert.push({ ...baseSale, item_name: itemName, total_amount: total, payment_method: method });
             }
 
-            if(method === "Debt") {
-                const dName = prompt("Customer Name:");
-                if(dName) await supabase.from('debtors').insert([{ customer_name: dName, amount_owed: total, sale_id: sData[0].id }]);
-            }
+            const { data: sData, error } = await supabase.from('sales').insert(salesToInsert).select();
+            
+            if (!error) {
+                // Update stock based on sale type
+                if (selectedItem.category === 'Gas') {
+                    if (gasSaleType === 'refill') {
+                        // For refills: decrease full cylinders, increase empty cylinders
+                        // Try using the RPC function first, fall back to direct update
+                        try {
+                            const { error: rpcError } = await supabase.rpc('update_gas_refill_stock', {
+                                product_id: selectedItem.id,
+                                stock_change: -qty,
+                                empty_change: qty
+                            });
+                            
+                            if (rpcError) {
+                                // Fallback to direct update if RPC fails
+                                console.log("RPC failed, using direct update:", rpcError);
+                                await supabase
+                                    .from('products')
+                                    .update({ 
+                                        stock_quantity: selectedItem.stock_quantity - qty,
+                                        empty_quantity: (selectedItem.empty_quantity || 0) + qty
+                                    })
+                                    .eq('id', selectedItem.id);
+                            }
+                        } catch (rpcErr) {
+                            console.log("RPC error, using direct update:", rpcErr);
+                            await supabase
+                                .from('products')
+                                .update({ 
+                                    stock_quantity: selectedItem.stock_quantity - qty,
+                                    empty_quantity: (selectedItem.empty_quantity || 0) + qty
+                                })
+                                .eq('id', selectedItem.id);
+                        }
+                    } else {
+                        // For complete cylinders: only decrease full cylinders
+                        await supabase
+                            .from('products')
+                            .update({ stock_quantity: selectedItem.stock_quantity - qty })
+                            .eq('id', selectedItem.id);
+                    }
+                } else {
+                    // For non-gas items
+                    await supabase
+                        .from('products')
+                        .update({ stock_quantity: selectedItem.stock_quantity - qty })
+                        .eq('id', selectedItem.id);
+                }
 
-            // Sync UI
-            await fetchInventory(); 
-            await loadShiftData();
-            
-            // Reset Form
-            document.getElementById('sale-form').reset();
-            document.getElementById('pSearch').value = '';
-            document.getElementById('hint-stock').style.display = 'none';
-            document.getElementById('hint-min').style.display = 'none';
-            document.getElementById('total-text').innerText = '0';
-            
+                if(method === "Debt") {
+                    const dName = prompt("Customer Name:");
+                    if(dName) await supabase.from('debtors').insert([{ 
+                        customer_name: dName, 
+                        amount_owed: total, 
+                        sale_id: sData[0].id,
+                        shift_id: currentShift.id 
+                    }]);
+                }
+
+                // Sync UI
+                await fetchInventory(); 
+                await loadShiftData();
+                
+                // Reset Form
+                document.getElementById('sale-form').reset();
+                document.getElementById('pSearch').value = '';
+                document.getElementById('hint-stock').style.display = 'none';
+                document.getElementById('hint-min').style.display = 'none';
+                document.getElementById('total-text').innerText = '0';
+                document.getElementById('gas-options-container').style.display = 'none';
+                document.getElementById('brand-exchange-container').style.display = 'none';
+                
+                btn.disabled = false;
+                btn.innerText = "RECORD ITEM";
+                alert("Sale Saved!");
+            } else { 
+                alert("Error: " + error.message); 
+                btn.disabled = false;
+                btn.innerText = "RECORD ITEM";
+            }
+        } catch (err) {
+            console.error("Sale Error:", err);
+            alert("Error processing sale: " + err.message);
             btn.disabled = false;
-            btn.innerText = "SUBMIT SALE";
-            alert("Sale Saved!");
-        } else { 
-            alert("Error: " + error.message); 
-            btn.disabled = false;
-            btn.innerText = "SUBMIT SALE";
+            btn.innerText = "RECORD ITEM";
         }
     };
 
@@ -919,9 +1022,283 @@
         const closeKcbInput = document.getElementById('c-bank');
         if (closeKcbInput) closeKcbInput.value = currentKcbSalesTotal;
 
-        document.getElementById('live-sales-body').innerHTML = sales.map(s => `<tr><td data-label="Time">${new Date(s.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Item"><b>${s.item_name}</b></td><td data-label="Qty">${s.quantity}</td><td data-label="Total">Ksh ${s.total_amount.toLocaleString()}</td><td data-label="Method">${s.payment_method}</td></tr>`).join('');
+        // Update sales table with action buttons
+        document.getElementById('live-sales-body').innerHTML = sales.map(s => {
+            const canEdit = s.user_id === currentUserId;
+            const canRefund = s.payment_method !== 'KCB Paybill'; // Cannot refund paybill payments directly
+            const isDebt = s.payment_method === 'Debt';
+            
+            return `<tr>
+                <td data-label="Time">${new Date(s.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
+                <td data-label="Item"><b>${s.item_name}</b></td>
+                <td data-label="Qty">${s.quantity}</td>
+                <td data-label="Total">Ksh ${s.total_amount.toLocaleString()}</td>
+                <td data-label="Method">${s.payment_method}</td>
+                <td data-label="Actions">
+                    <div class="action-buttons">
+                        ${canEdit ? `<button class="action-btn" style="background:var(--warning); color:white" onclick="editSale('${s.id}')">Edit</button>` : ''}
+                        ${canRefund && !isDebt ? `<button class="action-btn" style="background:var(--danger); color:white" onclick="initiateRefund('${s.id}')">Refund</button>` : ''}
+                        ${!canRefund ? `<button class="action-btn" style="background:var(--danger); color:white" onclick="initiateRefund('${s.id}')" title="Record refund (bank refund separate)">Record Refund</button>` : ''}
+                        ${isDebt ? `<button class="action-btn" style="background:#94a3b8; color:white" disabled title="Debt sales cannot be refunded">Debt</button>` : ''}
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+        
         document.getElementById('live-trans-body').innerHTML = trans.map(t => `<tr><td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Reason">${t.description}</td><td data-label="Amt">Ksh ${t.amount.toLocaleString()}</td><td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">${t.type}</td><td data-label="Wallet">${t.category}</td></tr>`).join('');
     }
+
+    // Refund functionality with payment method consideration
+    window.initiateRefund = async (saleId) => {
+        const { data: sale } = await supabase.from('sales').select('*').eq('id', saleId).single();
+        if (!sale) return alert("Sale not found!");
+        
+        const { data: product } = await supabase.from('products').select('*').eq('id', sale.product_id).single();
+        
+        document.getElementById('refund-details').innerHTML = `
+            <p><strong>Item:</strong> ${sale.item_name}</p>
+            <p><strong>Quantity:</strong> ${sale.quantity}</p>
+            <p><strong>Original Amount:</strong> Ksh ${sale.total_amount.toLocaleString()}</p>
+            <p><strong>Payment Method:</strong> ${sale.payment_method}</p>
+            <p><strong>Time:</strong> ${new Date(sale.created_at).toLocaleString()}</p>
+        `;
+        
+        // Set refund amount to original total
+        document.getElementById('refund-amount').value = sale.total_amount;
+        
+        // Show/hide paybill note
+        const paybillNote = document.getElementById('paybill-refund-note');
+        if (sale.payment_method === 'KCB Paybill') {
+            paybillNote.style.display = 'block';
+            // For paybill, only allow recording refund, not processing payment
+            document.getElementById('refund-method').innerHTML = `
+                <option value="None">Record Only (Bank Refund Separate)</option>
+            `;
+        } else if (sale.payment_method === 'Debt') {
+            alert("Debt sales cannot be refunded. Please mark as paid or adjust debt balance.");
+            return;
+        } else {
+            paybillNote.style.display = 'none';
+            document.getElementById('refund-method').innerHTML = `
+                <option value="Cash">Cash</option>
+                <option value="Mpesa">Mpesa</option>
+                <option value="KCB">KCB Float</option>
+                <option value="Equity">Equity Float</option>
+            `;
+            // Set default refund method to match original payment
+            if (sale.payment_method === 'Cash') {
+                document.getElementById('refund-method').value = 'Cash';
+            } else if (sale.payment_method === 'Mpesa') {
+                document.getElementById('refund-method').value = 'Mpesa';
+            }
+        }
+        
+        document.getElementById('refund-modal').style.display = 'flex';
+        document.getElementById('refund-modal').dataset.saleId = saleId;
+        document.getElementById('refund-modal').dataset.productId = sale.product_id;
+        document.getElementById('refund-modal').dataset.quantity = sale.quantity;
+        document.getElementById('refund-modal').dataset.originalAmount = sale.total_amount;
+        document.getElementById('refund-modal').dataset.paymentMethod = sale.payment_method;
+    };
+
+    document.getElementById('confirm-refund').onclick = async function() {
+        const saleId = document.getElementById('refund-modal').dataset.saleId;
+        const productId = document.getElementById('refund-modal').dataset.productId;
+        const quantity = parseInt(document.getElementById('refund-modal').dataset.quantity);
+        const originalAmount = parseFloat(document.getElementById('refund-modal').dataset.originalAmount);
+        const paymentMethod = document.getElementById('refund-modal').dataset.paymentMethod;
+        const refundAmount = parseFloat(document.getElementById('refund-amount').value);
+        const refundMethod = document.getElementById('refund-method').value;
+        const reason = document.getElementById('refund-reason').value;
+        
+        if (!reason.trim()) {
+            alert("Please enter a refund reason");
+            return;
+        }
+        
+        if (refundAmount <= 0) {
+            alert("Refund amount must be greater than 0");
+            return;
+        }
+        
+        if (refundAmount > originalAmount) {
+            if (!confirm(`Refund amount (Ksh ${refundAmount.toLocaleString()}) exceeds original sale amount (Ksh ${originalAmount.toLocaleString()}). Continue anyway?`)) {
+                return;
+            }
+        }
+        
+        this.disabled = true;
+        
+        try {
+            // For paybill payments, only record the refund, don't create cash transaction
+            if (paymentMethod === 'KCB Paybill') {
+                // Just record the refund in sale notes and update stock
+                await supabase
+                    .from('sales')
+                    .update({ 
+                        discount_reason: (sale.discount_reason || '') + ` | REFUNDED: ${reason} (KCB Paybill - Bank refund separate)` 
+                    })
+                    .eq('id', saleId);
+            } else {
+                // Record refund transaction for other payment methods
+                const { error: refundError } = await supabase.from('cash_transactions').insert([{
+                    shift_id: currentShift.id,
+                    type: 'Money Out',
+                    category: 'Refund',
+                    amount: refundAmount,
+                    description: `Refund for sale ${saleId}: ${reason} (Original: ${paymentMethod})`
+                }]);
+                
+                if (refundError) throw refundError;
+                
+                // Mark sale as refunded
+                await supabase
+                    .from('sales')
+                    .update({ 
+                        discount_reason: (sale.discount_reason || '') + ` | REFUNDED: ${reason} (${refundMethod})` 
+                    })
+                    .eq('id', saleId);
+            }
+            
+            // Update stock (add back the returned items)
+            const { data: product } = await supabase.from('products').select('*').eq('id', productId).single();
+            
+            // Check if it's a gas refill sale
+            const { data: sale } = await supabase.from('sales').select('*').eq('id', saleId).single();
+            const isGasRefill = sale.item_name.includes('Refill') && product.category === 'Gas';
+            
+            if (isGasRefill) {
+                // For gas refill refunds: add back to full cylinders, remove from empty
+                await supabase
+                    .from('products')
+                    .update({ 
+                        stock_quantity: (product.stock_quantity || 0) + quantity,
+                        empty_quantity: (product.empty_quantity || 0) - quantity
+                    })
+                    .eq('id', productId);
+            } else {
+                // For regular items: just add back to stock
+                await supabase
+                    .from('products')
+                    .update({ stock_quantity: (product.stock_quantity || 0) + quantity })
+                    .eq('id', productId);
+            }
+            
+            alert(paymentMethod === 'KCB Paybill' 
+                ? "Refund recorded. Bank refund must be processed separately."
+                : "Refund processed successfully!");
+            
+            document.getElementById('refund-modal').style.display = 'none';
+            document.getElementById('refund-amount').value = '';
+            document.getElementById('refund-reason').value = '';
+            
+            // Refresh data
+            await fetchInventory();
+            await loadShiftData();
+            
+        } catch (err) {
+            console.error("Refund Error:", err);
+            alert("Error processing refund: " + err.message);
+        } finally {
+            this.disabled = false;
+        }
+    };
+
+    // Edit sale functionality
+    window.editSale = async (saleId) => {
+        const { data: sale } = await supabase.from('sales').select('*').eq('id', saleId).single();
+        if (!sale) return alert("Sale not found!");
+        
+        document.getElementById('edit-details').innerHTML = `
+            <p><strong>Item:</strong> ${sale.item_name}</p>
+            <p><strong>Original Qty:</strong> ${sale.quantity}</p>
+            <p><strong>Original Price:</strong> Ksh ${sale.unit_price.toLocaleString()}</p>
+            <p><strong>Original Total:</strong> Ksh ${sale.total_amount.toLocaleString()}</p>
+        `;
+        
+        document.getElementById('edit-qty').value = sale.quantity;
+        document.getElementById('edit-price').value = sale.unit_price;
+        
+        document.getElementById('edit-modal').style.display = 'flex';
+        document.getElementById('edit-modal').dataset.saleId = saleId;
+        document.getElementById('edit-modal').dataset.productId = sale.product_id;
+        document.getElementById('edit-modal').dataset.originalQty = sale.quantity;
+    };
+
+    document.getElementById('confirm-edit').onclick = async function() {
+        const saleId = document.getElementById('edit-modal').dataset.saleId;
+        const productId = document.getElementById('edit-modal').dataset.productId;
+        const originalQty = parseInt(document.getElementById('edit-modal').dataset.originalQty);
+        const newQty = parseInt(document.getElementById('edit-qty').value);
+        const newPrice = parseFloat(document.getElementById('edit-price').value);
+        const reason = document.getElementById('edit-reason').value;
+        
+        if (!reason.trim()) {
+            alert("Please enter a reason for editing");
+            return;
+        }
+        
+        if (newQty < 1) {
+            alert("Quantity must be at least 1");
+            return;
+        }
+        
+        this.disabled = true;
+        
+        try {
+            // Get current product stock
+            const { data: product } = await supabase.from('products').select('*').eq('id', productId).single();
+            
+            // Calculate stock adjustment
+            const qtyDifference = newQty - originalQty;
+            
+            // Check if we have enough stock for increase
+            if (qtyDifference > 0 && (product.stock_quantity || 0) < qtyDifference) {
+                alert(`Insufficient stock to increase quantity by ${qtyDifference}. Available: ${product.stock_quantity}`);
+                this.disabled = false;
+                return;
+            }
+            
+            // Update sale record
+            const newTotal = newQty * newPrice;
+            const { error: updateError } = await supabase
+                .from('sales')
+                .update({
+                    quantity: newQty,
+                    unit_price: newPrice,
+                    total_amount: newTotal,
+                    amount: newTotal,
+                    discount_reason: (product.discount_reason || '') + ` | EDITED: ${reason}`
+                })
+                .eq('id', saleId);
+            
+            if (updateError) throw updateError;
+            
+            // Update stock based on quantity difference
+            if (qtyDifference !== 0) {
+                await supabase
+                    .from('products')
+                    .update({ 
+                        stock_quantity: (product.stock_quantity || 0) - qtyDifference 
+                    })
+                    .eq('id', productId);
+            }
+            
+            alert("Sale updated successfully!");
+            document.getElementById('edit-modal').style.display = 'none';
+            document.getElementById('edit-reason').value = '';
+            
+            // Refresh data
+            await fetchInventory();
+            await loadShiftData();
+            
+        } catch (err) {
+            console.error("Edit Error:", err);
+            alert("Error updating sale: " + err.message);
+        } finally {
+            this.disabled = false;
+        }
+    };
 
     document.getElementById('confirm-open').onclick = async function() {
         const cash = parseFloat(document.getElementById('o-cash').value || 0);
