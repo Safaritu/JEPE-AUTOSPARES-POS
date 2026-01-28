@@ -3,165 +3,253 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JEPE POS | WELCOME BACK CASHIER</title>
+    <title>Gas Hub Management | JEPE COMPANY LIMITED</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root { 
-            --primary: #4f46e5; 
-            --primary-dark: #3730a3;
+            --primary: #6366f1; 
+            --primary-dark: #4f46e5;
             --bg: #f1f5f9; 
-            --card-bg: #ffffff; 
-            --danger: #e11d48; 
+            --card: #ffffff; 
+            --border: #e2e8f0; 
+            --text: #0f172a; 
+            --text-dim: #64748b;
+            --danger: #ef4444; 
             --success: #10b981; 
             --warning: #f59e0b;
-            --nav-btn-bg: #6366f1;
-            --text-main: #1e293b; 
-            --text-dim: #64748b;
-            --border: #e2e8f0; 
-            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            --deep-blue: #1e3a8a;
-            --admin-dark: #0f172a;
-            --admin-accent: #1e3a8a;
-            --switch-btn: #0ea5e9;
+            --sidebar-width: 260px;
         }
 
-        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
-            background-color: var(--bg);
-            padding: 10px; margin: 0; color: var(--text-main); line-height: 1.5; 
-            overflow-x: hidden;
-            width: 100%;
+            background: var(--bg); 
+            margin: 0; 
+            color: var(--text);
+            display: flex;
         }
 
-        .container { max-width: 1450px; margin: auto; width: 100%; }
-        
-        header { 
-            display: flex; flex-direction: column; gap: 15px;
-            margin-bottom: 25px; padding: 20px; 
-            background: #fff; border-radius: 16px;
-            box-shadow: var(--shadow); border: 1px solid var(--border);
+        /* --- SIDEBAR --- */
+        .sidebar {
+            position: fixed; left: 0; top: 0; width: var(--sidebar-width); height: 100vh;
+            background: white; border-right: 1px solid var(--border); z-index: 2000;
+            padding: 25px; display: flex; flex-direction: column; transition: 0.3s;
         }
-
-        @media (min-width: 768px) {
-            header { flex-direction: row; justify-content: space-between; align-items: center; }
-            body { padding: 15px; }
+        .sidebar h2 { color: var(--primary-dark); font-weight: 800; font-size: 1.2rem; margin-bottom: 30px; }
+        .nav-link {
+            display: flex; align-items: center; padding: 12px 15px;
+            color: var(--text-dim); text-decoration: none; font-weight: 600;
+            border-radius: 12px; margin-bottom: 5px; transition: 0.2s; font-size: 0.9rem;
         }
+        .nav-link:hover { background: #f8fafc; color: var(--primary); }
+        .nav-link.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
 
-        .logo { font-size: 1.4rem; font-weight: 800; letter-spacing: -1px; color: #111827; }
-        .logo span { color: var(--primary); font-weight: 500; font-size: 0.9rem; margin-left: 5px; opacity: 0.8; }
-
-        .special-action-btn {
-            font-size: 0.9rem !important;
-            padding: 12px 20px !important;
-            border-radius: 12px !important;
-            box-shadow: 0 0 15px rgba(79, 70, 229, 0.4) !important;
-            border: 2px solid white !important;
-        }
-
-        .float-status-card {
-            background: #fff; padding: 20px; border-radius: 16px; border: 1px solid var(--border);
-            margin-bottom: 25px; display: grid; grid-template-columns: repeat(2, 1fr);
-            gap: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-        }
-
-        @media (min-width: 600px) { .float-status-card { grid-template-columns: repeat(5, 1fr); } }
-
-        .float-item { text-align: center; }
-        .float-item label { display: block; font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; font-weight: 800; }
-        .float-item span { font-size: 1.1rem; font-weight: 800; color: var(--primary); }
-        .kcb-live-box { border: 2px solid var(--primary); border-radius: 12px; background: #f5f3ff; }
+        /* --- LAYOUT --- */
+        .main-wrapper { flex: 1; margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)); }
+        .container { padding: 30px; max-width: 1400px; margin: auto; }
 
         .card { 
-            background: var(--card-bg); border-radius: 20px; border: 1px solid var(--border); 
-            padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow);
+            background: white; padding: 24px; border-radius: 20px; 
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border: 1px solid var(--border); 
+            margin-bottom: 24px;
         }
+        .card h3 { margin-top: 0; font-size: 1rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        .section-label { 
-            font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.12em; 
-            color: var(--primary); margin-bottom: 20px; font-weight: 800; 
-            display: flex; align-items: center; gap: 10px; 
-        }
-        .section-label::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+        .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+        .gas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
 
-        .grid-inputs { display: grid; gap: 15px; }
-        .input-group { display: flex; flex-direction: column; }
-        label { margin-bottom: 6px; font-weight: 700; color: var(--text-main); font-size: 0.75rem; }
-        
+        label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-dim); margin-bottom: 6px; }
         input, select { 
-            background: #f8fafc; border: 1px solid var(--border); padding: 14px; border-radius: 12px; 
-            font-size: 16px; font-family: inherit; transition: 0.2s; color: var(--text-main); width: 100%;
+            padding: 12px; border-radius: 12px; border: 1px solid var(--border); 
+            width: 100%; margin-bottom: 15px; font-size: 0.9rem; 
+            font-family: inherit; outline: none; background: #fcfcfd;
         }
-        
-        .hint-badge { padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; margin-top: 5px; }
-        .bg-stock { background: #dcfce7; color: #166534; }
-        .bg-min { background: #fef9c3; color: #854d0e; }
+        input:focus { border-color: var(--primary); background: white; }
 
-        .table-card { border-radius: 16px; margin-bottom: 10px; width: 100%; background: #fff; border: 1px solid var(--border); overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; }
-        th { padding: 15px 20px; background: #f8fafc; font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); font-weight: 800; text-align: left; border-bottom: 2px solid var(--border); }
-        td { padding: 14px 20px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
-
-        @media (max-width: 768px) {
-            .mobile-hide-header { display: none; }
-            tr { display: block; background: white; margin-bottom: 15px; padding: 15px; border-radius: 15px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
-            td { display: flex; justify-content: space-between; padding: 10px 0; border: none !important; border-bottom: 1px dashed #f1f5f9 !important; text-align: right; }
-            td::before { content: attr(data-label); font-weight: 800; color: var(--text-dim); font-size: 0.65rem; display: block; text-align: left; }
+        .price-badge {
+            background: #f8fafc; padding: 10px; border-radius: 10px;
+            margin-bottom: 15px; border-left: 4px solid var(--primary); font-size: 0.85rem;
         }
 
-        .btn { padding: 16px 24px; border-radius: 12px; font-weight: 800; cursor: pointer; border: none; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 8px; text-transform: uppercase; transition: 0.3s opacity; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-sync { background: var(--warning); color: white; }
-
-        .overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(8px); padding: 20px; }
-        .modal { background: #fff; padding: 25px; border-radius: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+        .btn { 
+            padding: 14px; color: white; border: none; font-weight: 800; 
+            cursor: pointer; border-radius: 12px; width: 100%; font-size: 0.8rem; 
+            text-transform: uppercase; letter-spacing: 1px; transition: 0.2s;
+            text-align: center; text-decoration: none; display: block;
+        }
+        .btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
         
-        .dual-tables { display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; }
-        @media (min-width: 1024px) { .dual-tables { grid-template-columns: 1.2fr 1fr; } }
+        .btn-buy { 
+            background: #f1f5f9; color: var(--text); border: 1px dashed var(--border);
+            padding: 10px; font-size: 0.7rem; margin-top: 15px; border-radius: 10px;
+            font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center;
+            gap: 5px; transition: 0.2s;
+        }
+        .btn-buy:hover { background: #e2e8f0; border-color: var(--text-dim); }
 
-        .text-success { color: #15803d !important; font-weight: 700; }
-        .text-danger { color: #b91c1c !important; font-weight: 700; }
-        .variance-status { font-weight: 800; padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; text-align: center; }
-        .balanced { background: #dcfce7; color: #166534; }
-        .mismatch { background: #fee2e2; color: #991b1b; }
+        .stock-display { display: flex; gap: 10px; margin-top: 15px; }
+        .box { flex: 1; text-align: center; padding: 15px; border-radius: 15px; }
+        .full { background: #ecfdf5; color: #065f46; border: 1px solid #d1fae5; }
+        .empty { background: #fff1f2; color: #9f1239; border: 1px solid #ffe4e6; }
+        .qty { font-size: 1.5rem; font-weight: 800; display: block; }
+        .brand-tag { background: #eef2ff; color: #4338ca; padding: 4px 10px; border-radius: 8px; font-weight: 700; font-size: 0.7rem; }
 
-        .float-list { margin: 0; padding: 0; list-style: none; font-size: 0.75rem; color: var(--text-dim); }
-        .float-list li { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid #f8fafc; }
-        .float-list li b { color: var(--text-main); }
-        .total-cell { font-weight: 800; color: var(--primary); border-top: 2px solid var(--border); margin-top: 5px; padding-top: 5px; font-size: 0.85rem; display: flex; justify-content: space-between; }
-        
-        .search-input {
+        .price-warning { color: var(--danger); font-size: 0.75rem; font-weight: 800; margin-top: -10px; margin-bottom: 10px; display: none; background: #fff1f2; padding: 5px; border-radius: 5px; text-align: center; }
+
+        .exchange-box {
+            background: #fdf2f2;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #fee2e2;
+            margin-bottom: 15px;
+        }
+
+        /* --- SHIFT TABLE STYLES --- */
+        .shift-table {
             width: 100%;
-            padding: 16px 20px;
-            border: 2px solid var(--border);
-            border-radius: 15px;
-            font-size: 16px;
-            outline: none;
-            font-family: inherit;
-            transition: border-color 0.2s;
-            background: white;
-            margin-bottom: 25px;
+            border-collapse: collapse;
+            margin-top: 20px;
         }
-        .search-input:focus { border-color: var(--primary); }
-
-        .account-line { display: flex; justify-content: space-between; margin-bottom: 4px; border-bottom: 1px dashed #f1f5f9; padding-bottom: 2px; }
-        .account-label { color: var(--text-dim); font-size: 0.75rem; font-weight: 500; }
-        .account-val { font-weight: 600; color: var(--text-main); font-size: 0.8rem; }
-        .total-row { font-weight: 800; margin-top: 10px; padding: 8px; background: #f5f3ff; color: var(--primary); border-radius: 6px; text-align: center; }
-        .status-badge { font-weight: 800; padding: 10px 15px; border-radius: 10px; font-size: 0.85rem; display: block; text-align: center; min-width: 140px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .balanced { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
-        .mismatch { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
-        .active-shift { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
-        .date-cell b { display: block; margin-bottom: 8px; font-size: 1rem; }
-        .time-pill { background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; color: var(--text-dim); display: inline-block; margin-top: 4px; }
-        .revenue-card { background: #fff; border: 1px solid var(--border); padding: 12px; border-radius: 10px; text-decoration: none; display: block; transition: 0.2s; }
-        .revenue-card:hover { border-color: var(--primary); transform: translateY(-2px); }
         
-        /* --- NAVIGATION --- */
+        .shift-table th {
+            background: var(--primary-dark);
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .shift-table td {
+            padding: 15px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+        
+        .shift-table tr:hover {
+            background: #f8fafc;
+        }
+        
+        .shift-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        
+        .status-open {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-closed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        /* --- SALE ITEM TABLE STYLES --- */
+        .sale-item-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.2s;
+        }
+        
+        .sale-item-row:hover {
+            background: #f8fafc;
+        }
+        
+        .sale-info {
+            flex: 1;
+        }
+        
+        .sale-time {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .sale-details {
+            display: flex;
+            gap: 20px;
+            font-size: 0.85rem;
+        }
+        
+        .sale-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-edit, .btn-refund {
+            padding: 6px 15px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        
+        .btn-edit {
+            background: var(--warning);
+            color: white;
+        }
+        
+        .btn-edit:hover {
+            background: #d97706;
+            transform: translateY(-1px);
+        }
+        
+        .btn-refund {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .btn-refund:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+        
+        /* --- AUTO SYNC INDICATOR --- */
+        .sync-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--success);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar { left: -260px; }
+            .main-wrapper { margin-left: 0; width: 100%; }
+        }
+
+        /* --- NAVIGATION OVERLAY --- */
         .nav-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(15px); z-index: 3000; display: none; flex-direction: column; padding: 60px 20px 40px 20px; overflow-y: auto; }
         .nav-overlay.active { display: flex; animation: fadeIn 0.3s ease forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -169,195 +257,13 @@
         .nav-card { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 15px 8px; text-align: center; color: white; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 5px; }
         .nav-card span { font-size: 1.2rem; }
         .nav-card small { font-size: 0.7rem; font-weight: 600; line-height: 1.2; }
-        .switch-card { background: var(--switch-btn); grid-column: span 2; margin-bottom: 10px; border: none; font-weight: 800; padding: 20px; }
         .nav-header-title { color: white; text-align: center; font-weight: 800; font-size: 1.4rem; margin-bottom: 20px; letter-spacing: 1px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
-
-        /* --- FAB --- */
-        .fab-menu { position: fixed; bottom: 30px; left: 25px; width: 65px; height: 65px; background: var(--deep-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.6rem; box-shadow: 0 10px 30px rgba(30, 58, 138, 0.4); border: 4px solid white; cursor: pointer; z-index: 2000; animation: swing 3s infinite ease-in-out; transform-origin: center bottom; }
+        .fab-menu { position: fixed; bottom: 30px; left: 25px; width: 65px; height: 65px; background: #1e3a8a; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.6rem; box-shadow: 0 10px 30px rgba(30, 58, 138, 0.4); border: 4px solid white; cursor: pointer; z-index: 2000; animation: swing 3s infinite ease-in-out; transform-origin: center bottom; }
         @keyframes swing { 0%, 100% { transform: rotate(0deg); } 20% { transform: rotate(10deg); } 40% { transform: rotate(-10deg); } }
         .guide-hand { position: fixed; bottom: 105px; left: 32px; z-index: 2500; display: flex; flex-direction: column; align-items: center; animation: bounce 1.5s infinite; }
         .guide-hand span { font-size: 1.8rem; }
-        .guide-label { background: var(--admin-dark); color: white; padding: 3px 8px; border-radius: 6px; font-size: 0.55rem; font-weight: 800; margin-bottom: 2px; border: 1px solid var(--admin-accent); }
+        .guide-label { background: #0f172a; color: white; padding: 3px 8px; border-radius: 6px; font-size: 0.55rem; font-weight: 800; margin-bottom: 2px; border: 1px solid #1e3a8a; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-        .congrats-msg { 
-            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); 
-            color: #166534; 
-            padding: 18px 24px; 
-            border-radius: 12px; 
-            margin-bottom: 20px; 
-            text-align: center; 
-            font-weight: 800; 
-            font-size: 1rem; 
-            display: none; 
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
-            border: 2px solid #86efac;
-            letter-spacing: 0.5px;
-            animation: slideDown 0.5s ease;
-        }
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .greeting-banner {
-            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
-            color: white;
-            padding: 20px 24px;
-            border-radius: 16px;
-            margin-bottom: 25px;
-            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.3);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        .greeting-text h2 {
-            margin: 0;
-            font-size: 1.5rem;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-        }
-        .greeting-text p {
-            margin: 5px 0 0 0;
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-        .greeting-time {
-            font-size: 0.85rem;
-            opacity: 0.9;
-            font-weight: 600;
-        }
-        
-        /* Low Stock Pulse Animation */
-        .low-stock-alert {
-            color: #ff4d4d !important; /* Bright Red */
-            font-weight: 800;
-            animation: pulse-red 1.5s infinite;
-            padding: 2px 8px;
-            border-radius: 6px;
-            background: rgba(255, 77, 77, 0.1);
-        }
-
-        @keyframes pulse-red {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.7; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        /* --- REFUND/EDIT MODAL STYLES --- */
-        .refund-modal { max-width: 600px !important; }
-        .refund-option {
-            background: #f8fafc;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            border: 1px solid var(--border);
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        
-        .refund-option:hover {
-            background: #f1f5f9;
-            border-color: var(--primary);
-        }
-        
-        .refund-option.selected {
-            background: #e0e7ff;
-            border-color: var(--primary);
-        }
-        
-        .payment-method-options {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin: 15px 0;
-        }
-        
-        .payment-method-btn {
-            padding: 12px;
-            border-radius: 10px;
-            border: 2px solid var(--border);
-            background: white;
-            color: var(--text);
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            text-align: center;
-        }
-        
-        .payment-method-btn.selected {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-        
-        .refund-reason {
-            width: 100%;
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            margin-top: 10px;
-            font-family: inherit;
-            resize: vertical;
-            min-height: 80px;
-        }
-        
-        .action-btn {
-            padding: 6px 12px;
-            border-radius: 8px;
-            border: none;
-            font-weight: 600;
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: 0.2s;
-            margin: 0 2px;
-        }
-        
-        .edit-btn {
-            background: var(--warning);
-            color: white;
-        }
-        
-        .refund-btn {
-            background: var(--danger);
-            color: white;
-        }
-
-        .sale-actions {
-            display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
-        }
-
-        /* Sale History Modal */
-        .history-modal { max-width: 800px !important; }
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        
-        .history-table th {
-            padding: 12px;
-            background: #f8fafc;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            color: var(--text-dim);
-            font-weight: 800;
-            text-align: left;
-            border-bottom: 2px solid var(--border);
-        }
-        
-        .history-table td {
-            padding: 12px;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.85rem;
-        }
-        
-        .history-table tr:hover {
-            background: #f8fafc;
-        }
     </style>
 </head>
 <body>
@@ -371,8 +277,8 @@
     <button style="position:fixed; top:20px; right:20px; background:rgba(255,255,255,0.1); border:none; color:white; width:45px; height:45px; border-radius:50%; font-size:1.2rem; z-index: 3100;" onclick="toggleNav()">✕</button>
     <div class="nav-header-title">CASHIER HUB</div>
     <div class="nav-grid">
-        <a href="cashier.html" class="nav-card" style="background: var(--admin-accent)"><span>📊</span><small>Dashboard</small></a>
-        <a href="cashiergashub.html" class="nav-card"><span>⛽</span><small>Gas Hub</small></a>
+        <a href="cashier.html" class="nav-card"><span>📊</span><small>Dashboard</small></a>
+        <a href="cashiergashub.html" class="nav-card" style="background: #1e3a8a"><span>⛽</span><small>Gas Hub</small></a>
         <a href="cashier_inventory.html" class="nav-card"><span>➕</span><small>Add/Update Items</small></a>
         <a href="moneyinout.html" class="nav-card"><span>💸</span><small>MONEY IN/OUT</small></a>
         <a href="shift history cashier.html" class="nav-card"><span>⏳</span><small>Daily Shift History</small></a>
@@ -384,1029 +290,713 @@
         <a href="gas_delivery.html" class="nav-card"><span>🏍️</span><small>Delivery</small></a>
         <a href="sale edit cashier.html" class="nav-card"><span>✏️</span><small>Edit sales</small></a>
         <a href="cashier_report.html" class="nav-card"><span>📝</span><small>Today's Report</small></a>
+        <a href="cashiermotorbike_hub.html" class="nav-card"><span>🏍️</span><small>Motorbike Hub</small></a>
+        <a href="cashierspare_parts_hub.html" class="nav-card"><span>⚙️</span><small>Spare Parts Hub</small></a>
+        <a href="cashier_settings.html" class="nav-card"><span>⚙️</span><small>Settings</small></a>
         <a href="cashier.html" class="nav-card"><span>🏠</span><small>HOME</small></a>
-        <button onclick="logoutUser()" style="grid-column: span 2; margin-top:20px; background:var(--danger); color:white; border:none; padding:18px; border-radius:15px; font-weight:800;">🚪 LOGOUT SYSTEM</button>
+        <button onclick="logoutUser()" style="grid-column: span 2; margin-top:20px; background:#ef4444; color:white; border:none; padding:18px; border-radius:15px; font-weight:800;">🚪 LOGOUT SYSTEM</button>
     </div>
 </div>
 
 <button class="fab-menu" onclick="toggleNav()">☰</button>
 
-<div id="congrats-banner" class="congrats-msg">🎉 WELL DONE! YOUR LAST SHIFT WAS PERFECTLY BALANCED! ✔</div>
-
-<!-- Refund/Edit Modal -->
-<div id="refund-modal" class="overlay">
-    <div class="modal refund-modal">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h3 style="margin:0; font-size:1.2rem;" id="refund-modal-title">Process Refund</h3>
-            <button onclick="closeRefundModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-dim);">×</button>
-        </div>
-        <div id="refund-content">
-            <!-- Content will be loaded dynamically -->
-        </div>
-    </div>
-</div>
-
-<!-- Sale History Modal -->
-<div id="history-modal" class="overlay">
-    <div class="modal history-modal">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h3 style="margin:0; font-size:1.2rem;">Recent Sales</h3>
-            <button onclick="closeHistoryModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-dim);">×</button>
-        </div>
-        <div style="margin-bottom: 20px;">
-            <input type="text" id="history-search-input" placeholder="🔍 Search by item or payment method..." style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border);">
-        </div>
-        <div style="max-height: 500px; overflow-y: auto;">
-            <table class="history-table">
-                <thead>
-                    <tr>
-                        <th>Time</th>
-                        <th>Item</th>
-                        <th>Qty</th>
-                        <th>Total</th>
-                        <th>Method</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="sales-history-body">
-                    <!-- Sales will be loaded here -->
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<div class="container">
-    <div class="greeting-banner" id="greeting-banner">
-        <div class="greeting-text">
-            <h2 id="greeting-title">Welcome Back!</h2>
-            <p id="greeting-subtitle">Ready to start your shift?</p>
-        </div>
-        <div class="greeting-time" id="greeting-time"></div>
-    </div>
-    
-    <header>
-        <div class="logo">CASHIER DASHBOARD <span>/ JEPE AUTOSPARES HUB</span></div>
-        <div style="display: flex; gap: 10px;">
-            <button onclick="showSaleHistory()" class="btn" style="width: auto; padding: 12px 20px; background: var(--primary-dark); font-size: 0.8rem;">
-                📜 View Sales
-            </button>
-            <div id="shift-action-container"></div>
-        </div>
-    </header>
-
-    <div class="section-label">Opening Floats & Live Sales Tracker</div>
-    <div class="float-status-card">
-        <div class="float-item"><label>Cash</label><span id="float-cash">0.00</span></div>
-        <div class="float-item"><label>Mpesa</label><span id="float-mpesa">0.00</span></div>
-        <div class="float-item"><label>KCB Float</label><span id="float-kcb">0.00</span></div>
-        <div class="float-item"><label>Equity Float</label><span id="float-equity">0.00</span></div>
-        <div class="float-item kcb-live-box"><label>Live KCB Paybill Sales</label><span id="live-kcb-box">0.00</span></div>
+    <div class="sidebar" id="sidebar" style="display: none;">
+        <h2>JEPE LOGISTICS</h2>
+        <nav>
+            <a href="cashier.html" class="nav-link">📊 Dashboard</a>
+            <a href="cashiergashub.html" class="nav-link active">⛽ Gas Hub</a>
+            <a href="low-stock-cashier.html" class="nav-link">⚠️ Low Stock</a>
+            <a href="debtors.html" class="nav-link">👥 Debtors</a>
+            <a href="supplierscashier.html" class="nav-link">🤝 Suppliers</a>
+            <a href="gas_delivery.html" class="nav-link">🚚 Delivery Records</a>
+            <a href="cashier_inventory.html" class="nav-link">📦 Add Items</a>
+            <a href="sales_reports.html" class="nav-link">📜 Sales History</a>
+            <a href="shift history cashier.html" class="nav-link">🌞 Shift History</a>
+            <a href="price_audits.html" class="nav-link">⚖️ Price Audits</a> 
+            <a href="pos.html" class="nav-link">🌠 View All Items</a>  
+        </nav>
     </div>
 
-    <div class="card">
-        <div class="section-label">Sale Item</div>
-        <form id="sale-form">
-            <div class="grid-inputs" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
-                <div class="input-group">
-                    <label>Search Item</label>
-                    <input type="text" id="pSearch" list="pList" placeholder="Find Item..." required autocomplete="off">
-                    <datalist id="pList"></datalist>
-                    <div style="display: flex; gap: 5px;">
-                        <span id="hint-stock" class="hint-badge bg-stock" style="display:none"></span>
-                        <span id="hint-min" class="hint-badge bg-min" style="display:none"></span>
+    <div class="main-wrapper">
+        <div class="container">
+            <header style="margin-bottom: 30px;">
+                <h1 style="margin:0; font-weight: 800; font-size: 1.8rem;">Gas Operations</h1>
+                <p id="last-updated" style="color: var(--text-dim); font-size: 0.9rem;">Connecting...</p>
+            </header>
+
+            <!-- TODAY'S SALES SECTION (From Image) -->
+            <div class="card" style="border-top: 4px solid var(--primary);">
+                <h3 style="color: var(--primary);">TODAY'S SALES</h3>
+                <div id="today-sales-container"></div>
+            </div>
+
+            <!-- MONEY IN/OUT SECTION (From Image) -->
+            <div class="card" style="border-top: 4px solid var(--success);">
+                <h3 style="color: var(--success);">MONEY IN/OUT RECORD</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div>
+                        <label>Amount</label>
+                        <input type="number" id="money-amount" placeholder="0.00">
+                    </div>
+                    <div>
+                        <label>Money Out</label>
+                        <select id="money-type">
+                            <option value="in">Money In</option>
+                            <option value="out">Money Out</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Reason (e.g. Loading Fee, Lunch)</label>
+                        <input type="text" id="money-reason" placeholder="Reason">
+                    </div>
+                    <div>
+                        <label>Method</label>
+                        <select id="money-method">
+                            <option value="Cash">Cash</option>
+                            <option value="M-Pesa">M-Pesa</option>
+                            <option value="Bank">Bank</option>
+                        </select>
                     </div>
                 </div>
-                <div class="input-group"><label>Price (Ksh)</label><input type="number" id="pPrice" step="0.01" required></div>
-                <div class="input-group"><label>Qty</label><input type="number" id="pQty" value="1" min="1"></div>
-                <div class="input-group">
-                    <label>Method</label>
-                    <select id="pMethod" onchange="toggleSplitFields()">
-                        <option value="Cash">Cash (Shop)</option>
-                        <option value="KCB Paybill">KCB Paybill</option>
-                        <option value="Split">Split: Cash + KCB Paybill</option>
-                        <option value="Debt">Debtor (Owed)</option>
-                    </select>
+                <button id="btn-record-money" class="btn" style="background:var(--success)">RECORD MONEY</button>
+                
+                <div id="money-history" style="margin-top: 30px;">
+                    <h4 style="margin-bottom: 15px; color: var(--text-dim);">DAY'S MONEY IN/OUT HISTORY</h4>
+                    <div id="money-history-container"></div>
                 </div>
             </div>
 
-            <div id="split-fields" style="display: none; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px dashed var(--primary);">
-                <div class="input-group"><label>Cash Paid</label><input type="number" id="split-cash" placeholder="0.00" oninput="calculateSplit()"></div>
-                <div class="input-group"><label>Paybill Balance</label><input type="number" id="split-online" readonly style="background: #e2e8f0;"></div>
+            <!-- EXISTING GAS OPERATIONS -->
+            <div class="card" style="border-top: 4px solid var(--success);">
+                <h3 style="color: var(--success);">Register New Gas Brand</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+                    <div><label>Brand Name</label><input type="text" id="new-name" placeholder="e.g. K-Gas"></div>
+                    <div><label>Weight Category</label><input type="text" id="new-weight" placeholder="e.g. 13kg"></div>
+                    <div><label>Select Supplier</label><select id="new-supplier-id"></select></div>
+                    <div><label>Cost Price</label><input type="number" id="new-cost"></div>
+                    <div><label>Refill Selling Price</label><input type="number" id="new-sell"></div>
+                    <div><label>Refill Min Price</label><input type="number" id="new-min-sell"></div>
+                    <div><label>Empty Cylinder Price</label><input type="number" id="new-cyl-price"></div>
+                    <div><label>Initial Full Stock</label><input type="number" id="new-qty" value="0"></div>
+                    <div style="display: flex; align-items: flex-end; padding-bottom: 15px;">
+                        <button id="btn-add-inventory" class="btn" style="background:var(--success)">Register Brand</button>
+                    </div>
+                </div>
             </div>
 
-            <button type="submit" id="submit-sale-btn" class="btn btn-primary" style="margin-top: 25px; width: 100%; height: 60px; font-size: 1.1rem;">
-                RECORD ITEM Ksh <span id="total-text">0.00</span>
-            </button>
-        </form>
-    </div>
+            <div class="action-grid">
+                <div class="card" style="border-top: 4px solid var(--primary);">
+                    <h3 style="color: var(--primary);">Refill Sale</h3>
+                    
+                    <label>Gas Customer is TAKING (Outgoing)</label>
+                    <select class="gas-dropdown" id="sale-select" onchange="autoFillPrice('refill')"></select>
+                    
+                    <div class="exchange-box">
+                        <label style="color: var(--danger);">Gas Customer BROUGHT (Incoming Empty)</label>
+                        <select class="gas-dropdown" id="incoming-select">
+                            <option value="same">-- Same as Outgoing Brand --</option>
+                        </select>
+                        <small style="color: var(--text-dim); font-size: 0.7rem;">Use this if customer brought a different brand for exchange.</small>
+                    </div>
 
-    <div class="dual-tables">
-        <div>
-            <div class="section-label">TODAYS SALES</div>
-            <div class="table-card" style="max-height: 400px; overflow-y: auto;">
-                <table>
-                    <thead class="mobile-hide-header"><tr><th>Time</th><th>Item</th><th>Qty</th><th>Total</th><th>Method</th><th>Actions</th></tr></thead>
-                    <tbody id="live-sales-body"></tbody>
+                    <label>Negotiated Unit Price (Ksh)</label>
+                    <input type="number" id="sale-price" placeholder="0.00" oninput="calculateTotal('refill')">
+                    <div id="refill-warn" class="price-warning">⚠️ BELOW MINIMUM PRICE GUARDRAIL</div>
+
+                    <label>Quantity</label>
+                    <input type="number" id="sale-qty" value="1" oninput="calculateTotal('refill')">
+                    
+                    <div class="price-badge" id="refill-preview">Total: Ksh 0</div>
+                    <button id="btn-sell-refill" class="btn" style="background:var(--primary)">Complete Refill</button>
+                </div>
+
+                <div class="card" style="border-top: 4px solid var(--warning);">
+                    <h3 style="color: var(--warning);">Complete Sale (Gas + Cylinder)</h3>
+                    <label>Select Gas</label>
+                    <select class="gas-dropdown" id="complete-select" onchange="autoFillPrice('complete')"></select>
+                    
+                    <label>Total Unit Price (Gas + Shell)</label>
+                    <input type="number" id="complete-price" placeholder="0.00" oninput="calculateTotal('complete')">
+                    <div id="complete-warn" class="price-warning">⚠️ BELOW MINIMUM PRICE GUARDRAIL</div>
+
+                    <label>Quantity</label>
+                    <input type="number" id="complete-qty" value="1" oninput="calculateTotal('complete')">
+                    
+                    <div class="price-badge" id="complete-preview" style="border-left-color: var(--warning);">Total: Ksh 0</div>
+                    <button id="btn-sell-complete" class="btn" style="background:var(--warning)">Complete Full Sale</button>
+                </div>
+
+                <div class="card" style="border-top: 4px solid var(--text);">
+                    <h3 style="color: var(--text);">Warehouse Refill</h3>
+                    <label>Select Gas</label>
+                    <select class="gas-dropdown" id="refill-select"></select>
+                    <label>Quantity to move from Empty to Full</label>
+                    <input type="number" id="action-qty" placeholder="Units">
+                    <button id="btn-instant-refill" class="btn" style="background:var(--text)">Update Stock</button>
+                </div>
+            </div>
+
+            <!-- SHIFT TABLE -->
+            <div class="card">
+                <h3 style="color: var(--primary);">SHIFT INFORMATION</h3>
+                <table class="shift-table">
+                    <thead>
+                        <tr>
+                            <th>Shift ID</th>
+                            <th>Opened By</th>
+                            <th>Opened At</th>
+                            <th>Closed At</th>
+                            <th>Status</th>
+                            <th>Total Sales</th>
+                        </tr>
+                    </thead>
+                    <tbody id="shift-table-body">
+                        <!-- Shift data will be loaded here -->
+                    </tbody>
                 </table>
             </div>
-        </div>
 
-        <div class="card">
-            <div class="section-label">MONEY IN/OUT RECORD</div>
-            <input type="number" id="exp-amt" placeholder="Amount" style="margin-bottom:12px;">
-            <select id="exp-type" style="margin-bottom:12px;"><option value="Money Out">Money Out</option><option value="Money In">Money In</option></select>
-            <input type="text" id="exp-desc" placeholder="Reason (e.g. Loading Fee, Lunch)" style="width:100%; margin-bottom:12px;">
-            <select id="exp-method" style="width:100%; margin-bottom:15px;">
-                <option value="Cash">Cash</option><option value="Mpesa">Mpesa</option><option value="KCB">KCB Float</option><option value="Equity">Equity Float</option>
-            </select>
-            <button id="record-expense-btn" class="btn btn-sync" style="width: 100%;">RECORD MONEY</button>
-        </div>
-    </div>
-
-    <div class="section-label">TODAY'S MONEY IN/OUT HISTORY</div>
-    <div class="table-card">
-        <table>
-            <thead class="mobile-hide-header"><tr><th>Time</th><th>Reason</th><th>Amt</th><th>Type</th><th>Wallet</th></tr></thead>
-            <tbody id="live-trans-body"></tbody>
-        </table>
-    </div>
-
-    <div class="section-label">WORK HISTORY</div>
-    <input type="text" id="history-search" class="search-input" placeholder="🔍 Search by date (e.g. 10 Jan 2026)..." style="max-width: 500px;">
-    
-    <div class="table-card" style="overflow-x: auto;">
-        <table style="min-width: 1250px;">
-            <thead class="mobile-hide-header">
-                <tr>
-                    <th width="160">DATE</th>
-                    <th width="210">OPENING FLOATS</th>
-                    <th width="210">PAYMENT METHOD</th>
-                    <th width="190">MONEY IN/OUT</th>
-                    <th width="210">CLOSING FLOATS</th>
-                    <th width="190">VARIANCE</th>
-                    <th width="200">VARIANCE REASON</th>
-                </tr>
-            </thead>
-            <tbody id="history-body"></tbody>
-        </table>
-    </div>
-
-    <div style="text-align: center; padding: 20px;">
-        <button id="load-more-btn" class="btn" style="background: #e2e8f0; color: #1e293b; margin: auto;">LOAD MORE HISTORY</button>
-    </div>
-</div>
-
-<div id="open-modal" class="overlay">
-    <div class="modal">
-        <h3>🚀 Start Shift</h3>
-        <div class="grid-inputs" style="grid-template-columns: 1fr 1fr;">
-            <div class="input-group"><label>Actual Cash</label><input type="number" id="o-cash" value="0"></div>
-            <div class="input-group"><label>Mpesa Float</label><input type="number" id="o-mpesa" value="0"></div>
-            <div class="input-group"><label>KCB Float</label><input type="number" id="o-kcb" value="0"></div>
-            <div class="input-group"><label>Equity Float</label><input type="number" id="o-equity" value="0"></div>
-        </div>
-        <button class="btn btn-primary" style="margin-top:20px; width:100%" id="confirm-open">START DAY</button>
-    </div>
-</div>
-
-<div id="close-modal" class="overlay">
-    <div class="modal">
-        <h3 style="color:var(--danger)">🔒 End Day</h3>
-        <div class="grid-inputs" style="grid-template-columns: 1fr 1fr;">
-            <div class="input-group"><label>Actual Mpesa</label><input type="number" id="c-mpesa" value="0"></div>
-            <div class="input-group"><label>Actual KCB Float</label><input type="number" id="c-kcb" value="0"></div>
-            <div class="input-group"><label>Actual Equity</label><input type="number" id="c-equity" value="0"></div>
-            <div class="input-group">
-                <label>Actual KCB Paybill</label>
-                <input type="number" id="c-bank" value="0" readonly style="background:#f1f5f9; font-weight:bold; color:var(--primary);">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 25px;">
+                    <h3 style="margin:0;">Live Inventory</h3>
+                    <button onclick="loadAll()" style="background:#f1f5f9; border:none; padding:8px 15px; border-radius:8px; color:var(--primary); font-weight:700; cursor:pointer;">Refresh</button>
+                </div>
+                <div class="gas-grid" id="gas-display"></div>
             </div>
-            <div class="input-group" style="grid-column: span 2;"><label>Actual Cash</label><input type="number" id="c-cash" value="0"></div>
         </div>
-        <button class="btn btn-danger" style="margin-top:20px; width:100%" id="confirm-close">FINALIZE & CLOSE</button>
     </div>
-</div>
 
-<script type="module">
-    import { supabase } from './auth.js';
+    <!-- Auto Sync Indicator -->
+    <div id="syncIndicator" class="sync-indicator" style="display: none;">
+        <span>🔄</span>
+        <span>Syncing...</span>
+    </div>
 
-    let inventory = [];
-    let currentShift = null;
-    let selectedItem = null;
-    let historyLimit = 15;
-    let allShifts = [];
-    let allTransactions = [];
-    let allSales = [];
-    let currentKcbSalesTotal = 0;
-    let currentSale = null;
-    let refundMethod = 'Cash';
-    let refundAmount = 0;
-    let refundReason = '';
+    <script type="module">
+        import { supabase } from './auth.js';
 
-    // --- REALTIME: Sync Inventory Automatically ---
-    // This ensures stock numbers update instantly if an admin changes them
-    const productSubscription = supabase
-        .channel('inventory-sync')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload) => {
-            console.log("Database Change Detected. Syncing...");
-            fetchInventory(); 
-        })
-        .subscribe();
-
-    async function fetchInventory() {
-        const { data } = await supabase.from('products').select('*');
-        if (data) {
-            inventory = data;
-            refreshProductDatalist();
-            
-            // If an item is currently selected, refresh its stock hint immediately
-            if (selectedItem) {
-                const updated = inventory.find(p => p.id === selectedItem.id);
-                if (updated) {
-                    selectedItem = updated;
-                    updateStockDisplay(updated);
-                }
-            }
-        }
-    }
-
-    // Helper to handle the Red Pulsing Logic
-    function updateStockDisplay(item) {
-        const hStock = document.getElementById('hint-stock');
-        hStock.innerText = `Stock: ${item.stock_quantity}`;
-        hStock.style.display = 'inline-block';
-
-        if (item.stock_quantity <= 0) {
-            hStock.innerText = "OUT OF STOCK";
-            hStock.classList.add('low-stock-alert');
-        } else if (item.stock_quantity < 5) {
-            hStock.classList.add('low-stock-alert');
-        } else {
-            hStock.classList.remove('low-stock-alert');
-        }
-    }
-
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') init();
-    });
-
-    window.toggleNav = () => {
-        document.getElementById('navBanner').classList.toggle('active');
-        document.getElementById('onboardingHand').style.display = 'none';
-        sessionStorage.setItem('menuClicked', 'true');
-    };
-
-    window.logoutUser = async () => { 
-        await supabase.auth.signOut(); 
-        location.href = 'index.html'; 
-    };
-
-    window.toggleSplitFields = () => {
-        const method = document.getElementById('pMethod').value;
-        document.getElementById('split-fields').style.display = (method === 'Split') ? 'grid' : 'none';
-        if(method === 'Split') calculateSplit();
-    };
-
-    window.calculateSplit = () => {
-        const total = parseFloat(document.getElementById('pPrice').value || 0) * parseInt(document.getElementById('pQty').value || 0);
-        const cash = parseFloat(document.getElementById('split-cash').value || 0);
-        document.getElementById('split-online').value = (total - cash).toFixed(2);
-    };
-
-    // REFUND FUNCTIONS
-    window.showRefundModal = async (saleId) => {
-        const { data: sale } = await supabase.from('sales').select('*').eq('id', saleId).single();
-        if (!sale) return alert("Sale not found!");
-        
-        currentSale = sale;
-        refundAmount = sale.total_amount;
-        
-        document.getElementById('refund-modal-title').textContent = `Refund: ${sale.item_name}`;
-        
-        document.getElementById('refund-content').innerHTML = `
-            <div style="margin-bottom: 20px;">
-                <div style="background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 15px;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                        <div><small style="color: var(--text-dim);">Original Amount:</small><br>
-                            <b style="color: var(--danger); font-size: 1.2rem;">Ksh ${sale.total_amount.toLocaleString()}</b>
-                        </div>
-                        <div><small style="color: var(--text-dim);">Quantity:</small><br>
-                            <b style="font-size: 1.2rem;">${sale.quantity}</b>
-                        </div>
-                    </div>
-                    <small style="color: var(--text-dim);">Sold on: ${new Date(sale.created_at).toLocaleString()}</small>
-                </div>
-                
-                <label>Refund Amount (Ksh)</label>
-                <input type="number" id="refundAmountInput" value="${sale.total_amount}" 
-                       oninput="updateRefundAmount(this.value)" 
-                       style="margin-bottom: 15px;">
-                
-                <label>Select Refund Method (NOT KCB Paybill)</label>
-                <div class="payment-method-options">
-                    <button class="payment-method-btn ${refundMethod === 'Cash' ? 'selected' : ''}" 
-                            onclick="selectRefundMethod('Cash')">Cash</button>
-                    <button class="payment-method-btn ${refundMethod === 'Mpesa' ? 'selected' : ''}" 
-                            onclick="selectRefundMethod('Mpesa')">Mpesa</button>
-                    <button class="payment-method-btn ${refundMethod === 'KCB Float' ? 'selected' : ''}" 
-                            onclick="selectRefundMethod('KCB Float')">KCB Float</button>
-                    <button class="payment-method-btn ${refundMethod === 'Equity Float' ? 'selected' : ''}" 
-                            onclick="selectRefundMethod('Equity Float')">Equity Float</button>
-                </div>
-                
-                <label>Refund Reason (Required)</label>
-                <textarea id="refundReasonInput" class="refund-reason" 
-                          placeholder="Enter reason for refund..." 
-                          oninput="updateRefundReason(this.value)"></textarea>
-                
-                <div style="margin-top: 25px; display: flex; gap: 10px;">
-                    <button onclick="processRefund()" class="btn" style="background: var(--danger); flex: 1;">
-                        PROCESS REFUND
-                    </button>
-                    <button onclick="closeRefundModal()" class="btn" style="background: var(--text-dim); flex: 1;">
-                        CANCEL
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        document.getElementById('refund-modal').style.display = 'flex';
-    };
-
-    window.selectRefundMethod = (method) => {
-        refundMethod = method;
-        document.querySelectorAll('.payment-method-btn').forEach(btn => {
-            btn.classList.remove('selected');
-        });
-        event.target.classList.add('selected');
-    };
-
-    window.updateRefundAmount = (amount) => {
-        refundAmount = parseFloat(amount) || 0;
-    };
-
-    window.updateRefundReason = (reason) => {
-        refundReason = reason;
-    };
-
-    window.processRefund = async () => {
-        if (!refundReason.trim()) {
-            alert("Please enter a refund reason!");
-            return;
-        }
-        
-        if (refundAmount <= 0) {
-            alert("Please enter a valid refund amount!");
-            return;
-        }
-        
-        if (refundMethod.includes('KCB Paybill')) {
-            alert("Refunds cannot be processed through KCB Paybill. Please select another method.");
-            return;
-        }
-        
-        if (!currentShift) {
-            alert("No active shift found!");
-            return;
-        }
-        
-        try {
-            // Create refund transaction
-            const { error: transError } = await supabase.from('cash_transactions').insert([{
-                shift_id: currentShift.id,
-                type: 'Money Out',
-                category: refundMethod,
-                amount: refundAmount,
-                description: `REFUND: ${currentSale.item_name} - ${refundReason}`,
-                sale_id: currentSale.id
-            }]);
-            
-            if (transError) throw transError;
-            
-            // Update stock for the item (reverse the sale)
-            if (currentSale.product_id) {
-                const { data: product } = await supabase.from('products')
-                    .select('*')
-                    .eq('id', currentSale.product_id)
-                    .single();
-                
-                if (product) {
-                    // Restore stock quantity
-                    const { error: stockError } = await supabase.from('products')
-                        .update({
-                            stock_quantity: product.stock_quantity + currentSale.quantity
-                        })
-                        .eq('id', currentSale.product_id);
-                    
-                    if (stockError) throw stockError;
-                }
-            }
-            
-            alert(`Refund of Ksh ${refundAmount.toLocaleString()} processed successfully via ${refundMethod}!`);
-            closeRefundModal();
-            loadShiftData();
-            
-        } catch (error) {
-            alert("Error processing refund: " + error.message);
-        }
-    };
-
-    window.closeRefundModal = () => {
-        document.getElementById('refund-modal').style.display = 'none';
-        currentSale = null;
-        refundMethod = 'Cash';
-        refundAmount = 0;
-        refundReason = '';
-    };
-
-    // EDIT SALE FUNCTIONS
-    window.showEditModal = async (saleId) => {
-        const { data: sale } = await supabase.from('sales').select('*').eq('id', saleId).single();
-        if (!sale) return alert("Sale not found!");
-        
-        currentSale = sale;
-        
-        document.getElementById('refund-modal-title').textContent = `Edit Sale: ${sale.item_name}`;
-        
-        document.getElementById('refund-content').innerHTML = `
-            <div style="margin-bottom: 20px;">
-                <div style="background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 15px;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                        <div><small style="color: var(--text-dim);">Original Amount:</small><br>
-                            <b style="color: var(--danger); font-size: 1.2rem;">Ksh ${sale.total_amount.toLocaleString()}</b>
-                        </div>
-                        <div><small style="color: var(--text-dim);">Quantity:</small><br>
-                            <b style="font-size: 1.2rem;">${sale.quantity}</b>
-                        </div>
-                    </div>
-                    <small style="color: var(--text-dim);">Sold on: ${new Date(sale.created_at).toLocaleString()}</small>
-                </div>
-                
-                <label>New Quantity</label>
-                <input type="number" id="editQtyInput" value="${sale.quantity}" min="1" style="margin-bottom: 15px;">
-                
-                <label>New Unit Price (Ksh)</label>
-                <input type="number" id="editPriceInput" value="${sale.unit_price}" step="0.01" style="margin-bottom: 15px;">
-                
-                <label>New Payment Method</label>
-                <select id="editMethodInput" style="margin-bottom: 20px;">
-                    <option value="Cash" ${sale.payment_method === 'Cash' ? 'selected' : ''}>Cash</option>
-                    <option value="KCB Paybill" ${sale.payment_method === 'KCB Paybill' ? 'selected' : ''}>KCB Paybill</option>
-                    <option value="Mpesa" ${sale.payment_method === 'Mpesa' ? 'selected' : ''}>Mpesa</option>
-                    <option value="KCB Float" ${sale.payment_method === 'KCB Float' ? 'selected' : ''}>KCB Float</option>
-                    <option value="Equity Float" ${sale.payment_method === 'Equity Float' ? 'selected' : ''}>Equity Float</option>
-                    <option value="Debt" ${sale.payment_method === 'Debt' ? 'selected' : ''}>Debt</option>
-                </select>
-                
-                <label>Edit Reason (Required)</label>
-                <textarea id="editReasonInput" class="refund-reason" placeholder="Enter reason for editing this sale..."></textarea>
-                
-                <div style="margin-top: 25px; display: flex; gap: 10px;">
-                    <button onclick="processEdit()" class="btn" style="background: var(--warning); flex: 1;">
-                        UPDATE SALE
-                    </button>
-                    <button onclick="closeRefundModal()" class="btn" style="background: var(--text-dim); flex: 1;">
-                        CANCEL
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        document.getElementById('refund-modal').style.display = 'flex';
-    };
-
-    window.processEdit = async () => {
-        const newQty = parseInt(document.getElementById('editQtyInput').value) || 0;
-        const newPrice = parseFloat(document.getElementById('editPriceInput').value) || 0;
-        const newMethod = document.getElementById('editMethodInput').value;
-        const editReason = document.getElementById('editReasonInput').value.trim();
-        
-        if (newQty <= 0 || newPrice <= 0) {
-            alert("Please enter valid quantity and price!");
-            return;
-        }
-        
-        if (!editReason) {
-            alert("Please enter a reason for editing this sale!");
-            return;
-        }
-        
-        const newTotal = newQty * newPrice;
-        const qtyDiff = newQty - currentSale.quantity;
-        
-        try {
-            // Update stock if quantity changed
-            if (currentSale.product_id && qtyDiff !== 0) {
-                const { data: product } = await supabase.from('products')
-                    .select('*')
-                    .eq('id', currentSale.product_id)
-                    .single();
-                
-                if (product) {
-                    // Adjust stock based on quantity difference
-                    const { error: stockError } = await supabase.from('products')
-                        .update({
-                            stock_quantity: product.stock_quantity - qtyDiff
-                        })
-                        .eq('id', currentSale.product_id);
-                    
-                    if (stockError) throw stockError;
-                }
-            }
-            
-            // Update the sale record
-            const { error: updateError } = await supabase.from('sales')
-                .update({
-                    quantity: newQty,
-                    unit_price: newPrice,
-                    total_amount: newTotal,
-                    payment_method: newMethod,
-                    discount_reason: editReason,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', currentSale.id);
-            
-            if (updateError) throw updateError;
-            
-            alert("Sale updated successfully!");
-            closeRefundModal();
-            loadShiftData();
-            
-        } catch (error) {
-            alert("Error updating sale: " + error.message);
-        }
-    };
-
-    // SALE HISTORY FUNCTIONS
-    window.showSaleHistory = async () => {
-        if (!currentShift) {
-            alert("No active shift found!");
-            return;
-        }
-        
-        const { data: sales } = await supabase.from('sales')
-            .select('*')
-            .eq('shift_id', currentShift.id)
-            .order('created_at', { ascending: false })
-            .limit(50);
-        
-        if (!sales || sales.length === 0) {
-            document.getElementById('sales-history-body').innerHTML = `
-                <tr>
-                    <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-dim);">
-                        No sales found for current shift.
-                    </td>
-                </tr>
-            `;
-        } else {
-            document.getElementById('sales-history-body').innerHTML = sales.map(sale => `
-                <tr>
-                    <td>${new Date(sale.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
-                    <td><b>${sale.item_name}</b></td>
-                    <td>${sale.quantity}</td>
-                    <td>Ksh ${sale.total_amount.toLocaleString()}</td>
-                    <td>${sale.payment_method}</td>
-                    <td>
-                        <div class="sale-actions">
-                            <button class="action-btn edit-btn" onclick="showEditModal(${sale.id})">Edit</button>
-                            <button class="action-btn refund-btn" onclick="showRefundModal(${sale.id})">Refund</button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-        }
-        
-        document.getElementById('history-modal').style.display = 'flex';
-    };
-
-    window.closeHistoryModal = () => {
-        document.getElementById('history-modal').style.display = 'none';
-    };
-
-    function updateGreeting() {
-        const hour = new Date().getHours();
-        const greetingTitle = document.getElementById('greeting-title');
-        const greetingSubtitle = document.getElementById('greeting-subtitle');
-        const greetingTime = document.getElementById('greeting-time');
-        
-        let greeting = '';
-        if (hour < 12) {
-            greeting = 'Good Morning';
-        } else if (hour < 17) {
-            greeting = 'Good Afternoon';
-        } else {
-            greeting = 'Good Evening';
-        }
-        
-        if (greetingTitle) greetingTitle.textContent = greeting + '!';
-        if (greetingSubtitle) {
-            if (currentShift) {
-                greetingSubtitle.textContent = 'Your shift is active. Keep up the great work!';
-            } else {
-                greetingSubtitle.textContent = 'Ready to start your shift?';
-            }
-        }
-        if (greetingTime) {
-            greetingTime.textContent = new Date().toLocaleString('en-GB', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
-    }
-
-    async function init() {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return window.location.href = 'index.html';
-
-        updateGreeting();
-        setInterval(updateGreeting, 60000); // Update every minute
-
-        const [prodRes, shiftRes] = await Promise.all([
-            supabase.from('products').select('*'),
-            supabase.from('daily_shifts').select('*').eq('status', 'Open').maybeSingle()
-        ]);
-
-        inventory = prodRes.data || [];
-        refreshProductDatalist();
-
-        const actionBtnContainer = document.getElementById('shift-action-container');
-        if (shiftRes.data) {
-            currentShift = shiftRes.data;
-            actionBtnContainer.innerHTML = `<button class="btn btn-danger special-action-btn" onclick="document.getElementById('close-modal').style.display='flex'">🔴 CLOSE DAY</button>`;
-            document.getElementById('float-cash').innerText = (currentShift.open_cash || 0).toLocaleString();
-            document.getElementById('float-mpesa').innerText = (currentShift.open_mpesa || 0).toLocaleString();
-            document.getElementById('float-kcb').innerText = (currentShift.open_kcb || 0).toLocaleString();
-            document.getElementById('float-equity').innerText = (currentShift.open_equity || 0).toLocaleString();
-            loadShiftData();
-            updateGreeting();
-        } else {
-            actionBtnContainer.innerHTML = `<button class="btn btn-primary special-action-btn" onclick="document.getElementById('open-modal').style.display='flex'">🟢 START DAY</button>`;
-        }
-        loadHistory();
-    }
-
-    function refreshProductDatalist() {
-        document.getElementById('pList').innerHTML = inventory.map(p => `<option value="${formatItemName(p)}">`).join('');
-    }
-
-    function formatItemName(p) {
-        let name = p.name;
-        if (p.category === 'Gas' && p.weight_category) name += ` (${p.weight_category})`;
-        if (p.part_type && p.part_type !== 'N/A') name += ` [${p.part_type}]`;
-        return name;
-    }
-
-    document.getElementById('pSearch').oninput = (e) => {
-        selectedItem = inventory.find(p => formatItemName(p) === e.target.value);
-        if (selectedItem) {
-            document.getElementById('pPrice').value = selectedItem.selling_price;
-            document.getElementById('hint-min').innerText = `Min: ${selectedItem.min_price || 0}`;
-            document.getElementById('hint-min').style.display = 'inline-block';
-            updateStockDisplay(selectedItem);
-            updateTotal();
-        }
-    };
-
-    function updateTotal() {
-        const price = parseFloat(document.getElementById('pPrice').value || 0);
-        const qty = parseInt(document.getElementById('pQty').value || 0);
-        document.getElementById('total-text').innerText = (price * qty).toLocaleString();
-        if (document.getElementById('pMethod').value === 'Split') calculateSplit();
-    }
-
-    document.getElementById('pPrice').oninput = updateTotal;
-    document.getElementById('pQty').oninput = updateTotal;
-
-    document.getElementById('sale-form').onsubmit = async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('submit-sale-btn');
-        if (!currentShift) return alert("Open shift first!");
-        if (!selectedItem) return alert("Select a valid item.");
-
-        const price = parseFloat(document.getElementById('pPrice').value);
-        const qty = parseInt(document.getElementById('pQty').value);
-        const total = price * qty;
-        const method = document.getElementById('pMethod').value;
-
-        if (price < (selectedItem.min_price || 0)) {
-            const discReason = prompt(`Price below Min. Reason:`);
-            if (!discReason) return;
-            selectedItem.tempReason = discReason;
-        }
-
-        if (qty > selectedItem.stock_quantity) return alert("Insufficient stock!");
-
-        btn.disabled = true;
-        btn.innerText = "RECORDING...";
-
-        let salesToInsert = [];
-        const baseSale = {
-            shift_id: currentShift.id,
-            product_id: selectedItem.id,
-            quantity: qty, 
-            unit_price: price, 
-            cost_price: selectedItem.cost_price || 0,
-            part_type: selectedItem.part_type || 'N/A', 
-            discount_reason: selectedItem.tempReason || ""
+        window.toggleNav = () => {
+            document.getElementById('navBanner').classList.toggle('active');
+            document.getElementById('onboardingHand').style.display = 'none';
+            sessionStorage.setItem('menuClicked', 'true');
         };
 
-        if (method === 'Split') {
-            const cashAmt = parseFloat(document.getElementById('split-cash').value || 0);
-            const onlineAmt = total - cashAmt;
-            salesToInsert.push({ ...baseSale, item_name: `${formatItemName(selectedItem)} (Split-C)`, total_amount: cashAmt, payment_method: 'Cash' });
-            salesToInsert.push({ ...baseSale, item_name: `${formatItemName(selectedItem)} (Split-O)`, quantity: 0, total_amount: onlineAmt, payment_method: 'KCB Paybill' });
-        } else {
-            salesToInsert.push({ ...baseSale, item_name: formatItemName(selectedItem), total_amount: total, payment_method: method });
-        }
-
-        const { data: sData, error } = await supabase.from('sales').insert(salesToInsert).select();
-        
-        if (!error) {
-            if(method === "Debt") {
-                const dName = prompt("Customer Name:");
-                if(dName) await supabase.from('debtors').insert([{ customer_name: dName, amount_owed: total, sale_id: sData[0].id }]);
-            }
-
-            // Sync UI without full page reload
-            await fetchInventory(); 
-            await loadShiftData();
-            
-            // Reset Form
-            document.getElementById('sale-form').reset();
-            document.getElementById('pSearch').value = '';
-            document.getElementById('hint-stock').style.display = 'none';
-            document.getElementById('hint-min').style.display = 'none';
-            document.getElementById('total-text').innerText = '0';
-            
-            btn.disabled = false;
-            btn.innerText = "SUBMIT SALE";
-            alert("Sale Saved!");
-        } else { 
-            alert("Error: " + error.message); 
-            btn.disabled = false;
-            btn.innerText = "SUBMIT SALE";
-        }
-    };
-
-    async function loadShiftData() {
-        const [salesRes, transRes] = await Promise.all([
-            supabase.from('sales').select('*').eq('shift_id', currentShift.id).order('created_at', {ascending:false}),
-            supabase.from('cash_transactions').select('*').eq('shift_id', currentShift.id).order('created_at', {ascending:false})
-        ]);
-
-        const sales = salesRes.data || [];
-        const trans = transRes.data || [];
-
-        currentKcbSalesTotal = sales.filter(s => s.payment_method === 'KCB Paybill').reduce((a, b) => a + b.total_amount, 0);
-        document.getElementById('live-kcb-box').innerText = currentKcbSalesTotal.toLocaleString();
-        
-        const closeKcbInput = document.getElementById('c-bank');
-        if (closeKcbInput) closeKcbInput.value = currentKcbSalesTotal;
-
-        // Update live sales table with action buttons
-        document.getElementById('live-sales-body').innerHTML = sales.map(s => `
-            <tr>
-                <td data-label="Time">${new Date(s.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
-                <td data-label="Item"><b>${s.item_name}</b></td>
-                <td data-label="Qty">${s.quantity}</td>
-                <td data-label="Total">Ksh ${s.total_amount.toLocaleString()}</td>
-                <td data-label="Method">${s.payment_method}</td>
-                <td data-label="Actions">
-                    <div class="sale-actions">
-                        <button class="action-btn edit-btn" onclick="showEditModal(${s.id})">Edit</button>
-                        <button class="action-btn refund-btn" onclick="showRefundModal(${s.id})">Refund</button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
-        
-        document.getElementById('live-trans-body').innerHTML = trans.map(t => `<tr><td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Reason">${t.description}</td><td data-label="Amt">Ksh ${t.amount.toLocaleString()}</td><td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">${t.type}</td><td data-label="Wallet">${t.category}</td></tr>`).join('');
-    }
-
-    document.getElementById('confirm-open').onclick = async function() {
-        const cash = parseFloat(document.getElementById('o-cash').value || 0);
-        const mpesa = parseFloat(document.getElementById('o-mpesa').value || 0);
-        const kcb = parseFloat(document.getElementById('o-kcb').value || 0);
-        const equity = parseFloat(document.getElementById('o-equity').value || 0);
-        const total = cash + mpesa + kcb + equity;
-        
-        const confirmed = confirm(
-            `Are these the correct opening floats? Please confirm before starting your shift.\n\n` +
-            `Cash: Ksh ${cash.toLocaleString()}\n` +
-            `Mpesa: Ksh ${mpesa.toLocaleString()}\n` +
-            `KCB Float: Ksh ${kcb.toLocaleString()}\n` +
-            `Equity Float: Ksh ${equity.toLocaleString()}\n\n` +
-            `Total: Ksh ${total.toLocaleString()}`
-        );
-        
-        if (!confirmed) {
-            return; // User cancelled, don't proceed
-        }
-        
-        this.disabled = true;
-        const openData = {
-            open_cash: cash,
-            open_mpesa: mpesa,
-            open_kcb: kcb,
-            open_equity: equity,
-            status: 'Open', 
-            start_time: new Date().toISOString()
+        window.logoutUser = async () => { 
+            await supabase.auth.signOut(); 
+            location.href = 'index.html'; 
         };
-        await supabase.from('daily_shifts').insert([openData]);
-        location.reload();
-    };
-
-    document.getElementById('confirm-close').onclick = async function() {
-        this.disabled = true;
-        const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
-        const clK = parseFloat(document.getElementById('c-kcb').value || 0);
-        const clE = parseFloat(document.getElementById('c-equity').value || 0);
-        const clB = currentKcbSalesTotal;
-        const clC = parseFloat(document.getElementById('c-cash').value || 0);
-
-        const { data: sales } = await supabase.from('sales').select('total_amount').eq('shift_id', currentShift.id).neq('payment_method','Debt');
-        const { data: trans } = await supabase.from('cash_transactions').select('amount, type').eq('shift_id', currentShift.id);
         
-        const totalSales = (sales || []).reduce((a,b) => a + b.total_amount, 0);
-        const moneyIn = (trans || []).filter(t => t.type === 'Money In').reduce((a,b) => a + b.amount, 0);
-        const moneyOut = (trans || []).filter(t => t.type === 'Money Out').reduce((a,b) => a + b.amount, 0);
+        let gasItems = [];
+        let activeShift = null;
+        let autoSyncInterval = null;
 
-        const opTotal = currentShift.open_cash + currentShift.open_mpesa + currentShift.open_kcb + currentShift.open_equity;
-        const expected = (opTotal + totalSales + moneyIn) - moneyOut;
-        const actual = clM + clK + clE + clB + clC;
-        const variance = actual - expected;
+        async function init() {
+            const { data: shift } = await supabase.from('daily_shifts').select('*').eq('status', 'Open').maybeSingle();
+            activeShift = shift;
+            loadAll();
+            loadSuppliers();
+            loadTodaySales();
+            loadMoneyHistory();
+            loadShifts();
+            
+            // Start auto-sync every 30 seconds
+            startAutoSync();
+        }
 
-        let note = Math.abs(variance) < 1 ? "Balanced" : prompt(`Variance: ${variance}. Reason:`);
-        if (Math.abs(variance) >= 1 && !note) { this.disabled = false; return; }
+        async function startAutoSync() {
+            // Clear existing interval
+            if (autoSyncInterval) clearInterval(autoSyncInterval);
+            
+            // Set new interval for auto-sync
+            autoSyncInterval = setInterval(async () => {
+                try {
+                    document.getElementById('syncIndicator').style.display = 'flex';
+                    await Promise.all([
+                        loadAll(),
+                        loadTodaySales(),
+                        loadMoneyHistory(),
+                        loadShifts()
+                    ]);
+                    
+                    // Show sync success briefly
+                    setTimeout(() => {
+                        document.getElementById('syncIndicator').innerHTML = `<span>✅</span><span>Synced ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>`;
+                        setTimeout(() => {
+                            document.getElementById('syncIndicator').style.display = 'none';
+                        }, 2000);
+                    }, 500);
+                    
+                } catch (error) {
+                    console.error('Auto-sync error:', error);
+                    document.getElementById('syncIndicator').innerHTML = `<span>❌</span><span>Sync Failed</span>`;
+                }
+            }, 30000); // Sync every 30 seconds
+        }
 
-        await supabase.from('daily_shifts').update({
-            close_mpesa: clM, close_kcb: clK, close_equity: clE, close_kcb_bank: clB, close_cash: clC,
-            status: 'Closed', end_time: new Date().toISOString(), variance_note: note, system_expected_total: expected
-        }).eq('id', currentShift.id);
-        location.reload();
-    };
+        async function loadSuppliers() {
+            const { data } = await supabase.from('suppliers').select('id, name').order('name');
+            if (data) {
+                document.getElementById('new-supplier-id').innerHTML = 
+                    `<option value="">No Supplier</option>` + 
+                    data.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            }
+        }
 
-    async function loadHistory(searchQuery = "") {
-        try {
-            const { data: shifts } = await supabase
+        async function loadShifts() {
+            const { data, error } = await supabase
                 .from('daily_shifts')
                 .select('*')
-                .order('start_time', { ascending: false })
-                .limit(historyLimit);
-
-            const { data: transactions } = await supabase.from('cash_transactions').select('shift_id, amount, type');
-            const { data: sales } = await supabase.from('sales').select('shift_id, total_amount, payment_method');
-
-            allShifts = shifts || [];
-            allTransactions = transactions || [];
-            allSales = sales || [];
+                .order('opened_at', { ascending: false })
+                .limit(10);
             
-            const lastClosed = allShifts.find(s => s.status === 'Closed');
-            if (lastClosed) {
-                const clT = (lastClosed.close_cash||0) + (lastClosed.close_mpesa||0) + (lastClosed.close_kcb||0) + (lastClosed.close_equity||0) + (lastClosed.close_kcb_bank || 0);
-                if (Math.abs(clT - (lastClosed.system_expected_total || 0)) < 1) {
-                    const banner = document.getElementById('congrats-banner');
-                    if(banner) banner.style.display = 'block';
+            if (!error && data) {
+                const tbody = document.getElementById('shift-table-body');
+                tbody.innerHTML = data.map(shift => `
+                    <tr>
+                        <td>${shift.id}</td>
+                        <td>${shift.opened_by || 'N/A'}</td>
+                        <td>${new Date(shift.opened_at).toLocaleString()}</td>
+                        <td>${shift.closed_at ? new Date(shift.closed_at).toLocaleString() : 'Active'}</td>
+                        <td>
+                            <span class="shift-status ${shift.status === 'Open' ? 'status-open' : 'status-closed'}">
+                                ${shift.status}
+                            </span>
+                        </td>
+                        <td>Ksh ${(shift.total_sales || 0).toLocaleString()}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        async function loadTodaySales() {
+            if (!activeShift) return;
+            
+            const { data, error } = await supabase
+                .from('sales')
+                .select('*')
+                .eq('shift_id', activeShift.id)
+                .order('created_at', { ascending: false });
+            
+            if (!error && data) {
+                const container = document.getElementById('today-sales-container');
+                container.innerHTML = data.map(sale => `
+                    <div class="sale-item-row">
+                        <div class="sale-info">
+                            <div class="sale-time">
+                                ${new Date(sale.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} 
+                                | ${sale.item_name}
+                            </div>
+                            <div class="sale-details">
+                                <span>Qty: ${sale.quantity}</span>
+                                <span>Price: Ksh ${sale.unit_price.toLocaleString()}</span>
+                                <span>Total: Ksh ${sale.total_amount.toLocaleString()}</span>
+                                <span>Method: ${sale.payment_method}</span>
+                            </div>
+                        </div>
+                        <div class="sale-actions">
+                            <button class="btn-edit" onclick="editSale('${sale.id}')">Edit</button>
+                            <button class="btn-refund" onclick="refundSale('${sale.id}')">Refund</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function loadMoneyHistory() {
+            if (!activeShift) return;
+            
+            const { data, error } = await supabase
+                .from('money_transactions')
+                .select('*')
+                .eq('shift_id', activeShift.id)
+                .order('created_at', { ascending: false });
+            
+            if (!error && data) {
+                const container = document.getElementById('money-history-container');
+                container.innerHTML = data.map(trans => `
+                    <div class="sale-item-row">
+                        <div class="sale-info">
+                            <div class="sale-time">
+                                ${new Date(trans.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} 
+                                | ${trans.type === 'in' ? '💰 MONEY IN' : '💸 MONEY OUT'}
+                            </div>
+                            <div class="sale-details">
+                                <span>Amount: Ksh ${trans.amount.toLocaleString()}</span>
+                                <span>Reason: ${trans.reason}</span>
+                                <span>Method: ${trans.method}</span>
+                            </div>
+                        </div>
+                        <div class="sale-actions">
+                            <button class="btn-edit" onclick="editMoneyTransaction('${trans.id}')">Edit</button>
+                            <button class="btn-refund" onclick="deleteMoneyTransaction('${trans.id}')">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function loadAll() {
+            const { data, error } = await supabase.from('products').select('*').eq('category', 'Gas').order('name');
+            if (!error) {
+                gasItems = data || [];
+                renderInventory();
+                updateDropdowns();
+                document.getElementById('last-updated').innerText = "Last Sync: " + new Date().toLocaleTimeString();
+            }
+        }
+
+        function renderInventory() {
+            document.getElementById('gas-display').innerHTML = gasItems.map(g => `
+                <div class="card" style="margin-bottom:0; padding: 20px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                        <div>
+                            <div style="font-weight:800; font-size: 1.1rem;">${g.name}</div>
+                            <span class="brand-tag">${g.weight_category}</span>
+                        </div>
+                        <div style="text-align:right">
+                            <small style="color:var(--text-dim); font-weight:700;">REFILL PRICE</small>
+                            <div style="font-weight:800; color:var(--primary)">Ksh ${g.selling_price.toLocaleString()}</div>
+                        </div>
+                    </div>
+                    <div class="stock-display">
+                        <div class="box full"><span class="qty">${g.stock_quantity}</span><small>Full</small></div>
+                        <div class="box empty"><span class="qty">${g.empty_quantity || 0}</span><small>Empty</small></div>
+                    </div>
+                    <a href="cashier_inventory.html?item=${encodeURIComponent(g.name)}&type=gas" class="btn-buy">
+                        🚚 Buy Complete Stock from Supplier
+                    </a>
+                </div>
+            `).join('');
+        }
+
+        function updateDropdowns() {
+            const opts = `<option value="" disabled selected>Choose Brand...</option>` + 
+                gasItems.map(g => `<option value="${g.id}">${g.name} (${g.weight_category})</option>`).join('');
+            
+            document.querySelectorAll('.gas-dropdown').forEach(el => {
+                if(el.id === 'incoming-select') {
+                    el.innerHTML = `<option value="same">-- Same as Outgoing Brand --</option>` + opts;
+                } else {
+                    el.innerHTML = opts;
+                }
+            });
+        }
+
+        window.autoFillPrice = (type) => {
+            const id = document.getElementById(type === 'refill' ? 'sale-select' : 'complete-select').value;
+            const item = gasItems.find(g => g.id == id);
+            if (!item) return;
+
+            const priceInput = document.getElementById(type === 'refill' ? 'sale-price' : 'complete-price');
+            priceInput.value = type === 'refill' ? item.selling_price : (item.selling_price + (item.cylinder_price || 0));
+            calculateTotal(type);
+        };
+
+        window.calculateTotal = (type) => {
+            const id = document.getElementById(type === 'refill' ? 'sale-select' : 'complete-select').value;
+            const qty = parseInt(document.getElementById(type === 'refill' ? 'sale-qty' : 'complete-qty').value) || 0;
+            const price = parseFloat(document.getElementById(type === 'refill' ? 'sale-price' : 'complete-price').value) || 0;
+            const item = gasItems.find(g => g.id == id);
+            
+            if (!item) return;
+
+            const minAllowed = type === 'refill' ? (item.min_selling_price || item.selling_price) : ((item.min_selling_price || item.selling_price) + (item.cylinder_price || 0));
+            const warnEl = document.getElementById(type === 'refill' ? 'refill-warn' : 'complete-warn');
+            warnEl.style.display = price < minAllowed ? 'block' : 'none';
+
+            const total = price * qty;
+            document.getElementById(type === 'refill' ? 'refill-preview' : 'complete-preview').innerHTML = 
+                `In Stock: ${item.stock_quantity} | Total: <b>Ksh ${total.toLocaleString()}</b>`;
+        };
+
+        // FIXED: Complete sale should NOT increase empty cylinders
+        async function processSale(btnId, type) {
+            const outgoingId = document.getElementById(type === 'refill' ? 'sale-select' : 'complete-select').value;
+            const qty = parseInt(document.getElementById(type === 'refill' ? 'sale-qty' : 'complete-qty').value);
+            const price = parseFloat(document.getElementById(type === 'refill' ? 'sale-price' : 'complete-price').value);
+            const outgoingItem = gasItems.find(g => g.id == outgoingId);
+            const btn = document.getElementById(btnId);
+
+            if (!outgoingId || !qty || !price || qty <= 0) return alert("Fill all details");
+            if (!activeShift) return alert("No open shift! Open shift first.");
+            if (outgoingItem.stock_quantity < qty) return alert("Insufficient full cylinders in stock!");
+
+            // Brand Exchange Logic - only for refills
+            let incomingId = outgoingId;
+            if (type === 'refill') {
+                const exchangeVal = document.getElementById('incoming-select').value;
+                if (exchangeVal !== "same" && exchangeVal !== "") {
+                    incomingId = exchangeVal;
                 }
             }
-            renderHistory(allShifts, allTransactions, allSales, searchQuery);
-        } catch (error) {
-            console.error("Fetch Error:", error);
-        }
-    }
+            const incomingItem = gasItems.find(g => g.id == incomingId);
 
-    function renderHistory(shifts, transData, salesData, query = "") {
-        const desktopTbody = document.getElementById('history-body');
-        if(!desktopTbody) return;
-        
-        const filtered = shifts.filter(sh => {
-            const dateStr = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }).toLowerCase();
-            return dateStr.includes(query.toLowerCase());
-        });
-        
-        let tableHtml = '';
-
-        filtered.forEach(sh => {
-            const shiftLogs = (transData || []).filter(t => t.shift_id === sh.id);
-            const shiftSales = (salesData || []).filter(s => s.shift_id === sh.id);
-
-            const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
-            const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
-            const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount || 0), 0);
-            const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount || 0), 0);
-
-            const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_equity||0);
-            const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
-
-            const isClosed = sh.status === 'Closed';
-            const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
-            const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
-            const variance = isClosed ? (closeTotal - expected) : 0;
-            const statusClass = !isClosed ? 'active-shift' : (Math.abs(variance) < 1 ? 'balanced' : 'mismatch');
-
-            const startD = new Date(sh.start_time);
+            // --- PRICE AUDIT ENFORCEMENT ---
+            let auditReason = null;
+            const minAllowed = type === 'refill' ? (outgoingItem.min_selling_price || outgoingItem.selling_price) : ((outgoingItem.min_selling_price || outgoingItem.selling_price) + (outgoingItem.cylinder_price || 0));
             
-            tableHtml += `
-                <tr>
-                    <td class="date-cell">
-                        <b>${startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'})}</b>
-                        <span class="time-pill">IN: ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span><br>
-                        <span class="time-pill">${sh.end_time ? 'OUT: '+new Date(sh.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'ACTIVE'}</span>
-                    </td>
-                    <td>
-                        <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity||0).toLocaleString()}</span></div>
-                        <div class="total-row">Total: ${openTotal.toLocaleString()}</div>
-                    </td>
-                    <td>
-                        <div class="revenue-card">
-                            <div class="account-line"><span class="account-label">Cash Sales</span><span class="account-val" style="color:var(--success)">+${cashSales.toLocaleString()}</span></div>
-                            <div class="account-line"><span class="account-label">KCB Paybill</span><span class="account-val" style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span></div>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="revenue-card">
-                            <div class="account-line"><span class="account-label">In</span><span class="account-val" style="color:var(--success)">+${moneyIn.toLocaleString()}</span></div>
-                            <div class="account-line"><span class="account-label">Out</span><span class="account-val" style="color:var(--danger)">-${moneyOut.toLocaleString()}</span></div>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.close_cash||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.close_kcb||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.close_equity||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">Paybill</span><span class="account-val">${(sh.close_kcb_bank||0).toLocaleString()}</span></div>
-                        <div class="total-row" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>
-                    </td>
-                    <td>
-                        <span class="status-badge ${statusClass}">
-                            ${isClosed ? 'VAR: ' + variance.toLocaleString() : 'SHIFT ACTIVE'}
-                        </span>
-                        <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 8px; text-align: center;">
-                            Expected: ${expected.toLocaleString()}
-                        </div>
-                    </td>
-                    <td><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim); font-style: italic;">${sh.variance_note || 'No notes added.'}</div></td>
-                </tr>`;
-        });
+            if (price < minAllowed) {
+                auditReason = prompt(`Price (Ksh ${price}) is below authorized minimum (Ksh ${minAllowed}).\n\nEnter REASON for this discount (Required for Audit):`);
+                if (!auditReason || auditReason.trim() === "") {
+                    return alert("Sale Cancelled: You must provide a reason for selling below the minimum price.");
+                }
+            }
 
-        desktopTbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.</td></tr>';
-    }
+            btn.disabled = true;
+            btn.innerText = "Processing...";
 
-    document.getElementById('history-search').addEventListener('input', (e) => {
-        const term = e.target.value.toLowerCase();
-        const filtered = allShifts.filter(sh => {
-            const dateStr = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }).toLowerCase();
-            return dateStr.includes(term);
-        });
-        renderHistory(filtered, allTransactions, allSales, term);
-    });
-    
-    // Search functionality for sale history
-    document.getElementById('history-search-input')?.addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toLowerCase();
-        const rows = document.querySelectorAll('#sales-history-body tr');
-        
-        rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(searchTerm) ? '' : 'none';
-        });
-    });
+            try {
+                const total = price * qty;
+                const saleName = type === 'refill' && incomingId !== outgoingId ? 
+                    `${outgoingItem.name} (Exchanged for empty ${incomingItem.name})` : 
+                    `${outgoingItem.name} (${outgoingItem.weight_category})`;
 
-    document.getElementById('load-more-btn').onclick = () => { historyLimit += 15; loadHistory(); };
-    
-    document.getElementById('record-expense-btn').onclick = async function() {
-        const amt = parseFloat(document.getElementById('exp-amt').value);
-        const desc = document.getElementById('exp-desc').value;
-        if (!amt || !desc || !currentShift) return alert("Fill all fields");
-        
-        this.disabled = true;
-        const { error } = await supabase.from('cash_transactions').insert([{
-            shift_id: currentShift.id, 
-            type: document.getElementById('exp-type').value,
-            category: document.getElementById('exp-method').value, 
-            amount: amt, 
-            description: desc
-        }]);
+                const { error: saleErr } = await supabase.from('sales').insert([{
+                    shift_id: activeShift.id,
+                    product_id: outgoingItem.id,
+                    item_name: `${saleName} - ${type === 'refill' ? 'REFILL' : 'COMPLETE'}`,
+                    quantity: qty,
+                    unit_price: price,
+                    total_amount: total,
+                    amount: total,
+                    payment_method: 'Cash',
+                    cost_price: outgoingItem.cost_price || 0,
+                    discount_reason: auditReason,
+                    sale_type: type
+                }]);
 
-        if(!error) {
-            document.getElementById('exp-amt').value = '';
-            document.getElementById('exp-desc').value = '';
-            loadShiftData();
-            this.disabled = false;
-        } else {
-            alert(error.message);
-            this.disabled = false;
+                if (saleErr) throw saleErr;
+
+                // Update Outgoing Stock (Full cylinders decrease for both refill and complete)
+                await supabase.from('products').update({ 
+                    stock_quantity: outgoingItem.stock_quantity - qty 
+                }).eq('id', outgoingId);
+
+                // UPDATE FIXED: Only increase empty cylinders for REFILL sales, NOT for complete sales
+                if (type === 'refill') {
+                    // We fetch current incoming item again to avoid race conditions
+                    const { data: latestIncoming } = await supabase.from('products').select('empty_quantity').eq('id', incomingId).single();
+                    await supabase.from('products').update({ 
+                        empty_quantity: (latestIncoming.empty_quantity || 0) + qty 
+                    }).eq('id', incomingId);
+                }
+                // For complete sales: empty cylinders remain unchanged (customer keeps the cylinder)
+
+                alert("Sale recorded and stock updated!");
+                loadAll();
+                loadTodaySales();
+                
+                document.getElementById(type === 'refill' ? 'sale-qty' : 'complete-qty').value = 1;
+                calculateTotal(type);
+
+            } catch (err) {
+                alert("Database Error: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = type === 'refill' ? "Complete Refill" : "Complete Full Sale";
+            }
         }
-    };
 
-    init();
-</script>
+        // EDIT and REFUND functions
+        window.editSale = async (saleId) => {
+            const newPrice = prompt("Enter new unit price:");
+            if (!newPrice || isNaN(newPrice)) return;
+            
+            const { error } = await supabase
+                .from('sales')
+                .update({ unit_price: parseFloat(newPrice) })
+                .eq('id', saleId);
+            
+            if (!error) {
+                alert("Sale updated!");
+                loadTodaySales();
+            } else {
+                alert("Error updating sale: " + error.message);
+            }
+        };
+
+        window.refundSale = async (saleId) => {
+            if (!confirm("Are you sure you want to refund this sale? This will reverse stock changes.")) return;
+            
+            // First get the sale details
+            const { data: sale, error: fetchError } = await supabase
+                .from('sales')
+                .select('*')
+                .eq('id', saleId)
+                .single();
+            
+            if (fetchError) {
+                alert("Error fetching sale: " + fetchError.message);
+                return;
+            }
+            
+            // Reverse stock changes
+            const { data: product } = await supabase
+                .from('products')
+                .select('*')
+                .eq('id', sale.product_id)
+                .single();
+            
+            if (product) {
+                // Increase full cylinders
+                await supabase.from('products').update({
+                    stock_quantity: product.stock_quantity + sale.quantity
+                }).eq('id', sale.product_id);
+                
+                // If it was a refill sale, decrease empty cylinders
+                if (sale.sale_type === 'refill') {
+                    await supabase.from('products').update({
+                        empty_quantity: (product.empty_quantity || 0) - sale.quantity
+                    }).eq('id', sale.product_id);
+                }
+            }
+            
+            // Mark sale as refunded
+            const { error } = await supabase
+                .from('sales')
+                .update({ status: 'refunded', refunded_at: new Date().toISOString() })
+                .eq('id', saleId);
+            
+            if (!error) {
+                alert("Sale refunded and stock reversed!");
+                loadAll();
+                loadTodaySales();
+            } else {
+                alert("Error refunding sale: " + error.message);
+            }
+        };
+
+        // Money transaction functions
+        document.getElementById('btn-record-money').onclick = async () => {
+            const amount = parseFloat(document.getElementById('money-amount').value);
+            const type = document.getElementById('money-type').value;
+            const reason = document.getElementById('money-reason').value;
+            const method = document.getElementById('money-method').value;
+            
+            if (!amount || !reason) return alert("Please fill amount and reason");
+            if (!activeShift) return alert("No active shift!");
+            
+            const btn = document.getElementById('btn-record-money');
+            btn.disabled = true;
+            
+            const { error } = await supabase.from('money_transactions').insert([{
+                shift_id: activeShift.id,
+                amount: amount,
+                type: type,
+                reason: reason,
+                method: method,
+                created_at: new Date().toISOString()
+            }]);
+            
+            if (!error) {
+                alert("Money transaction recorded!");
+                loadMoneyHistory();
+                document.getElementById('money-amount').value = '';
+                document.getElementById('money-reason').value = '';
+            } else {
+                alert("Error: " + error.message);
+            }
+            
+            btn.disabled = false;
+        };
+
+        window.editMoneyTransaction = async (transId) => {
+            const newAmount = prompt("Enter new amount:");
+            const newReason = prompt("Enter new reason:");
+            
+            if (!newAmount || isNaN(newAmount)) return;
+            
+            const { error } = await supabase
+                .from('money_transactions')
+                .update({ 
+                    amount: parseFloat(newAmount),
+                    reason: newReason || ''
+                })
+                .eq('id', transId);
+            
+            if (!error) {
+                alert("Transaction updated!");
+                loadMoneyHistory();
+            } else {
+                alert("Error: " + error.message);
+            }
+        };
+
+        window.deleteMoneyTransaction = async (transId) => {
+            if (!confirm("Delete this money transaction?")) return;
+            
+            const { error } = await supabase
+                .from('money_transactions')
+                .delete()
+                .eq('id', transId);
+            
+            if (!error) {
+                alert("Transaction deleted!");
+                loadMoneyHistory();
+            } else {
+                alert("Error: " + error.message);
+            }
+        };
+
+        // Event listeners
+        document.getElementById('btn-sell-refill').onclick = () => processSale('btn-sell-refill', 'refill');
+        document.getElementById('btn-sell-complete').onclick = () => processSale('btn-sell-complete', 'complete');
+
+        document.getElementById('btn-add-inventory').onclick = async () => {
+            const btn = document.getElementById('btn-add-inventory');
+            const payload = {
+                name: document.getElementById('new-name').value,
+                weight_category: document.getElementById('new-weight').value,
+                supplier_id: document.getElementById('new-supplier-id').value || null,
+                cost_price: parseFloat(document.getElementById('new-cost').value) || 0,
+                selling_price: parseFloat(document.getElementById('new-sell').value) || 0,
+                min_selling_price: parseFloat(document.getElementById('new-min-sell').value) || 0,
+                cylinder_price: parseInt(document.getElementById('new-cyl-price').value) || 0,
+                stock_quantity: parseInt(document.getElementById('new-qty').value) || 0,
+                empty_quantity: 0,
+                category: 'Gas'
+            };
+
+            if (!payload.name || !payload.weight_category) return alert("Name and weight are required");
+            btn.disabled = true;
+            const { error } = await supabase.from('products').insert([payload]);
+            if (!error) { 
+                alert("New Brand Registered!"); 
+                loadAll(); 
+                document.getElementById('new-name').value = "";
+            } else { 
+                alert(error.message); 
+            }
+            btn.disabled = false;
+        };
+
+        document.getElementById('btn-instant-refill').onclick = async () => {
+            const id = document.getElementById('refill-select').value;
+            const qty = parseInt(document.getElementById('action-qty').value);
+            const item = gasItems.find(g => g.id == id);
+            
+            if (!item || !qty || qty <= 0) return alert("Select a brand and valid quantity");
+            if ((item.empty_quantity || 0) < qty) return alert("Not enough empty cylinders to refill!");
+
+            const btn = document.getElementById('btn-instant-refill');
+            btn.disabled = true;
+
+            const { error } = await supabase.from('products').update({
+                stock_quantity: item.stock_quantity + qty,
+                empty_quantity: item.empty_quantity - qty
+            }).eq('id', id);
+
+            if (!error) {
+                alert("Stock Refilled from Warehouse");
+                loadAll();
+                document.getElementById('action-qty').value = "";
+            } else {
+                alert(error.message);
+            }
+            btn.disabled = false;
+        };
+
+        init();
+    </script>
 </body>
 </html>
