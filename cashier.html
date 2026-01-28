@@ -125,9 +125,13 @@
 
         .text-success { color: #15803d !important; font-weight: 700; }
         .text-danger { color: #b91c1c !important; font-weight: 700; }
+        
+        /* Improved Variance Status Classes */
         .variance-status { font-weight: 800; padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; text-align: center; }
-        .balanced { background: #dcfce7; color: #166534; }
-        .mismatch { background: #fee2e2; color: #991b1b; }
+        .var-positive { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .var-negative { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .var-balanced { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+        .active-shift { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
 
         .float-list { margin: 0; padding: 0; list-style: none; font-size: 0.75rem; color: var(--text-dim); }
         .float-list li { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid #f8fafc; }
@@ -155,7 +159,6 @@
         .status-badge { font-weight: 800; padding: 10px 15px; border-radius: 10px; font-size: 0.85rem; display: block; text-align: center; min-width: 140px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .balanced { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
         .mismatch { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
-        .active-shift { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
         .date-cell b { display: block; margin-bottom: 8px; font-size: 1rem; }
         .time-pill { background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; color: var(--text-dim); display: inline-block; margin-top: 4px; }
         .revenue-card { background: #fff; border: 1px solid var(--border); padding: 12px; border-radius: 10px; text-decoration: none; display: block; transition: 0.2s; }
@@ -228,21 +231,21 @@
             opacity: 0.9;
             font-weight: 600;
         }
-    /* Low Stock Pulse Animation */
-.low-stock-alert {
-    color: #ff4d4d !important; /* Bright Red */
-    font-weight: 800;
-    animation: pulse-red 1.5s infinite;
-    padding: 2px 8px;
-    border-radius: 6px;
-    background: rgba(255, 77, 77, 0.1);
-}
+        /* Low Stock Pulse Animation */
+        .low-stock-alert {
+            color: #ff4d4d !important; /* Bright Red */
+            font-weight: 800;
+            animation: pulse-red 1.5s infinite;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: rgba(255, 77, 77, 0.1);
+        }
 
-@keyframes pulse-red {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.05); opacity: 0.7; }
-    100% { transform: scale(1); opacity: 1; }
-}
+        @keyframes pulse-red {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -821,12 +824,8 @@
         const total = price * qty;
         const method = document.getElementById('pMethod').value;
 
-        // Check if item is gas and handle specially
-        if (selectedItem.category === 'Gas') {
-            // For gas items, use the gas sale logic
-            alert("For gas sales, please use the gas section for proper stock management.");
-            return;
-        }
+        // REMOVED: The block preventing gas sales from cashier page
+        // Gas items can now be sold from cashier page with proper stock management
 
         if (price < (selectedItem.min_price || 0)) {
             const discReason = prompt(`Price below Min. Reason:`);
@@ -862,8 +861,17 @@
         const { data: sData, error } = await supabase.from('sales').insert(salesToInsert).select();
         
         if (!error) {
-            // Update stock for non-gas items
-            if (selectedItem.category !== 'Gas') {
+            // Update stock for all items (including gas)
+            if (selectedItem.category === 'Gas') {
+                // For gas items: Only decrease full cylinders when sold
+                const { error: gasError } = await supabase
+                    .from('products')
+                    .update({ stock_quantity: selectedItem.stock_quantity - qty })
+                    .eq('id', selectedItem.id);
+                
+                if (gasError) console.error("Gas stock update error:", gasError);
+            } else {
+                // For non-gas items
                 await supabase
                     .from('products')
                     .update({ stock_quantity: selectedItem.stock_quantity - qty })
@@ -1033,8 +1041,28 @@
             const isClosed = sh.status === 'Closed';
             const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
-            const variance = isClosed ? (closeTotal - expected) : 0;
-            const statusClass = !isClosed ? 'active-shift' : (Math.abs(variance) < 1 ? 'balanced' : 'mismatch');
+            
+            // LOGIC FOR VARIANCE DISPLAY
+            let varianceVal = isClosed ? (closeTotal - expected) : 0;
+            let varianceDisplay = '';
+            let varianceClass = '';
+
+            if (!isClosed) {
+                varianceDisplay = 'SHIFT ACTIVE';
+                varianceClass = 'active-shift';
+            } else {
+                // If closed, check the amount for sign and color
+                if (varianceVal > 0) {
+                    varianceDisplay = 'VAR: +' + varianceVal.toLocaleString();
+                    varianceClass = 'var-positive';
+                } else if (varianceVal < 0) {
+                    varianceDisplay = 'VAR: ' + varianceVal.toLocaleString(); // toLocaleString keeps the - sign
+                    varianceClass = 'var-negative';
+                } else {
+                    varianceDisplay = 'VAR: 0';
+                    varianceClass = 'var-balanced';
+                }
+            }
 
             const startD = new Date(sh.start_time);
             
@@ -1073,8 +1101,8 @@
                         <div class="total-row" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>
                     </td>
                     <td>
-                        <span class="status-badge ${statusClass}">
-                            ${isClosed ? 'VAR: ' + variance.toLocaleString() : 'SHIFT ACTIVE'}
+                        <span class="status-badge ${varianceClass}">
+                            ${varianceDisplay}
                         </span>
                         <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 8px; text-align: center;">
                             Expected: ${expected.toLocaleString()}
