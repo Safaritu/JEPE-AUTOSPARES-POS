@@ -1182,6 +1182,70 @@
         width: 80px;
         text-align: center;
     }
+    
+    /* Mobile-friendly shift cards */
+    @media (max-width: 768px) {
+        .shift-mobile-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .shift-mobile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .shift-mobile-date {
+            font-weight: 800;
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+        
+        .shift-mobile-status {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 700;
+        }
+        
+        .shift-mobile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .shift-mobile-section {
+            background: #f8fafc;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .shift-mobile-section-title {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            font-weight: 700;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        
+        .mobile-shifts-container {
+            display: block;
+        }
+        
+        .shift-history-table-container {
+            display: none;
+        }
+    }
 </style>
 </head>
 <body>
@@ -1294,8 +1358,6 @@
 
 <button class="fab-menu" onclick="toggleNav()">☰</button>
 
-<!-- UPDATED: Removed Time Alert Banner -->
-
 <!-- UPDATED: Smaller congrats message -->
 <div id="congrats-banner" class="congrats-msg">🎉 Perfect Shift!</div>
 
@@ -1308,7 +1370,11 @@
             </button>
             <div class="logo-compact">CASHIER DASHBOARD <span>/ JEPE AUTOSPARES</span></div>
         </div>
-        <div class="header-right" id="shift-action-container"></div>
+        <div class="header-right" id="shift-action-container">
+            <button class="btn" onclick="refreshData()" style="background: #e2e8f0; padding: 8px 12px; font-size: 0.8rem;">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
     </div>
 
     <div class="greeting-banner" id="greeting-banner">
@@ -1323,7 +1389,6 @@
     <div class="section-label">
         <span style="display: flex; align-items: center; gap: 8px;">
             Opening Floats & Live Sales Tracker
-            <!-- UPDATED: Removed alert indicator -->
         </span>
     </div>
     
@@ -1469,9 +1534,10 @@
 
     <input type="text" id="history-search" class="search-input" placeholder="Search by date (e.g. 10 Jan 2026)...">
 
-    <div class="table-card">
+    <!-- Desktop Table View -->
+    <div class="table-card shift-history-table-container">
         <div class="table-container" id="scrollContainer">
-            <table>
+            <table class="shift-history-table">
                 <thead>
                     <tr>
                         <th width="160">DATE</th>
@@ -1487,6 +1553,9 @@
             </table>
         </div>
     </div>
+
+    <!-- Mobile Card View Container -->
+    <div id="mobile-shifts-container" class="mobile-shifts-container"></div>
 
     <div style="text-align: center; padding: 12px;">
         <button id="load-more-btn" class="btn" style="background: #e2e8f0; color: #1e293b; margin: auto; font-size: 0.8rem;">LOAD MORE HISTORY</button>
@@ -1571,7 +1640,7 @@
         refundingSale = null;
     };
 
-    // Process refund function
+    // Process refund function - FIXED VERSION
     window.processRefund = async function() {
         if (!refundingSale || !currentShift) return;
         
@@ -1599,8 +1668,49 @@
         
         if (!confirmed) return;
         
+        const submitBtn = document.querySelector('#refund-modal .btn-danger');
+        const originalBtnText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner"></span> PROCESSING...';
+        
         try {
-            // 1. Record money out for the refund
+            // 1. Create a NEGATIVE sale entry (this is the proper way)
+            const { error: saleError } = await supabase.from('sales').insert([{
+                shift_id: currentShift.id,
+                product_id: refundingSale.product_id,
+                item_name: `REFUND: ${refundingSale.item_name}`,
+                part_type: refundingSale.part_type,
+                quantity: -refundingSale.quantity, // Negative quantity
+                unit_price: refundingSale.unit_price,
+                total_amount: -refundAmount, // Negative amount
+                payment_method: refundMethod,
+                cost_price: refundingSale.cost_price || 0,
+                amount: -refundAmount, // Negative amount
+                category: refundingSale.category,
+                user_id: currentUser.id,
+                weight_category: refundingSale.weight_category,
+                discount_reason: refundReason,
+                refunded: true,
+                refund_method: refundMethod,
+                refund_reason: refundReason,
+                refunded_at: new Date().toISOString()
+            }]);
+            
+            if (saleError) throw saleError;
+            
+            // 2. Mark original sale as refunded
+            const { error: updateError } = await supabase.from('sales')
+                .update({ 
+                    refunded: true,
+                    refund_method: refundMethod,
+                    refund_reason: refundReason,
+                    refunded_at: new Date().toISOString()
+                })
+                .eq('id', refundingSale.id);
+            
+            if (updateError) throw updateError;
+            
+            // 3. Record money out transaction for the refund
             const { error: transError } = await supabase.from('cash_transactions').insert([{
                 shift_id: currentShift.id,
                 type: 'Money Out',
@@ -1611,20 +1721,7 @@
             
             if (transError) throw transError;
             
-            // 2. Update sale record to mark as refunded
-            const { error: saleError } = await supabase.from('sales')
-                .update({ 
-                    refunded: true,
-                    refund_amount: refundAmount,
-                    refund_method: refundMethod,
-                    refund_reason: refundReason,
-                    refunded_at: new Date().toISOString()
-                })
-                .eq('id', refundingSale.id);
-            
-            if (saleError) throw saleError;
-            
-            // 3. Restore stock quantity
+            // 4. Restore stock quantity
             const { data: product } = await supabase.from('products')
                 .select('stock_quantity')
                 .eq('id', refundingSale.product_id)
@@ -1632,15 +1729,17 @@
             
             if (product) {
                 const newStock = product.stock_quantity + refundingSale.quantity;
-                await supabase.from('products')
+                const { error: stockError } = await supabase.from('products')
                     .update({ stock_quantity: newStock })
                     .eq('id', refundingSale.product_id);
+                
+                if (stockError) throw stockError;
             }
             
-            // 4. Show success message
-            alert(`✅ Refund processed successfully!\n\nPlease check the returned item's condition.`);
+            // 5. Show success message
+            alert(`✅ Refund processed successfully!\n\nRefund of Ksh ${refundAmount.toLocaleString()} processed via ${refundMethod}. Stock has been restored.`);
             
-            // 5. Close modal and refresh data
+            // 6. Close modal and refresh data
             closeRefundModal();
             await fetchInventory();
             await loadShiftData();
@@ -1648,6 +1747,9 @@
         } catch (error) {
             console.error("Refund error:", error);
             alert("Error processing refund: " + error.message);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
         }
     };
 
@@ -1703,6 +1805,24 @@
     function checkTimeAlerts() {
         // Function intentionally left empty as requested
     }
+
+    // Refresh data function
+    window.refreshData = async function() {
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner"></span>';
+        btn.disabled = true;
+        
+        await Promise.all([
+            fetchInventory(),
+            loadShiftData(),
+            loadHistory()
+        ]);
+        
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        alert('Data refreshed successfully!');
+    };
 
     // --- REALTIME: Sync Inventory Automatically ---
     const productSubscription = supabase
@@ -1865,7 +1985,12 @@
             const actionBtnContainer = document.getElementById('shift-action-container');
             if (shiftRes.data) {
                 currentShift = shiftRes.data;
-                actionBtnContainer.innerHTML = `<button class="btn btn-danger special-action-btn" onclick="document.getElementById('close-modal').style.display='flex'">🔴 CLOSE DAY</button>`;
+                actionBtnContainer.innerHTML = `
+                    <button class="btn btn-danger special-action-btn" onclick="document.getElementById('close-modal').style.display='flex'">🔴 CLOSE DAY</button>
+                    <button class="btn" onclick="refreshData()" style="background: #e2e8f0; padding: 8px 12px; font-size: 0.8rem;">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                `;
                 
                 // Update float displays safely
                 const floatCash = document.getElementById('float-cash');
@@ -1884,7 +2009,12 @@
                 // Check for low floats after data is loaded
                 setTimeout(checkLowFloats, 500);
             } else {
-                actionBtnContainer.innerHTML = `<button class="btn btn-primary special-action-btn start-btn-large" onclick="document.getElementById('open-modal').style.display='flex'">🚀 START DAY</button>`;
+                actionBtnContainer.innerHTML = `
+                    <button class="btn btn-primary special-action-btn start-btn-large" onclick="document.getElementById('open-modal').style.display='flex'">🚀 START DAY</button>
+                    <button class="btn" onclick="refreshData()" style="background: #e2e8f0; padding: 8px 12px; font-size: 0.8rem;">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                `;
             }
             await loadHistory();
         } catch (error) {
@@ -2075,7 +2205,11 @@
             const sales = salesRes.data || [];
             const trans = transRes.data || [];
 
-            currentKcbSalesTotal = sales.filter(s => s.payment_method === 'KCB Paybill' && !s.refunded).reduce((a, b) => a + b.total_amount, 0);
+            // Filter out refunds (negative sales) for KCB total
+            currentKcbSalesTotal = sales
+                .filter(s => s.payment_method === 'KCB Paybill' && !s.refunded && s.total_amount > 0)
+                .reduce((a, b) => a + b.total_amount, 0);
+                
             const liveKcbBox = document.getElementById('live-kcb-box');
             if (liveKcbBox) liveKcbBox.innerText = currentKcbSalesTotal.toLocaleString();
             
@@ -2090,14 +2224,23 @@
                         <td data-label="Item">
                             <b>${s.item_name}</b>
                             ${s.refunded ? '<span class="refunded-badge">REFUNDED</span>' : ''}
+                            ${s.total_amount < 0 ? '<span class="refunded-badge" style="background:#b91c1c">REFUND</span>' : ''}
                         </td>
-                        <td data-label="Qty">${s.quantity}</td>
-                        <td data-label="Total">Ksh ${s.total_amount.toLocaleString()}</td>
-                        <td data-label="Method">${s.payment_method}</td>
+                        <td data-label="Qty" class="${s.quantity < 0 ? 'text-danger' : ''}">
+                            ${s.quantity < 0 ? `-${Math.abs(s.quantity)}` : s.quantity}
+                        </td>
+                        <td data-label="Total" class="${s.total_amount < 0 ? 'text-danger' : ''}">
+                            Ksh ${s.total_amount.toLocaleString()}
+                        </td>
+                        <td data-label="Method">
+                            ${s.refunded ? 'Refund via ' : ''}${s.payment_method}
+                        </td>
                         <td data-label="Action" class="action-column">
-                            ${!s.refunded ? `<button class="btn-refund" onclick="openRefundModal(${JSON.stringify(s).replace(/"/g, '&quot;')})">
-                                <i class="fas fa-undo-alt"></i> Refund
-                            </button>` : ''}
+                            ${!s.refunded && s.quantity > 0 && s.total_amount > 0 ? `
+                                <button class="btn-refund" onclick="openRefundModal(${JSON.stringify(s).replace(/"/g, '&quot;')})">
+                                    <i class="fas fa-undo-alt"></i> Refund
+                                </button>
+                            ` : ''}
                         </td>
                     </tr>
                 `).join('');
@@ -2197,7 +2340,14 @@
             const clB = currentKcbSalesTotal;
             const clC = parseFloat(document.getElementById('c-cash').value || 0);
 
-            const { data: sales } = await supabase.from('sales').select('total_amount').eq('shift_id', currentShift.id).neq('payment_method','Debt').eq('refunded', false);
+            // Filter out refunds and negative sales
+            const { data: sales } = await supabase.from('sales')
+                .select('total_amount')
+                .eq('shift_id', currentShift.id)
+                .neq('payment_method','Debt')
+                .eq('refunded', false)
+                .gt('total_amount', 0);
+                
             const { data: trans } = await supabase.from('cash_transactions').select('amount, type').eq('shift_id', currentShift.id);
             
             const totalSales = (sales || []).reduce((a,b) => a + b.total_amount, 0);
@@ -2245,7 +2395,11 @@
                 .limit(historyLimit);
 
             const { data: transactions } = await supabase.from('cash_transactions').select('shift_id, amount, type');
-            const { data: sales } = await supabase.from('sales').select('shift_id, total_amount, payment_method').eq('refunded', false);
+            // Filter out refunds and negative sales for history
+            const { data: sales } = await supabase.from('sales')
+                .select('shift_id, total_amount, payment_method')
+                .eq('refunded', false)
+                .gt('total_amount', 0);
 
             allShifts = shifts || [];
             allTransactions = transactions || [];
@@ -2265,13 +2419,19 @@
                     }
                 }
             }
-            renderHistory(allShifts, allTransactions, allSales, searchQuery);
+            
+            // Check screen size and render appropriately
+            if (window.innerWidth <= 768) {
+                renderMobileHistory(allShifts, allTransactions, allSales, searchQuery);
+            } else {
+                renderDesktopHistory(allShifts, allTransactions, allSales, searchQuery);
+            }
         } catch (error) {
             console.error("Fetch Error:", error);
         }
     }
 
-    function renderHistory(shifts, transData, salesData, query = "") {
+    function renderDesktopHistory(shifts, transData, salesData, query = "") {
         const desktopTbody = document.getElementById('history-body');
         if(!desktopTbody) return;
         
@@ -2373,6 +2533,113 @@
         desktopTbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.</td></tr>';
     }
 
+    function renderMobileHistory(shifts, transData, salesData, query = "") {
+        const mobileContainer = document.getElementById('mobile-shifts-container');
+        const desktopContainer = document.querySelector('.shift-history-table-container');
+        
+        if (!mobileContainer) return;
+        
+        // Hide desktop table on mobile
+        if (desktopContainer) desktopContainer.style.display = 'none';
+        mobileContainer.style.display = 'block';
+        
+        const filtered = shifts.filter(sh => {
+            const dateStr = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }).toLowerCase();
+            return dateStr.includes(query.toLowerCase());
+        });
+        
+        let mobileHtml = '';
+
+        filtered.forEach(sh => {
+            const shiftLogs = transData.filter(t => t.shift_id === sh.id);
+            const shiftSales = salesData.filter(s => s.shift_id === sh.id);
+
+            const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
+            const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
+            const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount || 0), 0);
+
+            const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
+            const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
+
+            const isClosed = sh.status === 'Closed';
+            const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
+            const varianceVal = isClosed ? (closeTotal - expected) : 0;
+            
+            const startD = new Date(sh.start_time);
+            
+            let varianceClass = '';
+            if (!isClosed) {
+                varianceClass = 'active-shift';
+            } else if (varianceVal > 0) {
+                varianceClass = 'var-positive';
+            } else if (varianceVal < 0) {
+                varianceClass = 'var-negative';
+            } else {
+                varianceClass = 'var-balanced';
+            }
+            
+            mobileHtml += `
+                <div class="shift-mobile-card">
+                    <div class="shift-mobile-header">
+                        <div class="shift-mobile-date">
+                            ${startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'})}
+                        </div>
+                        <div class="shift-mobile-status ${varianceClass}">
+                            ${isClosed ? (varianceVal > 0 ? `+${varianceVal.toLocaleString()}` : varianceVal < 0 ? varianceVal.toLocaleString() : 'Balanced') : 'Active'}
+                        </div>
+                    </div>
+                    
+                    <div class="shift-mobile-grid">
+                        <div class="shift-mobile-section">
+                            <div class="shift-mobile-section-title">Opening Floats</div>
+                            <div style="font-size: 0.8rem;">
+                                <div>Cash: ${(sh.open_cash||0).toLocaleString()}</div>
+                                <div>Mpesa: ${(sh.open_mpesa||0).toLocaleString()}</div>
+                                <div>KCB: ${(sh.open_kcb||0).toLocaleString()}</div>
+                                <div style="font-weight:700; margin-top:5px;">Total: ${openTotal.toLocaleString()}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="shift-mobile-section">
+                            <div class="shift-mobile-section-title">Sales</div>
+                            <div style="font-size: 0.8rem;">
+                                <div>Cash: ${cashSales.toLocaleString()}</div>
+                                <div>Paybill: ${kcbPaybillSales.toLocaleString()}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="shift-mobile-section">
+                            <div class="shift-mobile-section-title">Money In/Out</div>
+                            <div style="font-size: 0.8rem;">
+                                <div style="color:var(--success)">In: ${moneyIn.toLocaleString()}</div>
+                                <div style="color:var(--danger)">Out: ${moneyOut.toLocaleString()}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="shift-mobile-section">
+                            <div class="shift-mobile-section-title">Closing Floats</div>
+                            <div style="font-size: 0.8rem;">
+                                <div>Cash: ${(sh.close_cash||0).toLocaleString()}</div>
+                                <div>Mpesa: ${(sh.close_mpesa||0).toLocaleString()}</div>
+                                <div>KCB: ${(sh.close_kcb||0).toLocaleString()}</div>
+                                <div style="font-weight:700; margin-top:5px;">Total: ${closeTotal.toLocaleString()}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 10px;">
+                        <div>Expected: ${expected.toLocaleString()}</div>
+                        <div>Variance Note: ${sh.variance_note || 'No notes'}</div>
+                    </div>
+                </div>
+            `;
+        });
+
+        mobileContainer.innerHTML = mobileHtml || '<div style="text-align:center; padding:50px;">No records found.</div>';
+    }
+
     // Setup scroll indicator for shift history table
     const scrollContainer = document.getElementById('scrollContainer');
     const scrollHint = document.getElementById('scrollHint');
@@ -2391,7 +2658,12 @@
             const dateStr = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }).toLowerCase();
             return dateStr.includes(term);
         });
-        renderHistory(filtered, allTransactions, allSales, term);
+        
+        if (window.innerWidth <= 768) {
+            renderMobileHistory(filtered, allTransactions, allSales, term);
+        } else {
+            renderDesktopHistory(filtered, allTransactions, allSales, term);
+        }
     });
     
     document.getElementById('load-more-btn').addEventListener('click', () => { 
@@ -2440,6 +2712,21 @@
             alert("Error recording transaction: " + error.message);
             this.disabled = false;
             this.innerHTML = 'RECORD MONEY';
+        }
+    });
+
+    // Handle window resize for responsive display
+    window.addEventListener('resize', function() {
+        if (allShifts.length > 0) {
+            if (window.innerWidth <= 768) {
+                renderMobileHistory(allShifts, allTransactions, allSales);
+            } else {
+                renderDesktopHistory(allShifts, allTransactions, allSales);
+                const desktopContainer = document.querySelector('.shift-history-table-container');
+                const mobileContainer = document.getElementById('mobile-shifts-container');
+                if (desktopContainer) desktopContainer.style.display = 'block';
+                if (mobileContainer) mobileContainer.style.display = 'none';
+            }
         }
     });
 
