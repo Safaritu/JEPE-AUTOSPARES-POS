@@ -391,7 +391,7 @@
             }
         }
         
-        /* FIXED DUAL TABLES - PREVENT MONEY IN/OUT FROM BEING MINIMIZED */
+        /* UPDATED DUAL TABLES - USING BETTER LAYOUT FROM SECOND CODE */
         .dual-tables { 
             display: grid; 
             grid-template-columns: 1fr; 
@@ -407,28 +407,7 @@
             
             /* Ensure MONEY IN/OUT RECORD card maintains proper width */
             .dual-tables > div:nth-child(2) {
-                min-width: 400px; /* Increased from 350px for better visibility */
-            }
-            
-            /* Ensure form elements in MONEY IN/OUT RECORD don't get too narrow */
-            .dual-tables .card .grid-inputs {
-                display: flex;
-                flex-direction: column;
-                gap: 12px;
-            }
-            
-            .dual-tables .card .grid-inputs input,
-            .dual-tables .card .grid-inputs select {
-                min-height: 50px; /* Ensure adequate touch target size */
-                font-size: 16px; /* Prevent text from shrinking */
-                padding: 14px 16px;
-            }
-            
-            .dual-tables .card .grid-inputs .btn {
-                min-height: 55px;
-                font-size: 1rem;
-                font-weight: 800;
-                margin-top: 10px;
+                min-width: 400px; /* Keep adequate width */
             }
         }
 
@@ -968,6 +947,24 @@
         .hand-icon { font-size: 1.2rem; animation: tapSide 1.5s infinite; }
         @keyframes tapSide { 0%, 100% { transform: translateX(5px); } 50% { transform: translateX(-5px); } }
         @media (max-width: 1024px) { .slide-indicator { display: flex; } }
+        
+        /* UPDATED MONEY IN/OUT RECORD FORM STYLING - FROM SECOND CODE */
+        .money-inout-form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .money-inout-form input,
+        .money-inout-form select {
+            width: 100%;
+            margin-bottom: 12px;
+        }
+        
+        .money-inout-form .btn {
+            width: 100%;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -1149,22 +1146,23 @@
             </div>
         </div>
 
+        <!-- UPDATED MONEY IN/OUT RECORD SECTION - Using layout from second code -->
         <div class="card">
             <div class="section-label">MONEY IN/OUT RECORD</div>
-            <div class="grid-inputs">
-                <input type="number" id="exp-amt" placeholder="Amount">
-                <select id="exp-type">
+            <div class="money-inout-form">
+                <input type="number" id="exp-amt" placeholder="Amount" style="margin-bottom:12px;">
+                <select id="exp-type" style="margin-bottom:12px;">
                     <option value="Money Out">Money Out</option>
                     <option value="Money In">Money In</option>
                 </select>
-                <input type="text" id="exp-desc" placeholder="Reason (e.g. Loading Fee, Lunch)">
-                <select id="exp-method">
+                <input type="text" id="exp-desc" placeholder="Reason (e.g. Loading Fee, Lunch)" style="width:100%; margin-bottom:12px;">
+                <select id="exp-method" style="width:100%; margin-bottom:15px;">
                     <option value="Cash">Cash</option>
                     <option value="Mpesa">Mpesa</option>
                     <option value="KCB">KCB Float</option>
                     <option value="Equity">Equity Float</option>
                 </select>
-                <button id="record-expense-btn" class="btn btn-sync">RECORD MONEY</button>
+                <button id="record-expense-btn" class="btn btn-sync" style="width: 100%;">RECORD MONEY</button>
             </div>
         </div>
     </div>
@@ -2161,6 +2159,7 @@
         loadHistory(); 
     });
     
+    // UPDATED MONEY IN/OUT RECORD BUTTON FUNCTION
     document.getElementById('record-expense-btn').addEventListener('click', async function() {
         const amt = parseFloat(document.getElementById('exp-amt').value);
         const desc = document.getElementById('exp-desc').value;
