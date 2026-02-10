@@ -126,10 +126,12 @@
         .text-success { color: #15803d !important; font-weight: 700; }
         .text-danger { color: #b91c1c !important; font-weight: 700; }
         .variance-status { font-weight: 800; padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; text-align: center; }
-        .balanced { background: #dcfce7; color: #166534; }
+        
+        /* Updated Variance Colors */
+        .balanced { background: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; }
         .mismatch { background: #fee2e2; color: #991b1b; }
-        .variance-positive { background: #dbeafe; color: #1d4ed8; }
-        .variance-negative { background: #fee2e2; color: #b91c1c; }
+        .variance-positive { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .variance-negative { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
 
         .float-list { margin: 0; padding: 0; list-style: none; font-size: 0.75rem; color: var(--text-dim); }
         .float-list li { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid #f8fafc; }
@@ -155,8 +157,6 @@
         .account-val { font-weight: 600; color: var(--text-main); font-size: 0.8rem; }
         .total-row { font-weight: 800; margin-top: 10px; padding: 8px; background: #f5f3ff; color: var(--primary); border-radius: 6px; text-align: center; }
         .status-badge { font-weight: 800; padding: 10px 15px; border-radius: 10px; font-size: 0.85rem; display: block; text-align: center; min-width: 140px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .balanced { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
-        .mismatch { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
         .active-shift { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
         .date-cell b { display: block; margin-bottom: 8px; font-size: 1rem; }
         .time-pill { background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; color: var(--text-dim); display: inline-block; margin-top: 4px; }
@@ -306,6 +306,21 @@
             background: var(--primary);
             color: white;
         }
+        
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -339,6 +354,7 @@
         <a href="cashiergashub.html" class="nav-card"><span>⛽</span><small>Gas Hub</small></a>
         <a href="cashier_inventory.html" class="nav-card"><span>➕</span><small>Add/Update Items</small></a>
         <a href="moneyinout.html" class="nav-card"><span>💸</span><small>MONEY IN/OUT</small></a>
+        <a href="cashierprofile.html" class="nav-card"><span>👤</span><small>My Profile</small></a>
         <a href="shift history cashier.html" class="nav-card"><span>⏳</span><small>Daily Shift History</small></a>
         <a href="sales_reports.html" class="nav-card"><span>📈</span><small>Sales History</small></a>
         <a href="low-stock-cashier.html" class="nav-card"><span>⚠️</span><small>View Low Stock</small></a>
@@ -655,12 +671,12 @@
             document.getElementById('float-mpesa').innerText = (currentShift.open_mpesa || 0).toLocaleString();
             document.getElementById('float-kcb').innerText = (currentShift.open_kcb || 0).toLocaleString();
             document.getElementById('float-equity').innerText = (currentShift.open_equity || 0).toLocaleString();
-            loadShiftData();
+            await loadShiftData();
             updateGreeting();
         } else {
             actionBtnContainer.innerHTML = `<button class="btn btn-primary special-action-btn" onclick="document.getElementById('open-modal').style.display='flex'">🟢 START DAY</button>`;
         }
-        loadHistory();
+        await loadHistory();
     }
 
     function refreshProductDatalist() {
@@ -727,7 +743,7 @@
         if (qty > selectedItem.stock_quantity) return alert("Insufficient stock!");
 
         btn.disabled = true;
-        btn.innerText = "RECORDING...";
+        btn.innerHTML = '<span class="spinner"></span> RECORDING...';
 
         let salesToInsert = [];
         const baseSale = {
@@ -749,12 +765,34 @@
             salesToInsert.push({ ...baseSale, item_name: formatItemName(selectedItem), total_amount: total, payment_method: method });
         }
 
-        const { data: sData, error } = await supabase.from('sales').insert(salesToInsert).select();
-        
-        if (!error) {
+        try {
+            const { data: sData, error } = await supabase
+                .from('sales')
+                .insert(salesToInsert)
+                .select();
+            
+            if (error) throw error;
+
+            // Update stock quantity
+            const newStock = selectedItem.stock_quantity - qty;
+            const { error: updateError } = await supabase
+                .from('products')
+                .update({ stock_quantity: newStock })
+                .eq('id', selectedItem.id);
+            
+            if (updateError) throw updateError;
+
+            // Record debt if applicable
             if(method === "Debt") {
                 const dName = prompt("Customer Name:");
-                if(dName) await supabase.from('debtors').insert([{ customer_name: dName, amount_owed: total, sale_id: sData[0].id }]);
+                if(dName) {
+                    await supabase.from('debtors').insert([{ 
+                        customer_name: dName, 
+                        amount_owed: total, 
+                        sale_id: sData[0].id,
+                        shift_id: currentShift.id
+                    }]);
+                }
             }
 
             // Sync UI without full page reload
@@ -767,34 +805,42 @@
             document.getElementById('hint-stock').style.display = 'none';
             document.getElementById('hint-min').style.display = 'none';
             document.getElementById('total-text').innerText = '0';
+            selectedItem = null;
             
             btn.disabled = false;
-            btn.innerText = "SUBMIT SALE";
-            alert("Sale Saved!");
-        } else { 
+            btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
+            
+            // Show success message
+            alert("Sale Saved Successfully!");
+        } catch (error) { 
+            console.error("Sale Error:", error);
             alert("Error: " + error.message); 
             btn.disabled = false;
-            btn.innerText = "SUBMIT SALE";
+            btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
         }
     };
 
     async function loadShiftData() {
-        const [salesRes, transRes] = await Promise.all([
-            supabase.from('sales').select('*').eq('shift_id', currentShift.id).order('created_at', {ascending:false}),
-            supabase.from('cash_transactions').select('*').eq('shift_id', currentShift.id).order('created_at', {ascending:false})
-        ]);
+        try {
+            const [salesRes, transRes] = await Promise.all([
+                supabase.from('sales').select('*').eq('shift_id', currentShift.id).order('created_at', {ascending:false}),
+                supabase.from('cash_transactions').select('*').eq('shift_id', currentShift.id).order('created_at', {ascending:false})
+            ]);
 
-        const sales = salesRes.data || [];
-        const trans = transRes.data || [];
+            const sales = salesRes.data || [];
+            const trans = transRes.data || [];
 
-        currentKcbSalesTotal = sales.filter(s => s.payment_method === 'KCB Paybill').reduce((a, b) => a + b.total_amount, 0);
-        document.getElementById('live-kcb-box').innerText = currentKcbSalesTotal.toLocaleString();
-        
-        const closeKcbInput = document.getElementById('c-bank');
-        if (closeKcbInput) closeKcbInput.value = currentKcbSalesTotal;
+            currentKcbSalesTotal = sales.filter(s => s.payment_method === 'KCB Paybill').reduce((a, b) => a + b.total_amount, 0);
+            document.getElementById('live-kcb-box').innerText = currentKcbSalesTotal.toLocaleString();
+            
+            const closeKcbInput = document.getElementById('c-bank');
+            if (closeKcbInput) closeKcbInput.value = currentKcbSalesTotal;
 
-        document.getElementById('live-sales-body').innerHTML = sales.map(s => `<tr><td data-label="Time">${new Date(s.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Item"><b>${s.item_name}</b></td><td data-label="Qty">${s.quantity}</td><td data-label="Total">Ksh ${s.total_amount.toLocaleString()}</td><td data-label="Method">${s.payment_method}</td></tr>`).join('');
-        document.getElementById('live-trans-body').innerHTML = trans.map(t => `<tr><td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Reason">${t.description}</td><td data-label="Amt">Ksh ${t.amount.toLocaleString()}</td><td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">${t.type}</td><td data-label="Wallet">${t.category}</td></tr>`).join('');
+            document.getElementById('live-sales-body').innerHTML = sales.map(s => `<tr><td data-label="Time">${new Date(s.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Item"><b>${s.item_name}</b></td><td data-label="Qty">${s.quantity}</td><td data-label="Total">Ksh ${s.total_amount.toLocaleString()}</td><td data-label="Method">${s.payment_method}</td></tr>`).join('');
+            document.getElementById('live-trans-body').innerHTML = trans.map(t => `<tr><td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Reason">${t.description}</td><td data-label="Amt">Ksh ${t.amount.toLocaleString()}</td><td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">${t.type}</td><td data-label="Wallet">${t.category}</td></tr>`).join('');
+        } catch (error) {
+            console.error("Error loading shift data:", error);
+        }
     }
 
     document.getElementById('confirm-open').onclick = async function() {
@@ -818,6 +864,8 @@
         }
         
         this.disabled = true;
+        this.innerHTML = '<span class="spinner"></span> STARTING...';
+        
         const openData = {
             open_cash: cash,
             open_mpesa: mpesa,
@@ -826,38 +874,65 @@
             status: 'Open', 
             start_time: new Date().toISOString()
         };
-        await supabase.from('daily_shifts').insert([openData]);
-        location.reload();
+        
+        try {
+            await supabase.from('daily_shifts').insert([openData]);
+            location.reload();
+        } catch (error) {
+            alert("Error starting shift: " + error.message);
+            this.disabled = false;
+            this.innerHTML = 'START DAY';
+        }
     };
 
     document.getElementById('confirm-close').onclick = async function() {
         this.disabled = true;
-        const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
-        const clK = parseFloat(document.getElementById('c-kcb').value || 0);
-        const clE = parseFloat(document.getElementById('c-equity').value || 0);
-        const clB = currentKcbSalesTotal;
-        const clC = parseFloat(document.getElementById('c-cash').value || 0);
-
-        const { data: sales } = await supabase.from('sales').select('total_amount').eq('shift_id', currentShift.id).neq('payment_method','Debt');
-        const { data: trans } = await supabase.from('cash_transactions').select('amount, type').eq('shift_id', currentShift.id);
+        this.innerHTML = '<span class="spinner"></span> FINALIZING...';
         
-        const totalSales = (sales || []).reduce((a,b) => a + b.total_amount, 0);
-        const moneyIn = (trans || []).filter(t => t.type === 'Money In').reduce((a,b) => a + b.amount, 0);
-        const moneyOut = (trans || []).filter(t => t.type === 'Money Out').reduce((a,b) => a + b.amount, 0);
+        try {
+            const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
+            const clK = parseFloat(document.getElementById('c-kcb').value || 0);
+            const clE = parseFloat(document.getElementById('c-equity').value || 0);
+            const clB = currentKcbSalesTotal;
+            const clC = parseFloat(document.getElementById('c-cash').value || 0);
 
-        const opTotal = currentShift.open_cash + currentShift.open_mpesa + currentShift.open_kcb + currentShift.open_equity;
-        const expected = (opTotal + totalSales + moneyIn) - moneyOut;
-        const actual = clM + clK + clE + clB + clC;
-        const variance = actual - expected;
+            const { data: sales } = await supabase.from('sales').select('total_amount').eq('shift_id', currentShift.id).neq('payment_method','Debt');
+            const { data: trans } = await supabase.from('cash_transactions').select('amount, type').eq('shift_id', currentShift.id);
+            
+            const totalSales = (sales || []).reduce((a,b) => a + b.total_amount, 0);
+            const moneyIn = (trans || []).filter(t => t.type === 'Money In').reduce((a,b) => a + b.amount, 0);
+            const moneyOut = (trans || []).filter(t => t.type === 'Money Out').reduce((a,b) => a + b.amount, 0);
 
-        let note = Math.abs(variance) < 1 ? "Balanced" : prompt(`Variance: ${variance.toFixed(2)}. Reason:`);
-        if (Math.abs(variance) >= 1 && !note) { this.disabled = false; return; }
+            const opTotal = currentShift.open_cash + currentShift.open_mpesa + currentShift.open_kcb + currentShift.open_equity;
+            const expected = (opTotal + totalSales + moneyIn) - moneyOut;
+            const actual = clM + clK + clE + clB + clC;
+            const variance = actual - expected;
 
-        await supabase.from('daily_shifts').update({
-            close_mpesa: clM, close_kcb: clK, close_equity: clE, close_kcb_bank: clB, close_cash: clC,
-            status: 'Closed', end_time: new Date().toISOString(), variance_note: note, system_expected_total: expected
-        }).eq('id', currentShift.id);
-        location.reload();
+            let note = Math.abs(variance) < 1 ? "Balanced" : prompt(`Variance: ${variance.toFixed(2)}. Reason:`);
+            if (Math.abs(variance) >= 1 && !note) { 
+                this.disabled = false; 
+                this.innerHTML = 'FINALIZE & CLOSE';
+                return; 
+            }
+
+            await supabase.from('daily_shifts').update({
+                close_mpesa: clM, 
+                close_kcb: clK, 
+                close_equity: clE, 
+                close_kcb_bank: clB, 
+                close_cash: clC,
+                status: 'Closed', 
+                end_time: new Date().toISOString(), 
+                variance_note: note, 
+                system_expected_total: expected
+            }).eq('id', currentShift.id);
+            
+            location.reload();
+        } catch (error) {
+            alert("Error closing shift: " + error.message);
+            this.disabled = false;
+            this.innerHTML = 'FINALIZE & CLOSE';
+        }
     };
 
     async function loadHistory(searchQuery = "") {
@@ -917,7 +992,7 @@
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             const variance = isClosed ? (closeTotal - expected) : 0;
             
-            // Determine variance status class
+            // Determine variance status class with new color coding
             let statusClass = 'mismatch';
             let varianceText = '';
             
@@ -994,7 +1069,11 @@
         });
         renderHistory(filtered, allTransactions, allSales, term);
     });
-    document.getElementById('load-more-btn').onclick = () => { historyLimit += 15; loadHistory(); };
+    
+    document.getElementById('load-more-btn').onclick = () => { 
+        historyLimit += 15; 
+        loadHistory(); 
+    };
     
     document.getElementById('record-expense-btn').onclick = async function() {
         const amt = parseFloat(document.getElementById('exp-amt').value);
@@ -1002,22 +1081,30 @@
         if (!amt || !desc || !currentShift) return alert("Fill all fields");
         
         this.disabled = true;
-        const { error } = await supabase.from('cash_transactions').insert([{
-            shift_id: currentShift.id, 
-            type: document.getElementById('exp-type').value,
-            category: document.getElementById('exp-method').value, 
-            amount: amt, 
-            description: desc
-        }]);
+        this.innerHTML = '<span class="spinner"></span> RECORDING...';
+        
+        try {
+            const { error } = await supabase.from('cash_transactions').insert([{
+                shift_id: currentShift.id, 
+                type: document.getElementById('exp-type').value,
+                category: document.getElementById('exp-method').value, 
+                amount: amt, 
+                description: desc
+            }]);
 
-        if(!error) {
-            document.getElementById('exp-amt').value = '';
-            document.getElementById('exp-desc').value = '';
-            loadShiftData();
-            this.disabled = false;
-        } else {
+            if(!error) {
+                document.getElementById('exp-amt').value = '';
+                document.getElementById('exp-desc').value = '';
+                await loadShiftData();
+                this.disabled = false;
+                this.innerHTML = 'RECORD MONEY';
+            } else {
+                throw error;
+            }
+        } catch (error) {
             alert(error.message);
             this.disabled = false;
+            this.innerHTML = 'RECORD MONEY';
         }
     };
 
