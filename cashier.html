@@ -1005,65 +1005,6 @@
     @keyframes tapSide { 0%, 100% { transform: translateX(5px); } 50% { transform: translateX(-5px); } }
     @media (max-width: 1024px) { .slide-indicator { display: flex; } }
     
-    /* UPDATED MONEY IN/OUT RECORD FORM STYLING */
-    .money-inout-form {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    .money-inout-form input,
-    .money-inout-form select {
-        width: 100%;
-        margin-bottom: 0;
-        font-size: 14px;
-        padding: 12px;
-    }
-    
-    .money-inout-form .btn {
-        width: 100%;
-        margin-top: 5px;
-        padding: 14px;
-        font-size: 0.85rem;
-    }
-    
-    /* Improved Money In/Out History Table */
-    .money-history-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 15px;
-    }
-    
-    .money-history-table th {
-        background: #f8fafc;
-        padding: 12px 10px;
-        font-size: 0.65rem;
-        text-transform: uppercase;
-        color: var(--text-dim);
-        font-weight: 800;
-        border-bottom: 2px solid var(--border);
-    }
-    
-    .money-history-table td {
-        padding: 10px 10px;
-        border-bottom: 1px solid var(--border);
-        font-size: 0.8rem;
-    }
-    
-    .money-in-row {
-        background-color: rgba(16, 185, 129, 0.05);
-    }
-    
-    .money-out-row {
-        background-color: rgba(225, 29, 72, 0.05);
-    }
-    
-    .money-total-row {
-        background-color: #f8fafc;
-        font-weight: 800;
-        border-top: 2px solid var(--border);
-    }
-    
     /* Money In/Out Summary Cards */
     .money-summary-cards {
         display: grid;
@@ -1192,6 +1133,21 @@
     
     .table-card::-webkit-scrollbar-thumb:hover {
         background: #94a3b8;
+    }
+    
+    /* Money In/Out History Table */
+    .money-in-row {
+        background-color: rgba(16, 185, 129, 0.05);
+    }
+    
+    .money-out-row {
+        background-color: rgba(225, 29, 72, 0.05);
+    }
+    
+    .money-total-row {
+        background-color: #f8fafc;
+        font-weight: 800;
+        border-top: 2px solid var(--border);
     }
 </style>
 </head>
@@ -1355,6 +1311,7 @@
         </form>
     </div>
 
+    <!-- UPDATED DUAL TABLES SECTION - SIMPLIFIED MONEY IN/OUT FROM FIRST CODE -->
     <div class="dual-tables">
         <div>
             <div class="section-label">TODAY'S SALES</div>
@@ -1374,55 +1331,55 @@
             </div>
         </div>
 
-        <!-- UPDATED MONEY IN/OUT RECORD SECTION - Using layout from first code -->
+        <!-- UPDATED MONEY IN/OUT RECORD SECTION - SIMPLIFIED LIKE FIRST CODE -->
         <div class="card">
             <div class="section-label">MONEY IN/OUT RECORD</div>
-            <div class="money-inout-form">
-                <input type="number" id="exp-amt" placeholder="Amount" style="margin-bottom:12px;">
-                <select id="exp-type" style="margin-bottom:12px;">
-                    
-                </select>
-                <input type="text" id="exp-desc" placeholder="Reason (e.g. Loading Fee, Lunch)" style="width:100%; margin-bottom:12px;">
-                <select id="exp-method" style="width:100%; margin-bottom:15px;">
-                    <option value="Cash">Cash</option>
-                    <option value="Mpesa">Mpesa</option>
-                    <option value="KCB">KCB Float</option>
-                    <option value="Equity">Equity Float</option>
-                </select>
-                <button id="record-expense-btn" class="btn btn-sync" style="width: 100%;">RECORD MONEY</button>
-            </div>
-            
-            <!-- Money In/Out Summary Cards -->
-            <div class="money-summary-cards" id="money-summary-cards" style="margin-top: 20px; display: none;">
-                <div class="money-summary-card money-in-card">
-                    <div class="money-summary-label">Money In</div>
-                    <div class="money-summary-amount money-in-amount" id="total-money-in">Ksh 0.00</div>
-                </div>
-                <div class="money-summary-card money-out-card">
-                    <div class="money-summary-label">Money Out</div>
-                    <div class="money-summary-amount money-out-amount" id="total-money-out">Ksh 0.00</div>
-                </div>
-            </div>
+            <!-- SIMPLE FORM LIKE FIRST CODE -->
+            <input type="number" id="exp-amt" placeholder="Amount" style="margin-bottom:12px; padding: 12px; border-radius: 8px;">
+            <select id="exp-type" style="margin-bottom:12px; padding: 12px; border-radius: 8px;">
+                <option value="Money Out">Money Out</option>
+                <option value="Money In">Money In</option>
+            </select>
+            <input type="text" id="exp-desc" placeholder="Reason (e.g. Loading Fee, Lunch)" style="width:100%; margin-bottom:12px; padding: 12px; border-radius: 8px;">
+            <select id="exp-method" style="width:100%; margin-bottom:15px; padding: 12px; border-radius: 8px;">
+                <option value="Cash">Cash</option>
+                <option value="Mpesa">Mpesa</option>
+                <option value="KCB">KCB Float</option>
+                <option value="Equity">Equity Float</option>
+            </select>
+            <button id="record-expense-btn" class="btn btn-sync" style="width: 100%; padding: 12px; font-size: 0.85rem;">RECORD MONEY</button>
         </div>
     </div>
 
     <div class="section-label">TODAY'S MONEY IN/OUT HISTORY</div>
-   
     
+    <!-- Money In/Out Summary - SIMPLIFIED FROM FIRST CODE -->
+    <div id="money-summary-container">
+        <div class="money-summary-cards" id="money-summary-cards-full">
+            <div class="money-summary-card money-in-card">
+                <div class="money-summary-label">Total Money In</div>
+                <div class="money-summary-amount money-in-amount" id="total-money-in-full">Ksh 0.00</div>
+            </div>
+            <div class="money-summary-card money-out-card">
+                <div class="money-summary-label">Total Money Out</div>
+                <div class="money-summary-amount money-out-amount" id="total-money-out-full">Ksh 0.00</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- SIMPLIFIED MONEY IN/OUT HISTORY TABLE LIKE FIRST CODE -->
     <div class="table-card">
         <table class="money-history-table">
-            <thead>
+            <thead class="mobile-hide-header">
                 <tr>
                     <th width="120">Time</th>
                     <th width="200">Reason</th>
                     <th width="120">Amount</th>
                     <th width="100">Type</th>
                     <th width="120">Wallet</th>
-                    
                 </tr>
             </thead>
             <tbody id="live-trans-body"></tbody>
-            
         </table>
     </div>
 
@@ -1492,18 +1449,6 @@
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
-<div id="delete-modal" class="overlay">
-    <div class="modal">
-        <h3 style="color:var(--danger)">⚠️ Delete Transaction</h3>
-        <p id="delete-confirm-text">Are you sure you want to delete this transaction?</p>
-        <div style="display: flex; gap: 10px; margin-top: 20px;">
-            <button class="btn" onclick="document.getElementById('delete-modal').style.display='none'" style="flex:1; background:var(--text-dim); color:white;">Cancel</button>
-            <button class="btn btn-danger" id="confirm-delete" style="flex:1;">Delete</button>
-        </div>
-    </div>
-</div>
-
 <script type="module">
     import { supabase } from './auth.js';
 
@@ -1519,7 +1464,6 @@
     let timeCheckInterval = null;
     let alertSoundPlayed = false;
     let audioContext = null;
-    let transactionToDelete = null;
 
     // Initialize audio context on user interaction
     function initAudioContext() {
@@ -2149,29 +2093,21 @@
             // Calculate money in/out totals
             let totalMoneyIn = 0;
             let totalMoneyOut = 0;
-            let totalTransactions = 0;
             
-           
+            trans.forEach(t => {
+                if (t.type === 'Money In') {
+                    totalMoneyIn += t.amount;
+                } else if (t.type === 'Money Out') {
+                    totalMoneyOut += t.amount;
+                }
+            });
             
-            // Update summary cards
-            const moneySummaryCards = document.getElementById('money-summary-cards');
-            const totalMoneyInEl = document.getElementById('total-money-in');
-            const totalMoneyOutEl = document.getElementById('total-money-out');
+            // Update summary cards - SIMPLIFIED LIKE FIRST CODE
             const totalMoneyInFullEl = document.getElementById('total-money-in-full');
             const totalMoneyOutFullEl = document.getElementById('total-money-out-full');
-            const moneySummaryContainer = document.getElementById('money-summary-container');
             
-            if (moneySummaryCards) {
-                moneySummaryCards.style.display = 'grid';
-                if (totalMoneyInEl) totalMoneyInEl.textContent = `Ksh ${totalMoneyIn.toLocaleString()}`;
-                if (totalMoneyOutEl) totalMoneyOutEl.textContent = `Ksh ${totalMoneyOut.toLocaleString()}`;
-            }
-            
-            if (moneySummaryContainer) {
-                moneySummaryContainer.style.display = 'block';
-                if (totalMoneyInFullEl) totalMoneyInFullEl.textContent = `Ksh ${totalMoneyIn.toLocaleString()}`;
-                if (totalMoneyOutFullEl) totalMoneyOutFullEl.textContent = `Ksh ${totalMoneyOut.toLocaleString()}`;
-            }
+            if (totalMoneyInFullEl) totalMoneyInFullEl.textContent = `Ksh ${totalMoneyIn.toLocaleString()}`;
+            if (totalMoneyOutFullEl) totalMoneyOutFullEl.textContent = `Ksh ${totalMoneyOut.toLocaleString()}`;
             
             const liveTransBody = document.getElementById('live-trans-body');
             if (liveTransBody) {
@@ -2184,19 +2120,8 @@
                             ${t.type}
                         </td>
                         <td data-label="Wallet">${t.category}</td>
-                        <td data-label="Actions">
-                            <button class="btn btn-danger" style="padding: 5px 10px; font-size: 0.7rem;" onclick="confirmDeleteTransaction(${t.id}, '${t.description}', ${t.amount})">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
                     </tr>
                 `).join('');
-                
-                // Add total row
-                const totalTransactionsAmount = document.getElementById('total-transactions-amount');
-                if (totalTransactionsAmount) {
-                    totalTransactionsAmount.textContent = `Ksh ${totalTransactions.toLocaleString()}`;
-                }
             }
             
             // Check for low floats after data is loaded
@@ -2205,49 +2130,6 @@
             console.error("Error loading shift data:", error);
         }
     }
-
-    // Delete transaction function
-    window.confirmDeleteTransaction = function(transactionId, description, amount) {
-        transactionToDelete = transactionId;
-        const deleteText = document.getElementById('delete-confirm-text');
-        if (deleteText) {
-            deleteText.innerHTML = `Are you sure you want to delete this transaction?<br><br>
-            <strong>Reason:</strong> ${description}<br>
-            <strong>Amount:</strong> Ksh ${amount.toLocaleString()}`;
-        }
-        document.getElementById('delete-modal').style.display = 'flex';
-    };
-
-    // Setup delete confirmation
-    document.getElementById('confirm-delete').addEventListener('click', async function() {
-        if (!transactionToDelete) return;
-        
-        this.disabled = true;
-        this.innerHTML = '<span class="spinner"></span> Deleting...';
-        
-        try {
-            const { error } = await supabase
-                .from('cash_transactions')
-                .delete()
-                .eq('id', transactionToDelete);
-            
-            if (error) throw error;
-            
-            // Reload data
-            await loadShiftData();
-            document.getElementById('delete-modal').style.display = 'none';
-            transactionToDelete = null;
-            
-            // Show success message
-            alert("Transaction deleted successfully!");
-        } catch (error) {
-            console.error("Delete Error:", error);
-            alert("Error deleting transaction: " + error.message);
-        } finally {
-            this.disabled = false;
-            this.innerHTML = 'Delete';
-        }
-    });
 
     document.getElementById('confirm-open').addEventListener('click', async function() {
         const cash = parseFloat(document.getElementById('o-cash').value || 0);
@@ -2498,7 +2380,7 @@
         loadHistory(); 
     });
     
-    // UPDATED MONEY IN/OUT RECORD BUTTON FUNCTION
+    // SIMPLIFIED MONEY IN/OUT RECORD BUTTON FUNCTION LIKE FIRST CODE
     document.getElementById('record-expense-btn').addEventListener('click', async function() {
         const amt = parseFloat(document.getElementById('exp-amt').value);
         const desc = document.getElementById('exp-desc').value;
