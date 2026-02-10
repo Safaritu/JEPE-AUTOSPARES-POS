@@ -100,6 +100,14 @@
             box-shadow: 0 0 8px rgba(79, 70, 229, 0.4) !important;
             border: 2px solid white !important;
         }
+        
+        /* Start button with larger font */
+        .start-btn-large {
+            font-size: 0.9rem !important;
+            padding: 10px 18px !important;
+            font-weight: 900 !important;
+            letter-spacing: 0.5px !important;
+        }
 
         .float-status-card {
             background: #fff; 
@@ -135,6 +143,7 @@
             border-radius: 8px;
             border: 1px solid var(--border);
             transition: all 0.3s;
+            position: relative;
         }
         
         .float-item:hover {
@@ -933,6 +942,18 @@
             background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
             border-color: #a7f3d0;
         }
+        
+        /* Danger Alert for Low Floats */
+        .danger-alert {
+            animation: dangerPulse 1s infinite !important;
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.5) !important;
+        }
+        
+        @keyframes dangerPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.9; }
+        }
     </style>
 </head>
 <body>
@@ -1027,8 +1048,15 @@
         <div class="greeting-time" id="greeting-time"></div>
     </div>
     
-    <div class="section-label">Opening Floats & Live Sales Tracker</div>
-    <div class="float-status-card">
+    <!-- OPENING FLOATS & LIVE SALES TRACKER with Alert System -->
+    <div class="section-label">
+        <span style="display: flex; align-items: center; gap: 8px;">
+            Opening Floats & Live Sales Tracker
+            <span id="float-alert-indicator" style="display: none; font-size: 0.8rem; animation: blink 1s infinite;">⚠️</span>
+        </span>
+    </div>
+    
+    <div class="float-status-card" id="float-status-card">
         <div class="float-item" id="float-cash-item">
             <label>Cash</label>
             <span id="float-cash">0.00</span>
@@ -1090,7 +1118,7 @@
 
     <div class="dual-tables">
         <div>
-            <div class="section-label">TODAYS SALES</div>
+            <div class="section-label">TODAY'S SALES</div>
             <div class="table-card" style="max-height: 320px; overflow-y: auto;">
                 <table>
                     <thead class="mobile-hide-header">
@@ -1143,7 +1171,8 @@
         </table>
     </div>
 
-    <div class="section-label">WORK HISTORY</div>
+    <!-- BOTTOM SHIFT HISTORY TABLE -->
+    <div class="section-label">SHIFT AUDIT HISTORY</div>
     <input type="text" id="history-search" class="search-input" placeholder="🔍 Search by date (e.g. 10 Jan 2026)..." style="max-width: 100%;">
     
     <div class="table-card">
@@ -1168,6 +1197,7 @@
     </div>
 </div>
 
+<!-- Start Shift Modal -->
 <div id="open-modal" class="overlay">
     <div class="modal">
         <h3>🚀 Start Shift</h3>
@@ -1177,10 +1207,11 @@
             <div class="input-group"><label>KCB Float</label><input type="number" id="o-kcb" value="0"></div>
             <div class="input-group"><label>Equity Float</label><input type="number" id="o-equity" value="0"></div>
         </div>
-        <button class="btn btn-primary" style="margin-top:20px; width:100%" id="confirm-open">START DAY</button>
+        <button class="btn btn-primary start-btn-large" style="margin-top:20px; width:100%" id="confirm-open">🚀 START DAY</button>
     </div>
 </div>
 
+<!-- Close Shift Modal -->
 <div id="close-modal" class="overlay">
     <div class="modal">
         <h3 style="color:var(--danger)">🔒 End Day</h3>
@@ -1211,11 +1242,11 @@
     let currentKcbSalesTotal = 0;
     let currentUser = null;
     let timeCheckInterval = null;
+    let alertSoundPlayed = false;
 
     // Gas redirect functions
     window.closeGasRedirect = function() {
         document.getElementById('gasRedirectModal').style.display = 'none';
-        // Reset form
         document.getElementById('pSearch').value = '';
         document.getElementById('pPrice').value = '';
         document.getElementById('pQty').value = '1';
@@ -1252,20 +1283,50 @@
         ];
 
         let lowFloatDetected = false;
+        let criticalFloatDetected = false;
         
         floatItems.forEach(item => {
             const floatItemElement = document.getElementById(item.id);
-            if (floatItemElement && item.value < 7000 && item.value > 0) {
-                floatItemElement.classList.add('low-float-warning');
-                lowFloatDetected = true;
-            } else if (floatItemElement) {
-                floatItemElement.classList.remove('low-float-warning');
+            const alertIndicator = document.getElementById('float-alert-indicator');
+            
+            if (floatItemElement) {
+                // Remove all alert classes first
+                floatItemElement.classList.remove('low-float-warning', 'danger-alert');
+                
+                // Check for critical low float (below 2000)
+                if (item.value < 2000 && item.value > 0) {
+                    floatItemElement.classList.add('danger-alert');
+                    lowFloatDetected = true;
+                    criticalFloatDetected = true;
+                } 
+                // Check for warning low float (below 7000)
+                else if (item.value < 7000 && item.value > 0) {
+                    floatItemElement.classList.add('low-float-warning');
+                    lowFloatDetected = true;
+                }
             }
         });
 
-        // Play alert sound if low float detected
-        if (lowFloatDetected) {
-            playAlertSound();
+        // Show/hide alert indicator
+        const alertIndicator = document.getElementById('float-alert-indicator');
+        if (alertIndicator) {
+            if (lowFloatDetected) {
+                alertIndicator.style.display = 'inline';
+                alertIndicator.style.color = criticalFloatDetected ? '#ef4444' : '#f59e0b';
+            } else {
+                alertIndicator.style.display = 'none';
+            }
+        }
+
+        // Play alert sound if critical low float detected
+        if (criticalFloatDetected && !alertSoundPlayed) {
+            playAlertSound('danger');
+            alertSoundPlayed = true;
+            
+            // Reset after 30 seconds
+            setTimeout(() => {
+                alertSoundPlayed = false;
+            }, 30000);
         }
     }
 
@@ -1286,25 +1347,59 @@
             gainNode.connect(audioContext.destination);
             
             // Different sounds for different alerts
-            if (type === 'time-alert') {
+            if (type === 'danger') {
+                oscillator.frequency.value = 800; // High pitch for danger
+                oscillator.type = 'sawtooth';
+            } else if (type === 'time-alert') {
                 oscillator.frequency.value = 600; // Lower tone for time alerts
                 oscillator.type = 'sawtooth';
             } else {
-                oscillator.frequency.value = 800; // Higher tone for low floats
+                oscillator.frequency.value = 700; // Medium tone for warnings
                 oscillator.type = 'sine';
             }
             
-            gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
+            if (type === 'danger') {
+                // Danger sound: three quick beeps
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1);
+                
+                // Second beep
+                setTimeout(() => {
+                    const oscillator2 = audioContext.createOscillator();
+                    const gainNode2 = audioContext.createGain();
+                    oscillator2.connect(gainNode2);
+                    gainNode2.connect(audioContext.destination);
+                    oscillator2.frequency.value = 800;
+                    oscillator2.type = 'sawtooth';
+                    gainNode2.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                    oscillator2.start(audioContext.currentTime);
+                    oscillator2.stop(audioContext.currentTime + 0.1);
+                }, 150);
+                
+                // Third beep
+                setTimeout(() => {
+                    const oscillator3 = audioContext.createOscillator();
+                    const gainNode3 = audioContext.createGain();
+                    oscillator3.connect(gainNode3);
+                    gainNode3.connect(audioContext.destination);
+                    oscillator3.frequency.value = 800;
+                    oscillator3.type = 'sawtooth';
+                    gainNode3.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode3.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                    oscillator3.start(audioContext.currentTime);
+                    oscillator3.stop(audioContext.currentTime + 0.1);
+                }, 300);
+            } else {
+                gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.8);
+            }
             
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.8);
-            
-            // Clean up
-            oscillator.onended = () => {
-                oscillator.disconnect();
-                gainNode.disconnect();
-            };
         } catch (e) {
             console.log("Audio error:", e);
         }
@@ -1406,6 +1501,7 @@
         if (document.visibilityState === 'visible') {
             init();
             checkTimeAlerts();
+            checkLowFloats();
         }
     });
 
@@ -1535,7 +1631,7 @@
                 // Check for low floats after data is loaded
                 setTimeout(checkLowFloats, 500);
             } else {
-                actionBtnContainer.innerHTML = `<button class="btn btn-primary special-action-btn" onclick="document.getElementById('open-modal').style.display='flex'">🟢 START DAY</button>`;
+                actionBtnContainer.innerHTML = `<button class="btn btn-primary special-action-btn start-btn-large" onclick="document.getElementById('open-modal').style.display='flex'">🚀 START DAY</button>`;
             }
             await loadHistory();
         } catch (error) {
@@ -1916,7 +2012,7 @@
             const variance = isClosed ? (closeTotal - expected) : 0;
             
             // Determine variance status class with new color coding
-            let statusClass = 'mismatch';
+            let statusClass = 'balanced';
             let varianceText = '';
             
             if (!isClosed) {
@@ -1940,6 +2036,25 @@
             const cashSalesLink = `<a href="sales_reports.html?date=${startD.toISOString().split('T')[0]}&method=Cash" class="clickable-link" title="Click to view Cash Sales">${cashSales.toLocaleString()}</a>`;
             const kcbSalesLink = `<a href="sales_reports.html?date=${startD.toISOString().split('T')[0]}&method=KCB Paybill" class="clickable-link" title="Click to view KCB Paybill Sales">${kcbPaybillSales.toLocaleString()}</a>`;
             
+            // Opening floats display
+            const openingFloats = `
+                <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash||0).toLocaleString()}</span></div>
+                <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa||0).toLocaleString()}</span></div>
+                <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb||0).toLocaleString()}</span></div>
+                <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity||0).toLocaleString()}</span></div>
+                <div class="total-row">Total: ${openTotal.toLocaleString()}</div>
+            `;
+            
+            // Closing floats display
+            const closingFloats = `
+                <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.close_cash||0).toLocaleString()}</span></div>
+                <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa||0).toLocaleString()}</span></div>
+                <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.close_kcb||0).toLocaleString()}</span></div>
+                <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.close_equity||0).toLocaleString()}</span></div>
+                <div class="account-line"><span class="account-label">Paybill</span><span class="account-val">${(sh.close_kcb_bank||0).toLocaleString()}</span></div>
+                <div class="total-row" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>
+            `;
+            
             tableHtml += `
                 <tr>
                     <td class="date-cell">
@@ -1948,11 +2063,7 @@
                         <span class="time-pill">${sh.end_time ? 'OUT: '+new Date(sh.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'ACTIVE'}</span>
                     </td>
                     <td>
-                        <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity||0).toLocaleString()}</span></div>
-                        <div class="total-row">Total: ${openTotal.toLocaleString()}</div>
+                        ${openingFloats}
                     </td>
                     <td>
                         <div class="revenue-card">
@@ -1968,12 +2079,7 @@
                         </div>
                     </td>
                     <td>
-                        <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.close_cash||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.close_kcb||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.close_equity||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">Paybill</span><span class="account-val">${(sh.close_kcb_bank||0).toLocaleString()}</span></div>
-                        <div class="total-row" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>
+                        ${closingFloats}
                     </td>
                     <td>
                         <span class="status-badge ${statusClass}">
@@ -2043,6 +2149,9 @@
     // Initialize when page loads
     document.addEventListener('DOMContentLoaded', function() {
         init();
+        
+        // Check low floats every 30 seconds
+        setInterval(checkLowFloats, 30000);
         
         // Clean up interval on page unload
         window.addEventListener('beforeunload', function() {
