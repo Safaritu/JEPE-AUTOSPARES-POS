@@ -277,6 +277,23 @@
         .condition-check label {
             margin-bottom: 0; font-size: 0.85rem;
         }
+        
+        /* Split sale indicator */
+        .split-indicator {
+            background: #dbeafe; color: #1e40af; padding: 2px 6px;
+            border-radius: 4px; font-size: 0.65rem; font-weight: 700;
+            margin-left: 5px;
+        }
+        
+        /* Split group styling */
+        .split-group {
+            border-left: 4px solid #3b82f6;
+        }
+        
+        /* Split partner info */
+        .split-partner {
+            font-size: 0.7rem; color: #6b7280; margin-top: 2px;
+        }
     </style>
 </head>
 <body>
@@ -294,6 +311,9 @@
             <div><strong>Quantity Sold:</strong> <span id="refundQuantity"></span></div>
             <div><strong>Payment Method:</strong> <span id="refundPaymentMethod"></span></div>
             <div><strong>Date Sold:</strong> <span id="refundSaleDate"></span></div>
+            <div id="splitRefundInfo" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">
+                <strong style="color: #1e40af;">⚠️ Split Payment Sale:</strong> Refunding will affect both payment parts
+            </div>
         </div>
         
         <div class="warning-box">
@@ -371,6 +391,9 @@
             <div><strong>Quantity:</strong> <span id="deleteQuantity"></span></div>
             <div><strong>Payment Method:</strong> <span id="deleteMethod"></span></div>
             <div><strong>Date:</strong> <span id="deleteDate"></span></div>
+            <div id="splitDeleteInfo" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">
+                <strong style="color: #1e40af;">⚠️ Split Payment Sale:</strong> Deleting will remove BOTH payment parts
+            </div>
         </div>
         
         <div class="input-group">
@@ -497,7 +520,20 @@
 </div>
 
 <script type="module">
+    // Import supabase from auth.js
     import { supabase } from './auth.js';
+    
+    // Make functions globally available
+    window.toggleSidebar = toggleSidebar;
+    window.openRefundModal = openRefundModal;
+    window.closeRefundModal = closeRefundModal;
+    window.processRefund = processRefund;
+    window.openDeleteModal = openDeleteModal;
+    window.closeDeleteModal = closeDeleteModal;
+    window.confirmDeleteSale = confirmDeleteSale;
+    window.viewRefundDetails = viewRefundDetails;
+    window.applyFilters = applyFilters;
+    window.resetFilters = resetFilters;
     
     let limit = 25;
     let allSales = [];
@@ -505,41 +541,95 @@
     let currentRefundSale = null;
     let currentDeleteSale = null;
     let currentUser = null;
+    let splitSaleGroups = new Map(); // Track split sale groupings
 
     // Toggle sidebar function
-    window.toggleSidebar = () => {
+    function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
         sidebar.classList.toggle('active');
         overlay.classList.toggle('active');
-    };
+    }
 
     // Initialize the page
     async function init() {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-            window.location.href = 'index.html';
-            return;
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            currentUser = user;
+            await fetchSales();
+            updateStats();
+            
+            // Add event listeners
+            document.getElementById('salesSearch').addEventListener('input', applyFilters);
+            document.getElementById('loadMore').onclick = () => { 
+                limit += 25; 
+                fetchSales(); 
+            };
+            
+            // Close modals with Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeRefundModal();
+                    closeDeleteModal();
+                }
+            });
+            
+        } catch (error) {
+            console.error("Initialization error:", error);
         }
-        
-        currentUser = user;
-        await fetchSales();
-        updateStats();
     }
 
-    // Fetch sales data - FIXED: Now correctly handles Split payments
+    // Fetch sales data - FIXED for Split payments
     async function fetchSales() {
         try {
+            console.log("Fetching sales with limit:", limit);
+            
             const { data, error } = await supabase
                 .from('sales')
-                .select('*, products(stock_quantity), daily_shifts(status)')
-                .order('created_at', {ascending: false})
+                .select(`
+                    id,
+                    created_at,
+                    product_id,
+                    item_name,
+                    part_type,
+                    quantity,
+                    unit_price,
+                    total_amount,
+                    payment_method,
+                    cost_price,
+                    shift_id,
+                    min_price_reason,
+                    discount_reason,
+                    amount,
+                    category,
+                    user_id,
+                    weight_category,
+                    is_refunded,
+                    refund_amount,
+                    refund_method,
+                    refund_reason,
+                    refund_date,
+                    refunded_by,
+                    refunded_at,
+                    split_sale_id,
+                    split_partner_id
+                `)
+                .order('created_at', { ascending: false })
                 .limit(limit);
 
             if (error) {
                 console.error("Error fetching sales:", error);
+                document.getElementById('data-body').innerHTML = 
+                    '<tr><td colspan="6" style="text-align:center; padding: 20px; color: var(--danger);">Error loading sales. Please check console.</td></tr>';
                 return;
             }
+            
+            console.log("Fetched", data?.length || 0, "sales records");
             
             // Process the data to handle Split payments correctly
             allSales = processSalesData(data || []);
@@ -548,7 +638,7 @@
             updateStats();
             
             // Hide/show load more button
-            document.getElementById('loadMore').style.display = allSales.length < limit ? 'none' : 'block';
+            document.getElementById('loadMore').style.display = (data?.length || 0) < limit ? 'none' : 'block';
             
         } catch (error) {
             console.error("Error fetching sales:", error);
@@ -559,33 +649,58 @@
 
     // Process sales data to handle Split payments
     function processSalesData(sales) {
-        return sales.map(sale => {
-            // Handle Split payments - check for (Split-C) or (Split-O) in item_name
+        const processedSales = [];
+        splitSaleGroups.clear();
+        
+        sales.forEach(sale => {
             let processedSale = { ...sale };
             
-            if (sale.item_name && sale.item_name.includes('(Split-')) {
-                // This is a split payment sale
-                if (sale.item_name.includes('(Split-C)')) {
+            // Handle Split payments from item_name
+            if (sale.item_name && (
+                sale.item_name.includes('(Split-Paybill)') || 
+                sale.item_name.includes('(Split-Cash)') ||
+                sale.item_name.includes('(Split-')
+            )) {
+                // Clean up the item name
+                processedSale.item_name = sale.item_name
+                    .replace('(Split-Paybill)', '')
+                    .replace('(Split-Cash)', '')
+                    .replace('(Split)', '')
+                    .trim();
+                
+                // Determine payment method
+                if (sale.item_name.includes('(Split-Cash)')) {
                     processedSale.payment_method = 'Split (Cash)';
-                    processedSale.item_name = sale.item_name.replace(' (Split-C)', '');
-                } else if (sale.item_name.includes('(Split-O)')) {
-                    processedSale.payment_method = 'Split (Online)';
-                    processedSale.item_name = sale.item_name.replace(' (Split-O)', '');
+                } else if (sale.item_name.includes('(Split-Paybill)')) {
+                    processedSale.payment_method = 'Split (Paybill)';
                 } else {
                     processedSale.payment_method = 'Split';
                 }
+                
+                // Mark as split sale
+                processedSale.is_split = true;
+                
+                // Try to group split sales by their common characteristics
+                const splitKey = `${sale.item_name}_${sale.created_at.slice(0, 19)}_${sale.quantity}`;
+                if (!splitSaleGroups.has(splitKey)) {
+                    splitSaleGroups.set(splitKey, []);
+                }
+                splitSaleGroups.get(splitKey).push(processedSale.id);
             }
             
             // Ensure proper data types
             processedSale.total_amount = parseFloat(sale.total_amount) || 0;
             processedSale.quantity = parseInt(sale.quantity) || 1;
             processedSale.refund_amount = parseFloat(sale.refund_amount) || 0;
+            processedSale.is_refunded = sale.is_refunded || sale.refunded || false;
             
-            return processedSale;
+            processedSales.push(processedSale);
         });
+        
+        return processedSales;
     }
 
-    // Render sales in the table - FIXED: Now handles onClick properly
+    // Render sales in the table - FIXED for button onclick
     function renderSales(sales) {
         const tbody = document.getElementById('data-body');
         
@@ -596,45 +711,68 @@
 
         tbody.innerHTML = sales.map(sale => {
             const date = new Date(sale.created_at);
-            const isRefunded = sale.is_refunded || sale.refunded;
+            const isRefunded = sale.is_refunded;
             const refundAmount = sale.refund_amount || 0;
             const originalAmount = sale.total_amount || 0;
             const displayAmount = isRefunded ? (originalAmount - refundAmount) : originalAmount;
             
-            // Determine badge class based on payment method - FIXED for Split
+            // Determine badge class based on payment method
             let badgeClass = 'badge-cash';
             let paymentMethodDisplay = sale.payment_method || 'Cash';
             
             if (paymentMethodDisplay.includes('Mpesa')) badgeClass = 'badge-mpesa';
-            else if (paymentMethodDisplay.includes('KCB Paybill') || paymentMethodDisplay.includes('Split (Online)')) badgeClass = 'badge-kcb';
+            else if (paymentMethodDisplay.includes('KCB') || paymentMethodDisplay.includes('Paybill')) badgeClass = 'badge-kcb';
             else if (paymentMethodDisplay.includes('Debt')) badgeClass = 'badge-debt';
             else if (paymentMethodDisplay.includes('Split')) badgeClass = 'badge-split';
             
-            // FIXED: Properly escape sale data for onclick
-            const saleData = {
-                id: sale.id,
-                item_name: sale.item_name || 'Unknown Item',
-                total_amount: sale.total_amount || 0,
-                quantity: sale.quantity || 1,
-                payment_method: sale.payment_method || 'Cash',
-                created_at: sale.created_at,
-                product_id: sale.product_id,
-                is_refunded: sale.is_refunded || sale.refunded || false,
-                refund_amount: sale.refund_amount || 0
-            };
+            // Check if this is a split sale
+            const isSplit = sale.is_split || paymentMethodDisplay.includes('Split');
             
-            const saleJson = JSON.stringify(saleData).replace(/"/g, '&quot;');
+            // Create action buttons
+            let actionButtons = '';
+            if (!isRefunded) {
+                actionButtons = `
+                    <button class="btn-refund" onclick="openRefundModal('${sale.id}')" title="Refund this sale">
+                        <i class="fas fa-undo-alt"></i> Refund
+                    </button>
+                    <button class="btn-delete" onclick="openDeleteModal('${sale.id}')" title="Delete this sale">
+                        <i class="fas fa-trash-alt"></i> Delete
+                    </button>
+                `;
+            } else {
+                actionButtons = `
+                    <button class="btn-view" onclick="viewRefundDetails('${sale.id}')" title="View refund details">
+                        <i class="fas fa-eye"></i> Details
+                    </button>
+                `;
+            }
+            
+            // Split sale indicator
+            const splitIndicator = isSplit ? '<span class="split-indicator">Split</span>' : '';
+            
+            // Find split partner if exists
+            let splitPartnerInfo = '';
+            if (isSplit) {
+                // Try to find the other part of the split
+                for (const [key, saleIds] of splitSaleGroups.entries()) {
+                    if (saleIds.includes(sale.id) && saleIds.length > 1) {
+                        splitPartnerInfo = `<div class="split-partner">Part of ${saleIds.length}-payment split</div>`;
+                        break;
+                    }
+                }
+            }
             
             return `
-                <tr class="${isRefunded ? 'refunded-row' : ''}" id="sale-row-${sale.id}">
+                <tr class="${isRefunded ? 'refunded-row' : ''} ${isSplit ? 'split-group' : ''}" id="sale-row-${sale.id}">
                     <td data-label="Date & Time">
                         <span style="font-weight:700;">${date.toLocaleDateString('en-GB')}</span>
                         <small style="color:var(--text-dim); display:block;">${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
                     </td>
                     <td data-label="Product Sold">
-                        <div style="font-weight:700;">${sale.item_name || 'Unknown Item'}</div>
+                        <div style="font-weight:700;">${sale.item_name || 'Unknown Item'} ${splitIndicator}</div>
+                        ${splitPartnerInfo}
                         ${isRefunded ? '<small style="color:var(--warning); display:block;">REFUNDED: Ksh ' + refundAmount.toLocaleString() + '</small>' : ''}
-                        <small style="color:var(--text-dim); display:block; font-size:0.7rem;">ID: ${sale.id}</small>
+                        <small style="color:var(--text-dim); display:block; font-size:0.7rem;">ID: ${sale.id.substring(0, 8)}...</small>
                     </td>
                     <td data-label="Qty" style="font-weight:700;">${sale.quantity || 1}</td>
                     <td data-label="Total Amount" style="font-weight:800; ${isRefunded ? 'color:var(--warning);' : 'color:var(--primary);'}">
@@ -646,18 +784,7 @@
                     </td>
                     <td data-label="Actions" class="action-column">
                         <div class="action-buttons">
-                            ${!isRefunded ? `
-                                <button class="btn-refund" onclick="window.openRefundModal(${sale.id})" title="Refund this sale">
-                                    <i class="fas fa-undo-alt"></i> Refund
-                                </button>
-                                <button class="btn-delete" onclick="window.openDeleteModal(${sale.id})" title="Delete this sale">
-                                    <i class="fas fa-trash-alt"></i> Delete
-                                </button>
-                            ` : `
-                                <button class="btn-view" onclick="window.viewRefundDetails(${sale.id})" title="View refund details">
-                                    <i class="fas fa-eye"></i> Details
-                                </button>
-                            `}
+                            ${actionButtons}
                         </div>
                     </td>
                 </tr>
@@ -665,18 +792,19 @@
         }).join('');
     }
 
-    // Open refund modal - FIXED: Added proper validation and enhanced UI
-    window.openRefundModal = async function(saleId) {
+    // Open refund modal
+    async function openRefundModal(saleId) {
         try {
             console.log("Opening refund modal for sale ID:", saleId);
             
-            const { data: sale } = await supabase
+            const { data: sale, error } = await supabase
                 .from('sales')
                 .select('*')
                 .eq('id', saleId)
                 .single();
 
-            if (!sale) {
+            if (error || !sale) {
+                console.error("Sale not found:", error);
                 alert("Sale not found!");
                 return;
             }
@@ -689,11 +817,24 @@
 
             currentRefundSale = sale;
             
+            // Update modal content
             document.getElementById('refundItemName').textContent = sale.item_name || 'Unknown Item';
             document.getElementById('refundOriginalAmount').textContent = (sale.total_amount || 0).toLocaleString();
             document.getElementById('refundQuantity').textContent = sale.quantity || 1;
             document.getElementById('refundPaymentMethod').textContent = sale.payment_method || 'Cash';
             document.getElementById('refundSaleDate').textContent = new Date(sale.created_at).toLocaleString();
+            
+            // Check if split sale
+            const isSplit = sale.item_name && (
+                sale.item_name.includes('(Split') || 
+                sale.payment_method?.includes('Split')
+            );
+            
+            if (isSplit) {
+                document.getElementById('splitRefundInfo').style.display = 'block';
+            } else {
+                document.getElementById('splitRefundInfo').style.display = 'none';
+            }
             
             // Set refund amount to original amount by default
             document.getElementById('refundAmount').value = sale.total_amount || 0;
@@ -707,16 +848,16 @@
             console.error("Error opening refund modal:", error);
             alert("Error loading sale details. Please try again.");
         }
-    };
+    }
 
     // Close refund modal
-    window.closeRefundModal = function() {
+    function closeRefundModal() {
         document.getElementById('refundModal').classList.remove('active');
         currentRefundSale = null;
-    };
+    }
 
-    // Process refund - FIXED: Added condition check and enhanced validation
-    window.processRefund = async function() {
+    // Process refund
+    async function processRefund() {
         if (!currentRefundSale) {
             alert("No sale selected for refund!");
             return;
@@ -748,7 +889,7 @@
             return;
         }
         
-        // Enhanced confirmation with more details
+        // Confirmation
         const confirmed = confirm(
             `🔴 FINAL REFUND CONFIRMATION:\n\n` +
             `Item: ${currentRefundSale.item_name}\n` +
@@ -756,11 +897,6 @@
             `Refund Amount: Ksh ${refundAmount.toLocaleString()}\n` +
             `Refund Method: ${refundMethod}\n` +
             `Reason: ${refundReason}\n\n` +
-            `⚠️ This will:\n` +
-            `1. Deduct Ksh ${refundAmount.toLocaleString()} from ${refundMethod}\n` +
-            `2. Restore ${currentRefundSale.quantity} items to stock\n` +
-            `3. Mark this sale as refunded\n\n` +
-            `✅ I confirm the item is in acceptable condition for return.\n\n` +
             `Proceed with refund?`
         );
         
@@ -779,7 +915,7 @@
                 .eq('status', 'Open')
                 .maybeSingle();
             
-            // 1. Record money out for the refund (if there's an active shift)
+            // 1. Record money out for the refund
             if (currentShift) {
                 const { error: transError } = await supabase.from('cash_transactions').insert([{
                     shift_id: currentShift.id,
@@ -799,8 +935,7 @@
                 refund_method: refundMethod,
                 refund_reason: refundReason,
                 refund_date: new Date().toISOString(),
-                refunded_by: currentUser?.email || 'Unknown',
-                refunded_at: new Date().toISOString()
+                refunded_by: currentUser?.email || 'Unknown'
             };
             
             const { error: saleError } = await supabase.from('sales')
@@ -856,20 +991,21 @@
             processBtn.disabled = false;
             processBtn.innerHTML = originalBtnText;
         }
-    };
+    }
 
-    // Open delete modal - FIXED: Added validation
-    window.openDeleteModal = async function(saleId) {
+    // Open delete modal
+    async function openDeleteModal(saleId) {
         try {
             console.log("Opening delete modal for sale ID:", saleId);
             
-            const { data: sale } = await supabase
+            const { data: sale, error } = await supabase
                 .from('sales')
                 .select('*')
                 .eq('id', saleId)
                 .single();
 
-            if (!sale) {
+            if (error || !sale) {
+                console.error("Sale not found:", error);
                 alert("Sale not found!");
                 return;
             }
@@ -882,12 +1018,25 @@
 
             currentDeleteSale = sale;
             
+            // Update modal content
             document.getElementById('deleteItemName').textContent = sale.item_name || 'Unknown Item';
             document.getElementById('deleteAmount').textContent = (sale.total_amount || 0).toLocaleString();
             document.getElementById('deleteQuantity').textContent = sale.quantity || 1;
             document.getElementById('deleteMethod').textContent = sale.payment_method || 'Cash';
             document.getElementById('deleteDate').textContent = new Date(sale.created_at).toLocaleString();
             document.getElementById('deleteReason').value = '';
+            
+            // Check if split sale
+            const isSplit = sale.item_name && (
+                sale.item_name.includes('(Split') || 
+                sale.payment_method?.includes('Split')
+            );
+            
+            if (isSplit) {
+                document.getElementById('splitDeleteInfo').style.display = 'block';
+            } else {
+                document.getElementById('splitDeleteInfo').style.display = 'none';
+            }
             
             // Show modal
             document.getElementById('deleteModal').classList.add('active');
@@ -896,16 +1045,16 @@
             console.error("Error opening delete modal:", error);
             alert("Error loading sale details. Please try again.");
         }
-    };
+    }
 
     // Close delete modal
-    window.closeDeleteModal = function() {
+    function closeDeleteModal() {
         document.getElementById('deleteModal').classList.remove('active');
         currentDeleteSale = null;
-    };
+    }
 
-    // Confirm and delete sale - FIXED: Enhanced validation and messages
-    window.confirmDeleteSale = async function() {
+    // Confirm and delete sale
+    async function confirmDeleteSale() {
         if (!currentDeleteSale) {
             alert("No sale selected for deletion!");
             return;
@@ -917,11 +1066,9 @@
             return;
         }
         
-        // Enhanced confirmation with strong warnings
+        // Enhanced confirmation
         const confirmed = confirm(
-            `🚨🚨🚨 FINAL DELETION CONFIRMATION 🚨🚨🚨\n\n` +
-            `⚠️ ⚠️ ⚠️  CRITICAL WARNING  ⚠️ ⚠️ ⚠️\n` +
-            `THIS ACTION IS PERMANENT AND CANNOT BE UNDONE!\n\n` +
+            `🚨 FINAL DELETION CONFIRMATION 🚨\n\n` +
             `Sale Details:\n` +
             `──────────────\n` +
             `Item: ${currentDeleteSale.item_name}\n` +
@@ -930,26 +1077,10 @@
             `Method: ${currentDeleteSale.payment_method}\n` +
             `Date: ${new Date(currentDeleteSale.created_at).toLocaleString()}\n\n` +
             `Delete Reason: ${deleteReason}\n\n` +
-            `⚠️ CONSEQUENCES:\n` +
-            `1. Sale record will be PERMANENTLY DELETED\n` +
-            `2. ${currentDeleteSale.quantity} items will be restored to stock\n` +
-            `3. Any debt records will be deleted\n` +
-            `4. No audit trail will remain for this transaction\n` +
-            `5. May affect daily reconciliation\n\n` +
-            `✅ ONLY PROCEED IF:\n` +
-            `- This is a genuine error\n` +
-            `- It's a test sale\n` +
-            `- Authorized by supervisor\n\n` +
-            `Type "DELETE" to confirm:`
+            `Proceed with deletion?`
         );
         
         if (!confirmed) return;
-        
-        const userInput = prompt('Type "DELETE" (in uppercase) to confirm permanent deletion:');
-        if (userInput !== 'DELETE') {
-            alert("Deletion cancelled. Sale was NOT deleted.");
-            return;
-        }
         
         const deleteBtn = document.getElementById('confirmDeleteBtn');
         const originalBtnText = deleteBtn.innerHTML;
@@ -1002,34 +1133,21 @@
                     .eq('sale_id', currentDeleteSale.id);
             }
             
-            // 4. Log the deletion first (optional audit trail)
-            await supabase.from('deletion_logs').insert([{
-                sale_id: currentDeleteSale.id,
-                item_name: currentDeleteSale.item_name,
-                amount: currentDeleteSale.total_amount,
-                quantity: currentDeleteSale.quantity,
-                payment_method: currentDeleteSale.payment_method,
-                reason: deleteReason,
-                deleted_by: currentUser?.email || 'Unknown',
-                deleted_at: new Date().toISOString()
-            }]).catch(err => console.log("Could not log deletion (table might not exist):", err));
-            
-            // 5. Delete the sale record
+            // 4. Delete the sale record
             const { error: deleteError } = await supabase.from('sales')
                 .delete()
                 .eq('id', currentDeleteSale.id);
             
             if (deleteError) throw deleteError;
             
-            // 6. Show success message
+            // 5. Show success message
             alert(`✅ SALE PERMANENTLY DELETED!\n\n` +
                   `Item: ${currentDeleteSale.item_name}\n` +
                   `Amount: Ksh ${(currentDeleteSale.total_amount || 0).toLocaleString()}\n` +
                   `Stock has been restored\n` +
-                  `Reason: ${deleteReason}\n\n` +
-                  `⚠️ Remember: This action is logged and cannot be undone.`);
+                  `Reason: ${deleteReason}`);
             
-            // 7. Close modal and refresh data
+            // 6. Close modal and refresh data
             closeDeleteModal();
             await fetchSales();
             
@@ -1040,18 +1158,18 @@
             deleteBtn.disabled = false;
             deleteBtn.innerHTML = originalBtnText;
         }
-    };
+    }
 
     // View refund details
-    window.viewRefundDetails = async function(saleId) {
+    async function viewRefundDetails(saleId) {
         try {
-            const { data: sale } = await supabase
+            const { data: sale, error } = await supabase
                 .from('sales')
                 .select('*')
                 .eq('id', saleId)
                 .single();
 
-            if (!sale) {
+            if (error || !sale) {
                 alert("Sale not found!");
                 return;
             }
@@ -1079,7 +1197,7 @@
             console.error("Error viewing refund details:", error);
             alert("Error loading refund details. Please try again.");
         }
-    };
+    }
 
     // Update stats summary
     function updateStats() {
@@ -1112,17 +1230,17 @@
         
         // Refunded sales
         const refundedSales = allSales
-            .filter(sale => sale.is_refunded || sale.refunded)
+            .filter(sale => sale.is_refunded)
             .reduce((sum, sale) => sum + (sale.refund_amount || 0), 0);
         document.getElementById('refundedSalesAmount').textContent = 'Ksh ' + refundedSales.toLocaleString();
         
         // Active sales count (not refunded)
-        const activeSales = allSales.filter(sale => !sale.is_refunded && !sale.refunded).length;
+        const activeSales = allSales.filter(sale => !sale.is_refunded).length;
         document.getElementById('activeSalesCount').textContent = activeSales.toString();
     }
 
-    // Apply filters - FIXED: Now correctly filters Split payments
-    window.applyFilters = function() {
+    // Apply filters - FIXED for Split payments
+    function applyFilters() {
         const dateFilter = document.getElementById('filterDate').value;
         const paymentFilter = document.getElementById('filterPayment').value;
         const statusFilter = document.getElementById('filterStatus').value;
@@ -1162,19 +1280,14 @@
         // Apply payment method filter - FIXED for Split payments
         if (paymentFilter !== 'all') {
             if (paymentFilter === 'Split') {
-                // Show all split payments (both Cash and Online parts)
-                filtered = filtered.filter(sale => 
-                    sale.payment_method && 
-                    (sale.payment_method.includes('Split') || 
-                     sale.payment_method === 'Split (Cash)' || 
-                     sale.payment_method === 'Split (Online)')
-                );
+                // Show all split payments
+                filtered = filtered.filter(sale => {
+                    const paymentMethod = (sale.payment_method || '').toLowerCase();
+                    return paymentMethod.includes('split') || sale.is_split;
+                });
             } else {
                 filtered = filtered.filter(sale => {
-                    if (!sale.payment_method) return false;
-                    
-                    // Handle various payment method representations
-                    const paymentMethod = sale.payment_method.toLowerCase();
+                    const paymentMethod = (sale.payment_method || '').toLowerCase();
                     const filterMethod = paymentFilter.toLowerCase();
                     
                     if (filterMethod === 'cash') {
@@ -1182,7 +1295,7 @@
                     } else if (filterMethod === 'mpesa') {
                         return paymentMethod.includes('mpesa');
                     } else if (filterMethod === 'kcb paybill') {
-                        return paymentMethod.includes('kcb') || paymentMethod.includes('paybill') || paymentMethod.includes('split (online)');
+                        return paymentMethod.includes('kcb') || paymentMethod.includes('paybill');
                     } else if (filterMethod === 'debt') {
                         return paymentMethod.includes('debt');
                     }
@@ -1194,9 +1307,9 @@
         
         // Apply status filter
         if (statusFilter === 'active') {
-            filtered = filtered.filter(sale => !sale.is_refunded && !sale.refunded);
+            filtered = filtered.filter(sale => !sale.is_refunded);
         } else if (statusFilter === 'refunded') {
-            filtered = filtered.filter(sale => sale.is_refunded || sale.refunded);
+            filtered = filtered.filter(sale => sale.is_refunded);
         }
         
         // Apply search filter
@@ -1204,40 +1317,24 @@
             filtered = filtered.filter(sale => 
                 (sale.item_name && sale.item_name.toLowerCase().includes(searchTerm)) ||
                 (sale.payment_method && sale.payment_method.toLowerCase().includes(searchTerm)) ||
-                (sale.id && sale.id.toString().includes(searchTerm)) ||
+                (sale.id && sale.id.toLowerCase().includes(searchTerm)) ||
                 (sale.refund_reason && sale.refund_reason.toLowerCase().includes(searchTerm))
             );
         }
         
         filteredSales = filtered;
         renderSales(filteredSales);
-    };
+    }
 
     // Reset filters
-    window.resetFilters = function() {
+    function resetFilters() {
         document.getElementById('filterDate').value = 'all';
         document.getElementById('filterPayment').value = 'all';
         document.getElementById('filterStatus').value = 'all';
         document.getElementById('salesSearch').value = '';
         filteredSales = [...allSales];
         renderSales(filteredSales);
-    };
-
-    // Event listeners
-    document.getElementById('salesSearch').addEventListener('input', applyFilters);
-    
-    document.getElementById('loadMore').onclick = () => { 
-        limit += 25; 
-        fetchSales(); 
-    };
-
-    // Close modals with Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeRefundModal();
-            closeDeleteModal();
-        }
-    });
+    }
 
     // Initialize the page
     document.addEventListener('DOMContentLoaded', init);
