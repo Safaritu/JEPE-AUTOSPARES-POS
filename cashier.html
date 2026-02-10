@@ -391,6 +391,7 @@
             }
         }
         
+        /* FIXED DUAL TABLES - PREVENT MONEY IN/OUT FROM BEING MINIMIZED */
         .dual-tables { 
             display: grid; 
             grid-template-columns: 1fr; 
@@ -402,7 +403,33 @@
             .dual-tables { 
                 grid-template-columns: 1.2fr 1fr; 
                 gap: 20px; 
-            } 
+            }
+            
+            /* Ensure MONEY IN/OUT RECORD card maintains proper width */
+            .dual-tables > div:nth-child(2) {
+                min-width: 400px; /* Increased from 350px for better visibility */
+            }
+            
+            /* Ensure form elements in MONEY IN/OUT RECORD don't get too narrow */
+            .dual-tables .card .grid-inputs {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .dual-tables .card .grid-inputs input,
+            .dual-tables .card .grid-inputs select {
+                min-height: 50px; /* Ensure adequate touch target size */
+                font-size: 16px; /* Prevent text from shrinking */
+                padding: 14px 16px;
+            }
+            
+            .dual-tables .card .grid-inputs .btn {
+                min-height: 55px;
+                font-size: 1rem;
+                font-weight: 800;
+                margin-top: 10px;
+            }
         }
 
         .text-success { color: #15803d !important; font-weight: 700; }
