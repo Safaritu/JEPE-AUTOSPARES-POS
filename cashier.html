@@ -121,12 +121,11 @@
         box-shadow: 0 4px 6px rgba(0,0,0,0.02);
     }
     
-    /* Low float warning */
+    /* Low float warning - REMOVED PULSE ANIMATION */
     .low-float-warning {
         background: #fee2e2 !important;
         color: #b91c1c !important;
         border-color: #fecaca !important;
-        animation: pulse-red 1.5s infinite;
     }
 
     @media (min-width: 600px) { 
@@ -422,6 +421,19 @@
     .btn-primary { background: var(--primary); color: white; }
     .btn-danger { background: var(--danger); color: white; }
     .btn-sync { background: var(--warning); color: white; }
+    
+    /* Refund button styling */
+    .btn-refund { 
+        background: #f59e0b; 
+        color: white; 
+        padding: 6px 12px !important;
+        font-size: 0.7rem !important;
+        border-radius: 6px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
 
     .overlay { 
         position: fixed; 
@@ -649,28 +661,24 @@
         50% { transform: translateY(-8px); } 
     }
     
+    /* UPDATED: Smaller congrats message */
     .congrats-msg { 
         background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); 
         color: #166534; 
-        padding: 12px 16px; 
-        border-radius: 10px; 
+        padding: 8px 12px; 
+        border-radius: 8px; 
         margin-bottom: 12px; 
         text-align: center; 
-        font-weight: 800; 
-        font-size: 0.85rem; 
+        font-weight: 700; 
+        font-size: 0.8rem; 
         display: none; 
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
         border: 2px solid #86efac;
         letter-spacing: 0.5px;
         animation: slideDown 0.5s ease;
-    }
-    
-    @media (min-width: 768px) {
-        .congrats-msg {
-            padding: 18px 24px;
-            margin-bottom: 20px;
-            font-size: 1rem;
-        }
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
     }
     
     @keyframes slideDown {
@@ -929,18 +937,9 @@
         }
     }
     
-    /* Alert sound indicator */
+    /* Alert sound indicator - REMOVED */
     .alert-indicator {
         position: relative;
-    }
-    
-    .alert-indicator::after {
-        content: "⚠️";
-        position: absolute;
-        top: -4px;
-        right: -4px;
-        font-size: 0.7rem;
-        animation: blink 1s infinite;
     }
     
     @keyframes blink {
@@ -948,44 +947,56 @@
         50% { opacity: 0.3; }
     }
     
-    /* Time Alert Banner */
+    /* Time Alert Banner - REMOVED */
     .time-alert-banner {
-        background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
-        color: white;
-        padding: 10px 15px;
-        border-radius: 12px;
-        margin-bottom: 12px;
-        box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
-        text-align: center;
-        font-weight: 700;
-        font-size: 0.85rem;
-        display: none;
-        animation: slideDown 0.5s ease;
-        border: 2px solid #fbbf24;
+        display: none !important;
     }
     
-    .time-alert-banner.danger {
-        background: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%);
-        border-color: #fecdd3;
-    }
-    
-    .time-alert-banner.success {
-        background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-        border-color: #a7f3d0;
-    }
-    
-    /* Danger Alert for Low Floats */
+    /* Danger Alert for Low Floats - REMOVED ANIMATION */
     .danger-alert {
-        animation: dangerPulse 1s infinite !important;
         border-color: #ef4444 !important;
-        box-shadow: 0 0 15px rgba(239, 68, 68, 0.5) !important;
+        box-shadow: 0 0 5px rgba(239, 68, 68, 0.3) !important;
     }
     
-    @keyframes dangerPulse {
-        0%, 100% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.05); opacity: 0.9; }
+    /* Refund Modal Styles */
+    .refund-modal .modal {
+        max-width: 400px;
     }
-
+    
+    .refund-item-info {
+        background: #f8fafc;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        border-left: 4px solid var(--warning);
+    }
+    
+    .refund-warning {
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        color: #9a3412;
+        padding: 10px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+    
+    .refund-warning i {
+        color: #ea580c;
+        margin-right: 5px;
+    }
+    
+    .refund-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    
+    .refund-actions .btn {
+        flex: 1;
+    }
+    
     /* Mobile Slide Indicator */
     .slide-indicator { 
         background: #0f172a; 
@@ -1149,6 +1160,28 @@
         font-weight: 800;
         border-top: 2px solid var(--border);
     }
+    
+    /* Refunded item styling */
+    .refunded-row {
+        background-color: #fff7ed !important;
+        opacity: 0.8;
+    }
+    
+    .refunded-badge {
+        background: #f59e0b;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        margin-left: 5px;
+    }
+    
+    /* Sales table action column */
+    .action-column {
+        width: 80px;
+        text-align: center;
+    }
 </style>
 </head>
 <body>
@@ -1165,6 +1198,49 @@
         <div class="gas-redirect-buttons">
             <button class="btn btn-cancel" onclick="closeGasRedirect()">Cancel</button>
             <button class="btn btn-proceed" onclick="goToGasHub()">Go to Gas Hub</button>
+        </div>
+    </div>
+</div>
+
+<!-- Refund Modal -->
+<div id="refund-modal" class="overlay refund-modal">
+    <div class="modal">
+        <h3>🔄 Process Refund</h3>
+        <div class="refund-item-info">
+            <div><strong>Item:</strong> <span id="refund-item-name"></span></div>
+            <div><strong>Original Amount:</strong> Ksh <span id="refund-original-amount"></span></div>
+            <div><strong>Quantity to Refund:</strong> <span id="refund-quantity"></span></div>
+        </div>
+        
+        <div class="refund-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            Please check the returned item's condition before processing refund.
+        </div>
+        
+        <div class="input-group">
+            <label>Refund Method</label>
+            <select id="refund-method">
+                <option value="Cash">Cash</option>
+                <option value="Mpesa">Mpesa</option>
+                <option value="KCB Paybill">KCB Paybill</option>
+                <option value="KCB">KCB Float</option>
+                <option value="Equity">Equity Float</option>
+            </select>
+        </div>
+        
+        <div class="input-group">
+            <label>Refund Amount (Ksh)</label>
+            <input type="number" id="refund-amount" placeholder="Enter refund amount">
+        </div>
+        
+        <div class="input-group">
+            <label>Refund Reason (Optional)</label>
+            <input type="text" id="refund-reason" placeholder="e.g., Damaged item, Wrong item">
+        </div>
+        
+        <div class="refund-actions">
+            <button class="btn btn-danger" onclick="processRefund()">Process Refund</button>
+            <button class="btn" onclick="closeRefundModal()" style="background: #e2e8f0;">Cancel</button>
         </div>
     </div>
 </div>
@@ -1218,10 +1294,10 @@
 
 <button class="fab-menu" onclick="toggleNav()">☰</button>
 
-<!-- Time Alert Banner -->
-<div id="timeAlertBanner" class="time-alert-banner"></div>
+<!-- UPDATED: Removed Time Alert Banner -->
 
-<div id="congrats-banner" class="congrats-msg">🎉 WELL DONE! YOUR LAST SHIFT WAS PERFECTLY BALANCED! ✔</div>
+<!-- UPDATED: Smaller congrats message -->
+<div id="congrats-banner" class="congrats-msg">🎉 Perfect Shift!</div>
 
 <div class="container">
     <!-- Compact Header -->
@@ -1247,7 +1323,7 @@
     <div class="section-label">
         <span style="display: flex; align-items: center; gap: 8px;">
             Opening Floats & Live Sales Tracker
-            <span id="float-alert-indicator" style="display: none; font-size: 0.8rem; animation: blink 1s infinite;">⚠️</span>
+            <!-- UPDATED: Removed alert indicator -->
         </span>
     </div>
     
@@ -1311,12 +1387,12 @@
         </form>
     </div>
 
-    <!-- UPDATED DUAL TABLES SECTION - SIMPLIFIED MONEY IN/OUT FROM FIRST CODE -->
+    <!-- UPDATED DUAL TABLES SECTION - WITH REFUND BUTTON -->
     <div class="dual-tables">
         <div>
             <div class="section-label">TODAY'S SALES</div>
             <div class="table-card" style="max-height: 320px; overflow-y: auto;">
-                <table>
+                <table class="today-sales-table">
                     <thead class="mobile-hide-header">
                         <tr>
                             <th>Time</th>
@@ -1324,6 +1400,7 @@
                             <th>Qty</th>
                             <th>Total</th>
                             <th>Method</th>
+                            <th class="action-column">Action</th>
                         </tr>
                     </thead>
                     <tbody id="live-sales-body"></tbody>
@@ -1331,10 +1408,9 @@
             </div>
         </div>
 
-        <!-- UPDATED MONEY IN/OUT RECORD SECTION - SIMPLIFIED LIKE FIRST CODE -->
+        <!-- MONEY IN/OUT RECORD SECTION -->
         <div class="card">
             <div class="section-label">MONEY IN/OUT RECORD</div>
-            <!-- SIMPLE FORM LIKE FIRST CODE -->
             <input type="number" id="exp-amt" placeholder="Amount" style="margin-bottom:12px; padding: 12px; border-radius: 8px;">
             <select id="exp-type" style="margin-bottom:12px; padding: 12px; border-radius: 8px;">
                 <option value="Money Out">Money Out</option>
@@ -1353,7 +1429,7 @@
 
     <div class="section-label">TODAY'S MONEY IN/OUT HISTORY</div>
     
-    <!-- Money In/Out Summary - SIMPLIFIED FROM FIRST CODE -->
+    <!-- Money In/Out Summary -->
     <div id="money-summary-container">
         <div class="money-summary-cards" id="money-summary-cards-full">
             <div class="money-summary-card money-in-card">
@@ -1367,7 +1443,7 @@
         </div>
     </div>
     
-    <!-- SIMPLIFIED MONEY IN/OUT HISTORY TABLE LIKE FIRST CODE -->
+    <!-- MONEY IN/OUT HISTORY TABLE -->
     <div class="table-card">
         <table class="money-history-table">
             <thead class="mobile-hide-header">
@@ -1383,7 +1459,7 @@
         </table>
     </div>
 
-    <!-- BOTTOM SHIFT HISTORY TABLE - UPDATED TO MATCH SHIFT AUDIT PAGE -->
+    <!-- BOTTOM SHIFT HISTORY TABLE -->
     <div class="section-label">SHIFT AUDIT HISTORY</div>
     
     <div class="slide-indicator" id="scrollHint">
@@ -1464,13 +1540,7 @@
     let timeCheckInterval = null;
     let alertSoundPlayed = false;
     let audioContext = null;
-
-    // Initialize audio context on user interaction
-    function initAudioContext() {
-        if (!audioContext && (window.AudioContext || window.webkitAudioContext)) {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        }
-    }
+    let refundingSale = null;
 
     // Gas redirect functions
     window.closeGasRedirect = function() {
@@ -1485,6 +1555,102 @@
         window.location.href = 'cashiergashub.html';
     };
 
+    // Refund modal functions
+    window.openRefundModal = function(sale) {
+        refundingSale = sale;
+        document.getElementById('refund-item-name').textContent = sale.item_name || 'Unknown Item';
+        document.getElementById('refund-original-amount').textContent = sale.total_amount.toLocaleString();
+        document.getElementById('refund-quantity').textContent = sale.quantity;
+        document.getElementById('refund-amount').value = sale.total_amount;
+        document.getElementById('refund-reason').value = '';
+        document.getElementById('refund-modal').style.display = 'flex';
+    };
+
+    window.closeRefundModal = function() {
+        document.getElementById('refund-modal').style.display = 'none';
+        refundingSale = null;
+    };
+
+    // Process refund function
+    window.processRefund = async function() {
+        if (!refundingSale || !currentShift) return;
+        
+        const refundMethod = document.getElementById('refund-method').value;
+        const refundAmount = parseFloat(document.getElementById('refund-amount').value);
+        const refundReason = document.getElementById('refund-reason').value || 'Item return';
+        
+        if (!refundAmount || refundAmount <= 0) {
+            alert("Please enter a valid refund amount");
+            return;
+        }
+        
+        if (refundAmount > refundingSale.total_amount) {
+            alert("Refund amount cannot exceed original sale amount");
+            return;
+        }
+        
+        const confirmed = confirm(
+            `Confirm Refund:\n\n` +
+            `Item: ${refundingSale.item_name}\n` +
+            `Amount: Ksh ${refundAmount.toLocaleString()}\n` +
+            `Method: ${refundMethod}\n\n` +
+            `This will deduct from ${refundMethod} and return stock.`
+        );
+        
+        if (!confirmed) return;
+        
+        try {
+            // 1. Record money out for the refund
+            const { error: transError } = await supabase.from('cash_transactions').insert([{
+                shift_id: currentShift.id,
+                type: 'Money Out',
+                category: refundMethod,
+                amount: refundAmount,
+                description: `Refund: ${refundingSale.item_name}${refundReason ? ' - ' + refundReason : ''}`
+            }]);
+            
+            if (transError) throw transError;
+            
+            // 2. Update sale record to mark as refunded
+            const { error: saleError } = await supabase.from('sales')
+                .update({ 
+                    refunded: true,
+                    refund_amount: refundAmount,
+                    refund_method: refundMethod,
+                    refund_reason: refundReason,
+                    refunded_at: new Date().toISOString()
+                })
+                .eq('id', refundingSale.id);
+            
+            if (saleError) throw saleError;
+            
+            // 3. Restore stock quantity
+            const { data: product } = await supabase.from('products')
+                .select('stock_quantity')
+                .eq('id', refundingSale.product_id)
+                .single();
+            
+            if (product) {
+                const newStock = product.stock_quantity + refundingSale.quantity;
+                await supabase.from('products')
+                    .update({ stock_quantity: newStock })
+                    .eq('id', refundingSale.product_id);
+            }
+            
+            // 4. Show success message
+            alert(`✅ Refund processed successfully!\n\nPlease check the returned item's condition.`);
+            
+            // 5. Close modal and refresh data
+            closeRefundModal();
+            await fetchInventory();
+            await loadShiftData();
+            
+        } catch (error) {
+            console.error("Refund error:", error);
+            alert("Error processing refund: " + error.message);
+        }
+    };
+
     // Profile dropdown functions
     window.toggleProfileDropdown = function() {
         const dropdown = document.getElementById('profileDropdown');
@@ -1496,12 +1662,12 @@
         const dropdown = document.getElementById('profileDropdown');
         const profileBtn = document.getElementById('profileBtn');
         
-        if (!profileBtn.contains(event.target) && !dropdown.contains(event.target)) {
+        if (profileBtn && !profileBtn.contains(event.target) && dropdown && !dropdown.contains(event.target)) {
             dropdown.style.display = 'none';
         }
     });
 
-    // Check for low floats and highlight them
+    // Check for low floats - UPDATED: No alert sounds
     function checkLowFloats() {
         const floatItems = [
             { id: 'float-cash-item', element: document.getElementById('float-cash'), value: parseFloat(document.getElementById('float-cash').innerText.replace(/,/g, '')) || 0 },
@@ -1511,11 +1677,9 @@
         ];
 
         let lowFloatDetected = false;
-        let criticalFloatDetected = false;
         
         floatItems.forEach(item => {
             const floatItemElement = document.getElementById(item.id);
-            const alertIndicator = document.getElementById('float-alert-indicator');
             
             if (floatItemElement) {
                 // Remove all alert classes first
@@ -1525,7 +1689,6 @@
                 if (item.value < 2000 && item.value > 0) {
                     floatItemElement.classList.add('danger-alert');
                     lowFloatDetected = true;
-                    criticalFloatDetected = true;
                 } 
                 // Check for warning low float (below 7000)
                 else if (item.value < 7000 && item.value > 0) {
@@ -1534,168 +1697,11 @@
                 }
             }
         });
-
-        // Show/hide alert indicator
-        const alertIndicator = document.getElementById('float-alert-indicator');
-        if (alertIndicator) {
-            if (lowFloatDetected) {
-                alertIndicator.style.display = 'inline';
-                alertIndicator.style.color = criticalFloatDetected ? '#ef4444' : '#f59e0b';
-            } else {
-                alertIndicator.style.display = 'none';
-            }
-        }
-
-        // Play alert sound if critical low float detected
-        if (criticalFloatDetected && !alertSoundPlayed) {
-            playAlertSound('danger');
-            alertSoundPlayed = true;
-            
-            // Reset after 30 seconds
-            setTimeout(() => {
-                alertSoundPlayed = false;
-            }, 30000);
-        }
     }
 
-    // Play alert sound for low floats and time alerts - FIXED VERSION
-    function playAlertSound(type = 'low-float') {
-        try {
-            // Initialize audio context if not already done
-            if (!audioContext) {
-                initAudioContext();
-                if (!audioContext) {
-                    console.log("Audio context not supported or not initialized");
-                    return;
-                }
-            }
-
-            // Resume audio context if suspended (required by browsers)
-            if (audioContext.state === 'suspended') {
-                audioContext.resume();
-            }
-
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            // Different sounds for different alerts
-            if (type === 'danger') {
-                oscillator.frequency.value = 800; // High pitch for danger
-                oscillator.type = 'sawtooth';
-            } else if (type === 'time-alert') {
-                oscillator.frequency.value = 600; // Lower tone for time alerts
-                oscillator.type = 'sawtooth';
-            } else {
-                oscillator.frequency.value = 700; // Medium tone for warnings
-                oscillator.type = 'sine';
-            }
-            
-            if (type === 'danger') {
-                // Danger sound: three quick beeps
-                const now = audioContext.currentTime;
-                gainNode.gain.setValueAtTime(0, now);
-                gainNode.gain.linearRampToValueAtTime(0.3, now + 0.05);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                
-                oscillator.start(now);
-                oscillator.stop(now + 0.1);
-                
-                // Second beep
-                setTimeout(() => {
-                    const oscillator2 = audioContext.createOscillator();
-                    const gainNode2 = audioContext.createGain();
-                    oscillator2.connect(gainNode2);
-                    gainNode2.connect(audioContext.destination);
-                    oscillator2.frequency.value = 800;
-                    oscillator2.type = 'sawtooth';
-                    
-                    const now2 = audioContext.currentTime;
-                    gainNode2.gain.setValueAtTime(0, now2);
-                    gainNode2.gain.linearRampToValueAtTime(0.3, now2 + 0.05);
-                    gainNode2.gain.exponentialRampToValueAtTime(0.01, now2 + 0.1);
-                    
-                    oscillator2.start(now2);
-                    oscillator2.stop(now2 + 0.1);
-                }, 150);
-                
-                // Third beep
-                setTimeout(() => {
-                    const oscillator3 = audioContext.createOscillator();
-                    const gainNode3 = audioContext.createGain();
-                    oscillator3.connect(gainNode3);
-                    gainNode3.connect(audioContext.destination);
-                    oscillator3.frequency.value = 800;
-                    oscillator3.type = 'sawtooth';
-                    
-                    const now3 = audioContext.currentTime;
-                    gainNode3.gain.setValueAtTime(0, now3);
-                    gainNode3.gain.linearRampToValueAtTime(0.3, now3 + 0.05);
-                    gainNode3.gain.exponentialRampToValueAtTime(0.01, now3 + 0.1);
-                    
-                    oscillator3.start(now3);
-                    oscillator3.stop(now3 + 0.1);
-                }, 300);
-            } else {
-                const now = audioContext.currentTime;
-                gainNode.gain.setValueAtTime(0, now);
-                gainNode.gain.linearRampToValueAtTime(0.2, now + 0.1);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
-                
-                oscillator.start(now);
-                oscillator.stop(now + 0.8);
-            }
-            
-        } catch (e) {
-            console.log("Audio error:", e);
-        }
-    }
-
-    // Check time and show alerts for shift start/end
+    // UPDATED: Remove time alert checks completely
     function checkTimeAlerts() {
-        const now = new Date();
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
-        const currentTime = currentHour * 60 + currentMinute; // Convert to minutes since midnight
-        
-        const startAlertTime = 8 * 60 + 30; // 8:30 AM
-        const endAlertTime = 18 * 60 + 35; // 6:35 PM
-        
-        const timeAlertBanner = document.getElementById('timeAlertBanner');
-        if (!timeAlertBanner) return;
-        
-        // Clear any existing alert
-        timeAlertBanner.style.display = 'none';
-        timeAlertBanner.className = 'time-alert-banner';
-        
-        // Check for shift start alert (8:30 AM)
-        if (!currentShift && currentTime >= startAlertTime && currentTime < startAlertTime + 120) {
-            timeAlertBanner.innerHTML = `⏰ <strong>TIME TO START YOUR SHIFT!</strong> It's past 8:30 AM. Please start your shift to begin recording sales.`;
-            timeAlertBanner.classList.add('danger');
-            timeAlertBanner.style.display = 'block';
-            playAlertSound('time-alert');
-        }
-        // Check for shift end alert (6:35 PM)
-        else if (currentShift && currentTime >= endAlertTime) {
-            timeAlertBanner.innerHTML = `⏰ <strong>TIME TO CLOSE YOUR SHIFT!</strong> It's past 6:35 PM. Please close your shift to finalize today's transactions.`;
-            timeAlertBanner.classList.add('danger');
-            timeAlertBanner.style.display = 'block';
-            playAlertSound('time-alert');
-        }
-        // Check if shift should have started (15 minutes after 8:30)
-        else if (!currentShift && currentTime >= startAlertTime + 15) {
-            timeAlertBanner.innerHTML = `⚠️ <strong>SHIFT NOT STARTED!</strong> It's past 8:45 AM. Remember to start your shift to track sales.`;
-            timeAlertBanner.classList.add('warning');
-            timeAlertBanner.style.display = 'block';
-        }
-        // Check if shift is about to end soon (15 minutes before 6:35)
-        else if (currentShift && currentTime >= endAlertTime - 15 && currentTime < endAlertTime) {
-            timeAlertBanner.innerHTML = `⏳ <strong>SHIFT ENDING SOON!</strong> Shift closes at 6:35 PM. Prepare to close your shift.`;
-            timeAlertBanner.classList.add('warning');
-            timeAlertBanner.style.display = 'block';
-        }
+        // Function intentionally left empty as requested
     }
 
     // --- REALTIME: Sync Inventory Automatically ---
@@ -1760,7 +1766,8 @@
         sessionStorage.setItem('menuClicked', 'true');
         
         // Close profile dropdown if open
-        document.getElementById('profileDropdown').style.display = 'none';
+        const dropdown = document.getElementById('profileDropdown');
+        if (dropdown) dropdown.style.display = 'none';
     };
 
     window.logoutUser = async () => { 
@@ -1844,9 +1851,7 @@
         updateGreeting();
         setInterval(updateGreeting, 60000); // Update every minute
         
-        // Start time alert checks
-        checkTimeAlerts();
-        timeCheckInterval = setInterval(checkTimeAlerts, 60000); // Check every minute
+        // UPDATED: Don't start time alert checks
 
         try {
             const [prodRes, shiftRes] = await Promise.all([
@@ -2070,7 +2075,7 @@
             const sales = salesRes.data || [];
             const trans = transRes.data || [];
 
-            currentKcbSalesTotal = sales.filter(s => s.payment_method === 'KCB Paybill').reduce((a, b) => a + b.total_amount, 0);
+            currentKcbSalesTotal = sales.filter(s => s.payment_method === 'KCB Paybill' && !s.refunded).reduce((a, b) => a + b.total_amount, 0);
             const liveKcbBox = document.getElementById('live-kcb-box');
             if (liveKcbBox) liveKcbBox.innerText = currentKcbSalesTotal.toLocaleString();
             
@@ -2080,12 +2085,20 @@
             const liveSalesBody = document.getElementById('live-sales-body');
             if (liveSalesBody) {
                 liveSalesBody.innerHTML = sales.map(s => `
-                    <tr>
+                    <tr class="${s.refunded ? 'refunded-row' : ''}">
                         <td data-label="Time">${new Date(s.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
-                        <td data-label="Item"><b>${s.item_name}</b></td>
+                        <td data-label="Item">
+                            <b>${s.item_name}</b>
+                            ${s.refunded ? '<span class="refunded-badge">REFUNDED</span>' : ''}
+                        </td>
                         <td data-label="Qty">${s.quantity}</td>
                         <td data-label="Total">Ksh ${s.total_amount.toLocaleString()}</td>
                         <td data-label="Method">${s.payment_method}</td>
+                        <td data-label="Action" class="action-column">
+                            ${!s.refunded ? `<button class="btn-refund" onclick="openRefundModal(${JSON.stringify(s).replace(/"/g, '&quot;')})">
+                                <i class="fas fa-undo-alt"></i> Refund
+                            </button>` : ''}
+                        </td>
                     </tr>
                 `).join('');
             }
@@ -2102,7 +2115,7 @@
                 }
             });
             
-            // Update summary cards - SIMPLIFIED LIKE FIRST CODE
+            // Update summary cards
             const totalMoneyInFullEl = document.getElementById('total-money-in-full');
             const totalMoneyOutFullEl = document.getElementById('total-money-out-full');
             
@@ -2184,7 +2197,7 @@
             const clB = currentKcbSalesTotal;
             const clC = parseFloat(document.getElementById('c-cash').value || 0);
 
-            const { data: sales } = await supabase.from('sales').select('total_amount').eq('shift_id', currentShift.id).neq('payment_method','Debt');
+            const { data: sales } = await supabase.from('sales').select('total_amount').eq('shift_id', currentShift.id).neq('payment_method','Debt').eq('refunded', false);
             const { data: trans } = await supabase.from('cash_transactions').select('amount, type').eq('shift_id', currentShift.id);
             
             const totalSales = (sales || []).reduce((a,b) => a + b.total_amount, 0);
@@ -2232,7 +2245,7 @@
                 .limit(historyLimit);
 
             const { data: transactions } = await supabase.from('cash_transactions').select('shift_id, amount, type');
-            const { data: sales } = await supabase.from('sales').select('shift_id, total_amount, payment_method');
+            const { data: sales } = await supabase.from('sales').select('shift_id, total_amount, payment_method').eq('refunded', false);
 
             allShifts = shifts || [];
             allTransactions = transactions || [];
@@ -2243,7 +2256,13 @@
                 const clT = (lastClosed.close_cash||0) + (lastClosed.close_mpesa||0) + (lastClosed.close_kcb||0) + (lastClosed.close_equity||0) + (lastClosed.close_kcb_bank || 0);
                 if (Math.abs(clT - (lastClosed.system_expected_total || 0)) < 1) {
                     const banner = document.getElementById('congrats-banner');
-                    if(banner) banner.style.display = 'block';
+                    if(banner) {
+                        banner.style.display = 'block';
+                        // UPDATED: Hide after 5 seconds
+                        setTimeout(() => {
+                            banner.style.display = 'none';
+                        }, 5000);
+                    }
                 }
             }
             renderHistory(allShifts, allTransactions, allSales, searchQuery);
@@ -2380,7 +2399,7 @@
         loadHistory(); 
     });
     
-    // SIMPLIFIED MONEY IN/OUT RECORD BUTTON FUNCTION LIKE FIRST CODE
+    // MONEY IN/OUT RECORD BUTTON FUNCTION
     document.getElementById('record-expense-btn').addEventListener('click', async function() {
         const amt = parseFloat(document.getElementById('exp-amt').value);
         const desc = document.getElementById('exp-desc').value;
@@ -2426,24 +2445,15 @@
 
     // Initialize when page loads
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize audio context on first user interaction
-        document.addEventListener('click', function initAudioOnInteraction() {
-            initAudioContext();
-            document.removeEventListener('click', initAudioOnInteraction);
-        }, { once: true });
-        
         init();
         
         // Check low floats every 30 seconds
         setInterval(checkLowFloats, 30000);
         
-        // Clean up interval on page unload
+        // Clean up on page unload
         window.addEventListener('beforeunload', function() {
             if (timeCheckInterval) {
                 clearInterval(timeCheckInterval);
-            }
-            if (audioContext) {
-                audioContext.close();
             }
         });
     });
