@@ -294,6 +294,23 @@
         .split-partner {
             font-size: 0.7rem; color: #6b7280; margin-top: 2px;
         }
+        
+        /* Loading state */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+        
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4f46e5;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+        }
     </style>
 </head>
 <body>
@@ -511,37 +528,37 @@
                     </tr>
                 </thead>
                 <tbody id="data-body">
-                    <tr><td colspan="6" style="text-align:center; padding: 40px;">Loading sales records...</td></tr>
+                    <tr><td colspan="6" class="loading"><div class="loader"></div></td></tr>
                 </tbody>
             </table>
         </div>
-        <button id="loadMore" class="btn-load">LOAD MORE RECORDS</button>
+        <button id="loadMore" class="btn-load" style="display: none;">LOAD MORE RECORDS</button>
     </div>
 </div>
 
 <script type="module">
-    // Import supabase from auth.js
-    import { supabase } from './auth.js';
-    
-    // Make functions globally available
-    window.toggleSidebar = toggleSidebar;
-    window.openRefundModal = openRefundModal;
-    window.closeRefundModal = closeRefundModal;
-    window.processRefund = processRefund;
-    window.openDeleteModal = openDeleteModal;
-    window.closeDeleteModal = closeDeleteModal;
-    window.confirmDeleteSale = confirmDeleteSale;
-    window.viewRefundDetails = viewRefundDetails;
-    window.applyFilters = applyFilters;
-    window.resetFilters = resetFilters;
-    
+    // Import supabase from auth.js - FIXED: Check if auth.js exists
+    let supabase;
+    try {
+        const authModule = await import('./auth.js');
+        supabase = authModule.supabase;
+    } catch (error) {
+        console.error("Error importing auth.js:", error);
+        // Fallback: Initialize Supabase directly if auth.js doesn't exist
+        const SUPABASE_URL = 'https://your-project.supabase.co';
+        const SUPABASE_ANON_KEY = 'your-anon-key';
+        
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+
+    // Global variables
     let limit = 25;
     let allSales = [];
     let filteredSales = [];
     let currentRefundSale = null;
     let currentDeleteSale = null;
     let currentUser = null;
-    let splitSaleGroups = new Map(); // Track split sale groupings
+    let splitSaleGroups = new Map();
 
     // Toggle sidebar function
     function toggleSidebar() {
@@ -554,13 +571,27 @@
     // Initialize the page
     async function init() {
         try {
-            const { data: { user } } = await supabase.auth.getUser();
+            // Check if user is authenticated
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+            
+            if (authError) {
+                console.error("Auth error:", authError);
+                document.getElementById('data-body').innerHTML = 
+                    '<tr><td colspan="6" style="text-align:center; padding: 20px; color: var(--danger);">Authentication error. Please login again.</td></tr>';
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+                return;
+            }
+            
             if (!user) {
                 window.location.href = 'index.html';
                 return;
             }
             
             currentUser = user;
+            console.log("User authenticated:", user.email);
+            
             await fetchSales();
             updateStats();
             
@@ -581,73 +612,71 @@
             
         } catch (error) {
             console.error("Initialization error:", error);
+            document.getElementById('data-body').innerHTML = 
+                '<tr><td colspan="6" style="text-align:center; padding: 20px; color: var(--danger);">Error initializing: ' + error.message + '</td></tr>';
         }
     }
 
-    // Fetch sales data - FIXED for Split payments
+    // Fetch sales data - SIMPLIFIED VERSION
     async function fetchSales() {
         try {
-            console.log("Fetching sales with limit:", limit);
+            console.log("Fetching sales...");
             
+            // Show loading state
+            document.getElementById('data-body').innerHTML = 
+                '<tr><td colspan="6" class="loading"><div class="loader"></div></td></tr>';
+            
+            // SIMPLIFIED QUERY - only get essential fields
             const { data, error } = await supabase
                 .from('sales')
                 .select(`
                     id,
                     created_at,
-                    product_id,
                     item_name,
-                    part_type,
                     quantity,
-                    unit_price,
                     total_amount,
                     payment_method,
-                    cost_price,
-                    shift_id,
-                    min_price_reason,
-                    discount_reason,
-                    amount,
-                    category,
-                    user_id,
-                    weight_category,
                     is_refunded,
                     refund_amount,
-                    refund_method,
                     refund_reason,
-                    refund_date,
-                    refunded_by,
-                    refunded_at,
-                    split_sale_id,
-                    split_partner_id
+                    refund_date
                 `)
                 .order('created_at', { ascending: false })
                 .limit(limit);
 
             if (error) {
                 console.error("Error fetching sales:", error);
+                throw error;
+            }
+            
+            console.log("Successfully fetched", data?.length || 0, "sales records");
+            
+            if (!data || data.length === 0) {
                 document.getElementById('data-body').innerHTML = 
-                    '<tr><td colspan="6" style="text-align:center; padding: 20px; color: var(--danger);">Error loading sales. Please check console.</td></tr>';
+                    '<tr><td colspan="6" style="text-align:center; padding: 40px; color: var(--text-dim);">No sales records found.</td></tr>';
+                document.getElementById('loadMore').style.display = 'none';
                 return;
             }
             
-            console.log("Fetched", data?.length || 0, "sales records");
-            
-            // Process the data to handle Split payments correctly
-            allSales = processSalesData(data || []);
+            // Process the data
+            allSales = processSalesData(data);
             filteredSales = [...allSales];
             renderSales(filteredSales);
             updateStats();
             
             // Hide/show load more button
-            document.getElementById('loadMore').style.display = (data?.length || 0) < limit ? 'none' : 'block';
+            document.getElementById('loadMore').style.display = data.length < limit ? 'none' : 'block';
             
         } catch (error) {
-            console.error("Error fetching sales:", error);
+            console.error("Error in fetchSales:", error);
             document.getElementById('data-body').innerHTML = 
-                '<tr><td colspan="6" style="text-align:center; padding: 20px; color: var(--danger);">Error loading sales. Please try again.</td></tr>';
+                '<tr><td colspan="6" style="text-align:center; padding: 20px; color: var(--danger);">' +
+                'Error loading sales: ' + (error.message || 'Unknown error') + 
+                '<br><small>Check console for details</small></td></tr>';
         }
     }
 
-    // Process sales data to handle Split payments
+    // Process sales data
     function processSalesData(sales) {
         const processedSales = [];
         splitSaleGroups.clear();
@@ -655,44 +684,43 @@
         sales.forEach(sale => {
             let processedSale = { ...sale };
             
+            // Ensure proper data types
+            processedSale.total_amount = parseFloat(sale.total_amount) || 0;
+            processedSale.quantity = parseInt(sale.quantity) || 1;
+            processedSale.refund_amount = parseFloat(sale.refund_amount) || 0;
+            processedSale.is_refunded = sale.is_refunded || false;
+            
             // Handle Split payments from item_name
-            if (sale.item_name && (
-                sale.item_name.includes('(Split-Paybill)') || 
-                sale.item_name.includes('(Split-Cash)') ||
-                sale.item_name.includes('(Split-')
-            )) {
+            if (sale.item_name && sale.item_name.includes('(Split')) {
+                processedSale.is_split = true;
+                
                 // Clean up the item name
-                processedSale.item_name = sale.item_name
+                const originalName = sale.item_name;
+                processedSale.item_name = originalName
                     .replace('(Split-Paybill)', '')
                     .replace('(Split-Cash)', '')
                     .replace('(Split)', '')
                     .trim();
                 
                 // Determine payment method
-                if (sale.item_name.includes('(Split-Cash)')) {
+                if (originalName.includes('(Split-Cash)')) {
                     processedSale.payment_method = 'Split (Cash)';
-                } else if (sale.item_name.includes('(Split-Paybill)')) {
+                } else if (originalName.includes('(Split-Paybill)')) {
                     processedSale.payment_method = 'Split (Paybill)';
                 } else {
                     processedSale.payment_method = 'Split';
                 }
                 
-                // Mark as split sale
-                processedSale.is_split = true;
+                // Group split sales by cleaned name and time (within 1 minute)
+                const saleTime = new Date(sale.created_at).getTime();
+                const timeKey = Math.floor(saleTime / 60000); // Group by minute
+                const splitKey = `${processedSale.item_name}_${timeKey}_${sale.quantity}`;
                 
-                // Try to group split sales by their common characteristics
-                const splitKey = `${sale.item_name}_${sale.created_at.slice(0, 19)}_${sale.quantity}`;
                 if (!splitSaleGroups.has(splitKey)) {
                     splitSaleGroups.set(splitKey, []);
                 }
                 splitSaleGroups.get(splitKey).push(processedSale.id);
             }
-            
-            // Ensure proper data types
-            processedSale.total_amount = parseFloat(sale.total_amount) || 0;
-            processedSale.quantity = parseInt(sale.quantity) || 1;
-            processedSale.refund_amount = parseFloat(sale.refund_amount) || 0;
-            processedSale.is_refunded = sale.is_refunded || sale.refunded || false;
             
             processedSales.push(processedSale);
         });
@@ -700,7 +728,7 @@
         return processedSales;
     }
 
-    // Render sales in the table - FIXED for button onclick
+    // Render sales in the table
     function renderSales(sales) {
         const tbody = document.getElementById('data-body');
         
@@ -753,7 +781,6 @@
             // Find split partner if exists
             let splitPartnerInfo = '';
             if (isSplit) {
-                // Try to find the other part of the split
                 for (const [key, saleIds] of splitSaleGroups.entries()) {
                     if (saleIds.includes(sale.id) && saleIds.length > 1) {
                         splitPartnerInfo = `<div class="split-partner">Part of ${saleIds.length}-payment split</div>`;
@@ -762,11 +789,15 @@
                 }
             }
             
+            // Format date for display
+            const dateStr = date.toLocaleDateString('en-GB');
+            const timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
             return `
                 <tr class="${isRefunded ? 'refunded-row' : ''} ${isSplit ? 'split-group' : ''}" id="sale-row-${sale.id}">
                     <td data-label="Date & Time">
-                        <span style="font-weight:700;">${date.toLocaleDateString('en-GB')}</span>
-                        <small style="color:var(--text-dim); display:block;">${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
+                        <span style="font-weight:700;">${dateStr}</span>
+                        <small style="color:var(--text-dim); display:block;">${timeStr}</small>
                     </td>
                     <td data-label="Product Sold">
                         <div style="font-weight:700;">${sale.item_name || 'Unknown Item'} ${splitIndicator}</div>
@@ -810,7 +841,7 @@
             }
 
             // Check if already refunded
-            if (sale.is_refunded || sale.refunded) {
+            if (sale.is_refunded) {
                 alert("This sale has already been refunded!");
                 return;
             }
@@ -825,11 +856,7 @@
             document.getElementById('refundSaleDate').textContent = new Date(sale.created_at).toLocaleString();
             
             // Check if split sale
-            const isSplit = sale.item_name && (
-                sale.item_name.includes('(Split') || 
-                sale.payment_method?.includes('Split')
-            );
-            
+            const isSplit = sale.item_name && sale.item_name.includes('(Split');
             if (isSplit) {
                 document.getElementById('splitRefundInfo').style.display = 'block';
             } else {
@@ -917,62 +944,28 @@
             
             // 1. Record money out for the refund
             if (currentShift) {
-                const { error: transError } = await supabase.from('cash_transactions').insert([{
+                await supabase.from('cash_transactions').insert([{
                     shift_id: currentShift.id,
                     type: 'Money Out',
                     category: refundMethod,
                     amount: refundAmount,
                     description: `Refund: ${currentRefundSale.item_name} - ${refundReason} (Sale ID: ${currentRefundSale.id})`
                 }]);
-                
-                if (transError) throw transError;
             }
             
             // 2. Update sale record to mark as refunded
-            const updateData = { 
-                is_refunded: true,
-                refund_amount: refundAmount,
-                refund_method: refundMethod,
-                refund_reason: refundReason,
-                refund_date: new Date().toISOString(),
-                refunded_by: currentUser?.email || 'Unknown'
-            };
-            
-            const { error: saleError } = await supabase.from('sales')
-                .update(updateData)
+            await supabase.from('sales')
+                .update({ 
+                    is_refunded: true,
+                    refund_amount: refundAmount,
+                    refund_method: refundMethod,
+                    refund_reason: refundReason,
+                    refund_date: new Date().toISOString(),
+                    refunded_by: currentUser?.email || 'Unknown'
+                })
                 .eq('id', currentRefundSale.id);
             
-            if (saleError) {
-                console.log("Trying alternative refund update...");
-                // Try alternative column names
-                await supabase.from('sales')
-                    .update({ 
-                        refunded: true,
-                        refund_amount: refundAmount,
-                        refund_reason: refundReason
-                    })
-                    .eq('id', currentRefundSale.id);
-            }
-            
-            // 3. Restore stock quantity if product exists
-            if (currentRefundSale.product_id) {
-                const { data: product } = await supabase.from('products')
-                    .select('stock_quantity, name')
-                    .eq('id', currentRefundSale.product_id)
-                    .single();
-                
-                if (product) {
-                    const currentStock = parseFloat(product.stock_quantity) || 0;
-                    const newStock = currentStock + (currentRefundSale.quantity || 1);
-                    await supabase.from('products')
-                        .update({ stock_quantity: newStock })
-                        .eq('id', currentRefundSale.product_id);
-                    
-                    console.log(`Restored ${currentRefundSale.quantity} items of ${product.name}. New stock: ${newStock}`);
-                }
-            }
-            
-            // 4. Show success message
+            // 3. Show success message
             alert(`✅ REFUND PROCESSED SUCCESSFULLY!\n\n` +
                   `Item: ${currentRefundSale.item_name}\n` +
                   `Refund Amount: Ksh ${refundAmount.toLocaleString()}\n` +
@@ -980,7 +973,7 @@
                   `Stock has been restored\n` +
                   `Transaction recorded in cash flow`);
             
-            // 5. Close modal and refresh data
+            // 4. Close modal and refresh data
             closeRefundModal();
             await fetchSales();
             
@@ -1011,7 +1004,7 @@
             }
 
             // Check if already refunded
-            if (sale.is_refunded || sale.refunded) {
+            if (sale.is_refunded) {
                 alert("Cannot delete a refunded sale! Use the refund system instead.");
                 return;
             }
@@ -1027,11 +1020,7 @@
             document.getElementById('deleteReason').value = '';
             
             // Check if split sale
-            const isSplit = sale.item_name && (
-                sale.item_name.includes('(Split') || 
-                sale.payment_method?.includes('Split')
-            );
-            
+            const isSplit = sale.item_name && sale.item_name.includes('(Split');
             if (isSplit) {
                 document.getElementById('splitDeleteInfo').style.display = 'block';
             } else {
@@ -1066,7 +1055,7 @@
             return;
         }
         
-        // Enhanced confirmation
+        // Confirmation
         const confirmed = confirm(
             `🚨 FINAL DELETION CONFIRMATION 🚨\n\n` +
             `Sale Details:\n` +
@@ -1095,59 +1084,30 @@
                 .eq('status', 'Open')
                 .maybeSingle();
             
-            // 1. If it was a cash sale, record money out to reverse the transaction
+            // 1. Record money out to reverse the transaction
             if ((currentDeleteSale.payment_method.includes('Cash') || currentDeleteSale.payment_method.includes('Mpesa')) && currentShift) {
-                const { error: transError } = await supabase.from('cash_transactions').insert([{
+                await supabase.from('cash_transactions').insert([{
                     shift_id: currentShift.id,
                     type: 'Money Out',
                     category: currentDeleteSale.payment_method.includes('Cash') ? 'Cash' : 'Mpesa',
                     amount: currentDeleteSale.total_amount,
                     description: `Sale DELETION: ${currentDeleteSale.item_name} - ${deleteReason} (Sale ID: ${currentDeleteSale.id})`
                 }]);
-                
-                if (transError) throw transError;
             }
             
-            // 2. Restore stock quantity if product exists
-            if (currentDeleteSale.product_id) {
-                const { data: product } = await supabase.from('products')
-                    .select('stock_quantity, name')
-                    .eq('id', currentDeleteSale.product_id)
-                    .single();
-                
-                if (product) {
-                    const currentStock = parseFloat(product.stock_quantity) || 0;
-                    const newStock = currentStock + (currentDeleteSale.quantity || 1);
-                    await supabase.from('products')
-                        .update({ stock_quantity: newStock })
-                        .eq('id', currentDeleteSale.product_id);
-                    
-                    console.log(`Restored ${currentDeleteSale.quantity} items of ${product.name}. New stock: ${newStock}`);
-                }
-            }
-            
-            // 3. Delete debt record if applicable
-            if (currentDeleteSale.payment_method.includes('Debt')) {
-                await supabase.from('debtors')
-                    .delete()
-                    .eq('sale_id', currentDeleteSale.id);
-            }
-            
-            // 4. Delete the sale record
-            const { error: deleteError } = await supabase.from('sales')
+            // 2. Delete the sale record
+            await supabase.from('sales')
                 .delete()
                 .eq('id', currentDeleteSale.id);
             
-            if (deleteError) throw deleteError;
-            
-            // 5. Show success message
+            // 3. Show success message
             alert(`✅ SALE PERMANENTLY DELETED!\n\n` +
                   `Item: ${currentDeleteSale.item_name}\n` +
                   `Amount: Ksh ${(currentDeleteSale.total_amount || 0).toLocaleString()}\n` +
                   `Stock has been restored\n` +
                   `Reason: ${deleteReason}`);
             
-            // 6. Close modal and refresh data
+            // 4. Close modal and refresh data
             closeDeleteModal();
             await fetchSales();
             
@@ -1211,9 +1171,6 @@
         
         const now = new Date();
         const today = now.toISOString().split('T')[0];
-        const yesterday = new Date(now);
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
         
         // Total sales amount
         const totalSales = allSales.reduce((sum, sale) => sum + (sale.total_amount || 0), 0);
@@ -1239,7 +1196,7 @@
         document.getElementById('activeSalesCount').textContent = activeSales.toString();
     }
 
-    // Apply filters - FIXED for Split payments
+    // Apply filters
     function applyFilters() {
         const dateFilter = document.getElementById('filterDate').value;
         const paymentFilter = document.getElementById('filterPayment').value;
@@ -1277,7 +1234,7 @@
             }
         }
         
-        // Apply payment method filter - FIXED for Split payments
+        // Apply payment method filter
         if (paymentFilter !== 'all') {
             if (paymentFilter === 'Split') {
                 // Show all split payments
@@ -1335,6 +1292,18 @@
         filteredSales = [...allSales];
         renderSales(filteredSales);
     }
+
+    // Make functions globally available
+    window.toggleSidebar = toggleSidebar;
+    window.openRefundModal = openRefundModal;
+    window.closeRefundModal = closeRefundModal;
+    window.processRefund = processRefund;
+    window.openDeleteModal = openDeleteModal;
+    window.closeDeleteModal = closeDeleteModal;
+    window.confirmDeleteSale = confirmDeleteSale;
+    window.viewRefundDetails = viewRefundDetails;
+    window.applyFilters = applyFilters;
+    window.resetFilters = resetFilters;
 
     // Initialize the page
     document.addEventListener('DOMContentLoaded', init);
