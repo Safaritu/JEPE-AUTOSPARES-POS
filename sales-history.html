@@ -6,11 +6,13 @@
     <title>Sales History | JEPE ADMIN</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { 
             --admin-dark: #0f172a; --admin-accent: #6366f1; --bg: #f8fafc;
             --white: #ffffff; --text: #1e293b; --text-dim: #64748b;
             --border: #e2e8f0; --green: #10b981; --sidebar-width: 260px;
+            --warning: #f59e0b; --danger: #e11d48; --success: #10b981;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -89,10 +91,20 @@
             td[data-label="Item Details"] div { text-align: left; width: 100%; font-size: 1.1rem; }
         }
 
-        .badge { padding: 5px 10px; border-radius: 8px; font-size: 0.65rem; font-weight: 800; background: #e0e7ff; color: #3730a3; }
+        .badge { padding: 5px 10px; border-radius: 8px; font-size: 0.65rem; font-weight: 800; }
+        .badge-cash { background: #e0e7ff; color: #3730a3; }
+        .badge-mpesa { background: #dcfce7; color: #166534; }
+        .badge-kcb { background: #fef3c7; color: #92400e; }
+        .badge-debt { background: #fee2e2; color: #b91c1c; }
+        .badge-split { background: #dbeafe; color: #1e40af; }
+        
         .profit-text { color: var(--green); font-weight: 700; }
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; z-index: 2500; backdrop-filter: blur(4px); }
-        .overlay.active { display: block; }
+        .overlay { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); 
+            display: none; z-index: 2500; backdrop-filter: blur(4px); 
+            align-items: center; justify-content: center;
+        }
+        .overlay.active { display: flex; }
         
         .btn-load { 
             width: 100%; margin-top: 10px; background: white; 
@@ -101,11 +113,271 @@
             transition: 0.2s;
         }
         .btn-load:hover { background: var(--admin-accent); color: white; }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex; gap: 6px; justify-content: center;
+        }
+        
+        .btn-refund {
+            background: var(--warning); color: white; padding: 6px 12px;
+            border-radius: 6px; border: none; cursor: pointer;
+            font-size: 0.7rem; font-weight: 700; display: inline-flex;
+            align-items: center; gap: 4px;
+        }
+        
+        .btn-delete {
+            background: var(--danger); color: white; padding: 6px 12px;
+            border-radius: 6px; border: none; cursor: pointer;
+            font-size: 0.7rem; font-weight: 700; display: inline-flex;
+            align-items: center; gap: 4px;
+        }
+        
+        .btn-view {
+            background: var(--primary); color: white; padding: 6px 12px;
+            border-radius: 6px; border: none; cursor: pointer;
+            font-size: 0.7rem; font-weight: 700; display: inline-flex;
+            align-items: center; gap: 4px;
+        }
+        
+        /* Modal Styles */
+        .modal {
+            background: white; border-radius: 16px; padding: 25px;
+            width: 90%; max-width: 500px; max-height: 90vh;
+            overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        /* Refund Status */
+        .refunded-badge {
+            background: #f59e0b; color: white; padding: 2px 6px;
+            border-radius: 4px; font-size: 0.65rem; font-weight: 700;
+            margin-left: 5px;
+        }
+        
+        .refunded-row {
+            background-color: #fff7ed !important;
+            opacity: 0.9;
+        }
+        
+        /* Modal Content */
+        .modal h3 { margin-top: 0; color: var(--admin-accent); }
+        
+        .item-info {
+            background: #f8fafc; padding: 12px; border-radius: 8px;
+            margin-bottom: 15px; border-left: 4px solid var(--admin-accent);
+        }
+        
+        .warning-box {
+            background: #fef3c7; border: 1px solid #fbbf24; color: #92400e;
+            padding: 12px; border-radius: 8px; margin-bottom: 15px;
+        }
+        
+        .danger-box {
+            background: #fee2e2; border: 1px solid #f87171; color: #b91c1c;
+            padding: 12px; border-radius: 8px; margin-bottom: 15px;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block; margin-bottom: 5px; font-weight: 700;
+            color: var(--text); font-size: 0.85rem;
+        }
+        
+        .input-group input,
+        .input-group select,
+        .input-group textarea {
+            width: 100%; padding: 10px; border: 1px solid var(--border);
+            border-radius: 8px; font-size: 0.9rem; font-family: inherit;
+        }
+        
+        .modal-actions {
+            display: flex; gap: 10px; margin-top: 20px;
+        }
+        
+        .modal-actions .btn {
+            flex: 1; padding: 12px; border-radius: 8px; border: none;
+            font-weight: 700; cursor: pointer;
+        }
+        
+        .btn-primary {
+            background: var(--admin-accent); color: white;
+        }
+        
+        .btn-danger {
+            background: var(--danger); color: white;
+        }
+        
+        .btn-secondary {
+            background: #e2e8f0; color: var(--text);
+        }
+        
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block; width: 16px; height: 16px;
+            border: 3px solid rgba(255,255,255,.3); border-radius: 50%;
+            border-top-color: #fff; animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Stats Cards */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px; margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white; padding: 15px; border-radius: 12px;
+            border: 1px solid var(--border); text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem; font-weight: 800; color: var(--admin-accent);
+            margin: 5px 0;
+        }
+        
+        .stat-label {
+            font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;
+            font-weight: 700;
+        }
+        
+        /* Filters */
+        .filter-bar {
+            display: flex; gap: 10px; margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-select {
+            padding: 10px 15px; border: 1px solid var(--border);
+            border-radius: 8px; background: white; font-size: 0.85rem;
+        }
+        
+        /* Condition check boxes */
+        .condition-check {
+            display: flex; align-items: center; gap: 8px; margin: 10px 0;
+        }
+        
+        .condition-check input {
+            width: auto; margin-right: 5px;
+        }
+        
+        .condition-check label {
+            margin-bottom: 0; font-size: 0.85rem;
+        }
     </style>
 </head>
 <body>
 
 <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<!-- Refund Modal -->
+<div id="refundModal" class="overlay">
+    <div class="modal">
+        <h3><i class="fas fa-undo-alt"></i> Process Refund</h3>
+        
+        <div class="item-info" id="refundItemInfo">
+            <div><strong>Item:</strong> <span id="refundItemName"></span></div>
+            <div><strong>Original Amount:</strong> Ksh <span id="refundOriginalAmount"></span></div>
+            <div><strong>Quantity Sold:</strong> <span id="refundQuantity"></span></div>
+            <div><strong>Payment Method:</strong> <span id="refundPaymentMethod"></span></div>
+            <div><strong>Date Sold:</strong> <span id="refundSaleDate"></span></div>
+        </div>
+        
+        <div class="warning-box">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>IMPORTANT:</strong> Before processing refund, please check:
+            <div style="text-align: left; margin-top: 8px; font-size: 0.9rem;">
+                1. Item is in original condition<br>
+                2. All accessories are included<br>
+                3. Packaging is intact (if applicable)<br>
+                4. No damages or missing parts
+            </div>
+        </div>
+        
+        <div class="condition-check">
+            <input type="checkbox" id="conditionCheck" required>
+            <label for="conditionCheck">I have checked the item condition and confirm it's acceptable for return</label>
+        </div>
+        
+        <div class="input-group">
+            <label>Refund Wallet Method</label>
+            <select id="refundMethod">
+                <option value="Cash">Cash</option>
+                <option value="Mpesa">Mpesa</option>
+                <option value="KCB Paybill">KCB Paybill</option>
+            </select>
+            <small style="color: var(--text-dim); display: block; margin-top: 5px;">
+                Select the wallet to deduct refund amount from
+            </small>
+        </div>
+        
+        <div class="input-group">
+            <label>Refund Amount (Ksh)</label>
+            <input type="number" id="refundAmount" placeholder="Enter refund amount" required>
+        </div>
+        
+        <div class="input-group">
+            <label>Refund Reason <small style="color: var(--danger);">(Required)</small></label>
+            <textarea id="refundReason" placeholder="Enter detailed reason for refund (e.g., Damaged item, Wrong item, Customer return, etc.)" rows="3" required></textarea>
+        </div>
+        
+        <div class="modal-actions">
+            <button class="btn btn-danger" onclick="processRefund()" id="processRefundBtn">
+                <i class="fas fa-check-circle"></i> Process Refund
+            </button>
+            <button class="btn btn-secondary" onclick="closeRefundModal()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="deleteModal" class="overlay">
+    <div class="modal">
+        <h3 style="color:var(--danger)"><i class="fas fa-trash-alt"></i> Delete Sale</h3>
+        
+        <div class="danger-box">
+            <i class="fas fa-exclamation-circle"></i>
+            <strong>⚠️ CRITICAL WARNING:</strong> This action is permanent and cannot be undone!
+            <div style="text-align: left; margin-top: 8px; font-size: 0.9rem;">
+                <strong>ALERT:</strong><br>
+                1. This will permanently remove the sale record<br>
+                2. Stock will be restored automatically<br>
+                3. Any debt records will be deleted<br>
+                4. No audit trail will exist for this sale<br>
+                5. Only use for genuine errors or test sales
+            </div>
+        </div>
+        
+        <div class="item-info" id="deleteItemInfo">
+            <div><strong>Item:</strong> <span id="deleteItemName"></span></div>
+            <div><strong>Amount:</strong> Ksh <span id="deleteAmount"></span></div>
+            <div><strong>Quantity:</strong> <span id="deleteQuantity"></span></div>
+            <div><strong>Payment Method:</strong> <span id="deleteMethod"></span></div>
+            <div><strong>Date:</strong> <span id="deleteDate"></span></div>
+        </div>
+        
+        <div class="input-group">
+            <label>Delete Reason <small style="color: var(--danger);">(Required)</small></label>
+            <input type="text" id="deleteReason" placeholder="e.g., Accidental sale, Wrong item, Test sale, System error" required>
+        </div>
+        
+        <div class="modal-actions">
+            <button class="btn btn-danger" onclick="confirmDeleteSale()" id="confirmDeleteBtn">
+                <i class="fas fa-trash"></i> Delete Sale Permanently
+            </button>
+            <button class="btn btn-secondary" onclick="closeDeleteModal()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </div>
+    </div>
+</div>
 
 <div class="sidebar" id="sidebar">
     <h2>JEPE ADMIN</h2>
@@ -141,11 +413,61 @@
 
     <div class="container">
         <div style="margin-bottom: 25px;">
-            <h2 style="margin:0; font-weight:800; font-size: 1.5rem; letter-spacing: -1px;">Recent Transactions</h2>
-            <p style="color:var(--text-dim); margin-top:5px;">Full history of items sold across all categories.</p>
+            <h2 style="margin:0; font-weight:800; font-size: 1.5rem; letter-spacing: -1px;">Sales History</h2>
+            <p style="color:var(--text-dim); margin-top:5px;">View, refund, or delete sales transactions.</p>
         </div>
 
-        <input type="text" id="salesSearch" class="search-input" placeholder="Search by item, payment, or staff...">
+        <!-- Stats Summary -->
+        <div class="stats-grid" id="statsSummary">
+            <div class="stat-card">
+                <div class="stat-label">Total Sales</div>
+                <div class="stat-value" id="totalSalesAmount">Ksh 0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Today's Sales</div>
+                <div class="stat-value" id="todaySalesAmount">Ksh 0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Refunded Sales</div>
+                <div class="stat-value" id="refundedSalesAmount">Ksh 0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active Sales</div>
+                <div class="stat-value" id="activeSalesCount">0</div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-bar">
+            <select id="filterDate" class="filter-select" onchange="applyFilters()">
+                <option value="all">All Dates</option>
+                <option value="today">Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="thisweek">This Week</option>
+                <option value="thismonth">This Month</option>
+            </select>
+            
+            <select id="filterPayment" class="filter-select" onchange="applyFilters()">
+                <option value="all">All Payment Methods</option>
+                <option value="Cash">Cash</option>
+                <option value="Mpesa">Mpesa</option>
+                <option value="KCB Paybill">KCB Paybill</option>
+                <option value="Debt">Debt</option>
+                <option value="Split">Split Payment</option>
+            </select>
+            
+            <select id="filterStatus" class="filter-select" onchange="applyFilters()">
+                <option value="all">All Status</option>
+                <option value="active">Active Only</option>
+                <option value="refunded">Refunded Only</option>
+            </select>
+            
+            <button onclick="resetFilters()" class="btn-secondary" style="padding: 10px 15px; border-radius: 8px; border: none; cursor: pointer;">
+                <i class="fas fa-redo"></i> Reset Filters
+            </button>
+        </div>
+
+        <input type="text" id="salesSearch" class="search-input" placeholder="Search item, payment method, or sale ID...">
 
         <div class="data-card-container">
             <table id="sales-table">
@@ -157,6 +479,7 @@
                         <th>Total Amount</th>
                         <th>Profit</th>
                         <th>Method</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="data-body"></tbody>
@@ -168,8 +491,13 @@
 
 <script type="module">
     import { supabase } from './auth.js';
+    
     let limit = 25;
     let allSales = [];
+    let filteredSales = [];
+    let currentRefundSale = null;
+    let currentDeleteSale = null;
+    let currentUser = null;
 
     window.toggleSidebar = () => {
         document.getElementById('sidebar').classList.toggle('active');
@@ -177,75 +505,581 @@
     };
 
     async function fetchSales() {
-        // We fetch sales and join products to get the fallback cost_price
-        const { data, error } = await supabase
-            .from('sales')
-            .select('*, products(cost_price, category)')
-            .order('created_at', {ascending: false})
-            .limit(limit);
+        try {
+            // Fetch sales with product information
+            const { data, error } = await supabase
+                .from('sales')
+                .select('*, products(cost_price, category, stock_quantity)')
+                .order('created_at', {ascending: false})
+                .limit(limit);
 
-        if (error) return console.error(error);
-        allSales = data;
-        renderSales(allSales);
+            if (error) {
+                console.error("Error fetching sales:", error);
+                return;
+            }
+            
+            console.log("Fetched", data?.length || 0, "sales records");
+            
+            allSales = data || [];
+            filteredSales = [...allSales];
+            renderSales(filteredSales);
+            updateStats();
+            
+            document.getElementById('loadMore').style.display = allSales.length < limit ? 'none' : 'block';
+            
+        } catch (error) {
+            console.error("Error in fetchSales:", error);
+            document.getElementById('data-body').innerHTML = 
+                '<tr><td colspan="7" style="text-align:center; padding: 40px; color: var(--text-dim);">Error loading sales data.</td></tr>';
+        }
     }
 
     function renderSales(data) {
         const tbody = document.getElementById('data-body');
+        
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 40px; color: var(--text-dim);">No sales records found.</td></tr>';
+            return;
+        }
+
         tbody.innerHTML = data.map(s => {
-            // Logic: Use cost_price from sale record if available, else from product record
+            // Calculate profit
             const saleCost = s.cost_price || s.products?.cost_price || 0;
             const revenue = s.total_amount || 0;
             const profit = revenue - (saleCost * s.quantity);
             const date = new Date(s.created_at);
             
-            // Helpful category badge (handles the NULL category issue visually)
+            // Handle category
             const category = s.category || s.products?.category || 'General';
             
+            // Check if refunded
+            const isRefunded = s.is_refunded || s.refunded;
+            const refundAmount = s.refund_amount || 0;
+            const displayAmount = isRefunded ? (revenue - refundAmount) : revenue;
+            
+            // Determine badge class
+            let badgeClass = 'badge-cash';
+            let paymentMethod = s.payment_method || 'Cash';
+            
+            if (paymentMethod.includes('Mpesa')) badgeClass = 'badge-mpesa';
+            else if (paymentMethod.includes('KCB') || paymentMethod.includes('Paybill')) badgeClass = 'badge-kcb';
+            else if (paymentMethod.includes('Debt')) badgeClass = 'badge-debt';
+            else if (paymentMethod.includes('Split')) badgeClass = 'badge-split';
+            
+            // Create action buttons
+            let actionButtons = '';
+            if (!isRefunded) {
+                actionButtons = `
+                    <button class="btn-refund" onclick="openRefundModal('${s.id}')" title="Refund this sale">
+                        <i class="fas fa-undo-alt"></i> Refund
+                    </button>
+                    <button class="btn-delete" onclick="openDeleteModal('${s.id}')" title="Delete this sale">
+                        <i class="fas fa-trash-alt"></i> Delete
+                    </button>
+                `;
+            } else {
+                actionButtons = `
+                    <button class="btn-view" onclick="viewRefundDetails('${s.id}')" title="View refund details">
+                        <i class="fas fa-eye"></i> Details
+                    </button>
+                `;
+            }
+
             return `
-                <tr>
+                <tr class="${isRefunded ? 'refunded-row' : ''}">
                     <td data-label="Date & Time">
                         <span style="font-weight:700;">${date.toLocaleDateString()}</span>
                         <small style="color:var(--text-dim); display:block;">${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
                     </td>
                     <td data-label="Item Details">
-                        <div style="font-weight:700; color:var(--admin-dark);">${s.item_name}</div>
+                        <div style="font-weight:700; color:var(--admin-dark);">${s.item_name || 'Unknown Item'}</div>
                         <div style="font-size:0.7rem; color:var(--text-dim)">
-                            Cat: ${category} | Sold by: ${s.sold_by || 'System'}
+                            Cat: ${category} 
+                            ${isRefunded ? '| <span style="color:var(--warning);">REFUNDED</span>' : ''}
                         </div>
+                        <small style="font-size:0.65rem; color:var(--text-dim);">ID: ${s.id.substring(0, 8)}...</small>
                     </td>
                     <td data-label="Quantity" style="font-weight:700;">${s.quantity}</td>
-                    <td data-label="Total Amount" style="font-weight:800;">Ksh ${revenue.toLocaleString()}</td>
+                    <td data-label="Total Amount" style="font-weight:800; ${isRefunded ? 'color:var(--warning);' : ''}">
+                        Ksh ${displayAmount.toLocaleString()}
+                        ${isRefunded ? '<span class="refunded-badge">-Ksh ' + refundAmount.toLocaleString() + '</span>' : ''}
+                    </td>
                     <td data-label="Est. Profit">
                         <span class="profit-text">+Ksh ${profit.toLocaleString()}</span>
                     </td>
-                    <td data-label="Method"><span class="badge">${s.payment_method}</span></td>
+                    <td data-label="Method"><span class="badge ${badgeClass}">${paymentMethod}</span></td>
+                    <td data-label="Actions">
+                        <div class="action-buttons">
+                            ${actionButtons}
+                        </div>
+                    </td>
                 </tr>
             `;
         }).join('');
-        
-        document.getElementById('loadMore').style.display = data.length < limit ? 'none' : 'block';
     }
 
-    document.getElementById('salesSearch').addEventListener('input', (e) => {
-        const term = e.target.value.toLowerCase();
-        const filtered = allSales.filter(s => 
-            s.item_name.toLowerCase().includes(term) || 
-            s.payment_method.toLowerCase().includes(term) ||
-            (s.sold_by && s.sold_by.toLowerCase().includes(term)) ||
-            (s.category && s.category.toLowerCase().includes(term))
-        );
-        renderSales(filtered);
-    });
+    // Open refund modal
+    async function openRefundModal(saleId) {
+        try {
+            const { data: sale, error } = await supabase
+                .from('sales')
+                .select('*, products(cost_price, category)')
+                .eq('id', saleId)
+                .single();
 
+            if (error || !sale) {
+                alert("Sale not found!");
+                return;
+            }
+
+            // Check if already refunded
+            if (sale.is_refunded || sale.refunded) {
+                alert("This sale has already been refunded!");
+                return;
+            }
+
+            currentRefundSale = sale;
+            
+            document.getElementById('refundItemName').textContent = sale.item_name || 'Unknown Item';
+            document.getElementById('refundOriginalAmount').textContent = (sale.total_amount || 0).toLocaleString();
+            document.getElementById('refundQuantity').textContent = sale.quantity || 1;
+            document.getElementById('refundPaymentMethod').textContent = sale.payment_method || 'Cash';
+            document.getElementById('refundSaleDate').textContent = new Date(sale.created_at).toLocaleString();
+            
+            document.getElementById('refundAmount').value = sale.total_amount || 0;
+            document.getElementById('refundReason').value = '';
+            document.getElementById('conditionCheck').checked = false;
+            
+            document.getElementById('refundModal').classList.add('active');
+            
+        } catch (error) {
+            console.error("Error opening refund modal:", error);
+            alert("Error loading sale details. Please try again.");
+        }
+    }
+
+    // Close refund modal
+    function closeRefundModal() {
+        document.getElementById('refundModal').classList.remove('active');
+        currentRefundSale = null;
+    }
+
+    // Process refund
+    async function processRefund() {
+        if (!currentRefundSale) {
+            alert("No sale selected for refund!");
+            return;
+        }
+        
+        const conditionCheck = document.getElementById('conditionCheck');
+        if (!conditionCheck.checked) {
+            alert("You must confirm that you have checked the item condition before processing refund!");
+            return;
+        }
+        
+        const refundMethod = document.getElementById('refundMethod').value;
+        const refundAmount = parseFloat(document.getElementById('refundAmount').value);
+        const refundReason = document.getElementById('refundReason').value.trim();
+        
+        if (!refundAmount || refundAmount <= 0) {
+            alert("Please enter a valid refund amount (greater than 0)");
+            return;
+        }
+        
+        if (refundAmount > currentRefundSale.total_amount) {
+            alert("Refund amount cannot exceed original sale amount!");
+            return;
+        }
+        
+        if (!refundReason) {
+            alert("Please enter a reason for the refund");
+            return;
+        }
+        
+        const confirmed = confirm(
+            `🔴 REFUND CONFIRMATION:\n\n` +
+            `Item: ${currentRefundSale.item_name}\n` +
+            `Original Amount: Ksh ${(currentRefundSale.total_amount || 0).toLocaleString()}\n` +
+            `Refund Amount: Ksh ${refundAmount.toLocaleString()}\n` +
+            `Refund Method: ${refundMethod}\n` +
+            `Reason: ${refundReason}\n\n` +
+            `Proceed with refund?`
+        );
+        
+        if (!confirmed) return;
+        
+        const processBtn = document.getElementById('processRefundBtn');
+        const originalBtnText = processBtn.innerHTML;
+        processBtn.disabled = true;
+        processBtn.innerHTML = '<span class="spinner"></span> Processing...';
+        
+        try {
+            // Get current user
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            // Update sale record to mark as refunded
+            await supabase.from('sales')
+                .update({ 
+                    is_refunded: true,
+                    refund_amount: refundAmount,
+                    refund_method: refundMethod,
+                    refund_reason: refundReason,
+                    refund_date: new Date().toISOString(),
+                    refunded_by: user?.email || 'Unknown'
+                })
+                .eq('id', currentRefundSale.id);
+            
+            // Restore stock if product exists
+            if (currentRefundSale.product_id) {
+                const { data: product } = await supabase.from('products')
+                    .select('stock_quantity, name')
+                    .eq('id', currentRefundSale.product_id)
+                    .single();
+                
+                if (product) {
+                    const currentStock = parseFloat(product.stock_quantity) || 0;
+                    const newStock = currentStock + (currentRefundSale.quantity || 1);
+                    await supabase.from('products')
+                        .update({ stock_quantity: newStock })
+                        .eq('id', currentRefundSale.product_id);
+                }
+            }
+            
+            alert(`✅ REFUND PROCESSED!\n\n` +
+                  `Item: ${currentRefundSale.item_name}\n` +
+                  `Refund Amount: Ksh ${refundAmount.toLocaleString()}\n` +
+                  `Stock has been restored`);
+            
+            closeRefundModal();
+            await fetchSales();
+            
+        } catch (error) {
+            console.error("Refund error:", error);
+            alert("❌ Error processing refund: " + error.message);
+        } finally {
+            processBtn.disabled = false;
+            processBtn.innerHTML = originalBtnText;
+        }
+    }
+
+    // Open delete modal
+    async function openDeleteModal(saleId) {
+        try {
+            const { data: sale, error } = await supabase
+                .from('sales')
+                .select('*, products(cost_price, category)')
+                .eq('id', saleId)
+                .single();
+
+            if (error || !sale) {
+                alert("Sale not found!");
+                return;
+            }
+
+            if (sale.is_refunded || sale.refunded) {
+                alert("Cannot delete a refunded sale!");
+                return;
+            }
+
+            currentDeleteSale = sale;
+            
+            document.getElementById('deleteItemName').textContent = sale.item_name || 'Unknown Item';
+            document.getElementById('deleteAmount').textContent = (sale.total_amount || 0).toLocaleString();
+            document.getElementById('deleteQuantity').textContent = sale.quantity || 1;
+            document.getElementById('deleteMethod').textContent = sale.payment_method || 'Cash';
+            document.getElementById('deleteDate').textContent = new Date(sale.created_at).toLocaleString();
+            document.getElementById('deleteReason').value = '';
+            
+            document.getElementById('deleteModal').classList.add('active');
+            
+        } catch (error) {
+            console.error("Error opening delete modal:", error);
+            alert("Error loading sale details. Please try again.");
+        }
+    }
+
+    // Close delete modal
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.remove('active');
+        currentDeleteSale = null;
+    }
+
+    // Confirm and delete sale
+    async function confirmDeleteSale() {
+        if (!currentDeleteSale) {
+            alert("No sale selected for deletion!");
+            return;
+        }
+        
+        const deleteReason = document.getElementById('deleteReason').value.trim();
+        if (!deleteReason) {
+            alert("Please enter a reason for deleting this sale.");
+            return;
+        }
+        
+        const confirmed = confirm(
+            `🚨 DELETE CONFIRMATION 🚨\n\n` +
+            `Item: ${currentDeleteSale.item_name}\n` +
+            `Amount: Ksh ${(currentDeleteSale.total_amount || 0).toLocaleString()}\n` +
+            `Quantity: ${currentDeleteSale.quantity}\n` +
+            `Method: ${currentDeleteSale.payment_method}\n\n` +
+            `This action is PERMANENT!\n\n` +
+            `Proceed with deletion?`
+        );
+        
+        if (!confirmed) return;
+        
+        const deleteBtn = document.getElementById('confirmDeleteBtn');
+        const originalBtnText = deleteBtn.innerHTML;
+        deleteBtn.disabled = true;
+        deleteBtn.innerHTML = '<span class="spinner"></span> Deleting...';
+        
+        try {
+            // Restore stock if product exists
+            if (currentDeleteSale.product_id) {
+                const { data: product } = await supabase.from('products')
+                    .select('stock_quantity, name')
+                    .eq('id', currentDeleteSale.product_id)
+                    .single();
+                
+                if (product) {
+                    const currentStock = parseFloat(product.stock_quantity) || 0;
+                    const newStock = currentStock + (currentDeleteSale.quantity || 1);
+                    await supabase.from('products')
+                        .update({ stock_quantity: newStock })
+                        .eq('id', currentDeleteSale.product_id);
+                }
+            }
+            
+            // Delete debt record if applicable
+            if (currentDeleteSale.payment_method.includes('Debt')) {
+                await supabase.from('debtors')
+                    .delete()
+                    .eq('sale_id', currentDeleteSale.id);
+            }
+            
+            // Delete the sale record
+            await supabase.from('sales')
+                .delete()
+                .eq('id', currentDeleteSale.id);
+            
+            alert(`✅ SALE DELETED!\n\n` +
+                  `Item: ${currentDeleteSale.item_name}\n` +
+                  `Stock has been restored`);
+            
+            closeDeleteModal();
+            await fetchSales();
+            
+        } catch (error) {
+            console.error("Delete error:", error);
+            alert("❌ Error deleting sale: " + error.message);
+        } finally {
+            deleteBtn.disabled = false;
+            deleteBtn.innerHTML = originalBtnText;
+        }
+    }
+
+    // View refund details
+    async function viewRefundDetails(saleId) {
+        try {
+            const { data: sale, error } = await supabase
+                .from('sales')
+                .select('*')
+                .eq('id', saleId)
+                .single();
+
+            if (error || !sale) {
+                alert("Sale not found!");
+                return;
+            }
+
+            const refundAmount = sale.refund_amount || 0;
+            const refundMethod = sale.refund_method || 'Unknown';
+            const refundReason = sale.refund_reason || 'No reason provided';
+            const refundDate = sale.refund_date ? new Date(sale.refund_date).toLocaleString() : 'Unknown';
+            const refundedBy = sale.refunded_by || 'Unknown';
+            
+            alert(
+                `🔍 REFUND DETAILS\n` +
+                `────────────────\n` +
+                `Item: ${sale.item_name}\n` +
+                `Original Amount: Ksh ${(sale.total_amount || 0).toLocaleString()}\n` +
+                `Refund Amount: Ksh ${refundAmount.toLocaleString()}\n` +
+                `Refund Method: ${refundMethod}\n` +
+                `Refund Reason: ${refundReason}\n` +
+                `Refund Date: ${refundDate}\n` +
+                `Refunded By: ${refundedBy}`
+            );
+            
+        } catch (error) {
+            console.error("Error viewing refund details:", error);
+            alert("Error loading refund details. Please try again.");
+        }
+    }
+
+    // Update stats summary
+    function updateStats() {
+        if (allSales.length === 0) {
+            document.getElementById('totalSalesAmount').textContent = 'Ksh 0';
+            document.getElementById('todaySalesAmount').textContent = 'Ksh 0';
+            document.getElementById('refundedSalesAmount').textContent = 'Ksh 0';
+            document.getElementById('activeSalesCount').textContent = '0';
+            return;
+        }
+        
+        const now = new Date();
+        const today = now.toISOString().split('T')[0];
+        
+        // Total sales amount
+        const totalSales = allSales.reduce((sum, sale) => sum + (sale.total_amount || 0), 0);
+        document.getElementById('totalSalesAmount').textContent = 'Ksh ' + totalSales.toLocaleString();
+        
+        // Today's sales
+        const todaySales = allSales
+            .filter(sale => {
+                const saleDate = new Date(sale.created_at).toISOString().split('T')[0];
+                return saleDate === today;
+            })
+            .reduce((sum, sale) => sum + (sale.total_amount || 0), 0);
+        document.getElementById('todaySalesAmount').textContent = 'Ksh ' + todaySales.toLocaleString();
+        
+        // Refunded sales
+        const refundedSales = allSales
+            .filter(sale => sale.is_refunded || sale.refunded)
+            .reduce((sum, sale) => sum + (sale.refund_amount || 0), 0);
+        document.getElementById('refundedSalesAmount').textContent = 'Ksh ' + refundedSales.toLocaleString();
+        
+        // Active sales count (not refunded)
+        const activeSales = allSales.filter(sale => !sale.is_refunded && !sale.refunded).length;
+        document.getElementById('activeSalesCount').textContent = activeSales.toString();
+    }
+
+    // Apply filters
+    function applyFilters() {
+        const dateFilter = document.getElementById('filterDate').value;
+        const paymentFilter = document.getElementById('filterPayment').value;
+        const statusFilter = document.getElementById('filterStatus').value;
+        const searchTerm = document.getElementById('salesSearch').value.toLowerCase();
+        
+        let filtered = [...allSales];
+        
+        // Apply date filter
+        if (dateFilter !== 'all') {
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            const yesterday = new Date(now);
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            
+            if (dateFilter === 'today') {
+                filtered = filtered.filter(sale => {
+                    const saleDate = new Date(sale.created_at).toISOString().split('T')[0];
+                    return saleDate === today;
+                });
+            } else if (dateFilter === 'yesterday') {
+                filtered = filtered.filter(sale => {
+                    const saleDate = new Date(sale.created_at).toISOString().split('T')[0];
+                    return saleDate === yesterdayStr;
+                });
+            } else if (dateFilter === 'thisweek') {
+                const weekAgo = new Date(now);
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                filtered = filtered.filter(sale => new Date(sale.created_at) >= weekAgo);
+            } else if (dateFilter === 'thismonth') {
+                const monthAgo = new Date(now);
+                monthAgo.setMonth(monthAgo.getMonth() - 1);
+                filtered = filtered.filter(sale => new Date(sale.created_at) >= monthAgo);
+            }
+        }
+        
+        // Apply payment method filter
+        if (paymentFilter !== 'all') {
+            if (paymentFilter === 'Split') {
+                filtered = filtered.filter(sale => {
+                    const paymentMethod = (sale.payment_method || '').toLowerCase();
+                    return paymentMethod.includes('split');
+                });
+            } else {
+                filtered = filtered.filter(sale => {
+                    const paymentMethod = (sale.payment_method || '').toLowerCase();
+                    const filterMethod = paymentFilter.toLowerCase();
+                    
+                    if (filterMethod === 'cash') {
+                        return paymentMethod.includes('cash') && !paymentMethod.includes('split');
+                    } else if (filterMethod === 'mpesa') {
+                        return paymentMethod.includes('mpesa');
+                    } else if (filterMethod === 'kcb paybill') {
+                        return paymentMethod.includes('kcb') || paymentMethod.includes('paybill');
+                    } else if (filterMethod === 'debt') {
+                        return paymentMethod.includes('debt');
+                    }
+                    
+                    return paymentMethod === filterMethod;
+                });
+            }
+        }
+        
+        // Apply status filter
+        if (statusFilter === 'active') {
+            filtered = filtered.filter(sale => !sale.is_refunded && !sale.refunded);
+        } else if (statusFilter === 'refunded') {
+            filtered = filtered.filter(sale => sale.is_refunded || sale.refunded);
+        }
+        
+        // Apply search filter
+        if (searchTerm) {
+            filtered = filtered.filter(sale => 
+                (sale.item_name && sale.item_name.toLowerCase().includes(searchTerm)) ||
+                (sale.payment_method && sale.payment_method.toLowerCase().includes(searchTerm)) ||
+                (sale.id && sale.id.toLowerCase().includes(searchTerm)) ||
+                (sale.refund_reason && sale.refund_reason.toLowerCase().includes(searchTerm))
+            );
+        }
+        
+        filteredSales = filtered;
+        renderSales(filteredSales);
+    }
+
+    // Reset filters
+    function resetFilters() {
+        document.getElementById('filterDate').value = 'all';
+        document.getElementById('filterPayment').value = 'all';
+        document.getElementById('filterStatus').value = 'all';
+        document.getElementById('salesSearch').value = '';
+        filteredSales = [...allSales];
+        renderSales(filteredSales);
+    }
+
+    // Add event listeners
+    document.getElementById('salesSearch').addEventListener('input', applyFilters);
     document.getElementById('loadMore').onclick = () => { 
         limit += 25; 
         fetchSales(); 
     };
 
+    // Close modals with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeRefundModal();
+            closeDeleteModal();
+        }
+    });
+
     window.handleLogout = async () => {
         const { error } = await supabase.auth.signOut();
         window.location.href = 'index.html';
     };
+
+    // Make functions globally available
+    window.openRefundModal = openRefundModal;
+    window.closeRefundModal = closeRefundModal;
+    window.processRefund = processRefund;
+    window.openDeleteModal = openDeleteModal;
+    window.closeDeleteModal = closeDeleteModal;
+    window.confirmDeleteSale = confirmDeleteSale;
+    window.viewRefundDetails = viewRefundDetails;
+    window.applyFilters = applyFilters;
+    window.resetFilters = resetFilters;
 
     // Initial load
     fetchSales();
