@@ -121,7 +121,7 @@
         box-shadow: 0 4px 6px rgba(0,0,0,0.02);
     }
     
-    /* Low float warning - REMOVED PULSE ANIMATION */
+    /* Low float warning */
     .low-float-warning {
         background: #fee2e2 !important;
         color: #b91c1c !important;
@@ -409,6 +409,23 @@
         transition: 0.3s opacity; 
     }
     
+    /* UPDATED: Smaller button on mobile */
+    @media (max-width: 768px) {
+        .btn {
+            padding: 10px 12px !important;
+            font-size: 0.75rem !important;
+            border-radius: 8px !important;
+        }
+        
+        /* Specific fix for RECORD MONEY button on mobile */
+        #record-expense-btn {
+            padding: 12px !important;
+            font-size: 0.8rem !important;
+            height: auto !important;
+            min-height: 44px !important;
+        }
+    }
+    
     @media (min-width: 768px) {
         .btn {
             padding: 16px 24px;
@@ -421,33 +438,6 @@
     .btn-primary { background: var(--primary); color: white; }
     .btn-danger { background: var(--danger); color: white; }
     .btn-sync { background: var(--warning); color: white; }
-    
-    /* Refund button styling */
-    .btn-refund { 
-        background: #f59e0b; 
-        color: white; 
-        padding: 6px 12px !important;
-        font-size: 0.7rem !important;
-        border-radius: 6px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-    }
-    
-    /* Delete button styling */
-    .btn-delete { 
-        background: #dc2626; 
-        color: white; 
-        padding: 6px 12px !important;
-        font-size: 0.7rem !important;
-        border-radius: 6px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        margin-left: 5px;
-    }
 
     .overlay { 
         position: fixed; 
@@ -951,64 +941,10 @@
         }
     }
     
-    /* Alert sound indicator - REMOVED */
-    .alert-indicator {
-        position: relative;
-    }
-    
-    @keyframes blink {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.3; }
-    }
-    
-    /* Time Alert Banner - REMOVED */
-    .time-alert-banner {
-        display: none !important;
-    }
-    
-    /* Danger Alert for Low Floats - REMOVED ANIMATION */
+    /* Danger Alert for Low Floats */
     .danger-alert {
         border-color: #ef4444 !important;
         box-shadow: 0 0 5px rgba(239, 68, 68, 0.3) !important;
-    }
-    
-    /* Refund Modal Styles */
-    .refund-modal .modal {
-        max-width: 400px;
-    }
-    
-    .refund-item-info {
-        background: #f8fafc;
-        padding: 12px;
-        border-radius: 8px;
-        margin-bottom: 15px;
-        border-left: 4px solid var(--warning);
-    }
-    
-    .refund-warning {
-        background: #fff7ed;
-        border: 1px solid #fed7aa;
-        color: #9a3412;
-        padding: 10px;
-        border-radius: 6px;
-        font-size: 0.8rem;
-        margin-bottom: 15px;
-        text-align: center;
-    }
-    
-    .refund-warning i {
-        color: #ea580c;
-        margin-right: 5px;
-    }
-    
-    .refund-actions {
-        display: flex;
-        gap: 10px;
-        margin-top: 20px;
-    }
-    
-    .refund-actions .btn {
-        flex: 1;
     }
     
     /* Mobile Slide Indicator */
@@ -1109,33 +1045,35 @@
             margin-bottom: 10px !important;
         }
         
-        .money-inout-form .btn {
-            padding: 14px !important;
-            font-size: 0.85rem !important;
-            height: auto !important;
-        }
-        
-        /* FIX: Adjust RECORD MONEY button on mobile */
-        #record-expense-btn {
-            padding: 14px !important;
-            font-size: 0.85rem !important;
-            height: auto !important;
-        }
-        
-        /* Fix for shift history table on mobile */
+        /* UPDATED: Fix for shift history table on mobile */
         .shift-history-table th,
         .shift-history-table td {
             font-size: 0.7rem !important;
             padding: 8px 6px !important;
+            white-space: nowrap;
+        }
+        
+        /* UPDATED: Fix for shift history container */
+        .shift-history-table .account-line {
+            flex-wrap: nowrap;
+        }
+        
+        .shift-history-table .account-label,
+        .shift-history-table .account-val {
+            font-size: 0.65rem !important;
+            white-space: nowrap;
         }
         
         .date-cell b {
             font-size: 0.8rem !important;
+            white-space: nowrap;
         }
         
         .time-pill {
             font-size: 0.6rem !important;
             padding: 1px 4px !important;
+            margin-right: 2px;
+            white-space: nowrap;
         }
         
         .account-line {
@@ -1157,6 +1095,19 @@
         
         .money-summary-label {
             font-size: 0.6rem !important;
+        }
+        
+        /* UPDATED: Better scroll for shift history table */
+        #scrollContainer {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* UPDATED: Fix for status badges in shift table on mobile */
+        .status-badge {
+            min-width: 100px !important;
+            padding: 6px 8px !important;
+            font-size: 0.7rem !important;
         }
     }
     
@@ -1227,83 +1178,23 @@
         border-top: 2px solid var(--border);
     }
     
-    /* Refunded item styling */
+    /* Refunded item styling - REMOVED */
     .refunded-row {
-        background-color: #fff7ed !important;
-        opacity: 0.8;
+        background-color: inherit !important;
     }
     
     .refunded-badge {
-        background: #f59e0b;
-        color: white;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 0.65rem;
-        font-weight: 700;
-        margin-left: 5px;
+        display: none !important;
     }
     
-    /* Sales table action column */
+    /* Sales table action column - REMOVED */
     .action-column {
-        width: 100px;
-        text-align: center;
+        display: none !important;
     }
     
-    /* Action buttons container */
+    /* Action buttons container - REMOVED */
     .action-buttons {
-        display: flex;
-        gap: 5px;
-        justify-content: center;
-        flex-wrap: wrap;
-    }
-    
-    @media (max-width: 768px) {
-        .action-column {
-            width: 120px;
-        }
-        
-        .action-buttons {
-            flex-direction: column;
-            gap: 5px;
-        }
-        
-        .btn-refund, .btn-delete {
-            width: 100%;
-            justify-content: center;
-            padding: 8px 10px !important;
-            margin: 0 !important;
-        }
-    }
-    
-    /* Delete confirmation modal */
-    .delete-confirm-modal .modal {
-        max-width: 400px;
-    }
-    
-    .delete-warning {
-        background: #fee2e2;
-        border: 1px solid #fecaca;
-        color: #991b1b;
-        padding: 12px;
-        border-radius: 6px;
-        font-size: 0.85rem;
-        margin-bottom: 20px;
-        text-align: center;
-    }
-    
-    .delete-warning i {
-        color: #dc2626;
-        font-size: 1.5rem;
-        display: block;
-        margin-bottom: 8px;
-    }
-    
-    .delete-item-info {
-        background: #f8fafc;
-        padding: 12px;
-        border-radius: 8px;
-        margin-bottom: 15px;
-        border-left: 4px solid var(--danger);
+        display: none !important;
     }
     
     /* Table column adjustments for better mobile */
@@ -1335,7 +1226,7 @@
         
         .today-sales-table th:nth-child(6),
         .today-sales-table td:nth-child(6) {
-            width: 100px !important;
+            display: none !important; /* Hide action column */
         }
     }
 </style>
@@ -1354,79 +1245,6 @@
         <div class="gas-redirect-buttons">
             <button class="btn btn-cancel" onclick="closeGasRedirect()">Cancel</button>
             <button class="btn btn-proceed" onclick="goToGasHub()">Go to Gas Hub</button>
-        </div>
-    </div>
-</div>
-
-<!-- Refund Modal -->
-<div id="refund-modal" class="overlay refund-modal">
-    <div class="modal">
-        <h3>🔄 Process Refund</h3>
-        <div class="refund-item-info">
-            <div><strong>Item:</strong> <span id="refund-item-name"></span></div>
-            <div><strong>Original Amount:</strong> Ksh <span id="refund-original-amount"></span></div>
-            <div><strong>Quantity to Refund:</strong> <span id="refund-quantity"></span></div>
-        </div>
-        
-        <div class="refund-warning">
-            <i class="fas fa-exclamation-triangle"></i>
-            Please check the returned item's condition before processing refund.
-        </div>
-        
-        <div class="input-group">
-            <label>Refund Method</label>
-            <select id="refund-method">
-                <option value="Cash">Cash</option>
-                <option value="Mpesa">Mpesa</option>
-                <option value="KCB Paybill">KCB Paybill</option>
-                <option value="KCB">KCB Float</option>
-                <option value="Equity">Equity Float</option>
-            </select>
-        </div>
-        
-        <div class="input-group">
-            <label>Refund Amount (Ksh)</label>
-            <input type="number" id="refund-amount" placeholder="Enter refund amount">
-        </div>
-        
-        <div class="input-group">
-            <label>Refund Reason (Optional)</label>
-            <input type="text" id="refund-reason" placeholder="e.g., Damaged item, Wrong item">
-        </div>
-        
-        <div class="refund-actions">
-            <button class="btn btn-danger" onclick="processRefund()">Process Refund</button>
-            <button class="btn" onclick="closeRefundModal()" style="background: #e2e8f0;">Cancel</button>
-        </div>
-    </div>
-</div>
-
-<!-- Delete Sale Modal -->
-<div id="delete-modal" class="overlay delete-confirm-modal">
-    <div class="modal">
-        <h3 style="color:var(--danger)">🗑️ Delete Sale</h3>
-        
-        <div class="delete-warning">
-            <i class="fas fa-exclamation-circle"></i>
-            <strong>WARNING:</strong> This action cannot be undone!
-        </div>
-        
-        <div class="delete-item-info">
-            <div><strong>Item:</strong> <span id="delete-item-name"></span></div>
-            <div><strong>Amount:</strong> Ksh <span id="delete-amount"></span></div>
-            <div><strong>Quantity:</strong> <span id="delete-quantity"></span></div>
-            <div><strong>Payment Method:</strong> <span id="delete-method"></span></div>
-            <div><strong>Time:</strong> <span id="delete-time"></span></div>
-        </div>
-        
-        <div class="input-group">
-            <label>Delete Reason (Required)</label>
-            <input type="text" id="delete-reason" placeholder="e.g., Accidental sale, Wrong item" required>
-        </div>
-        
-        <div class="refund-actions">
-            <button class="btn btn-danger" onclick="confirmDeleteSale()">Delete Sale</button>
-            <button class="btn" onclick="closeDeleteModal()" style="background: #e2e8f0;">Cancel</button>
         </div>
     </div>
 </div>
@@ -1570,7 +1388,7 @@
         </form>
     </div>
 
-    <!-- UPDATED DUAL TABLES SECTION - WITH REFUND AND DELETE BUTTONS -->
+    <!-- UPDATED DUAL TABLES SECTION - WITHOUT REFUND AND DELETE BUTTONS -->
     <div class="dual-tables">
         <div>
             <div class="section-label">TODAY'S SALES</div>
@@ -1583,7 +1401,7 @@
                             <th>Qty</th>
                             <th>Total</th>
                             <th>Method</th>
-                            <th class="action-column">Actions</th>
+                            <!-- Action column removed -->
                         </tr>
                     </thead>
                     <tbody id="live-sales-body"></tbody>
@@ -1723,10 +1541,7 @@
     let currentKcbSalesTotal = 0;
     let currentUser = null;
     let timeCheckInterval = null;
-    let alertSoundPlayed = false;
     let audioContext = null;
-    let refundingSale = null;
-    let deletingSale = null;
 
     // Gas redirect functions
     window.closeGasRedirect = function() {
@@ -1739,204 +1554,6 @@
 
     window.goToGasHub = function() {
         window.location.href = 'cashiergashub.html';
-    };
-
-    // Refund modal functions
-    window.openRefundModal = function(sale) {
-        refundingSale = sale;
-        document.getElementById('refund-item-name').textContent = sale.item_name || 'Unknown Item';
-        document.getElementById('refund-original-amount').textContent = sale.total_amount.toLocaleString();
-        document.getElementById('refund-quantity').textContent = sale.quantity;
-        document.getElementById('refund-amount').value = sale.total_amount;
-        document.getElementById('refund-reason').value = '';
-        document.getElementById('refund-modal').style.display = 'flex';
-    };
-
-    window.closeRefundModal = function() {
-        document.getElementById('refund-modal').style.display = 'none';
-        refundingSale = null;
-    };
-
-    // Delete modal functions
-    window.openDeleteModal = function(sale) {
-        deletingSale = sale;
-        document.getElementById('delete-item-name').textContent = sale.item_name || 'Unknown Item';
-        document.getElementById('delete-amount').textContent = sale.total_amount.toLocaleString();
-        document.getElementById('delete-quantity').textContent = sale.quantity;
-        document.getElementById('delete-method').textContent = sale.payment_method;
-        document.getElementById('delete-time').textContent = new Date(sale.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-        document.getElementById('delete-reason').value = '';
-        document.getElementById('delete-modal').style.display = 'flex';
-    };
-
-    window.closeDeleteModal = function() {
-        document.getElementById('delete-modal').style.display = 'none';
-        deletingSale = null;
-    };
-
-    // Process refund function - UPDATED: Fixed column names
-    window.processRefund = async function() {
-        if (!refundingSale || !currentShift) return;
-        
-        const refundMethod = document.getElementById('refund-method').value;
-        const refundAmount = parseFloat(document.getElementById('refund-amount').value);
-        const refundReason = document.getElementById('refund-reason').value || 'Item return';
-        
-        if (!refundAmount || refundAmount <= 0) {
-            alert("Please enter a valid refund amount");
-            return;
-        }
-        
-        if (refundAmount > refundingSale.total_amount) {
-            alert("Refund amount cannot exceed original sale amount");
-            return;
-        }
-        
-        const confirmed = confirm(
-            `Confirm Refund:\n\n` +
-            `Item: ${refundingSale.item_name}\n` +
-            `Amount: Ksh ${refundAmount.toLocaleString()}\n` +
-            `Method: ${refundMethod}\n\n` +
-            `This will deduct from ${refundMethod} and return stock.`
-        );
-        
-        if (!confirmed) return;
-        
-        try {
-            // 1. Record money out for the refund
-            const { error: transError } = await supabase.from('cash_transactions').insert([{
-                shift_id: currentShift.id,
-                type: 'Money Out',
-                category: refundMethod,
-                amount: refundAmount,
-                description: `Refund: ${refundingSale.item_name}${refundReason ? ' - ' + refundReason : ''}`
-            }]);
-            
-            if (transError) throw transError;
-            
-            // 2. Update sale record to mark as refunded - FIXED COLUMN NAMES
-            const { error: saleError } = await supabase.from('sales')
-                .update({ 
-                    is_refunded: true,
-                    refund_amount: refundAmount,
-                    refund_method: refundMethod,
-                    refund_reason: refundReason,
-                    refund_date: new Date().toISOString()
-                })
-                .eq('id', refundingSale.id);
-            
-            if (saleError) {
-                // If column doesn't exist, try alternative approach
-                console.log("Trying alternative refund update...");
-                await supabase.from('sales')
-                    .update({ 
-                        refunded: true
-                    })
-                    .eq('id', refundingSale.id);
-            }
-            
-            // 3. Restore stock quantity
-            const { data: product } = await supabase.from('products')
-                .select('stock_quantity')
-                .eq('id', refundingSale.product_id)
-                .single();
-            
-            if (product) {
-                const newStock = product.stock_quantity + refundingSale.quantity;
-                await supabase.from('products')
-                    .update({ stock_quantity: newStock })
-                    .eq('id', refundingSale.product_id);
-            }
-            
-            // 4. Show success message
-            alert(`✅ Refund processed successfully!\n\nPlease check the returned item's condition.`);
-            
-            // 5. Close modal and refresh data
-            closeRefundModal();
-            await fetchInventory();
-            await loadShiftData();
-            
-        } catch (error) {
-            console.error("Refund error:", error);
-            alert("Error processing refund: " + error.message);
-        }
-    };
-
-    // Delete sale function
-    window.confirmDeleteSale = async function() {
-        if (!deletingSale || !currentShift) return;
-        
-        const deleteReason = document.getElementById('delete-reason').value;
-        if (!deleteReason) {
-            alert("Please enter a reason for deleting this sale");
-            return;
-        }
-        
-        const confirmed = confirm(
-            `⚠️ FINAL CONFIRMATION:\n\n` +
-            `Are you SURE you want to DELETE this sale?\n\n` +
-            `Item: ${deletingSale.item_name}\n` +
-            `Amount: Ksh ${deletingSale.total_amount.toLocaleString()}\n` +
-            `Quantity: ${deletingSale.quantity}\n` +
-            `Method: ${deletingSale.payment_method}\n\n` +
-            `This action CANNOT be undone!`
-        );
-        
-        if (!confirmed) return;
-        
-        try {
-            // 1. If it was a cash sale, record money out to reverse the transaction
-            if (deletingSale.payment_method === 'Cash' || deletingSale.payment_method === 'Mpesa') {
-                const { error: transError } = await supabase.from('cash_transactions').insert([{
-                    shift_id: currentShift.id,
-                    type: 'Money Out',
-                    category: deletingSale.payment_method,
-                    amount: deletingSale.total_amount,
-                    description: `Sale Deletion: ${deletingSale.item_name} - ${deleteReason}`
-                }]);
-                
-                if (transError) throw transError;
-            }
-            
-            // 2. Restore stock quantity
-            const { data: product } = await supabase.from('products')
-                .select('stock_quantity')
-                .eq('id', deletingSale.product_id)
-                .single();
-            
-            if (product) {
-                const newStock = product.stock_quantity + deletingSale.quantity;
-                await supabase.from('products')
-                    .update({ stock_quantity: newStock })
-                    .eq('id', deletingSale.product_id);
-            }
-            
-            // 3. Delete debt record if applicable
-            if (deletingSale.payment_method === 'Debt') {
-                await supabase.from('debtors')
-                    .delete()
-                    .eq('sale_id', deletingSale.id);
-            }
-            
-            // 4. Delete the sale record
-            const { error: deleteError } = await supabase.from('sales')
-                .delete()
-                .eq('id', deletingSale.id);
-            
-            if (deleteError) throw deleteError;
-            
-            // 5. Show success message
-            alert(`✅ Sale deleted successfully!\n\nStock has been restored and transaction reversed.`);
-            
-            // 6. Close modal and refresh data
-            closeDeleteModal();
-            await fetchInventory();
-            await loadShiftData();
-            
-        } catch (error) {
-            console.error("Delete error:", error);
-            alert("Error deleting sale: " + error.message);
-        }
     };
 
     // Profile dropdown functions
@@ -1955,7 +1572,7 @@
         }
     });
 
-    // Check for low floats - UPDATED: No alert sounds
+    // Check for low floats
     function checkLowFloats() {
         const floatItems = [
             { id: 'float-cash-item', element: document.getElementById('float-cash'), value: parseFloat(document.getElementById('float-cash').innerText.replace(/,/g, '')) || 0 },
@@ -1985,11 +1602,6 @@
                 }
             }
         });
-    }
-
-    // UPDATED: Remove time alert checks completely
-    function checkTimeAlerts() {
-        // Function intentionally left empty as requested
     }
 
     // --- REALTIME: Sync Inventory Automatically ---
@@ -2042,7 +1654,6 @@
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
             init();
-            checkTimeAlerts();
             checkLowFloats();
         }
     });
@@ -2139,8 +1750,6 @@
         updateGreeting();
         setInterval(updateGreeting, 60000); // Update every minute
         
-        // UPDATED: Don't start time alert checks
-
         try {
             const [prodRes, shiftRes] = await Promise.all([
                 supabase.from('products').select('*'),
@@ -2363,9 +1972,10 @@
             const sales = salesRes.data || [];
             const trans = transRes.data || [];
 
-            // FIXED: Check for refunded field with different possible column names
-            const nonRefundedSales = sales.filter(s => !s.is_refunded && !s.refunded);
-            currentKcbSalesTotal = nonRefundedSales.filter(s => s.payment_method === 'KCB Paybill').reduce((a, b) => a + b.total_amount, 0);
+            // FIXED: Get all sales (refunded sales are not filtered out for display)
+            currentKcbSalesTotal = sales
+                .filter(s => s.payment_method === 'KCB Paybill')
+                .reduce((a, b) => a + (b.total_amount || 0), 0);
             
             const liveKcbBox = document.getElementById('live-kcb-box');
             if (liveKcbBox) liveKcbBox.innerText = currentKcbSalesTotal.toLocaleString();
@@ -2375,32 +1985,15 @@
 
             const liveSalesBody = document.getElementById('live-sales-body');
             if (liveSalesBody) {
-                liveSalesBody.innerHTML = sales.map(s => {
-                    const isRefunded = s.is_refunded || s.refunded;
-                    return `
-                    <tr class="${isRefunded ? 'refunded-row' : ''}">
+                liveSalesBody.innerHTML = sales.map(s => `
+                    <tr>
                         <td data-label="Time">${new Date(s.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
-                        <td data-label="Item">
-                            <b>${s.item_name}</b>
-                            ${isRefunded ? '<span class="refunded-badge">REFUNDED</span>' : ''}
-                        </td>
+                        <td data-label="Item"><b>${s.item_name}</b></td>
                         <td data-label="Qty">${s.quantity}</td>
-                        <td data-label="Total">Ksh ${s.total_amount.toLocaleString()}</td>
+                        <td data-label="Total">Ksh ${(s.total_amount || 0).toLocaleString()}</td>
                         <td data-label="Method">${s.payment_method}</td>
-                        <td data-label="Actions" class="action-column">
-                            <div class="action-buttons">
-                                ${!isRefunded ? `
-                                    <button class="btn-refund" onclick="openRefundModal(${JSON.stringify(s).replace(/"/g, '&quot;')})">
-                                        <i class="fas fa-undo-alt"></i> Refund
-                                    </button>
-                                    <button class="btn-delete" onclick="openDeleteModal(${JSON.stringify(s).replace(/"/g, '&quot;')})">
-                                        <i class="fas fa-trash-alt"></i> Delete
-                                    </button>
-                                ` : ''}
-                            </div>
-                        </td>
-                    </tr>`;
-                }).join('');
+                    </tr>
+                `).join('');
             }
 
             // Calculate money in/out totals
@@ -2409,9 +2002,9 @@
             
             trans.forEach(t => {
                 if (t.type === 'Money In') {
-                    totalMoneyIn += t.amount;
+                    totalMoneyIn += t.amount || 0;
                 } else if (t.type === 'Money Out') {
-                    totalMoneyOut += t.amount;
+                    totalMoneyOut += t.amount || 0;
                 }
             });
             
@@ -2428,7 +2021,7 @@
                     <tr class="${t.type === 'Money In' ? 'money-in-row' : 'money-out-row'}">
                         <td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
                         <td data-label="Reason">${t.description}</td>
-                        <td data-label="Amount">Ksh ${t.amount.toLocaleString()}</td>
+                        <td data-label="Amount">Ksh ${(t.amount || 0).toLocaleString()}</td>
                         <td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">
                             ${t.type}
                         </td>
@@ -2497,21 +2090,20 @@
             const clB = currentKcbSalesTotal;
             const clC = parseFloat(document.getElementById('c-cash').value || 0);
 
-            // FIXED: Check for refunded sales properly
+            // FIXED: Include ALL sales for calculation (not filtering refunded)
             const { data: sales } = await supabase.from('sales')
-                .select('total_amount, payment_method, is_refunded, refunded')
+                .select('total_amount, payment_method')
                 .eq('shift_id', currentShift.id)
                 .neq('payment_method','Debt');
             
-            const nonRefundedSales = (sales || []).filter(s => !s.is_refunded && !s.refunded);
-            const totalSales = nonRefundedSales.reduce((a,b) => a + b.total_amount, 0);
+            const totalSales = (sales || []).reduce((a,b) => a + (b.total_amount || 0), 0);
             
             const { data: trans } = await supabase.from('cash_transactions').select('amount, type').eq('shift_id', currentShift.id);
             
-            const moneyIn = (trans || []).filter(t => t.type === 'Money In').reduce((a,b) => a + b.amount, 0);
-            const moneyOut = (trans || []).filter(t => t.type === 'Money Out').reduce((a,b) => a + b.amount, 0);
+            const moneyIn = (trans || []).filter(t => t.type === 'Money In').reduce((a,b) => a + (b.amount || 0), 0);
+            const moneyOut = (trans || []).filter(t => t.type === 'Money Out').reduce((a,b) => a + (b.amount || 0), 0);
 
-            const opTotal = currentShift.open_cash + currentShift.open_mpesa + currentShift.open_kcb + currentShift.open_equity;
+            const opTotal = (currentShift.open_cash || 0) + (currentShift.open_mpesa || 0) + (currentShift.open_kcb || 0) + (currentShift.open_equity || 0);
             const expected = (opTotal + totalSales + moneyIn) - moneyOut;
             const actual = clM + clK + clE + clB + clC;
             const variance = actual - expected;
@@ -2553,14 +2145,13 @@
 
             const { data: transactions } = await supabase.from('cash_transactions').select('shift_id, amount, type');
             
-            // FIXED: Get non-refunded sales only for history
+            // FIXED: Get ALL sales (including refunded for accurate totals)
             const { data: sales } = await supabase.from('sales')
-                .select('shift_id, total_amount, payment_method, is_refunded, refunded')
-                .or('is_refunded.is.null,refunded.is.null');
+                .select('shift_id, total_amount, payment_method');
 
             allShifts = shifts || [];
             allTransactions = transactions || [];
-            allSales = (sales || []).filter(s => !s.is_refunded && !s.refunded);
+            allSales = sales || [];
             
             const lastClosed = allShifts.find(s => s.status === 'Closed');
             if (lastClosed) {
@@ -2569,7 +2160,6 @@
                     const banner = document.getElementById('congrats-banner');
                     if(banner) {
                         banner.style.display = 'block';
-                        // UPDATED: Hide after 5 seconds
                         setTimeout(() => {
                             banner.style.display = 'none';
                         }, 5000);
@@ -2597,10 +2187,18 @@
             const shiftLogs = transData.filter(t => t.shift_id === sh.id);
             const shiftSales = salesData.filter(s => s.shift_id === sh.id);
 
+            // FIXED: Ensure proper calculations with fallback values
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
-            const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount || 0), 0);
-            const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            
+            // FIXED: Ensure sales values are not zero by using proper calculations
+            const cashSales = shiftSales
+                .filter(s => s.payment_method === 'Cash')
+                .reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            
+            const kcbPaybillSales = shiftSales
+                .filter(s => s.payment_method === 'KCB Paybill')
+                .reduce((s, x) => s + Number(x.total_amount || 0), 0);
 
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_equity||0) + (sh.close_kcb_bank || 0);
