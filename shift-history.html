@@ -6,13 +6,16 @@
     <title>Shift Audit | JEPE POS</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { 
             --primary: #4f46e5; 
+            --primary-dark: #3730a3;
             --bg: #f8fafc; 
             --card: #ffffff;
             --success: #10b981; 
             --danger: #ef4444; 
+            --warning: #f59e0b;
             --text: #1e293b; 
             --dim: #64748b; 
             --border: #e2e8f0; 
@@ -21,88 +24,613 @@
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; min-height: 100vh; }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            display: flex; 
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
 
         /* --- SIDEBAR --- */
         .sidebar { 
-            width: var(--sidebar-width); background: var(--sidebar-bg); position: fixed; 
-            left: 0; top: 0; height: 100vh; z-index: 3000; overflow-y: auto; 
+            width: var(--sidebar-width); 
+            background: var(--sidebar-bg); 
+            position: fixed; 
+            left: 0; 
+            top: 0; 
+            height: 100vh; 
+            z-index: 3000; 
+            overflow-y: auto; 
             transition: transform 0.3s ease;
         }
         .sidebar-header { 
-            padding: 25px; font-weight: 800; color: white; 
-            border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 1.2rem; 
-            display: flex; justify-content: space-between; align-items: center;
+            padding: 25px; 
+            font-weight: 800; 
+            color: white; 
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
+            font-size: 1.2rem; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
         }
-        .close-menu { display: none; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+        .close-menu { 
+            display: none; 
+            background: none; 
+            border: none; 
+            color: white; 
+            font-size: 1.5rem; 
+            cursor: pointer; 
+        }
         
-        .nav-list { padding: 15px; list-style: none; margin: 0; }
-        .nav-item { display: flex; align-items: center; padding: 12px 15px; text-decoration: none; color: #94a3b8; font-weight: 600; border-radius: 10px; margin-bottom: 4px; transition: 0.2s; font-size: 0.9rem; }
-        .nav-item span { margin-right: 12px; font-size: 1.1rem; }
-        .nav-item:hover { background: rgba(255,255,255,0.05); color: white; }
-        .nav-item.active { background: var(--primary); color: white; }
+        .nav-list { 
+            padding: 15px; 
+            list-style: none; 
+            margin: 0; 
+        }
+        .nav-item { 
+            display: flex; 
+            align-items: center; 
+            padding: 12px 15px; 
+            text-decoration: none; 
+            color: #94a3b8; 
+            font-weight: 600; 
+            border-radius: 10px; 
+            margin-bottom: 4px; 
+            transition: 0.2s; 
+            font-size: 0.9rem; 
+        }
+        .nav-item span { 
+            margin-right: 12px; 
+            font-size: 1.1rem; 
+        }
+        .nav-item:hover { 
+            background: rgba(255,255,255,0.05); 
+            color: white; 
+        }
+        .nav-item.active { 
+            background: var(--primary); 
+            color: white; 
+        }
 
         /* --- MENU TRIGGER --- */
         .menu-trigger {
-            display: none; position: fixed; top: 15px; left: 15px; z-index: 2500;
-            background: var(--sidebar-bg); color: white; border: none; padding: 10px 15px;
-            border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 700;
+            display: none; 
+            position: fixed; 
+            top: 15px; 
+            left: 15px; 
+            z-index: 2500;
+            background: var(--sidebar-bg); 
+            color: white; 
+            border: none; 
+            padding: 10px 15px;
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 0.9rem; 
+            font-weight: 700;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         /* --- MAIN CONTENT --- */
-        .main-content { flex-grow: 1; padding: 25px; width: 100%; margin-left: var(--sidebar-width); position: relative; }
-        
-        @media (max-width: 1024px) { 
-            .sidebar { transform: translateX(-100%); }
-            .sidebar.active { transform: translateX(0); }
-            .main-content { margin-left: 0; padding-top: 80px; }
-            .menu-trigger { display: block; }
-            .close-menu { display: block; }
+        .main-content { 
+            flex-grow: 1; 
+            padding: 25px; 
+            width: 100%; 
+            margin-left: var(--sidebar-width); 
+            position: relative; 
+            background: var(--bg);
+            min-height: 100vh;
         }
         
-        .page-header { background: white; padding: 24px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        @media (max-width: 1024px) { 
+            .sidebar { 
+                transform: translateX(-100%); 
+            }
+            .sidebar.active { 
+                transform: translateX(0); 
+            }
+            .main-content { 
+                margin-left: 0; 
+                padding-top: 80px; 
+                padding: 15px;
+            }
+            .menu-trigger { 
+                display: block; 
+            }
+            .close-menu { 
+                display: block; 
+            }
+        }
+        
+        .page-header { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 16px; 
+            border: 1px solid var(--border); 
+            margin-bottom: 24px; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); 
+        }
 
         /* --- MOBILE SLIDE INDICATOR --- */
         .slide-indicator { 
-            background: #0f172a; color: white; padding: 14px; border-radius: 12px; 
-            display: none; align-items: center; justify-content: center; gap: 12px; 
-            margin-bottom: 15px; font-size: 0.8rem; font-weight: 700;
+            background: #0f172a; 
+            color: white; 
+            padding: 14px; 
+            border-radius: 12px; 
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 12px; 
+            margin-bottom: 15px; 
+            font-size: 0.8rem; 
+            font-weight: 700;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
-        .hand-icon { font-size: 1.2rem; animation: tapSide 1.5s infinite; }
-        @keyframes tapSide { 0%, 100% { transform: translateX(5px); } 50% { transform: translateX(-5px); } }
-        @media (max-width: 1024px) { .slide-indicator { display: flex; } }
+        .hand-icon { 
+            font-size: 1.2rem; 
+            animation: tapSide 1.5s infinite; 
+        }
+        @keyframes tapSide { 
+            0%, 100% { transform: translateX(5px); } 
+            50% { transform: translateX(-5px); } 
+        }
+        @media (max-width: 1024px) { 
+            .slide-indicator { 
+                display: flex; 
+            } 
+        }
 
-        .search-input { width: 100%; padding: 14px 20px; border: 1px solid var(--border); border-radius: 14px; margin-bottom: 24px; font-size: 0.95rem; outline: none; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .search-input { 
+            width: 100%; 
+            padding: 14px 20px; 
+            border: 1px solid var(--border); 
+            border-radius: 14px; 
+            margin-bottom: 24px; 
+            font-size: 0.95rem; 
+            outline: none; 
+            background: white; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02); 
+        }
 
-        .table-outer { border-radius: 16px; overflow: hidden; border: 1px solid var(--border); background: white; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
-        .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .table-outer { 
+            border-radius: 16px; 
+            overflow: hidden; 
+            border: 1px solid var(--border); 
+            background: white; 
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); 
+            display: block;
+        }
         
-        table { width: 100%; border-collapse: collapse; min-width: 1250px; }
-        th { background: #f8fafc; padding: 18px 15px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--dim); border-bottom: 1px solid var(--border); text-align: left; }
-        td { padding: 20px 15px; border-bottom: 1px solid var(--border); font-size: 0.9rem; vertical-align: top; }
-
-        .account-line { display: flex; justify-content: space-between; margin-bottom: 4px; border-bottom: 1px dashed #f1f5f9; padding-bottom: 2px; }
-        .account-label { color: var(--dim); font-size: 0.75rem; font-weight: 500; }
-        .account-val { font-weight: 600; color: var(--text); font-size: 0.8rem; }
-
-        .total-row { font-weight: 800; margin-top: 10px; padding: 8px; background: #f5f3ff; color: var(--primary); border-radius: 6px; text-align: center; }
+        @media (max-width: 768px) {
+            .table-outer {
+                display: none;
+            }
+        }
         
-        .status-badge { font-weight: 800; padding: 10px 15px; border-radius: 10px; font-size: 0.85rem; display: block; text-align: center; min-width: 140px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid transparent; }
-        .active-shift { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
+        .table-container { 
+            overflow-x: auto; 
+            -webkit-overflow-scrolling: touch; 
+        }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            min-width: 1250px; 
+        }
+        th { 
+            background: #f8fafc; 
+            padding: 18px 15px; 
+            font-size: 0.75rem; 
+            text-transform: uppercase; 
+            letter-spacing: 0.05em; 
+            color: var(--dim); 
+            border-bottom: 1px solid var(--border); 
+            text-align: left; 
+        }
+        td { 
+            padding: 20px 15px; 
+            border-bottom: 1px solid var(--border); 
+            font-size: 0.9rem; 
+            vertical-align: top; 
+        }
+
+        .account-line { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 4px; 
+            border-bottom: 1px dashed #f1f5f9; 
+            padding-bottom: 2px; 
+        }
+        .account-label { 
+            color: var(--dim); 
+            font-size: 0.75rem; 
+            font-weight: 500; 
+        }
+        .account-val { 
+            font-weight: 600; 
+            color: var(--text); 
+            font-size: 0.8rem; 
+        }
+
+        .total-row { 
+            font-weight: 800; 
+            margin-top: 10px; 
+            padding: 8px; 
+            background: #f5f3ff; 
+            color: var(--primary); 
+            border-radius: 6px; 
+            text-align: center; 
+        }
+        
+        .status-badge { 
+            font-weight: 800; 
+            padding: 10px 15px; 
+            border-radius: 10px; 
+            font-size: 0.85rem; 
+            display: block; 
+            text-align: center; 
+            min-width: 140px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+            border: 1px solid transparent; 
+        }
+        .active-shift { 
+            background: #e0e7ff; 
+            color: #4338ca; 
+            border: 1px solid #c7d2fe; 
+        }
         /* Variance specific classes */
-        .var-positive { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
-        .var-negative { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
-        .var-balanced { background: #f1f5f9; color: var(--text); border-color: var(--border); }
+        .var-positive { 
+            background: #dcfce7; 
+            color: #15803d; 
+            border-color: #bbf7d0; 
+        }
+        .var-negative { 
+            background: #fee2e2; 
+            color: #b91c1c; 
+            border-color: #fecaca; 
+        }
+        .var-balanced { 
+            background: #f1f5f9; 
+            color: var(--text); 
+            border-color: var(--border); 
+        }
 
-        .revenue-card { background: #fff; border: 1px solid var(--border); padding: 12px; border-radius: 10px; text-decoration: none; display: block; transition: 0.2s; }
-        .revenue-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+        .revenue-card { 
+            background: #fff; 
+            border: 1px solid var(--border); 
+            padding: 12px; 
+            border-radius: 10px; 
+            text-decoration: none; 
+            display: block; 
+            transition: 0.2s; 
+        }
+        .revenue-card:hover { 
+            border-color: var(--primary); 
+            transform: translateY(-2px); 
+        }
         
-        .adj-box { padding: 12px; border-radius: 10px; background: #fafafa; border: 1px solid #f0f0f0; text-decoration: none; display: block; }
+        .adj-box { 
+            padding: 12px; 
+            border-radius: 10px; 
+            background: #fafafa; 
+            border: 1px solid #f0f0f0; 
+            text-decoration: none; 
+            display: block; 
+        }
 
-        .date-cell b { display: block; margin-bottom: 8px; font-size: 1rem; }
-        .time-pill { background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; color: var(--dim); display: inline-block; margin-top: 4px; }
+        .date-cell b { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-size: 1rem; 
+        }
+        .time-pill { 
+            background: #f1f5f9; 
+            padding: 2px 8px; 
+            border-radius: 4px; 
+            font-size: 0.7rem; 
+            font-weight: 700; 
+            color: var(--dim); 
+            display: inline-block; 
+            margin-top: 4px; 
+        }
+        
+        /* --- MOBILE CARD STYLES --- */
+        .mobile-shifts-container {
+            display: none;
+            margin-top: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-shifts-container {
+                display: block;
+            }
+            
+            .shift-mobile-card {
+                background: white;
+                border-radius: 16px;
+                padding: 20px;
+                margin-bottom: 20px;
+                border: 1px solid var(--border);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+                position: relative;
+                overflow: hidden;
+            }
+            
+            .shift-mobile-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 20px;
+                padding-bottom: 15px;
+                border-bottom: 1px solid var(--border);
+            }
+            
+            .shift-mobile-date {
+                font-weight: 800;
+                font-size: 1rem;
+                color: var(--text);
+            }
+            
+            .shift-mobile-date small {
+                display: block;
+                font-size: 0.75rem;
+                color: var(--dim);
+                font-weight: 500;
+                margin-top: 4px;
+            }
+            
+            .shift-mobile-status {
+                font-size: 0.75rem;
+                padding: 8px 12px;
+                border-radius: 8px;
+                font-weight: 700;
+                text-align: center;
+                min-width: 100px;
+            }
+            
+            .shift-mobile-grid {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+            
+            @media (min-width: 480px) {
+                .shift-mobile-grid {
+                    grid-template-columns: 1fr 1fr;
+                }
+            }
+            
+            .shift-mobile-section {
+                background: #f8fafc;
+                padding: 15px;
+                border-radius: 12px;
+                border: 1px solid var(--border);
+            }
+            
+            .shift-mobile-section-title {
+                font-size: 0.75rem;
+                color: var(--dim);
+                font-weight: 700;
+                margin-bottom: 10px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            
+            .shift-mobile-section-title i {
+                font-size: 0.9rem;
+            }
+            
+            .shift-mobile-details {
+                font-size: 0.85rem;
+            }
+            
+            .shift-mobile-detail-line {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 8px;
+                padding-bottom: 6px;
+                border-bottom: 1px dashed #e2e8f0;
+            }
+            
+            .shift-mobile-detail-label {
+                color: var(--dim);
+                font-weight: 500;
+            }
+            
+            .shift-mobile-detail-value {
+                font-weight: 600;
+                color: var(--text);
+            }
+            
+            .shift-mobile-total {
+                background: #f5f3ff;
+                padding: 10px;
+                border-radius: 8px;
+                text-align: center;
+                font-weight: 800;
+                color: var(--primary);
+                margin-top: 10px;
+                font-size: 0.9rem;
+            }
+            
+            .shift-mobile-expected {
+                font-size: 0.75rem;
+                color: var(--dim);
+                text-align: center;
+                margin-top: 8px;
+                font-weight: 500;
+            }
+            
+            .shift-mobile-variance-note {
+                background: #f8fafc;
+                padding: 12px;
+                border-radius: 8px;
+                margin-top: 15px;
+                font-size: 0.8rem;
+                color: var(--dim);
+                font-style: italic;
+                border-left: 3px solid var(--primary);
+            }
+            
+            .shift-mobile-actions {
+                display: flex;
+                gap: 10px;
+                margin-top: 15px;
+            }
+            
+            .shift-mobile-action-btn {
+                flex: 1;
+                padding: 10px;
+                border-radius: 8px;
+                text-decoration: none;
+                text-align: center;
+                font-weight: 700;
+                font-size: 0.8rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                transition: all 0.2s;
+            }
+            
+            .sales-action {
+                background: var(--primary);
+                color: white;
+                border: 1px solid var(--primary-dark);
+            }
+            
+            .money-action {
+                background: var(--success);
+                color: white;
+                border: 1px solid #0d9664;
+            }
+            
+            .shift-mobile-action-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            }
+            
+            .shift-mobile-action-btn i {
+                font-size: 0.9rem;
+            }
+            
+            .mobile-header {
+                display: flex;
+                align-items: center;
+                padding: 15px;
+                background: var(--sidebar-bg);
+                color: white;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 2000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
+            
+            .mobile-header button {
+                background: none;
+                border: none;
+                color: white;
+                font-size: 1.5rem;
+                cursor: pointer;
+                padding: 5px;
+                margin-right: 10px;
+            }
+            
+            .mobile-header span {
+                font-weight: 700;
+                font-size: 1.1rem;
+            }
+        }
+        
+        /* Desktop specific */
+        @media (min-width: 769px) {
+            .mobile-shifts-container {
+                display: none !important;
+            }
+            
+            .table-outer {
+                display: block;
+            }
+        }
+        
+        /* Loading Spinner */
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* No results message */
+        .no-results {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--dim);
+            font-size: 0.9rem;
+        }
+        
+        .no-results i {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: #cbd5e1;
+        }
+        
+        /* Refresh button */
+        .refresh-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+        
+        .refresh-btn:hover {
+            transform: rotate(45deg);
+            background: var(--primary-dark);
+        }
+        
+        @media (max-width: 768px) {
+            .refresh-btn {
+                bottom: 80px;
+                right: 15px;
+                width: 45px;
+                height: 45px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -151,6 +679,7 @@
 
     <input type="text" id="auditSearch" class="search-input" placeholder="Search by date (e.g. 10 Jan 2026)...">
 
+    <!-- Desktop Table View -->
     <div class="table-outer">
         <div class="table-container" id="scrollContainer">
             <table>
@@ -169,12 +698,35 @@
             </table>
         </div>
     </div>
+    
+    <!-- Mobile Card View -->
+    <div id="mobile-shifts-container" class="mobile-shifts-container">
+        <!-- Mobile cards will be inserted here by JavaScript -->
+    </div>
+    
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+    
+    <!-- No Results Message -->
+    <div id="noResults" class="no-results" style="display: none;">
+        <i class="fas fa-search"></i>
+        <p>No shift records found</p>
+        <p style="font-size: 0.8rem; margin-top: 5px;">Try searching with a different date</p>
+    </div>
 </main>
+
+<!-- Refresh Button -->
+<button class="refresh-btn" onclick="refreshData()" id="refreshBtn">
+    <i class="fas fa-sync-alt"></i>
+</button>
 
 <script type="module">
     import { supabase } from './auth.js';
     
     let allShifts = [], allTransactions = [], allSales = [];
+    let isMobile = window.innerWidth <= 768;
 
     window.toggleMenu = function() {
         document.getElementById('sidebar').classList.toggle('active');
@@ -182,26 +734,64 @@
 
     const scrollContainer = document.getElementById('scrollContainer');
     const scrollHint = document.getElementById('scrollHint');
-    scrollContainer.addEventListener('scroll', () => {
-        if (scrollContainer.scrollLeft > 20) {
-            scrollHint.style.opacity = '0';
-            setTimeout(() => scrollHint.style.display = 'none', 500);
-        }
-    });
+    if (scrollContainer && scrollHint) {
+        scrollContainer.addEventListener('scroll', () => {
+            if (scrollContainer.scrollLeft > 20) {
+                scrollHint.style.opacity = '0';
+                setTimeout(() => scrollHint.style.display = 'none', 500);
+            }
+        });
+    }
 
     async function fetchData() {
-        const { data: shifts } = await supabase.from('daily_shifts').select('*').order('start_time', { ascending: false });
-        const { data: trans } = await supabase.from('cash_transactions').select('shift_id, amount, type');
-        const { data: sales } = await supabase.from('sales').select('shift_id, total_amount, payment_method');
+        showLoading(true);
+        
+        try {
+            const [shiftsRes, transRes, salesRes] = await Promise.all([
+                supabase.from('daily_shifts').select('*').order('start_time', { ascending: false }),
+                supabase.from('cash_transactions').select('shift_id, amount, type'),
+                supabase.from('sales').select('shift_id, total_amount, payment_method')
+            ]);
 
-        allShifts = shifts || [];
-        allTransactions = trans || [];
-        allSales = sales || [];
-        render();
+            allShifts = shiftsRes.data || [];
+            allTransactions = transRes.data || [];
+            allSales = salesRes.data || [];
+            
+            render();
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            alert("Error loading shift data. Please try again.");
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    function showLoading(show) {
+        const loadingEl = document.getElementById('loadingSpinner');
+        const refreshBtn = document.getElementById('refreshBtn');
+        
+        if (loadingEl) loadingEl.style.display = show ? 'flex' : 'none';
+        if (refreshBtn) refreshBtn.disabled = show;
     }
 
     function render(data = allShifts) {
+        if (isMobile) {
+            renderMobile(data);
+        } else {
+            renderDesktop(data);
+        }
+        
+        // Show/hide no results message
+        const noResultsEl = document.getElementById('noResults');
+        if (noResultsEl) {
+            noResultsEl.style.display = data.length === 0 ? 'block' : 'none';
+        }
+    }
+
+    function renderDesktop(data = allShifts) {
         const tbody = document.getElementById('audit-body-desktop');
+        if (!tbody) return;
+        
         let tableHtml = '';
 
         data.forEach(sh => {
@@ -210,14 +800,14 @@
 
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
-            const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount), 0);
-            const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount), 0);
+            const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount || 0), 0);
 
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
             const isClosed = sh.status === 'Closed';
-            const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount), 0);
+            const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             
             // LOGIC FOR VARIANCE DISPLAY
@@ -295,16 +885,238 @@
         tbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.</td></tr>';
     }
 
+    function renderMobile(data = allShifts) {
+        const mobileContainer = document.getElementById('mobile-shifts-container');
+        if (!mobileContainer) return;
+        
+        let mobileHtml = '';
+
+        data.forEach(sh => {
+            const shiftLogs = allTransactions.filter(t => t.shift_id === sh.id);
+            const shiftSales = allSales.filter(s => s.shift_id === sh.id);
+
+            const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
+            const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
+            const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount || 0), 0);
+
+            const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
+            const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
+
+            const isClosed = sh.status === 'Closed';
+            const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
+            const varianceVal = isClosed ? (closeTotal - expected) : 0;
+            
+            const startD = new Date(sh.start_time);
+            const endD = sh.end_time ? new Date(sh.end_time) : null;
+            
+            let varianceClass = '';
+            let varianceText = '';
+            
+            if (!isClosed) {
+                varianceClass = 'active-shift';
+                varianceText = 'ACTIVE';
+            } else if (varianceVal > 0) {
+                varianceClass = 'var-positive';
+                varianceText = `+${varianceVal.toLocaleString()}`;
+            } else if (varianceVal < 0) {
+                varianceClass = 'var-negative';
+                varianceText = varianceVal.toLocaleString();
+            } else {
+                varianceClass = 'var-balanced';
+                varianceText = 'BALANCED';
+            }
+            
+            mobileHtml += `
+                <div class="shift-mobile-card">
+                    <div class="shift-mobile-header">
+                        <div class="shift-mobile-date">
+                            ${startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'})}
+                            <small>
+                                ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                                ${endD ? ` - ${endD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}` : ''}
+                            </small>
+                        </div>
+                        <div class="shift-mobile-status ${varianceClass}">
+                            ${isClosed ? varianceText : 'ACTIVE'}
+                        </div>
+                    </div>
+                    
+                    <div class="shift-mobile-grid">
+                        <div class="shift-mobile-section">
+                            <div class="shift-mobile-section-title">
+                                <i class="fas fa-wallet"></i> OPENING FLOATS
+                            </div>
+                            <div class="shift-mobile-details">
+                                <div class="shift-mobile-detail-line">
+                                    <span class="shift-mobile-detail-label">Cash</span>
+                                    <span class="shift-mobile-detail-value">${(sh.open_cash||0).toLocaleString()}</span>
+                                </div>
+                                <div class="shift-mobile-detail-line">
+                                    <span class="shift-mobile-detail-label">Mpesa</span>
+                                    <span class="shift-mobile-detail-value">${(sh.open_mpesa||0).toLocaleString()}</span>
+                                </div>
+                                <div class="shift-mobile-detail-line">
+                                    <span class="shift-mobile-detail-label">KCB Float</span>
+                                    <span class="shift-mobile-detail-value">${(sh.open_kcb||0).toLocaleString()}</span>
+                                </div>
+                                <div class="shift-mobile-detail-line">
+                                    <span class="shift-mobile-detail-label">Equity</span>
+                                    <span class="shift-mobile-detail-value">${(sh.open_equity||0).toLocaleString()}</span>
+                                </div>
+                                <div class="shift-mobile-total">
+                                    Total: ${openTotal.toLocaleString()}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="shift-mobile-section">
+                            <div class="shift-mobile-section-title">
+                                <i class="fas fa-cash-register"></i> PAYMENT METHOD
+                            </div>
+                            <div class="shift-mobile-details">
+                                <div class="shift-mobile-detail-line">
+                                    <span class="shift-mobile-detail-label">Cash Sales</span>
+                                    <span class="shift-mobile-detail-value" style="color:var(--success)">+${cashSales.toLocaleString()}</span>
+                                </div>
+                                <div class="shift-mobile-detail-line">
+                                    <span class="shift-mobile-detail-label">KCB Paybill</span>
+                                    <span class="shift-mobile-detail-value" style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="shift-mobile-section">
+                            <div class="shift-mobile-section-title">
+                                <i class="fas fa-exchange-alt"></i> MONEY IN/OUT
+                            </div>
+                            <div class="shift-mobile-details">
+                                <div class="shift-mobile-detail-line">
+                                    <span class="shift-mobile-detail-label">Money In</span>
+                                    <span class="shift-mobile-detail-value" style="color:var(--success)">+${moneyIn.toLocaleString()}</span>
+                                </div>
+                                <div class="shift-mobile-detail-line">
+                                    <span class="shift-mobile-detail-label">Money Out</span>
+                                    <span class="shift-mobile-detail-value" style="color:var(--danger)">-${moneyOut.toLocaleString()}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="shift-mobile-section">
+                            <div class="shift-mobile-section-title">
+                                <i class="fas fa-safe"></i> CLOSING FLOATS
+                            </div>
+                            <div class="shift-mobile-details">
+                                <div class="shift-mobile-detail-line">
+                                    <span class="shift-mobile-detail-label">Cash</span>
+                                    <span class="shift-mobile-detail-value">${(sh.close_cash||0).toLocaleString()}</span>
+                                </div>
+                                <div class="shift-mobile-detail-line">
+                                    <span class="shift-mobile-detail-label">Mpesa</span>
+                                    <span class="shift-mobile-detail-value">${(sh.close_mpesa||0).toLocaleString()}</span>
+                                </div>
+                                <div class="shift-mobile-detail-line">
+                                    <span class="shift-mobile-detail-label">KCB Float</span>
+                                    <span class="shift-mobile-detail-value">${(sh.close_kcb||0).toLocaleString()}</span>
+                                </div>
+                                <div class="shift-mobile-detail-line">
+                                    <span class="shift-mobile-detail-label">Equity</span>
+                                    <span class="shift-mobile-detail-value">${(sh.close_equity||0).toLocaleString()}</span>
+                                </div>
+                                <div class="shift-mobile-detail-line">
+                                    <span class="shift-mobile-detail-label">Paybill</span>
+                                    <span class="shift-mobile-detail-value">${(sh.close_kcb_bank||0).toLocaleString()}</span>
+                                </div>
+                                <div class="shift-mobile-total" style="background:#f0f9ff">
+                                    Total: ${closeTotal.toLocaleString()}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="shift-mobile-expected">
+                        Expected: ${expected.toLocaleString()}
+                    </div>
+                    
+                    ${sh.variance_note ? `
+                        <div class="shift-mobile-variance-note">
+                            <strong>Note:</strong> ${sh.variance_note}
+                        </div>
+                    ` : ''}
+                    
+                    <div class="shift-mobile-actions">
+                        <a href="sales-history.html" class="shift-mobile-action-btn sales-action">
+                            <i class="fas fa-chart-line"></i> Sales Report
+                        </a>
+                        <a href="money-history.html" class="shift-mobile-action-btn money-action">
+                            <i class="fas fa-money-bill-wave"></i> Money Log
+                        </a>
+                    </div>
+                </div>
+            `;
+        });
+
+        mobileContainer.innerHTML = mobileHtml || '<div class="no-results"><i class="fas fa-search"></i><p>No shift records found</p></div>';
+    }
+
+    function filterData(searchTerm) {
+        const filtered = allShifts.filter(sh => {
+            const dateStr = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'}).toLowerCase();
+            const status = sh.status.toLowerCase();
+            const note = (sh.variance_note || '').toLowerCase();
+            
+            return dateStr.includes(searchTerm) || 
+                   status.includes(searchTerm) ||
+                   note.includes(searchTerm);
+        });
+        
+        render(filtered);
+    }
+
     document.getElementById('auditSearch').addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
-        const filtered = allShifts.filter(sh => {
-            const d = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'}).toLowerCase();
-            return d.includes(term);
-        });
-        render(filtered);
+        filterData(term);
     });
 
-    fetchData();
+    async function refreshData() {
+        const btn = document.getElementById('refreshBtn');
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
+        await fetchData();
+        
+        btn.innerHTML = originalHtml;
+        
+        // Show success feedback
+        btn.style.background = '#10b981';
+        setTimeout(() => {
+            btn.style.background = '';
+        }, 1000);
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        const newIsMobile = window.innerWidth <= 768;
+        if (newIsMobile !== isMobile) {
+            isMobile = newIsMobile;
+            render();
+        }
+    });
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', function() {
+        fetchData();
+        
+        // Check if we're on mobile initially
+        isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+            const desktopTable = document.querySelector('.table-outer');
+            const mobileContainer = document.getElementById('mobile-shifts-container');
+            if (desktopTable) desktopTable.style.display = 'none';
+            if (mobileContainer) mobileContainer.style.display = 'block';
+        }
+    });
 </script>
 </body>
 </html>
