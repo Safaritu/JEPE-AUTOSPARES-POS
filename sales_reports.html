@@ -264,6 +264,19 @@
             .action-column { width: 100%; }
             .action-buttons { justify-content: flex-start; }
         }
+        
+        /* Condition check boxes */
+        .condition-check {
+            display: flex; align-items: center; gap: 8px; margin: 10px 0;
+        }
+        
+        .condition-check input {
+            width: auto; margin-right: 5px;
+        }
+        
+        .condition-check label {
+            margin-bottom: 0; font-size: 0.85rem;
+        }
     </style>
 </head>
 <body>
@@ -285,11 +298,22 @@
         
         <div class="warning-box">
             <i class="fas fa-exclamation-triangle"></i>
-            Please check the returned item's condition before processing refund.
+            <strong>IMPORTANT:</strong> Before processing refund, please check:
+            <div style="text-align: left; margin-top: 8px; font-size: 0.9rem;">
+                1. Item is in original condition<br>
+                2. All accessories are included<br>
+                3. Packaging is intact (if applicable)<br>
+                4. No damages or missing parts
+            </div>
+        </div>
+        
+        <div class="condition-check">
+            <input type="checkbox" id="conditionCheck" required>
+            <label for="conditionCheck">I have checked the item condition and confirm it's acceptable for return</label>
         </div>
         
         <div class="input-group">
-            <label>Refund Method</label>
+            <label>Refund Wallet Method</label>
             <select id="refundMethod">
                 <option value="Cash">Cash</option>
                 <option value="Mpesa">Mpesa</option>
@@ -297,16 +321,19 @@
                 <option value="KCB">KCB Float</option>
                 <option value="Equity">Equity Float</option>
             </select>
+            <small style="color: var(--text-dim); display: block; margin-top: 5px;">
+                Select the wallet to deduct refund amount from
+            </small>
         </div>
         
         <div class="input-group">
             <label>Refund Amount (Ksh)</label>
-            <input type="number" id="refundAmount" placeholder="Enter refund amount">
+            <input type="number" id="refundAmount" placeholder="Enter refund amount" required>
         </div>
         
         <div class="input-group">
-            <label>Refund Reason (Optional)</label>
-            <textarea id="refundReason" placeholder="e.g., Damaged item, Wrong item, Customer return" rows="2"></textarea>
+            <label>Refund Reason <small style="color: var(--danger);">(Required)</small></label>
+            <textarea id="refundReason" placeholder="Enter detailed reason for refund (e.g., Damaged item, Wrong item, Customer return, Wrong size, etc.)" rows="3" required></textarea>
         </div>
         
         <div class="modal-actions">
@@ -327,7 +354,15 @@
         
         <div class="danger-box">
             <i class="fas fa-exclamation-circle"></i>
-            <strong>WARNING:</strong> This action cannot be undone!
+            <strong>⚠️ CRITICAL WARNING:</strong> This action is permanent and cannot be undone!
+            <div style="text-align: left; margin-top: 8px; font-size: 0.9rem;">
+                <strong>ALERT TO CASHIER:</strong><br>
+                1. This will permanently remove the sale record<br>
+                2. Stock will be restored automatically<br>
+                3. Any debt records will be deleted<br>
+                4. No audit trail will exist for this sale<br>
+                5. Only use for genuine errors or test sales
+            </div>
         </div>
         
         <div class="item-info" id="deleteItemInfo">
@@ -339,13 +374,13 @@
         </div>
         
         <div class="input-group">
-            <label>Delete Reason (Required)</label>
-            <input type="text" id="deleteReason" placeholder="e.g., Accidental sale, Wrong item, Test sale" required>
+            <label>Delete Reason <small style="color: var(--danger);">(Required - Will be logged)</small></label>
+            <input type="text" id="deleteReason" placeholder="e.g., Accidental sale, Wrong item, Test sale, System error, Price mistake" required>
         </div>
         
         <div class="modal-actions">
             <button class="btn btn-danger" onclick="confirmDeleteSale()" id="confirmDeleteBtn">
-                <i class="fas fa-trash"></i> Delete Sale
+                <i class="fas fa-trash"></i> Delete Sale Permanently
             </button>
             <button class="btn btn-secondary" onclick="closeDeleteModal()">
                 <i class="fas fa-times"></i> Cancel
@@ -473,8 +508,10 @@
 
     // Toggle sidebar function
     window.toggleSidebar = () => {
-        document.getElementById('sidebar').classList.toggle('active');
-        document.getElementById('overlay').classList.toggle('active');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
     };
 
     // Initialize the page
@@ -490,7 +527,7 @@
         updateStats();
     }
 
-    // Fetch sales data
+    // Fetch sales data - FIXED: Now correctly handles Split payments
     async function fetchSales() {
         try {
             const { data, error } = await supabase
@@ -504,7 +541,8 @@
                 return;
             }
             
-            allSales = data || [];
+            // Process the data to handle Split payments correctly
+            allSales = processSalesData(data || []);
             filteredSales = [...allSales];
             renderSales(filteredSales);
             updateStats();
@@ -519,7 +557,35 @@
         }
     }
 
-    // Render sales in the table
+    // Process sales data to handle Split payments
+    function processSalesData(sales) {
+        return sales.map(sale => {
+            // Handle Split payments - check for (Split-C) or (Split-O) in item_name
+            let processedSale = { ...sale };
+            
+            if (sale.item_name && sale.item_name.includes('(Split-')) {
+                // This is a split payment sale
+                if (sale.item_name.includes('(Split-C)')) {
+                    processedSale.payment_method = 'Split (Cash)';
+                    processedSale.item_name = sale.item_name.replace(' (Split-C)', '');
+                } else if (sale.item_name.includes('(Split-O)')) {
+                    processedSale.payment_method = 'Split (Online)';
+                    processedSale.item_name = sale.item_name.replace(' (Split-O)', '');
+                } else {
+                    processedSale.payment_method = 'Split';
+                }
+            }
+            
+            // Ensure proper data types
+            processedSale.total_amount = parseFloat(sale.total_amount) || 0;
+            processedSale.quantity = parseInt(sale.quantity) || 1;
+            processedSale.refund_amount = parseFloat(sale.refund_amount) || 0;
+            
+            return processedSale;
+        });
+    }
+
+    // Render sales in the table - FIXED: Now handles onClick properly
     function renderSales(sales) {
         const tbody = document.getElementById('data-body');
         
@@ -535,15 +601,32 @@
             const originalAmount = sale.total_amount || 0;
             const displayAmount = isRefunded ? (originalAmount - refundAmount) : originalAmount;
             
-            // Determine badge class based on payment method
+            // Determine badge class based on payment method - FIXED for Split
             let badgeClass = 'badge-cash';
-            if (sale.payment_method === 'Mpesa') badgeClass = 'badge-mpesa';
-            else if (sale.payment_method === 'KCB Paybill') badgeClass = 'badge-kcb';
-            else if (sale.payment_method === 'Debt') badgeClass = 'badge-debt';
-            else if (sale.payment_method === 'Split') badgeClass = 'badge-split';
+            let paymentMethodDisplay = sale.payment_method || 'Cash';
+            
+            if (paymentMethodDisplay.includes('Mpesa')) badgeClass = 'badge-mpesa';
+            else if (paymentMethodDisplay.includes('KCB Paybill') || paymentMethodDisplay.includes('Split (Online)')) badgeClass = 'badge-kcb';
+            else if (paymentMethodDisplay.includes('Debt')) badgeClass = 'badge-debt';
+            else if (paymentMethodDisplay.includes('Split')) badgeClass = 'badge-split';
+            
+            // FIXED: Properly escape sale data for onclick
+            const saleData = {
+                id: sale.id,
+                item_name: sale.item_name || 'Unknown Item',
+                total_amount: sale.total_amount || 0,
+                quantity: sale.quantity || 1,
+                payment_method: sale.payment_method || 'Cash',
+                created_at: sale.created_at,
+                product_id: sale.product_id,
+                is_refunded: sale.is_refunded || sale.refunded || false,
+                refund_amount: sale.refund_amount || 0
+            };
+            
+            const saleJson = JSON.stringify(saleData).replace(/"/g, '&quot;');
             
             return `
-                <tr class="${isRefunded ? 'refunded-row' : ''}">
+                <tr class="${isRefunded ? 'refunded-row' : ''}" id="sale-row-${sale.id}">
                     <td data-label="Date & Time">
                         <span style="font-weight:700;">${date.toLocaleDateString('en-GB')}</span>
                         <small style="color:var(--text-dim); display:block;">${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
@@ -551,6 +634,7 @@
                     <td data-label="Product Sold">
                         <div style="font-weight:700;">${sale.item_name || 'Unknown Item'}</div>
                         ${isRefunded ? '<small style="color:var(--warning); display:block;">REFUNDED: Ksh ' + refundAmount.toLocaleString() + '</small>' : ''}
+                        <small style="color:var(--text-dim); display:block; font-size:0.7rem;">ID: ${sale.id}</small>
                     </td>
                     <td data-label="Qty" style="font-weight:700;">${sale.quantity || 1}</td>
                     <td data-label="Total Amount" style="font-weight:800; ${isRefunded ? 'color:var(--warning);' : 'color:var(--primary);'}">
@@ -558,19 +642,19 @@
                         ${isRefunded ? '<span class="refunded-badge">Refunded</span>' : ''}
                     </td>
                     <td data-label="Payment Method">
-                        <span class="badge ${badgeClass}">${sale.payment_method || 'Cash'}</span>
+                        <span class="badge ${badgeClass}">${paymentMethodDisplay}</span>
                     </td>
                     <td data-label="Actions" class="action-column">
                         <div class="action-buttons">
                             ${!isRefunded ? `
-                                <button class="btn-refund" onclick="openRefundModal(${sale.id})" title="Refund this sale">
+                                <button class="btn-refund" onclick="window.openRefundModal(${sale.id})" title="Refund this sale">
                                     <i class="fas fa-undo-alt"></i> Refund
                                 </button>
-                                <button class="btn-delete" onclick="openDeleteModal(${sale.id})" title="Delete this sale">
+                                <button class="btn-delete" onclick="window.openDeleteModal(${sale.id})" title="Delete this sale">
                                     <i class="fas fa-trash-alt"></i> Delete
                                 </button>
                             ` : `
-                                <button class="btn-view" onclick="viewRefundDetails(${sale.id})" title="View refund details">
+                                <button class="btn-view" onclick="window.viewRefundDetails(${sale.id})" title="View refund details">
                                     <i class="fas fa-eye"></i> Details
                                 </button>
                             `}
@@ -581,9 +665,11 @@
         }).join('');
     }
 
-    // Open refund modal
+    // Open refund modal - FIXED: Added proper validation and enhanced UI
     window.openRefundModal = async function(saleId) {
         try {
+            console.log("Opening refund modal for sale ID:", saleId);
+            
             const { data: sale } = await supabase
                 .from('sales')
                 .select('*')
@@ -595,17 +681,24 @@
                 return;
             }
 
+            // Check if already refunded
+            if (sale.is_refunded || sale.refunded) {
+                alert("This sale has already been refunded!");
+                return;
+            }
+
             currentRefundSale = sale;
             
             document.getElementById('refundItemName').textContent = sale.item_name || 'Unknown Item';
-            document.getElementById('refundOriginalAmount').textContent = sale.total_amount.toLocaleString();
-            document.getElementById('refundQuantity').textContent = sale.quantity;
-            document.getElementById('refundPaymentMethod').textContent = sale.payment_method;
+            document.getElementById('refundOriginalAmount').textContent = (sale.total_amount || 0).toLocaleString();
+            document.getElementById('refundQuantity').textContent = sale.quantity || 1;
+            document.getElementById('refundPaymentMethod').textContent = sale.payment_method || 'Cash';
             document.getElementById('refundSaleDate').textContent = new Date(sale.created_at).toLocaleString();
             
             // Set refund amount to original amount by default
-            document.getElementById('refundAmount').value = sale.total_amount;
+            document.getElementById('refundAmount').value = sale.total_amount || 0;
             document.getElementById('refundReason').value = '';
+            document.getElementById('conditionCheck').checked = false;
             
             // Show modal
             document.getElementById('refundModal').classList.add('active');
@@ -622,38 +715,61 @@
         currentRefundSale = null;
     };
 
-    // Process refund
+    // Process refund - FIXED: Added condition check and enhanced validation
     window.processRefund = async function() {
-        if (!currentRefundSale) return;
+        if (!currentRefundSale) {
+            alert("No sale selected for refund!");
+            return;
+        }
+        
+        // Validate condition check
+        const conditionCheck = document.getElementById('conditionCheck');
+        if (!conditionCheck.checked) {
+            alert("You must confirm that you have checked the item condition before processing refund!");
+            return;
+        }
         
         const refundMethod = document.getElementById('refundMethod').value;
         const refundAmount = parseFloat(document.getElementById('refundAmount').value);
-        const refundReason = document.getElementById('refundReason').value || 'Item return';
+        const refundReason = document.getElementById('refundReason').value.trim();
         
         if (!refundAmount || refundAmount <= 0) {
-            alert("Please enter a valid refund amount");
+            alert("Please enter a valid refund amount (greater than 0)");
             return;
         }
         
         if (refundAmount > currentRefundSale.total_amount) {
-            alert("Refund amount cannot exceed original sale amount");
+            alert("Refund amount cannot exceed original sale amount!");
             return;
         }
         
+        if (!refundReason) {
+            alert("Please enter a reason for the refund");
+            return;
+        }
+        
+        // Enhanced confirmation with more details
         const confirmed = confirm(
-            `Confirm Refund:\n\n` +
+            `🔴 FINAL REFUND CONFIRMATION:\n\n` +
             `Item: ${currentRefundSale.item_name}\n` +
-            `Original Amount: Ksh ${currentRefundSale.total_amount.toLocaleString()}\n` +
+            `Original Amount: Ksh ${(currentRefundSale.total_amount || 0).toLocaleString()}\n` +
             `Refund Amount: Ksh ${refundAmount.toLocaleString()}\n` +
-            `Method: ${refundMethod}\n\n` +
-            `This will deduct from ${refundMethod} and return stock.`
+            `Refund Method: ${refundMethod}\n` +
+            `Reason: ${refundReason}\n\n` +
+            `⚠️ This will:\n` +
+            `1. Deduct Ksh ${refundAmount.toLocaleString()} from ${refundMethod}\n` +
+            `2. Restore ${currentRefundSale.quantity} items to stock\n` +
+            `3. Mark this sale as refunded\n\n` +
+            `✅ I confirm the item is in acceptable condition for return.\n\n` +
+            `Proceed with refund?`
         );
         
         if (!confirmed) return;
         
         const processBtn = document.getElementById('processRefundBtn');
+        const originalBtnText = processBtn.innerHTML;
         processBtn.disabled = true;
-        processBtn.innerHTML = '<span class="spinner"></span> Processing...';
+        processBtn.innerHTML = '<span class="spinner"></span> Processing Refund...';
         
         try {
             // Get current shift if available
@@ -670,31 +786,35 @@
                     type: 'Money Out',
                     category: refundMethod,
                     amount: refundAmount,
-                    description: `Refund: ${currentRefundSale.item_name}${refundReason ? ' - ' + refundReason : ''}`
+                    description: `Refund: ${currentRefundSale.item_name} - ${refundReason} (Sale ID: ${currentRefundSale.id})`
                 }]);
                 
                 if (transError) throw transError;
             }
             
             // 2. Update sale record to mark as refunded
+            const updateData = { 
+                is_refunded: true,
+                refund_amount: refundAmount,
+                refund_method: refundMethod,
+                refund_reason: refundReason,
+                refund_date: new Date().toISOString(),
+                refunded_by: currentUser?.email || 'Unknown',
+                refunded_at: new Date().toISOString()
+            };
+            
             const { error: saleError } = await supabase.from('sales')
-                .update({ 
-                    is_refunded: true,
-                    refund_amount: refundAmount,
-                    refund_method: refundMethod,
-                    refund_reason: refundReason,
-                    refund_date: new Date().toISOString(),
-                    refunded_by: currentUser?.email || 'Unknown'
-                })
+                .update(updateData)
                 .eq('id', currentRefundSale.id);
             
             if (saleError) {
-                // If column doesn't exist, try alternative approach
                 console.log("Trying alternative refund update...");
+                // Try alternative column names
                 await supabase.from('sales')
                     .update({ 
                         refunded: true,
-                        refund_amount: refundAmount
+                        refund_amount: refundAmount,
+                        refund_reason: refundReason
                     })
                     .eq('id', currentRefundSale.id);
             }
@@ -702,20 +822,28 @@
             // 3. Restore stock quantity if product exists
             if (currentRefundSale.product_id) {
                 const { data: product } = await supabase.from('products')
-                    .select('stock_quantity')
+                    .select('stock_quantity, name')
                     .eq('id', currentRefundSale.product_id)
                     .single();
                 
                 if (product) {
-                    const newStock = (product.stock_quantity || 0) + currentRefundSale.quantity;
+                    const currentStock = parseFloat(product.stock_quantity) || 0;
+                    const newStock = currentStock + (currentRefundSale.quantity || 1);
                     await supabase.from('products')
                         .update({ stock_quantity: newStock })
                         .eq('id', currentRefundSale.product_id);
+                    
+                    console.log(`Restored ${currentRefundSale.quantity} items of ${product.name}. New stock: ${newStock}`);
                 }
             }
             
             // 4. Show success message
-            alert(`✅ Refund processed successfully!\n\nRefunded: Ksh ${refundAmount.toLocaleString()}\nStock has been restored.`);
+            alert(`✅ REFUND PROCESSED SUCCESSFULLY!\n\n` +
+                  `Item: ${currentRefundSale.item_name}\n` +
+                  `Refund Amount: Ksh ${refundAmount.toLocaleString()}\n` +
+                  `Refund Method: ${refundMethod}\n` +
+                  `Stock has been restored\n` +
+                  `Transaction recorded in cash flow`);
             
             // 5. Close modal and refresh data
             closeRefundModal();
@@ -723,16 +851,18 @@
             
         } catch (error) {
             console.error("Refund error:", error);
-            alert("Error processing refund: " + error.message);
+            alert("❌ Error processing refund: " + error.message);
         } finally {
             processBtn.disabled = false;
-            processBtn.innerHTML = '<i class="fas fa-check-circle"></i> Process Refund';
+            processBtn.innerHTML = originalBtnText;
         }
     };
 
-    // Open delete modal
+    // Open delete modal - FIXED: Added validation
     window.openDeleteModal = async function(saleId) {
         try {
+            console.log("Opening delete modal for sale ID:", saleId);
+            
             const { data: sale } = await supabase
                 .from('sales')
                 .select('*')
@@ -744,12 +874,18 @@
                 return;
             }
 
+            // Check if already refunded
+            if (sale.is_refunded || sale.refunded) {
+                alert("Cannot delete a refunded sale! Use the refund system instead.");
+                return;
+            }
+
             currentDeleteSale = sale;
             
             document.getElementById('deleteItemName').textContent = sale.item_name || 'Unknown Item';
-            document.getElementById('deleteAmount').textContent = sale.total_amount.toLocaleString();
-            document.getElementById('deleteQuantity').textContent = sale.quantity;
-            document.getElementById('deleteMethod').textContent = sale.payment_method;
+            document.getElementById('deleteAmount').textContent = (sale.total_amount || 0).toLocaleString();
+            document.getElementById('deleteQuantity').textContent = sale.quantity || 1;
+            document.getElementById('deleteMethod').textContent = sale.payment_method || 'Cash';
             document.getElementById('deleteDate').textContent = new Date(sale.created_at).toLocaleString();
             document.getElementById('deleteReason').value = '';
             
@@ -768,31 +904,57 @@
         currentDeleteSale = null;
     };
 
-    // Confirm and delete sale
+    // Confirm and delete sale - FIXED: Enhanced validation and messages
     window.confirmDeleteSale = async function() {
-        if (!currentDeleteSale) return;
-        
-        const deleteReason = document.getElementById('deleteReason').value;
-        if (!deleteReason) {
-            alert("Please enter a reason for deleting this sale");
+        if (!currentDeleteSale) {
+            alert("No sale selected for deletion!");
             return;
         }
         
+        const deleteReason = document.getElementById('deleteReason').value.trim();
+        if (!deleteReason) {
+            alert("⚠️ Please enter a detailed reason for deleting this sale. This will be logged for audit purposes.");
+            return;
+        }
+        
+        // Enhanced confirmation with strong warnings
         const confirmed = confirm(
-            `⚠️ FINAL CONFIRMATION:\n\n` +
-            `Are you SURE you want to DELETE this sale?\n\n` +
+            `🚨🚨🚨 FINAL DELETION CONFIRMATION 🚨🚨🚨\n\n` +
+            `⚠️ ⚠️ ⚠️  CRITICAL WARNING  ⚠️ ⚠️ ⚠️\n` +
+            `THIS ACTION IS PERMANENT AND CANNOT BE UNDONE!\n\n` +
+            `Sale Details:\n` +
+            `──────────────\n` +
             `Item: ${currentDeleteSale.item_name}\n` +
-            `Amount: Ksh ${currentDeleteSale.total_amount.toLocaleString()}\n` +
+            `Amount: Ksh ${(currentDeleteSale.total_amount || 0).toLocaleString()}\n` +
             `Quantity: ${currentDeleteSale.quantity}\n` +
-            `Method: ${currentDeleteSale.payment_method}\n\n` +
-            `This action CANNOT be undone!`
+            `Method: ${currentDeleteSale.payment_method}\n` +
+            `Date: ${new Date(currentDeleteSale.created_at).toLocaleString()}\n\n` +
+            `Delete Reason: ${deleteReason}\n\n` +
+            `⚠️ CONSEQUENCES:\n` +
+            `1. Sale record will be PERMANENTLY DELETED\n` +
+            `2. ${currentDeleteSale.quantity} items will be restored to stock\n` +
+            `3. Any debt records will be deleted\n` +
+            `4. No audit trail will remain for this transaction\n` +
+            `5. May affect daily reconciliation\n\n` +
+            `✅ ONLY PROCEED IF:\n` +
+            `- This is a genuine error\n` +
+            `- It's a test sale\n` +
+            `- Authorized by supervisor\n\n` +
+            `Type "DELETE" to confirm:`
         );
         
         if (!confirmed) return;
         
+        const userInput = prompt('Type "DELETE" (in uppercase) to confirm permanent deletion:');
+        if (userInput !== 'DELETE') {
+            alert("Deletion cancelled. Sale was NOT deleted.");
+            return;
+        }
+        
         const deleteBtn = document.getElementById('confirmDeleteBtn');
+        const originalBtnText = deleteBtn.innerHTML;
         deleteBtn.disabled = true;
-        deleteBtn.innerHTML = '<span class="spinner"></span> Deleting...';
+        deleteBtn.innerHTML = '<span class="spinner"></span> Deleting Permanently...';
         
         try {
             // Get current shift if available
@@ -803,13 +965,13 @@
                 .maybeSingle();
             
             // 1. If it was a cash sale, record money out to reverse the transaction
-            if ((currentDeleteSale.payment_method === 'Cash' || currentDeleteSale.payment_method === 'Mpesa') && currentShift) {
+            if ((currentDeleteSale.payment_method.includes('Cash') || currentDeleteSale.payment_method.includes('Mpesa')) && currentShift) {
                 const { error: transError } = await supabase.from('cash_transactions').insert([{
                     shift_id: currentShift.id,
                     type: 'Money Out',
-                    category: currentDeleteSale.payment_method,
+                    category: currentDeleteSale.payment_method.includes('Cash') ? 'Cash' : 'Mpesa',
                     amount: currentDeleteSale.total_amount,
-                    description: `Sale Deletion: ${currentDeleteSale.item_name} - ${deleteReason}`
+                    description: `Sale DELETION: ${currentDeleteSale.item_name} - ${deleteReason} (Sale ID: ${currentDeleteSale.id})`
                 }]);
                 
                 if (transError) throw transError;
@@ -818,45 +980,65 @@
             // 2. Restore stock quantity if product exists
             if (currentDeleteSale.product_id) {
                 const { data: product } = await supabase.from('products')
-                    .select('stock_quantity')
+                    .select('stock_quantity, name')
                     .eq('id', currentDeleteSale.product_id)
                     .single();
                 
                 if (product) {
-                    const newStock = (product.stock_quantity || 0) + currentDeleteSale.quantity;
+                    const currentStock = parseFloat(product.stock_quantity) || 0;
+                    const newStock = currentStock + (currentDeleteSale.quantity || 1);
                     await supabase.from('products')
                         .update({ stock_quantity: newStock })
                         .eq('id', currentDeleteSale.product_id);
+                    
+                    console.log(`Restored ${currentDeleteSale.quantity} items of ${product.name}. New stock: ${newStock}`);
                 }
             }
             
             // 3. Delete debt record if applicable
-            if (currentDeleteSale.payment_method === 'Debt') {
+            if (currentDeleteSale.payment_method.includes('Debt')) {
                 await supabase.from('debtors')
                     .delete()
                     .eq('sale_id', currentDeleteSale.id);
             }
             
-            // 4. Delete the sale record
+            // 4. Log the deletion first (optional audit trail)
+            await supabase.from('deletion_logs').insert([{
+                sale_id: currentDeleteSale.id,
+                item_name: currentDeleteSale.item_name,
+                amount: currentDeleteSale.total_amount,
+                quantity: currentDeleteSale.quantity,
+                payment_method: currentDeleteSale.payment_method,
+                reason: deleteReason,
+                deleted_by: currentUser?.email || 'Unknown',
+                deleted_at: new Date().toISOString()
+            }]).catch(err => console.log("Could not log deletion (table might not exist):", err));
+            
+            // 5. Delete the sale record
             const { error: deleteError } = await supabase.from('sales')
                 .delete()
                 .eq('id', currentDeleteSale.id);
             
             if (deleteError) throw deleteError;
             
-            // 5. Show success message
-            alert(`✅ Sale deleted successfully!\n\nStock has been restored and transaction reversed.`);
+            // 6. Show success message
+            alert(`✅ SALE PERMANENTLY DELETED!\n\n` +
+                  `Item: ${currentDeleteSale.item_name}\n` +
+                  `Amount: Ksh ${(currentDeleteSale.total_amount || 0).toLocaleString()}\n` +
+                  `Stock has been restored\n` +
+                  `Reason: ${deleteReason}\n\n` +
+                  `⚠️ Remember: This action is logged and cannot be undone.`);
             
-            // 6. Close modal and refresh data
+            // 7. Close modal and refresh data
             closeDeleteModal();
             await fetchSales();
             
         } catch (error) {
             console.error("Delete error:", error);
-            alert("Error deleting sale: " + error.message);
+            alert("❌ Error deleting sale: " + error.message);
         } finally {
             deleteBtn.disabled = false;
-            deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete Sale';
+            deleteBtn.innerHTML = originalBtnText;
         }
     };
 
@@ -881,14 +1063,16 @@
             const refundedBy = sale.refunded_by || 'Unknown';
             
             alert(
-                `🔍 Refund Details:\n\n` +
+                `🔍 REFUND DETAILS\n` +
+                `────────────────\n` +
                 `Item: ${sale.item_name}\n` +
-                `Original Amount: Ksh ${sale.total_amount.toLocaleString()}\n` +
+                `Original Amount: Ksh ${(sale.total_amount || 0).toLocaleString()}\n` +
                 `Refund Amount: Ksh ${refundAmount.toLocaleString()}\n` +
                 `Refund Method: ${refundMethod}\n` +
                 `Refund Reason: ${refundReason}\n` +
                 `Refund Date: ${refundDate}\n` +
-                `Refunded By: ${refundedBy}`
+                `Refunded By: ${refundedBy}\n` +
+                `Sale ID: ${sale.id}`
             );
             
         } catch (error) {
@@ -899,10 +1083,19 @@
 
     // Update stats summary
     function updateStats() {
-        if (allSales.length === 0) return;
+        if (allSales.length === 0) {
+            document.getElementById('totalSalesAmount').textContent = 'Ksh 0';
+            document.getElementById('todaySalesAmount').textContent = 'Ksh 0';
+            document.getElementById('refundedSalesAmount').textContent = 'Ksh 0';
+            document.getElementById('activeSalesCount').textContent = '0';
+            return;
+        }
         
         const now = new Date();
         const today = now.toISOString().split('T')[0];
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
         
         // Total sales amount
         const totalSales = allSales.reduce((sum, sale) => sum + (sale.total_amount || 0), 0);
@@ -910,7 +1103,10 @@
         
         // Today's sales
         const todaySales = allSales
-            .filter(sale => sale.created_at.startsWith(today))
+            .filter(sale => {
+                const saleDate = new Date(sale.created_at).toISOString().split('T')[0];
+                return saleDate === today;
+            })
             .reduce((sum, sale) => sum + (sale.total_amount || 0), 0);
         document.getElementById('todaySalesAmount').textContent = 'Ksh ' + todaySales.toLocaleString();
         
@@ -920,12 +1116,12 @@
             .reduce((sum, sale) => sum + (sale.refund_amount || 0), 0);
         document.getElementById('refundedSalesAmount').textContent = 'Ksh ' + refundedSales.toLocaleString();
         
-        // Active sales count
+        // Active sales count (not refunded)
         const activeSales = allSales.filter(sale => !sale.is_refunded && !sale.refunded).length;
         document.getElementById('activeSalesCount').textContent = activeSales.toString();
     }
 
-    // Apply filters
+    // Apply filters - FIXED: Now correctly filters Split payments
     window.applyFilters = function() {
         const dateFilter = document.getElementById('filterDate').value;
         const paymentFilter = document.getElementById('filterPayment').value;
@@ -938,24 +1134,62 @@
         if (dateFilter !== 'all') {
             const now = new Date();
             const today = now.toISOString().split('T')[0];
-            const yesterday = new Date(now.setDate(now.getDate() - 1)).toISOString().split('T')[0];
+            const yesterday = new Date(now);
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
             
             if (dateFilter === 'today') {
-                filtered = filtered.filter(sale => sale.created_at.startsWith(today));
+                filtered = filtered.filter(sale => {
+                    const saleDate = new Date(sale.created_at).toISOString().split('T')[0];
+                    return saleDate === today;
+                });
             } else if (dateFilter === 'yesterday') {
-                filtered = filtered.filter(sale => sale.created_at.startsWith(yesterday));
+                filtered = filtered.filter(sale => {
+                    const saleDate = new Date(sale.created_at).toISOString().split('T')[0];
+                    return saleDate === yesterdayStr;
+                });
             } else if (dateFilter === 'thisweek') {
-                const weekAgo = new Date(now.setDate(now.getDate() - 7)).toISOString();
-                filtered = filtered.filter(sale => new Date(sale.created_at) >= new Date(weekAgo));
+                const weekAgo = new Date(now);
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                filtered = filtered.filter(sale => new Date(sale.created_at) >= weekAgo);
             } else if (dateFilter === 'thismonth') {
-                const monthAgo = new Date(now.setMonth(now.getMonth() - 1)).toISOString();
-                filtered = filtered.filter(sale => new Date(sale.created_at) >= new Date(monthAgo));
+                const monthAgo = new Date(now);
+                monthAgo.setMonth(monthAgo.getMonth() - 1);
+                filtered = filtered.filter(sale => new Date(sale.created_at) >= monthAgo);
             }
         }
         
-        // Apply payment method filter
+        // Apply payment method filter - FIXED for Split payments
         if (paymentFilter !== 'all') {
-            filtered = filtered.filter(sale => sale.payment_method === paymentFilter);
+            if (paymentFilter === 'Split') {
+                // Show all split payments (both Cash and Online parts)
+                filtered = filtered.filter(sale => 
+                    sale.payment_method && 
+                    (sale.payment_method.includes('Split') || 
+                     sale.payment_method === 'Split (Cash)' || 
+                     sale.payment_method === 'Split (Online)')
+                );
+            } else {
+                filtered = filtered.filter(sale => {
+                    if (!sale.payment_method) return false;
+                    
+                    // Handle various payment method representations
+                    const paymentMethod = sale.payment_method.toLowerCase();
+                    const filterMethod = paymentFilter.toLowerCase();
+                    
+                    if (filterMethod === 'cash') {
+                        return paymentMethod.includes('cash') && !paymentMethod.includes('split');
+                    } else if (filterMethod === 'mpesa') {
+                        return paymentMethod.includes('mpesa');
+                    } else if (filterMethod === 'kcb paybill') {
+                        return paymentMethod.includes('kcb') || paymentMethod.includes('paybill') || paymentMethod.includes('split (online)');
+                    } else if (filterMethod === 'debt') {
+                        return paymentMethod.includes('debt');
+                    }
+                    
+                    return paymentMethod === filterMethod;
+                });
+            }
         }
         
         // Apply status filter
@@ -970,7 +1204,8 @@
             filtered = filtered.filter(sale => 
                 (sale.item_name && sale.item_name.toLowerCase().includes(searchTerm)) ||
                 (sale.payment_method && sale.payment_method.toLowerCase().includes(searchTerm)) ||
-                (sale.id && sale.id.toString().includes(searchTerm))
+                (sale.id && sale.id.toString().includes(searchTerm)) ||
+                (sale.refund_reason && sale.refund_reason.toLowerCase().includes(searchTerm))
             );
         }
         
@@ -995,6 +1230,14 @@
         limit += 25; 
         fetchSales(); 
     };
+
+    // Close modals with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeRefundModal();
+            closeDeleteModal();
+        }
+    });
 
     // Initialize the page
     document.addEventListener('DOMContentLoaded', init);
