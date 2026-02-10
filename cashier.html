@@ -6,6 +6,7 @@
     <title>JEPE POS | WELCOME BACK CASHIER</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { 
             --primary: #4f46e5; 
@@ -38,90 +39,361 @@
 
         .container { max-width: 1450px; margin: auto; width: 100%; }
         
-        header { 
-            display: flex; flex-direction: column; gap: 15px;
-            margin-bottom: 25px; padding: 20px; 
-            background: #fff; border-radius: 16px;
-            box-shadow: var(--shadow); border: 1px solid var(--border);
+        /* Compact Header */
+        .compact-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
         }
-
-        @media (min-width: 768px) {
-            header { flex-direction: row; justify-content: space-between; align-items: center; }
-            body { padding: 15px; }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
-
-        .logo { font-size: 1.4rem; font-weight: 800; letter-spacing: -1px; color: #111827; }
-        .logo span { color: var(--primary); font-weight: 500; font-size: 0.9rem; margin-left: 5px; opacity: 0.8; }
-
+        
+        .profile-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        
+        .logo-compact {
+            font-size: 1.2rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            color: #111827;
+        }
+        
+        .logo-compact span {
+            color: var(--primary);
+            font-weight: 500;
+            font-size: 0.8rem;
+            margin-left: 5px;
+            opacity: 0.8;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
         .special-action-btn {
-            font-size: 0.9rem !important;
-            padding: 12px 20px !important;
-            border-radius: 12px !important;
-            box-shadow: 0 0 15px rgba(79, 70, 229, 0.4) !important;
+            font-size: 0.8rem !important;
+            padding: 10px 16px !important;
+            border-radius: 10px !important;
+            box-shadow: 0 0 10px rgba(79, 70, 229, 0.4) !important;
             border: 2px solid white !important;
         }
 
         .float-status-card {
-            background: #fff; padding: 20px; border-radius: 16px; border: 1px solid var(--border);
-            margin-bottom: 25px; display: grid; grid-template-columns: repeat(2, 1fr);
-            gap: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            background: #fff; 
+            padding: 15px; 
+            border-radius: 16px; 
+            border: 1px solid var(--border);
+            margin-bottom: 20px; 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+        
+        /* Low float warning */
+        .low-float-warning {
+            background: #fee2e2 !important;
+            color: #b91c1c !important;
+            border-color: #fecaca !important;
+            animation: pulse-red 1.5s infinite;
         }
 
-        @media (min-width: 600px) { .float-status-card { grid-template-columns: repeat(5, 1fr); } }
+        @media (min-width: 600px) { 
+            .float-status-card { 
+                grid-template-columns: repeat(5, 1fr); 
+                padding: 20px;
+                gap: 15px;
+            } 
+        }
 
-        .float-item { text-align: center; }
-        .float-item label { display: block; font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; font-weight: 800; }
-        .float-item span { font-size: 1.1rem; font-weight: 800; color: var(--primary); }
-        .kcb-live-box { border: 2px solid var(--primary); border-radius: 12px; background: #f5f3ff; }
+        .float-item { 
+            text-align: center; 
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+        
+        .float-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .float-item label { 
+            display: block; 
+            font-size: 0.6rem; 
+            color: var(--text-dim); 
+            text-transform: uppercase; 
+            font-weight: 800; 
+            margin-bottom: 5px;
+        }
+        
+        .float-item span { 
+            font-size: 1rem; 
+            font-weight: 800; 
+            color: var(--primary); 
+            display: block;
+        }
+        
+        @media (min-width: 768px) {
+            .float-item span { font-size: 1.1rem; }
+            .float-item label { font-size: 0.65rem; }
+        }
+        
+        .kcb-live-box { 
+            border: 2px solid var(--primary); 
+            border-radius: 12px; 
+            background: #f5f3ff; 
+        }
 
         .card { 
-            background: var(--card-bg); border-radius: 20px; border: 1px solid var(--border); 
-            padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow);
+            background: var(--card-bg); 
+            border-radius: 16px; 
+            border: 1px solid var(--border); 
+            padding: 15px; 
+            margin-bottom: 15px; 
+            box-shadow: var(--shadow);
+        }
+        
+        @media (min-width: 768px) {
+            .card {
+                padding: 20px;
+                margin-bottom: 20px;
+                border-radius: 20px;
+            }
         }
 
         .section-label { 
-            font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.12em; 
-            color: var(--primary); margin-bottom: 20px; font-weight: 800; 
-            display: flex; align-items: center; gap: 10px; 
+            font-size: 0.7rem; 
+            text-transform: uppercase; 
+            letter-spacing: 0.1em; 
+            color: var(--primary); 
+            margin-bottom: 15px; 
+            font-weight: 800; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
         }
-        .section-label::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+        
+        @media (min-width: 768px) {
+            .section-label {
+                font-size: 0.75rem;
+                margin-bottom: 20px;
+            }
+        }
+        
+        .section-label::after { 
+            content: ""; 
+            flex: 1; 
+            height: 1px; 
+            background: var(--border); 
+        }
 
-        .grid-inputs { display: grid; gap: 15px; }
+        .grid-inputs { display: grid; gap: 12px; }
         .input-group { display: flex; flex-direction: column; }
-        label { margin-bottom: 6px; font-weight: 700; color: var(--text-main); font-size: 0.75rem; }
+        label { 
+            margin-bottom: 5px; 
+            font-weight: 700; 
+            color: var(--text-main); 
+            font-size: 0.7rem; 
+        }
+        
+        @media (min-width: 768px) {
+            label { font-size: 0.75rem; }
+        }
         
         input, select { 
-            background: #f8fafc; border: 1px solid var(--border); padding: 14px; border-radius: 12px; 
-            font-size: 16px; font-family: inherit; transition: 0.2s; color: var(--text-main); width: 100%;
+            background: #f8fafc; 
+            border: 1px solid var(--border); 
+            padding: 12px; 
+            border-radius: 10px; 
+            font-size: 14px; 
+            font-family: inherit; 
+            transition: 0.2s; 
+            color: var(--text-main); 
+            width: 100%;
         }
         
-        .hint-badge { padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; margin-top: 5px; }
+        @media (min-width: 768px) {
+            input, select {
+                padding: 14px;
+                font-size: 16px;
+                border-radius: 12px;
+            }
+        }
+        
+        .hint-badge { 
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 0.65rem; 
+            font-weight: 700; 
+            margin-top: 5px; 
+        }
+        
+        @media (min-width: 768px) {
+            .hint-badge {
+                font-size: 0.7rem;
+            }
+        }
+        
         .bg-stock { background: #dcfce7; color: #166534; }
         .bg-min { background: #fef9c3; color: #854d0e; }
 
-        .table-card { border-radius: 16px; margin-bottom: 10px; width: 100%; background: #fff; border: 1px solid var(--border); overflow-x: auto; }
+        .table-card { 
+            border-radius: 16px; 
+            margin-bottom: 10px; 
+            width: 100%; 
+            background: #fff; 
+            border: 1px solid var(--border); 
+            overflow-x: auto; 
+        }
+        
         table { width: 100%; border-collapse: collapse; }
-        th { padding: 15px 20px; background: #f8fafc; font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); font-weight: 800; text-align: left; border-bottom: 2px solid var(--border); }
-        td { padding: 14px 20px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+        th { 
+            padding: 12px 15px; 
+            background: #f8fafc; 
+            font-size: 0.65rem; 
+            text-transform: uppercase; 
+            color: var(--text-dim); 
+            font-weight: 800; 
+            text-align: left; 
+            border-bottom: 2px solid var(--border); 
+        }
+        
+        td { 
+            padding: 10px 15px; 
+            border-bottom: 1px solid var(--border); 
+            font-size: 0.8rem; 
+        }
+        
+        @media (min-width: 768px) {
+            th { padding: 15px 20px; font-size: 0.7rem; }
+            td { padding: 14px 20px; font-size: 0.85rem; }
+        }
 
         @media (max-width: 768px) {
             .mobile-hide-header { display: none; }
-            tr { display: block; background: white; margin-bottom: 15px; padding: 15px; border-radius: 15px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
-            td { display: flex; justify-content: space-between; padding: 10px 0; border: none !important; border-bottom: 1px dashed #f1f5f9 !important; text-align: right; }
-            td::before { content: attr(data-label); font-weight: 800; color: var(--text-dim); font-size: 0.65rem; display: block; text-align: left; }
+            tr { 
+                display: block; 
+                background: white; 
+                margin-bottom: 10px; 
+                padding: 10px; 
+                border-radius: 12px; 
+                border: 1px solid var(--border); 
+                box-shadow: 0 2px 4px rgba(0,0,0,0.04); 
+            }
+            td { 
+                display: flex; 
+                justify-content: space-between; 
+                padding: 8px 0; 
+                border: none !important; 
+                border-bottom: 1px dashed #f1f5f9 !important; 
+                text-align: right; 
+            }
+            td::before { 
+                content: attr(data-label); 
+                font-weight: 800; 
+                color: var(--text-dim); 
+                font-size: 0.6rem; 
+                display: block; 
+                text-align: left; 
+            }
         }
 
-        .btn { padding: 16px 24px; border-radius: 12px; font-weight: 800; cursor: pointer; border: none; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 8px; text-transform: uppercase; transition: 0.3s opacity; }
+        .btn { 
+            padding: 14px 20px; 
+            border-radius: 10px; 
+            font-weight: 800; 
+            cursor: pointer; 
+            border: none; 
+            font-size: 0.85rem; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 6px; 
+            text-transform: uppercase; 
+            transition: 0.3s opacity; 
+        }
+        
+        @media (min-width: 768px) {
+            .btn {
+                padding: 16px 24px;
+                font-size: 0.9rem;
+                border-radius: 12px;
+            }
+        }
+        
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-sync { background: var(--warning); color: white; }
 
-        .overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(8px); padding: 20px; }
-        .modal { background: #fff; padding: 25px; border-radius: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+        .overlay { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(15, 23, 42, 0.8); 
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 1000; 
+            backdrop-filter: blur(8px); 
+            padding: 15px; 
+        }
         
-        .dual-tables { display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; }
-        @media (min-width: 1024px) { .dual-tables { grid-template-columns: 1.2fr 1fr; } }
+        .modal { 
+            background: #fff; 
+            padding: 20px; 
+            border-radius: 20px; 
+            width: 100%; 
+            max-width: 450px; 
+            max-height: 90vh; 
+            overflow-y: auto; 
+        }
+        
+        @media (min-width: 768px) {
+            .modal {
+                padding: 25px;
+                max-width: 500px;
+                border-radius: 24px;
+            }
+        }
+        
+        .dual-tables { 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 15px; 
+            width: 100%; 
+        }
+        
+        @media (min-width: 1024px) { 
+            .dual-tables { 
+                grid-template-columns: 1.2fr 1fr; 
+                gap: 20px; 
+            } 
+        }
 
         .text-success { color: #15803d !important; font-weight: 700; }
         .text-danger { color: #b91c1c !important; font-weight: 700; }
@@ -133,102 +405,263 @@
         .variance-positive { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
         .variance-negative { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
 
-        .float-list { margin: 0; padding: 0; list-style: none; font-size: 0.75rem; color: var(--text-dim); }
-        .float-list li { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid #f8fafc; }
-        .float-list li b { color: var(--text-main); }
-        .total-cell { font-weight: 800; color: var(--primary); border-top: 2px solid var(--border); margin-top: 5px; padding-top: 5px; font-size: 0.85rem; display: flex; justify-content: space-between; }
-        
         .search-input {
             width: 100%;
-            padding: 16px 20px;
+            padding: 14px 18px;
             border: 2px solid var(--border);
-            border-radius: 15px;
-            font-size: 16px;
+            border-radius: 12px;
+            font-size: 14px;
             outline: none;
             font-family: inherit;
             transition: border-color 0.2s;
             background: white;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
+        
+        @media (min-width: 768px) {
+            .search-input {
+                padding: 16px 20px;
+                font-size: 16px;
+                border-radius: 15px;
+                margin-bottom: 25px;
+            }
+        }
+        
         .search-input:focus { border-color: var(--primary); }
 
         .account-line { display: flex; justify-content: space-between; margin-bottom: 4px; border-bottom: 1px dashed #f1f5f9; padding-bottom: 2px; }
-        .account-label { color: var(--text-dim); font-size: 0.75rem; font-weight: 500; }
-        .account-val { font-weight: 600; color: var(--text-main); font-size: 0.8rem; }
-        .total-row { font-weight: 800; margin-top: 10px; padding: 8px; background: #f5f3ff; color: var(--primary); border-radius: 6px; text-align: center; }
-        .status-badge { font-weight: 800; padding: 10px 15px; border-radius: 10px; font-size: 0.85rem; display: block; text-align: center; min-width: 140px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .account-label { color: var(--text-dim); font-size: 0.7rem; font-weight: 500; }
+        .account-val { font-weight: 600; color: var(--text-main); font-size: 0.75rem; }
+        .total-row { font-weight: 800; margin-top: 8px; padding: 6px; background: #f5f3ff; color: var(--primary); border-radius: 6px; text-align: center; }
+        .status-badge { font-weight: 800; padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; display: block; text-align: center; min-width: 120px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .active-shift { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
-        .date-cell b { display: block; margin-bottom: 8px; font-size: 1rem; }
-        .time-pill { background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; color: var(--text-dim); display: inline-block; margin-top: 4px; }
-        .revenue-card { background: #fff; border: 1px solid var(--border); padding: 12px; border-radius: 10px; text-decoration: none; display: block; transition: 0.2s; }
-        .revenue-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+        .date-cell b { display: block; margin-bottom: 5px; font-size: 0.9rem; }
+        .time-pill { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; color: var(--text-dim); display: inline-block; margin-top: 3px; }
+        
+        @media (min-width: 768px) {
+            .date-cell b { font-size: 1rem; margin-bottom: 8px; }
+            .time-pill { font-size: 0.7rem; margin-top: 4px; }
+            .account-label { font-size: 0.75rem; }
+            .account-val { font-size: 0.8rem; }
+            .total-row { margin-top: 10px; padding: 8px; }
+            .status-badge { 
+                padding: 10px 15px; 
+                font-size: 0.85rem; 
+                min-width: 140px; 
+                border-radius: 10px; 
+            }
+        }
+        
+        /* Compact Mobile View for History Table */
+        .history-table-compact {
+            min-width: 1000px !important;
+        }
+        
+        @media (max-width: 1024px) {
+            .history-table-compact {
+                min-width: 900px !important;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .history-table-compact {
+                min-width: 700px !important;
+            }
+        }
         
         /* --- NAVIGATION --- */
-        .nav-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(15px); z-index: 3000; display: none; flex-direction: column; padding: 60px 20px 40px 20px; overflow-y: auto; }
-        .nav-overlay.active { display: flex; animation: fadeIn 0.3s ease forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .nav-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; max-width: 500px; margin: 0 auto; }
-        .nav-card { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 15px 8px; text-align: center; color: white; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .nav-card span { font-size: 1.2rem; }
-        .nav-card small { font-size: 0.7rem; font-weight: 600; line-height: 1.2; }
-        .switch-card { background: var(--switch-btn); grid-column: span 2; margin-bottom: 10px; border: none; font-weight: 800; padding: 20px; }
-        .nav-header-title { color: white; text-align: center; font-weight: 800; font-size: 1.4rem; margin-bottom: 20px; letter-spacing: 1px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+        .nav-overlay { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(15, 23, 42, 0.98); 
+            backdrop-filter: blur(15px); 
+            z-index: 3000; 
+            display: none; 
+            flex-direction: column; 
+            padding: 50px 15px 30px 15px; 
+            overflow-y: auto; 
+        }
+        
+        .nav-overlay.active { 
+            display: flex; 
+            animation: fadeIn 0.3s ease forwards; 
+        }
+        
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(20px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        
+        .nav-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 8px; 
+            width: 100%; 
+            max-width: 500px; 
+            margin: 0 auto; 
+        }
+        
+        .nav-card { 
+            background: rgba(255, 255, 255, 0.08); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            border-radius: 12px; 
+            padding: 12px 6px; 
+            text-align: center; 
+            color: white; 
+            text-decoration: none; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 4px; 
+        }
+        
+        @media (min-width: 768px) {
+            .nav-grid { gap: 10px; }
+            .nav-card { padding: 15px 8px; gap: 5px; }
+        }
+        
+        .nav-card span { font-size: 1.1rem; }
+        .nav-card small { font-size: 0.65rem; font-weight: 600; line-height: 1.2; }
+        .switch-card { background: var(--switch-btn); grid-column: span 2; margin-bottom: 10px; border: none; font-weight: 800; padding: 18px; }
+        .nav-header-title { color: white; text-align: center; font-weight: 800; font-size: 1.2rem; margin-bottom: 15px; letter-spacing: 1px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+        
+        @media (min-width: 768px) {
+            .nav-header-title { font-size: 1.4rem; margin-bottom: 20px; }
+            .nav-card span { font-size: 1.2rem; }
+            .nav-card small { font-size: 0.7rem; }
+        }
 
         /* --- FAB --- */
-        .fab-menu { position: fixed; bottom: 30px; left: 25px; width: 65px; height: 65px; background: var(--deep-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.6rem; box-shadow: 0 10px 30px rgba(30, 58, 138, 0.4); border: 4px solid white; cursor: pointer; z-index: 2000; animation: swing 3s infinite ease-in-out; transform-origin: center bottom; }
-        @keyframes swing { 0%, 100% { transform: rotate(0deg); } 20% { transform: rotate(10deg); } 40% { transform: rotate(-10deg); } }
-        .guide-hand { position: fixed; bottom: 105px; left: 32px; z-index: 2500; display: flex; flex-direction: column; align-items: center; animation: bounce 1.5s infinite; }
-        .guide-hand span { font-size: 1.8rem; }
-        .guide-label { background: var(--admin-dark); color: white; padding: 3px 8px; border-radius: 6px; font-size: 0.55rem; font-weight: 800; margin-bottom: 2px; border: 1px solid var(--admin-accent); }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        .fab-menu { 
+            position: fixed; 
+            bottom: 25px; 
+            left: 20px; 
+            width: 60px; 
+            height: 60px; 
+            background: var(--deep-blue); 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: white; 
+            font-size: 1.5rem; 
+            box-shadow: 0 8px 25px rgba(30, 58, 138, 0.4); 
+            border: 4px solid white; 
+            cursor: pointer; 
+            z-index: 2000; 
+            animation: swing 3s infinite ease-in-out; 
+            transform-origin: center bottom; 
+        }
+        
+        @keyframes swing { 
+            0%, 100% { transform: rotate(0deg); } 
+            20% { transform: rotate(10deg); } 
+            40% { transform: rotate(-10deg); } 
+        }
+        
+        .guide-hand { 
+            position: fixed; 
+            bottom: 95px; 
+            left: 27px; 
+            z-index: 2500; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            animation: bounce 1.5s infinite; 
+        }
+        
+        .guide-hand span { font-size: 1.6rem; }
+        .guide-label { 
+            background: var(--admin-dark); 
+            color: white; 
+            padding: 3px 6px; 
+            border-radius: 6px; 
+            font-size: 0.5rem; 
+            font-weight: 800; 
+            margin-bottom: 2px; 
+            border: 1px solid var(--admin-accent); 
+        }
+        
+        @keyframes bounce { 
+            0%, 100% { transform: translateY(0); } 
+            50% { transform: translateY(-8px); } 
+        }
+        
         .congrats-msg { 
             background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); 
             color: #166534; 
-            padding: 18px 24px; 
+            padding: 15px 20px; 
             border-radius: 12px; 
-            margin-bottom: 20px; 
+            margin-bottom: 15px; 
             text-align: center; 
             font-weight: 800; 
-            font-size: 1rem; 
+            font-size: 0.9rem; 
             display: none; 
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
             border: 2px solid #86efac;
             letter-spacing: 0.5px;
             animation: slideDown 0.5s ease;
         }
+        
+        @media (min-width: 768px) {
+            .congrats-msg {
+                padding: 18px 24px;
+                margin-bottom: 20px;
+                font-size: 1rem;
+            }
+        }
+        
         @keyframes slideDown {
             from { opacity: 0; transform: translateY(-20px); }
             to { opacity: 1; transform: translateY(0); }
         }
         
+        /* Greeting Banner - More Compact */
         .greeting-banner {
             background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
             color: white;
-            padding: 20px 24px;
+            padding: 15px 20px;
             border-radius: 16px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             box-shadow: 0 10px 25px rgba(79, 70, 229, 0.3);
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 10px;
         }
+        
+        @media (min-width: 768px) {
+            .greeting-banner {
+                padding: 20px 24px;
+                margin-bottom: 25px;
+                gap: 15px;
+            }
+        }
+        
         .greeting-text h2 {
             margin: 0;
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             font-weight: 800;
             letter-spacing: -0.5px;
         }
+        
         .greeting-text p {
-            margin: 5px 0 0 0;
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-        .greeting-time {
+            margin: 3px 0 0 0;
             font-size: 0.85rem;
             opacity: 0.9;
+        }
+        
+        .greeting-time {
+            font-size: 0.8rem;
+            opacity: 0.9;
             font-weight: 600;
+        }
+        
+        @media (min-width: 768px) {
+            .greeting-text h2 { font-size: 1.5rem; }
+            .greeting-text p { font-size: 0.9rem; }
+            .greeting-time { font-size: 0.85rem; }
         }
         
         /* Low Stock Pulse Animation */
@@ -257,43 +690,51 @@
             align-items: center;
             justify-content: center;
             z-index: 9999;
-            padding: 20px;
+            padding: 15px;
         }
         
         .gas-redirect-content {
             background: white;
-            padding: 30px;
-            border-radius: 20px;
-            max-width: 500px;
+            padding: 25px;
+            border-radius: 18px;
+            max-width: 450px;
             width: 100%;
             text-align: center;
             box-shadow: 0 20px 40px rgba(0,0,0,0.2);
             border: 2px solid var(--primary);
         }
         
+        @media (min-width: 768px) {
+            .gas-redirect-content {
+                padding: 30px;
+                border-radius: 20px;
+                max-width: 500px;
+            }
+        }
+        
         .gas-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
+            font-size: 3.5rem;
+            margin-bottom: 15px;
             color: var(--warning);
         }
         
         .gas-redirect-title {
             color: var(--primary-dark);
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             font-weight: 800;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
         
         .gas-redirect-message {
             color: var(--text-dim);
-            font-size: 1rem;
-            margin-bottom: 25px;
+            font-size: 0.95rem;
+            margin-bottom: 20px;
             line-height: 1.5;
         }
         
         .gas-redirect-buttons {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             justify-content: center;
         }
         
@@ -310,8 +751,8 @@
         /* Loading Spinner */
         .spinner {
             display: inline-block;
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             border: 3px solid rgba(255,255,255,.3);
             border-radius: 50%;
             border-top-color: #fff;
@@ -320,6 +761,129 @@
         
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+        
+        /* Profile Dropdown */
+        .profile-dropdown {
+            position: absolute;
+            top: 60px;
+            left: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border: 1px solid var(--border);
+            width: 250px;
+            z-index: 1001;
+            display: none;
+            overflow: hidden;
+        }
+        
+        .profile-header {
+            padding: 15px;
+            background: var(--primary);
+            color: white;
+            text-align: center;
+        }
+        
+        .profile-header h4 {
+            margin: 0;
+            font-size: 1rem;
+        }
+        
+        .profile-header p {
+            margin: 5px 0 0 0;
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+        
+        .profile-menu {
+            list-style: none;
+            margin: 0;
+            padding: 10px 0;
+        }
+        
+        .profile-menu li {
+            padding: 0;
+        }
+        
+        .profile-menu a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            text-decoration: none;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        
+        .profile-menu a:hover {
+            background: #f8fafc;
+        }
+        
+        .profile-menu a i {
+            width: 20px;
+            text-align: center;
+            color: var(--primary);
+        }
+        
+        .profile-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 5px 15px;
+        }
+        
+        .logout-btn {
+            width: 100%;
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 12px 15px;
+            font-weight: 800;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .logout-btn:hover {
+            background: #c1121f;
+        }
+        
+        /* Compact form layout */
+        .compact-form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        
+        @media (min-width: 768px) {
+            .compact-form-grid {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 15px;
+            }
+        }
+        
+        /* Alert sound indicator */
+        .alert-indicator {
+            position: relative;
+        }
+        
+        .alert-indicator::after {
+            content: "⚠️";
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            font-size: 0.8rem;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
     </style>
 </head>
@@ -369,11 +933,41 @@
     </div>
 </div>
 
+<!-- Profile Dropdown -->
+<div class="profile-dropdown" id="profileDropdown">
+    <div class="profile-header">
+        <h4 id="profileUserName">Cashier</h4>
+        <p id="profileUserEmail">user@example.com</p>
+    </div>
+    <ul class="profile-menu">
+        <li><a href="cashierprofile.html"><i class="fas fa-user-cog"></i> Profile Settings</a></li>
+        <li><a href="#"><i class="fas fa-bell"></i> Notifications</a></li>
+        <li><a href="#"><i class="fas fa-history"></i> Activity Log</a></li>
+        <div class="profile-divider"></div>
+        <li><a href="#"><i class="fas fa-question-circle"></i> Help & Support</a></li>
+        <li><a href="#"><i class="fas fa-shield-alt"></i> Privacy & Security</a></li>
+    </ul>
+    <button class="logout-btn" onclick="logoutUser()">
+        <i class="fas fa-sign-out-alt"></i> Logout
+    </button>
+</div>
+
 <button class="fab-menu" onclick="toggleNav()">☰</button>
 
 <div id="congrats-banner" class="congrats-msg">🎉 WELL DONE! YOUR LAST SHIFT WAS PERFECTLY BALANCED! ✔</div>
 
 <div class="container">
+    <!-- Compact Header -->
+    <div class="compact-header">
+        <div class="header-left">
+            <button class="profile-btn" id="profileBtn" onclick="toggleProfileDropdown()">
+                <i class="fas fa-user"></i>
+            </button>
+            <div class="logo-compact">CASHIER DASHBOARD <span>/ JEPE AUTOSPARES</span></div>
+        </div>
+        <div class="header-right" id="shift-action-container"></div>
+    </div>
+
     <div class="greeting-banner" id="greeting-banner">
         <div class="greeting-text">
             <h2 id="greeting-title">Welcome Back!</h2>
@@ -382,24 +976,34 @@
         <div class="greeting-time" id="greeting-time"></div>
     </div>
     
-    <header>
-        <div class="logo">CASHIER DASHBOARD <span>/ JEPE AUTOSPARES HUB</span></div>
-        <div id="shift-action-container"></div>
-    </header>
-
     <div class="section-label">Opening Floats & Live Sales Tracker</div>
     <div class="float-status-card">
-        <div class="float-item"><label>Cash</label><span id="float-cash">0.00</span></div>
-        <div class="float-item"><label>Mpesa</label><span id="float-mpesa">0.00</span></div>
-        <div class="float-item"><label>KCB Float</label><span id="float-kcb">0.00</span></div>
-        <div class="float-item"><label>Equity Float</label><span id="float-equity">0.00</span></div>
-        <div class="float-item kcb-live-box"><label>Live KCB Paybill Sales</label><span id="live-kcb-box">0.00</span></div>
+        <div class="float-item" id="float-cash-item">
+            <label>Cash</label>
+            <span id="float-cash">0.00</span>
+        </div>
+        <div class="float-item" id="float-mpesa-item">
+            <label>Mpesa</label>
+            <span id="float-mpesa">0.00</span>
+        </div>
+        <div class="float-item" id="float-kcb-item">
+            <label>KCB Float</label>
+            <span id="float-kcb">0.00</span>
+        </div>
+        <div class="float-item" id="float-equity-item">
+            <label>Equity Float</label>
+            <span id="float-equity">0.00</span>
+        </div>
+        <div class="float-item kcb-live-box" id="kcb-live-item">
+            <label>Live KCB Paybill Sales</label>
+            <span id="live-kcb-box">0.00</span>
+        </div>
     </div>
 
     <div class="card">
         <div class="section-label">Sale Item</div>
         <form id="sale-form">
-            <div class="grid-inputs" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+            <div class="compact-form-grid">
                 <div class="input-group">
                     <label>Search Item</label>
                     <input type="text" id="pSearch" list="pList" placeholder="Find Item..." required autocomplete="off">
@@ -422,12 +1026,12 @@
                 </div>
             </div>
 
-            <div id="split-fields" style="display: none; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px dashed var(--primary);">
+            <div id="split-fields" style="display: none; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; padding: 12px; background: #f8fafc; border-radius: 10px; border: 1px dashed var(--primary);">
                 <div class="input-group"><label>Cash Paid</label><input type="number" id="split-cash" placeholder="0.00" oninput="calculateSplit()"></div>
                 <div class="input-group"><label>Paybill Balance</label><input type="number" id="split-online" readonly style="background: #e2e8f0;"></div>
             </div>
 
-            <button type="submit" id="submit-sale-btn" class="btn btn-primary" style="margin-top: 25px; width: 100%; height: 60px; font-size: 1.1rem;">
+            <button type="submit" id="submit-sale-btn" class="btn btn-primary" style="margin-top: 20px; width: 100%; height: 55px; font-size: 1rem;">
                 RECORD ITEM Ksh <span id="total-text">0.00</span>
             </button>
         </form>
@@ -436,9 +1040,17 @@
     <div class="dual-tables">
         <div>
             <div class="section-label">TODAYS SALES</div>
-            <div class="table-card" style="max-height: 400px; overflow-y: auto;">
+            <div class="table-card" style="max-height: 350px; overflow-y: auto;">
                 <table>
-                    <thead class="mobile-hide-header"><tr><th>Time</th><th>Item</th><th>Qty</th><th>Total</th><th>Method</th></tr></thead>
+                    <thead class="mobile-hide-header">
+                        <tr>
+                            <th>Time</th>
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>Total</th>
+                            <th>Method</th>
+                        </tr>
+                    </thead>
                     <tbody id="live-sales-body"></tbody>
                 </table>
             </div>
@@ -446,45 +1058,61 @@
 
         <div class="card">
             <div class="section-label">MONEY IN/OUT RECORD</div>
-            <input type="number" id="exp-amt" placeholder="Amount" style="margin-bottom:12px;">
-            <select id="exp-type" style="margin-bottom:12px;"><option value="Money Out">Money Out</option><option value="Money In">Money In</option></select>
-            <input type="text" id="exp-desc" placeholder="Reason (e.g. Loading Fee, Lunch)" style="width:100%; margin-bottom:12px;">
-            <select id="exp-method" style="width:100%; margin-bottom:15px;">
-                <option value="Cash">Cash</option><option value="Mpesa">Mpesa</option><option value="KCB">KCB Float</option><option value="Equity">Equity Float</option>
-            </select>
-            <button id="record-expense-btn" class="btn btn-sync" style="width: 100%;">RECORD MONEY</button>
+            <div class="grid-inputs">
+                <input type="number" id="exp-amt" placeholder="Amount">
+                <select id="exp-type">
+                    <option value="Money Out">Money Out</option>
+                    <option value="Money In">Money In</option>
+                </select>
+                <input type="text" id="exp-desc" placeholder="Reason (e.g. Loading Fee, Lunch)">
+                <select id="exp-method">
+                    <option value="Cash">Cash</option>
+                    <option value="Mpesa">Mpesa</option>
+                    <option value="KCB">KCB Float</option>
+                    <option value="Equity">Equity Float</option>
+                </select>
+                <button id="record-expense-btn" class="btn btn-sync">RECORD MONEY</button>
+            </div>
         </div>
     </div>
 
     <div class="section-label">TODAY'S MONEY IN/OUT HISTORY</div>
     <div class="table-card">
         <table>
-            <thead class="mobile-hide-header"><tr><th>Time</th><th>Reason</th><th>Amt</th><th>Type</th><th>Wallet</th></tr></thead>
+            <thead class="mobile-hide-header">
+                <tr>
+                    <th>Time</th>
+                    <th>Reason</th>
+                    <th>Amt</th>
+                    <th>Type</th>
+                    <th>Wallet</th>
+                </tr>
+            </thead>
             <tbody id="live-trans-body"></tbody>
         </table>
     </div>
 
     <div class="section-label">WORK HISTORY</div>
-    <input type="text" id="history-search" class="search-input" placeholder="🔍 Search by date (e.g. 10 Jan 2026)..." style="max-width: 500px;">
+    <input type="text" id="history-search" class="search-input" placeholder="🔍 Search by date (e.g. 10 Jan 2026)..." style="max-width: 100%;">
     
-    <div class="table-card" style="overflow-x: auto;">
-        <table style="min-width: 1250px;">
+    <div class="table-card">
+        <table class="history-table-compact">
             <thead class="mobile-hide-header">
                 <tr>
-                    <th width="160">DATE</th>
-                    <th width="210">OPENING FLOATS</th>
-                    <th width="210">PAYMENT METHOD</th>
-                    <th width="190">MONEY IN/OUT</th>
-                    <th width="210">CLOSING FLOATS</th>
-                    <th width="190">VARIANCE</th>
-                    <th width="200">VARIANCE REASON</th>
+                    <th width="140">DATE</th>
+                    <th width="180">OPENING FLOATS</th>
+                    <th width="180">PAYMENT METHOD</th>
+                    <th width="160">MONEY IN/OUT</th>
+                    <th width="180">CLOSING FLOATS</th>
+                    <th width="160">VARIANCE</th>
+                    <th width="180">VARIANCE REASON</th>
                 </tr>
             </thead>
             <tbody id="history-body"></tbody>
         </table>
     </div>
 
-    <div style="text-align: center; padding: 20px;">
+    <div style="text-align: center; padding: 15px;">
         <button id="load-more-btn" class="btn" style="background: #e2e8f0; color: #1e293b; margin: auto;">LOAD MORE HISTORY</button>
     </div>
 </div>
@@ -525,11 +1153,12 @@
     let inventory = [];
     let currentShift = null;
     let selectedItem = null;
-    let historyLimit = 15;
+    let historyLimit = 10; // Reduced for better mobile performance
     let allShifts = [];
     let allTransactions = [];
     let allSales = [];
     let currentKcbSalesTotal = 0;
+    let currentUser = null;
 
     // Gas redirect functions
     window.closeGasRedirect = function() {
@@ -545,6 +1174,73 @@
         window.location.href = 'cashiergashub.html';
     };
 
+    // Profile dropdown functions
+    window.toggleProfileDropdown = function() {
+        const dropdown = document.getElementById('profileDropdown');
+        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+    };
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('profileDropdown');
+        const profileBtn = document.getElementById('profileBtn');
+        
+        if (!profileBtn.contains(event.target) && !dropdown.contains(event.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    // Check for low floats and highlight them
+    function checkLowFloats() {
+        const floatItems = [
+            { id: 'float-cash-item', element: document.getElementById('float-cash'), value: parseFloat(document.getElementById('float-cash').innerText.replace(/,/g, '')) || 0 },
+            { id: 'float-mpesa-item', element: document.getElementById('float-mpesa'), value: parseFloat(document.getElementById('float-mpesa').innerText.replace(/,/g, '')) || 0 },
+            { id: 'float-kcb-item', element: document.getElementById('float-kcb'), value: parseFloat(document.getElementById('float-kcb').innerText.replace(/,/g, '')) || 0 },
+            { id: 'float-equity-item', element: document.getElementById('float-equity'), value: parseFloat(document.getElementById('float-equity').innerText.replace(/,/g, '')) || 0 }
+        ];
+
+        let lowFloatDetected = false;
+        
+        floatItems.forEach(item => {
+            const floatItemElement = document.getElementById(item.id);
+            if (floatItemElement && item.value < 7000) {
+                floatItemElement.classList.add('low-float-warning');
+                lowFloatDetected = true;
+            } else if (floatItemElement) {
+                floatItemElement.classList.remove('low-float-warning');
+            }
+        });
+
+        // Play alert sound if low float detected
+        if (lowFloatDetected) {
+            playAlertSound();
+        }
+    }
+
+    // Play alert sound for low floats
+    function playAlertSound() {
+        try {
+            // Create a simple beep sound
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        } catch (e) {
+            console.log("Audio context not supported");
+        }
+    }
+
     // --- REALTIME: Sync Inventory Automatically ---
     const productSubscription = supabase
         .channel('inventory-sync')
@@ -555,34 +1251,40 @@
         .subscribe();
 
     async function fetchInventory() {
-        const { data } = await supabase.from('products').select('*');
-        if (data) {
-            inventory = data;
-            refreshProductDatalist();
-            
-            if (selectedItem) {
-                const updated = inventory.find(p => p.id === selectedItem.id);
-                if (updated) {
-                    selectedItem = updated;
-                    updateStockDisplay(updated);
+        try {
+            const { data } = await supabase.from('products').select('*');
+            if (data) {
+                inventory = data;
+                refreshProductDatalist();
+                
+                if (selectedItem) {
+                    const updated = inventory.find(p => p.id === selectedItem.id);
+                    if (updated) {
+                        selectedItem = updated;
+                        updateStockDisplay(updated);
+                    }
                 }
             }
+        } catch (error) {
+            console.error("Error fetching inventory:", error);
         }
     }
 
     // Helper to handle the Red Pulsing Logic
     function updateStockDisplay(item) {
         const hStock = document.getElementById('hint-stock');
-        hStock.innerText = `Stock: ${item.stock_quantity}`;
-        hStock.style.display = 'inline-block';
+        if (hStock) {
+            hStock.innerText = `Stock: ${item.stock_quantity}`;
+            hStock.style.display = 'inline-block';
 
-        if (item.stock_quantity <= 0) {
-            hStock.innerText = "OUT OF STOCK";
-            hStock.classList.add('low-stock-alert');
-        } else if (item.stock_quantity < 5) {
-            hStock.classList.add('low-stock-alert');
-        } else {
-            hStock.classList.remove('low-stock-alert');
+            if (item.stock_quantity <= 0) {
+                hStock.innerText = "OUT OF STOCK";
+                hStock.classList.add('low-stock-alert');
+            } else if (item.stock_quantity < 5) {
+                hStock.classList.add('low-stock-alert');
+            } else {
+                hStock.classList.remove('low-stock-alert');
+            }
         }
     }
 
@@ -594,6 +1296,9 @@
         document.getElementById('navBanner').classList.toggle('active');
         document.getElementById('onboardingHand').style.display = 'none';
         sessionStorage.setItem('menuClicked', 'true');
+        
+        // Close profile dropdown if open
+        document.getElementById('profileDropdown').style.display = 'none';
     };
 
     window.logoutUser = async () => { 
@@ -603,14 +1308,20 @@
 
     window.toggleSplitFields = () => {
         const method = document.getElementById('pMethod').value;
-        document.getElementById('split-fields').style.display = (method === 'Split') ? 'grid' : 'none';
+        const splitFields = document.getElementById('split-fields');
+        if (splitFields) {
+            splitFields.style.display = (method === 'Split') ? 'grid' : 'none';
+        }
         if(method === 'Split') calculateSplit();
     };
 
     window.calculateSplit = () => {
         const total = parseFloat(document.getElementById('pPrice').value || 0) * parseInt(document.getElementById('pQty').value || 0);
         const cash = parseFloat(document.getElementById('split-cash').value || 0);
-        document.getElementById('split-online').value = (total - cash).toFixed(2);
+        const splitOnline = document.getElementById('split-online');
+        if (splitOnline) {
+            splitOnline.value = (total - cash).toFixed(2);
+        }
     };
 
     function updateGreeting() {
@@ -651,36 +1362,70 @@
     async function init() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return window.location.href = 'index.html';
+        
+        currentUser = user;
+        
+        // Update profile info
+        const profileUserName = document.getElementById('profileUserName');
+        const profileUserEmail = document.getElementById('profileUserEmail');
+        
+        if (profileUserName && user.user_metadata?.full_name) {
+            profileUserName.textContent = user.user_metadata.full_name;
+        } else if (profileUserName && user.email) {
+            profileUserName.textContent = user.email.split('@')[0];
+        }
+        
+        if (profileUserEmail && user.email) {
+            profileUserEmail.textContent = user.email;
+        }
 
         updateGreeting();
         setInterval(updateGreeting, 60000); // Update every minute
 
-        const [prodRes, shiftRes] = await Promise.all([
-            supabase.from('products').select('*'),
-            supabase.from('daily_shifts').select('*').eq('status', 'Open').maybeSingle()
-        ]);
+        try {
+            const [prodRes, shiftRes] = await Promise.all([
+                supabase.from('products').select('*'),
+                supabase.from('daily_shifts').select('*').eq('status', 'Open').maybeSingle()
+            ]);
 
-        inventory = prodRes.data || [];
-        refreshProductDatalist();
+            inventory = prodRes.data || [];
+            refreshProductDatalist();
 
-        const actionBtnContainer = document.getElementById('shift-action-container');
-        if (shiftRes.data) {
-            currentShift = shiftRes.data;
-            actionBtnContainer.innerHTML = `<button class="btn btn-danger special-action-btn" onclick="document.getElementById('close-modal').style.display='flex'">🔴 CLOSE DAY</button>`;
-            document.getElementById('float-cash').innerText = (currentShift.open_cash || 0).toLocaleString();
-            document.getElementById('float-mpesa').innerText = (currentShift.open_mpesa || 0).toLocaleString();
-            document.getElementById('float-kcb').innerText = (currentShift.open_kcb || 0).toLocaleString();
-            document.getElementById('float-equity').innerText = (currentShift.open_equity || 0).toLocaleString();
-            await loadShiftData();
-            updateGreeting();
-        } else {
-            actionBtnContainer.innerHTML = `<button class="btn btn-primary special-action-btn" onclick="document.getElementById('open-modal').style.display='flex'">🟢 START DAY</button>`;
+            const actionBtnContainer = document.getElementById('shift-action-container');
+            if (shiftRes.data) {
+                currentShift = shiftRes.data;
+                actionBtnContainer.innerHTML = `<button class="btn btn-danger special-action-btn" onclick="document.getElementById('close-modal').style.display='flex'">🔴 CLOSE DAY</button>`;
+                
+                // Update float displays safely
+                const floatCash = document.getElementById('float-cash');
+                const floatMpesa = document.getElementById('float-mpesa');
+                const floatKcb = document.getElementById('float-kcb');
+                const floatEquity = document.getElementById('float-equity');
+                
+                if (floatCash) floatCash.innerText = (currentShift.open_cash || 0).toLocaleString();
+                if (floatMpesa) floatMpesa.innerText = (currentShift.open_mpesa || 0).toLocaleString();
+                if (floatKcb) floatKcb.innerText = (currentShift.open_kcb || 0).toLocaleString();
+                if (floatEquity) floatEquity.innerText = (currentShift.open_equity || 0).toLocaleString();
+                
+                await loadShiftData();
+                updateGreeting();
+                
+                // Check for low floats after data is loaded
+                setTimeout(checkLowFloats, 500);
+            } else {
+                actionBtnContainer.innerHTML = `<button class="btn btn-primary special-action-btn" onclick="document.getElementById('open-modal').style.display='flex'">🟢 START DAY</button>`;
+            }
+            await loadHistory();
+        } catch (error) {
+            console.error("Error initializing:", error);
         }
-        await loadHistory();
     }
 
     function refreshProductDatalist() {
-        document.getElementById('pList').innerHTML = inventory.map(p => `<option value="${formatItemName(p)}">`).join('');
+        const pList = document.getElementById('pList');
+        if (pList) {
+            pList.innerHTML = inventory.map(p => `<option value="${formatItemName(p)}">`).join('');
+        }
     }
 
     function formatItemName(p) {
@@ -690,42 +1435,60 @@
         return name;
     }
 
-    document.getElementById('pSearch').oninput = (e) => {
+    document.getElementById('pSearch').addEventListener('input', (e) => {
         selectedItem = inventory.find(p => formatItemName(p) === e.target.value);
         if (selectedItem) {
-            document.getElementById('pPrice').value = selectedItem.selling_price;
-            document.getElementById('hint-min').innerText = `Min: ${selectedItem.min_price || 0}`;
-            document.getElementById('hint-min').style.display = 'inline-block';
+            const pPrice = document.getElementById('pPrice');
+            const hintMin = document.getElementById('hint-min');
+            
+            if (pPrice) pPrice.value = selectedItem.selling_price;
+            if (hintMin) {
+                hintMin.innerText = `Min: ${selectedItem.min_price || 0}`;
+                hintMin.style.display = 'inline-block';
+            }
+            
             updateStockDisplay(selectedItem);
             updateTotal();
             
             // Check if it's a gas item
             if (selectedItem.category === 'Gas') {
                 // Show gas redirect modal
-                document.getElementById('gasRedirectModal').style.display = 'flex';
+                const gasModal = document.getElementById('gasRedirectModal');
+                if (gasModal) gasModal.style.display = 'flex';
             }
         }
-    };
+    });
 
     function updateTotal() {
         const price = parseFloat(document.getElementById('pPrice').value || 0);
         const qty = parseInt(document.getElementById('pQty').value || 0);
-        document.getElementById('total-text').innerText = (price * qty).toLocaleString();
+        const totalText = document.getElementById('total-text');
+        if (totalText) {
+            totalText.innerText = (price * qty).toLocaleString();
+        }
         if (document.getElementById('pMethod').value === 'Split') calculateSplit();
     }
 
-    document.getElementById('pPrice').oninput = updateTotal;
-    document.getElementById('pQty').oninput = updateTotal;
+    document.getElementById('pPrice').addEventListener('input', updateTotal);
+    document.getElementById('pQty').addEventListener('input', updateTotal);
 
-    document.getElementById('sale-form').onsubmit = async (e) => {
+    document.getElementById('sale-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('submit-sale-btn');
-        if (!currentShift) return alert("Open shift first!");
-        if (!selectedItem) return alert("Select a valid item.");
+        if (!currentShift) {
+            alert("Open shift first!");
+            return;
+        }
+        
+        if (!selectedItem) {
+            alert("Select a valid item.");
+            return;
+        }
         
         // Prevent gas sales from this page
         if (selectedItem.category === 'Gas') {
-            document.getElementById('gasRedirectModal').style.display = 'flex';
+            const gasModal = document.getElementById('gasRedirectModal');
+            if (gasModal) gasModal.style.display = 'flex';
             return;
         }
 
@@ -740,7 +1503,10 @@
             selectedItem.tempReason = discReason;
         }
 
-        if (qty > selectedItem.stock_quantity) return alert("Insufficient stock!");
+        if (qty > selectedItem.stock_quantity) {
+            alert("Insufficient stock!");
+            return;
+        }
 
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner"></span> RECORDING...';
@@ -802,9 +1568,15 @@
             // Reset Form
             document.getElementById('sale-form').reset();
             document.getElementById('pSearch').value = '';
-            document.getElementById('hint-stock').style.display = 'none';
-            document.getElementById('hint-min').style.display = 'none';
-            document.getElementById('total-text').innerText = '0';
+            
+            const hintStock = document.getElementById('hint-stock');
+            const hintMin = document.getElementById('hint-min');
+            const totalText = document.getElementById('total-text');
+            
+            if (hintStock) hintStock.style.display = 'none';
+            if (hintMin) hintMin.style.display = 'none';
+            if (totalText) totalText.innerText = '0';
+            
             selectedItem = null;
             
             btn.disabled = false;
@@ -818,10 +1590,12 @@
             btn.disabled = false;
             btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
         }
-    };
+    });
 
     async function loadShiftData() {
         try {
+            if (!currentShift) return;
+            
             const [salesRes, transRes] = await Promise.all([
                 supabase.from('sales').select('*').eq('shift_id', currentShift.id).order('created_at', {ascending:false}),
                 supabase.from('cash_transactions').select('*').eq('shift_id', currentShift.id).order('created_at', {ascending:false})
@@ -831,19 +1605,46 @@
             const trans = transRes.data || [];
 
             currentKcbSalesTotal = sales.filter(s => s.payment_method === 'KCB Paybill').reduce((a, b) => a + b.total_amount, 0);
-            document.getElementById('live-kcb-box').innerText = currentKcbSalesTotal.toLocaleString();
+            const liveKcbBox = document.getElementById('live-kcb-box');
+            if (liveKcbBox) liveKcbBox.innerText = currentKcbSalesTotal.toLocaleString();
             
             const closeKcbInput = document.getElementById('c-bank');
             if (closeKcbInput) closeKcbInput.value = currentKcbSalesTotal;
 
-            document.getElementById('live-sales-body').innerHTML = sales.map(s => `<tr><td data-label="Time">${new Date(s.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Item"><b>${s.item_name}</b></td><td data-label="Qty">${s.quantity}</td><td data-label="Total">Ksh ${s.total_amount.toLocaleString()}</td><td data-label="Method">${s.payment_method}</td></tr>`).join('');
-            document.getElementById('live-trans-body').innerHTML = trans.map(t => `<tr><td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Reason">${t.description}</td><td data-label="Amt">Ksh ${t.amount.toLocaleString()}</td><td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">${t.type}</td><td data-label="Wallet">${t.category}</td></tr>`).join('');
+            const liveSalesBody = document.getElementById('live-sales-body');
+            if (liveSalesBody) {
+                liveSalesBody.innerHTML = sales.map(s => `
+                    <tr>
+                        <td data-label="Time">${new Date(s.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
+                        <td data-label="Item"><b>${s.item_name}</b></td>
+                        <td data-label="Qty">${s.quantity}</td>
+                        <td data-label="Total">Ksh ${s.total_amount.toLocaleString()}</td>
+                        <td data-label="Method">${s.payment_method}</td>
+                    </tr>
+                `).join('');
+            }
+
+            const liveTransBody = document.getElementById('live-trans-body');
+            if (liveTransBody) {
+                liveTransBody.innerHTML = trans.map(t => `
+                    <tr>
+                        <td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
+                        <td data-label="Reason">${t.description}</td>
+                        <td data-label="Amt">Ksh ${t.amount.toLocaleString()}</td>
+                        <td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">${t.type}</td>
+                        <td data-label="Wallet">${t.category}</td>
+                    </tr>
+                `).join('');
+            }
+            
+            // Check for low floats after data is loaded
+            checkLowFloats();
         } catch (error) {
             console.error("Error loading shift data:", error);
         }
     }
 
-    document.getElementById('confirm-open').onclick = async function() {
+    document.getElementById('confirm-open').addEventListener('click', async function() {
         const cash = parseFloat(document.getElementById('o-cash').value || 0);
         const mpesa = parseFloat(document.getElementById('o-mpesa').value || 0);
         const kcb = parseFloat(document.getElementById('o-kcb').value || 0);
@@ -883,9 +1684,9 @@
             this.disabled = false;
             this.innerHTML = 'START DAY';
         }
-    };
+    });
 
-    document.getElementById('confirm-close').onclick = async function() {
+    document.getElementById('confirm-close').addEventListener('click', async function() {
         this.disabled = true;
         this.innerHTML = '<span class="spinner"></span> FINALIZING...';
         
@@ -933,7 +1734,7 @@
             this.disabled = false;
             this.innerHTML = 'FINALIZE & CLOSE';
         }
-    };
+    });
 
     async function loadHistory(searchQuery = "") {
         try {
@@ -1054,11 +1855,11 @@
                             Expected: ${expected.toFixed(2)}
                         </div>
                     </td>
-                    <td><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim); font-style: italic;">${sh.variance_note || 'No notes added.'}</div></td>
+                    <td><div style="max-height: 100px; overflow-y: auto; font-size: 0.75rem; color: var(--text-dim); font-style: italic;">${sh.variance_note || 'No notes added.'}</div></td>
                 </tr>`;
         });
 
-        desktopTbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.</td></tr>';
+        desktopTbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:30px;">No records found.</td></tr>';
     }
 
     document.getElementById('history-search').addEventListener('input', (e) => {
@@ -1070,15 +1871,18 @@
         renderHistory(filtered, allTransactions, allSales, term);
     });
     
-    document.getElementById('load-more-btn').onclick = () => { 
-        historyLimit += 15; 
+    document.getElementById('load-more-btn').addEventListener('click', () => { 
+        historyLimit += 10; 
         loadHistory(); 
-    };
+    });
     
-    document.getElementById('record-expense-btn').onclick = async function() {
+    document.getElementById('record-expense-btn').addEventListener('click', async function() {
         const amt = parseFloat(document.getElementById('exp-amt').value);
         const desc = document.getElementById('exp-desc').value;
-        if (!amt || !desc || !currentShift) return alert("Fill all fields");
+        if (!amt || !desc || !currentShift) {
+            alert("Fill all fields");
+            return;
+        }
         
         this.disabled = true;
         this.innerHTML = '<span class="spinner"></span> RECORDING...';
@@ -1106,9 +1910,10 @@
             this.disabled = false;
             this.innerHTML = 'RECORD MONEY';
         }
-    };
+    });
 
-    init();
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
