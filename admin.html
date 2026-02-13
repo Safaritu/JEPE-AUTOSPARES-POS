@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JEPE AUTOSPARES | Professional Admin</title>
+    <title>JEPE AUTOSPARES | Multi-Branch Admin</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -44,8 +44,51 @@
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
         /* --- HEADER --- */
-        header { background: white; padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        header { background: white; padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         header .brand-info h1 { margin: 0; font-size: 1.4rem; font-weight: 800; color: var(--admin-accent); line-height: 1; }
+        
+        /* Branch Filter */
+        .branch-filter-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        @media (min-width: 768px) {
+            .branch-filter-container {
+                margin-top: 0;
+            }
+        }
+        .branch-select {
+            padding: 10px 15px;
+            border-radius: 30px;
+            border: 2px solid var(--admin-accent);
+            background: white;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--admin-dark);
+            cursor: pointer;
+            min-width: 200px;
+        }
+        .branch-badge {
+            background: var(--admin-accent);
+            color: white;
+            padding: 6px 15px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .branch-badge i {
+            font-size: 0.9rem;
+        }
+        .date-range {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-left: 10px;
+        }
 
         .container { padding: 12px; max-width: 1200px; margin: auto; padding-bottom: 100px; }
         .section-title { font-size: 0.85rem; font-weight: 800; color: var(--admin-dark); margin: 0 0 10px 0; display: flex; align-items: center; justify-content: space-between; }
@@ -56,6 +99,56 @@
         .float-item { background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #f1f5f9; }
         .float-item label { display: block; font-size: 0.6rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 2px; }
         .float-item span { font-size: 0.85rem; font-weight: 800; color: var(--admin-dark); }
+
+        /* Branch Comparison Cards */
+        .branch-comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .branch-stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+        .branch-stat-card.mutomo {
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+        }
+        .branch-stat-card.kitui {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        }
+        .branch-stat-card h4 {
+            margin: 0 0 10px 0;
+            font-size: 1rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .branch-stat-card .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 5px;
+        }
+        .branch-stat-card .stat-label {
+            opacity: 0.9;
+        }
+        .branch-stat-card .stat-value {
+            font-weight: 800;
+        }
+        .branch-stat-card .total-sales {
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin-top: 10px;
+            text-align: right;
+        }
 
         /* KCB PAYBILL BOX STYLING */
         .paybill-box { margin-top: 12px; background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 15px; padding: 15px; display: flex; flex-direction: column; gap: 4px; }
@@ -85,10 +178,24 @@
         .pill-full { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
         .pill-empty { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
 
-        input[type="text"], input[type="month"] { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #cbd5e1; margin-bottom: 10px; font-family: inherit; font-size: 0.85rem; }
+        input[type="text"], input[type="month"], .branch-select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #cbd5e1; margin-bottom: 10px; font-family: inherit; font-size: 0.85rem; }
         .load-more { width: 100%; padding: 12px; background: white; border: 2px dashed #cbd5e1; border-radius: 12px; color: var(--text-dim); font-weight: 800; cursor: pointer; margin-top: 5px; font-size: 0.8rem; }
         
         .btn-expense { background: var(--danger); color: white; border: none; padding: 10px; border-radius: 10px; font-size: 0.65rem; font-weight: 800; margin-top: 8px; cursor: pointer; display: inline-block; text-decoration: none; text-align: center; }
+        
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -104,7 +211,7 @@
     <div class="nav-grid">
         <a href="#" onclick="confirmSwitchToCashier(event)" class="nav-card switch-card"><span>🔄</span><small>SWITCH TO CASHIER MODE</small></a>
         <a href="admin.html" class="nav-card" style="background: var(--admin-accent)"><span>📊</span><small>Dashboard</small></a>
-        <a href="admin_expenses.html" class="nav-card" style="background: var(--danger)"><span>💸</span><small>Paybill Transactions </small></a>
+        <a href="admin_expenses.html" class="nav-card" style="background: var(--danger)"><span>💸</span><small>Paybill Transactions</small></a>
         <a href="gas_hub.html" class="nav-card"><span>🔥</span><small>Gas Hub</small></a>
         <a href="spares_hub.html" class="nav-card"><span>📋</span><small>Spare Parts Hub</small></a>
         <a href="motorbike_hub.html" class="nav-card"><span>🏍️</span><small>Motorbike Hub</small></a>
@@ -128,19 +235,37 @@
 
 <header>
     <div class="brand-info">
-        <h1>HOME PAGE</h1>
+        <h1>MULTI-BRANCH DASHBOARD</h1>
         <h2 id="greeting-text">GOOD DAY! WELCOME BACK, ADMIN 👋</h2>
     </div>
-    <div style="display:flex; align-items:center; gap:8px;">
-        <span id="shift-status-text" style="font-size: 0.75rem; font-weight: 800;">--</span>
-        <div id="status-dot" style="width: 12px; height: 12px; border-radius: 50%; background: #cbd5e1;"></div>
+    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+        <div class="branch-filter-container">
+            <select id="branchFilter" class="branch-select" onchange="handleBranchChange()">
+                <option value="all">🏢 ALL BRANCHES</option>
+                <option value="MUTOMO">🏪 MUTOMO BRANCH</option>
+                <option value="KITUI">🏪 KITUI BRANCH</option>
+            </select>
+            <div class="branch-badge" id="branchBadge">
+                <i class="fas fa-store"></i> <span id="selectedBranchName">ALL BRANCHES</span>
+            </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+            <span id="shift-status-text" style="font-size: 0.75rem; font-weight: 800;">--</span>
+            <div id="status-dot" style="width: 12px; height: 12px; border-radius: 50%; background: #cbd5e1;"></div>
+            <span class="date-range" id="dateRange"></span>
+        </div>
     </div>
 </header>
 
 <div class="container">
+    <!-- Branch Comparison Cards -->
+    <div class="branch-comparison-grid" id="branchComparison">
+        <!-- Will be populated by JavaScript -->
+    </div>
+
     <div class="card">
         <div class="section-title">
-            <span>🏦 TODAYS SHIFT OPENING FLOATS</span>
+            <span>🏦 TODAYS SHIFT OPENING FLOATS <span id="branchIndicator"></span></span>
             <div class="shift-timer-box">
                 <div id="disp-start" class="time-display" style="color:var(--success);">Opened: --:--</div>
                 <div id="disp-end" class="time-display" style="color:var(--danger);">Closed: --:--</div>
@@ -154,9 +279,9 @@
         </div>
 
         <div class="paybill-box">
-            <div style="display:flex; justify-content:space-between; align-items:start;">
+            <div style="display:flex; justify-content:space-between; align-items:start; flex-wrap:wrap;">
                 <div>
-                    <label>KCB PAYBILL (NET ACCOUNT BALANCE)</label>
+                    <label>KCB PAYBILL (NET ACCOUNT BALANCE) <span id="paybillBranch"></span></label>
                     <div id="pb-total" class="paybill-main-val">Ksh 0</div>
                 </div>
                 <a href="admin_expenses.html" class="btn-expense">CLICK TO PROCESS TRANSACTION FROM KCB PAYBILL SALES ACCOUNT</a>
@@ -166,8 +291,8 @@
     </div>
 
     <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <h3 class="section-title" style="margin:0;">📈 TODAYS MONEY FLOW</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
+            <h3 class="section-title" style="margin:0;">📈 MONEY FLOW <span id="moneyFlowBranch"></span></h3>
             <input type="month" id="month-picker" style="width:auto; padding:6px; margin:0; font-size:0.75rem;">
         </div>
         <div class="stats-grid">
@@ -178,7 +303,7 @@
         </div>
     </div>
 
-    <h3 class="section-title">🔥 GAS INVENTORY HUB</h3>
+    <h3 class="section-title">🔥 GAS INVENTORY HUB <span id="gasBranch"></span></h3>
     <input type="text" id="gasSearch" placeholder="Search Gas Brands...">
     <div class="grid-list" id="gas-list" style="margin-bottom:15px;"></div>
     
@@ -192,7 +317,7 @@
         </table>
     </div>
 
-    <h3 class="section-title" style="margin-top:20px;">📦 SPARE PARTS STOCK</h3>
+    <h3 class="section-title" style="margin-top:20px;">📦 SPARE PARTS STOCK <span id="sparesBranch"></span></h3>
     <input type="text" id="invSearch" placeholder="Search Spare Parts...">
     <div class="grid-list" id="stock-list"></div>
     <button id="loadStockBtn" class="load-more">LOAD MORE SPARES</button>
@@ -203,6 +328,10 @@
 
     let allProducts = [];
     let stockLimit = 6;
+    let branches = {};
+    let currentBranchFilter = 'all';
+    let currentBranchId = null;
+    let currentUser = null;
 
     window.toggleNav = () => {
         document.getElementById('navBanner').classList.toggle('active');
@@ -217,77 +346,245 @@
         }
     };
 
-    async function init() {
-        const hour = new Date().getHours();
-        const greetText = hour < 12 ? "GOOD MORNING!" : hour < 17 ? "GOOD AFTERNOON!" : "GOOD EVENING!";
-        document.getElementById('greeting-text').innerText = `${greetText} WELCOME BACK, ADMIN 👋`;
-
-        // 1. CALCULATE NET PAYBILL BALANCE WITH FUNDING LOGIC
-        const { data: allPaybillSales } = await supabase.from('sales').select('*').eq('payment_method', 'KCB Paybill');
-        const { data: adminRecords } = await supabase.from('admin_expenses').select('*').eq('payment_source', 'KCB Paybill');
-
-        let totalPaybillIncome = 0, pbProfit = 0;
-        allPaybillSales?.forEach(s => {
-            totalPaybillIncome += parseFloat(s.total_amount || 0);
-            pbProfit += (parseFloat(s.unit_price || 0) - parseFloat(s.cost_price || 0)) * parseInt(s.quantity || 0);
-        });
-
-        let manualFunding = 0;
-        let manualExpenses = 0;
-
-        adminRecords?.forEach(r => {
-            const val = parseFloat(r.amount || 0);
-            if(r.type === 'funding') {
-                manualFunding += val;
-            } else {
-                manualExpenses += val;
+    // Get branch ID from branch code
+    function getBranchIdFromCode(code) {
+        for (let id in branches) {
+            if (branches[id].code === code) {
+                return id;
             }
-        });
-
-        const netPaybillBalance = (totalPaybillIncome + manualFunding) - manualExpenses;
-
-        document.getElementById('pb-total').innerText = `Ksh ${netPaybillBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-        document.getElementById('pb-profit').innerText = `Total Net Profit from Paybill: Ksh ${pbProfit.toLocaleString()}`;
-
-        // 2. LOAD SHIFT DATA
-        const { data: shift } = await supabase.from('daily_shifts').select('*').order('start_time', { ascending: false }).limit(1).single();
-
-        if (shift) {
-            document.getElementById('f-mpesa').innerText = `Ksh ${shift.open_mpesa?.toLocaleString() || 0}`;
-            document.getElementById('f-cash').innerText = `Ksh ${shift.open_cash?.toLocaleString() || 0}`;
-            document.getElementById('f-kcb').innerText = `Ksh ${shift.open_kcb?.toLocaleString() || 0}`;
-            document.getElementById('f-equity').innerText = `Ksh ${shift.open_equity?.toLocaleString() || 0}`;
-            document.getElementById('shift-status-text').innerText = shift.status.toUpperCase();
-            document.getElementById('status-dot').style.background = shift.status === 'Open' ? '#10b981' : '#ef4444';
-            
-            const openTime = new Date(shift.start_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', day:'numeric', month:'short'});
-            document.getElementById('disp-start').innerText = `Opened: ${openTime}`;
-            if(shift.end_time) {
-                const closeTime = new Date(shift.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', day:'numeric', month:'short'});
-                document.getElementById('disp-end').innerText = `Closed: ${closeTime}`;
-            }
-
-            // Money Flow Logic
-            const { data: shiftSales } = await supabase.from('sales').select('*').eq('shift_id', shift.id);
-            let rev = 0, prof = 0;
-            shiftSales?.forEach(s => {
-                rev += parseFloat(s.total_amount || 0);
-                prof += (parseFloat(s.unit_price || 0) - parseFloat(s.cost_price || 0)) * parseInt(s.quantity || 0);
-            });
-            document.getElementById('t-rev').innerText = `Ksh ${rev.toLocaleString()}`;
-            document.getElementById('t-prof').innerText = `Ksh ${prof.toLocaleString()}`;
-
-            const { data: tx } = await supabase.from('cash_transactions').select('*').eq('shift_id', shift.id);
-            let exp = 0, mIn = 0;
-            tx?.forEach(t => {
-                if(t.type === 'Money Out') exp += parseFloat(t.amount || 0);
-                else if(t.type === 'Money In') mIn += parseFloat(t.amount || 0);
-            });
-            document.getElementById('t-exp').innerText = `Ksh ${exp.toLocaleString()}`;
-            document.getElementById('t-in').innerText = `Ksh ${mIn.toLocaleString()}`;
         }
+        return null;
+    }
 
-        const { data: products } = await supabase.from('products').select('*').order('name');
+    // Handle branch filter change
+    window.handleBranchChange = async function() {
+        const filter = document.getElementById('branchFilter').value;
+        currentBranchFilter = filter;
+        
+        const badge = document.getElementById('selectedBranchName');
+        const branchIndicator = document.getElementById('branchIndicator');
+        const moneyFlowBranch = document.getElementById('moneyFlowBranch');
+        const gasBranch = document.getElementById('gasBranch');
+        const sparesBranch = document.getElementById('sparesBranch');
+        const paybillBranch = document.getElementById('paybillBranch');
+        
+        if (filter === 'all') {
+            badge.textContent = 'ALL BRANCHES';
+            if (branchIndicator) branchIndicator.textContent = '(All Branches)';
+            if (moneyFlowBranch) moneyFlowBranch.textContent = '(All Branches)';
+            if (gasBranch) gasBranch.textContent = '(All Branches)';
+            if (sparesBranch) sparesBranch.textContent = '(All Branches)';
+            if (paybillBranch) paybillBranch.textContent = '(All Branches)';
+            currentBranchId = null;
+        } else {
+            const branchId = getBranchIdFromCode(filter);
+            if (branchId) {
+                currentBranchId = branchId;
+                badge.textContent = branches[branchId].name;
+                if (branchIndicator) branchIndicator.textContent = `(${branches[branchId].name})`;
+                if (moneyFlowBranch) moneyFlowBranch.textContent = `(${branches[branchId].name})`;
+                if (gasBranch) gasBranch.textContent = `(${branches[branchId].name})`;
+                if (sparesBranch) sparesBranch.textContent = `(${branches[branchId].name})`;
+                if (paybillBranch) paybillBranch.textContent = `(${branches[branchId].name})`;
+            }
+        }
+        
+        await loadDashboardData();
+        await loadProducts();
+    };
+
+    async function loadBranches() {
+        const { data } = await supabase.from('branches').select('*');
+        branches = {};
+        data?.forEach(b => {
+            branches[b.id] = b;
+        });
+        return branches;
+    }
+
+    async function loadBranchComparison() {
+        const { data: sales } = await supabase
+            .from('sales')
+            .select(`
+                branch_id,
+                total_amount,
+                created_at,
+                quantity,
+                unit_price,
+                cost_price
+            `)
+            .gte('created_at', new Date(new Date().setHours(0,0,0,0)).toISOString());
+
+        const branchStats = {};
+        
+        // Initialize stats for all branches
+        Object.keys(branches).forEach(id => {
+            branchStats[id] = {
+                sales: 0,
+                profit: 0,
+                transactions: 0,
+                items: 0
+            };
+        });
+
+        // Calculate stats
+        sales?.forEach(sale => {
+            if (branchStats[sale.branch_id]) {
+                branchStats[sale.branch_id].sales += sale.total_amount || 0;
+                branchStats[sale.branch_id].transactions++;
+                branchStats[sale.branch_id].items += sale.quantity || 0;
+                branchStats[sale.branch_id].profit += ((sale.unit_price || 0) - (sale.cost_price || 0)) * (sale.quantity || 0);
+            }
+        });
+
+        // Render comparison cards
+        const container = document.getElementById('branchComparison');
+        let html = '';
+        
+        Object.keys(branches).forEach(id => {
+            const branch = branches[id];
+            const stats = branchStats[id] || { sales: 0, profit: 0, transactions: 0, items: 0 };
+            const branchClass = branch.code === 'MUT' ? 'mutomo' : 'kitui';
+            
+            html += `
+                <div class="branch-stat-card ${branchClass}">
+                    <h4><i class="fas fa-store"></i> ${branch.name}</h4>
+                    <div class="stat-row">
+                        <span class="stat-label">Today's Sales</span>
+                        <span class="stat-value">Ksh ${stats.sales.toLocaleString()}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Today's Profit</span>
+                        <span class="stat-value">Ksh ${stats.profit.toLocaleString()}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Transactions</span>
+                        <span class="stat-value">${stats.transactions}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Items Sold</span>
+                        <span class="stat-value">${stats.items}</span>
+                    </div>
+                    <div class="total-sales">
+                        ${stats.sales > 0 ? `Ksh ${stats.sales.toLocaleString()}` : 'No sales yet'}
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    async function loadDashboardData() {
+        try {
+            // Get current shift based on filter
+            let shiftQuery = supabase
+                .from('daily_shifts')
+                .select('*')
+                .order('start_time', { ascending: false })
+                .limit(1);
+
+            if (currentBranchId) {
+                shiftQuery = shiftQuery.eq('branch_id', currentBranchId);
+            }
+
+            const { data: shift } = await shiftQuery.single();
+
+            if (shift) {
+                document.getElementById('f-mpesa').innerText = `Ksh ${shift.open_mpesa?.toLocaleString() || 0}`;
+                document.getElementById('f-cash').innerText = `Ksh ${shift.open_cash?.toLocaleString() || 0}`;
+                document.getElementById('f-kcb').innerText = `Ksh ${shift.open_kcb?.toLocaleString() || 0}`;
+                document.getElementById('f-equity').innerText = `Ksh ${shift.open_equity?.toLocaleString() || 0}`;
+                document.getElementById('shift-status-text').innerText = shift.status.toUpperCase();
+                document.getElementById('status-dot').style.background = shift.status === 'open' ? '#10b981' : '#ef4444';
+                
+                const openTime = new Date(shift.start_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', day:'numeric', month:'short'});
+                document.getElementById('disp-start').innerText = `Opened: ${openTime}`;
+                if(shift.end_time) {
+                    const closeTime = new Date(shift.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', day:'numeric', month:'short'});
+                    document.getElementById('disp-end').innerText = `Closed: ${closeTime}`;
+                }
+
+                // Money Flow Logic
+                let salesQuery = supabase.from('sales').select('*').eq('shift_id', shift.id);
+                if (currentBranchId) {
+                    salesQuery = salesQuery.eq('branch_id', currentBranchId);
+                }
+                
+                const { data: shiftSales } = await salesQuery;
+                let rev = 0, prof = 0;
+                shiftSales?.forEach(s => {
+                    rev += parseFloat(s.total_amount || 0);
+                    prof += (parseFloat(s.unit_price || 0) - parseFloat(s.cost_price || 0)) * parseInt(s.quantity || 0);
+                });
+                document.getElementById('t-rev').innerText = `Ksh ${rev.toLocaleString()}`;
+                document.getElementById('t-prof').innerText = `Ksh ${prof.toLocaleString()}`;
+
+                let transQuery = supabase.from('cash_transactions').select('*').eq('shift_id', shift.id);
+                if (currentBranchId) {
+                    transQuery = transQuery.eq('branch_id', currentBranchId);
+                }
+                
+                const { data: tx } = await transQuery;
+                let exp = 0, mIn = 0;
+                tx?.forEach(t => {
+                    if(t.type === 'Money Out') exp += parseFloat(t.amount || 0);
+                    else if(t.type === 'Money In') mIn += parseFloat(t.amount || 0);
+                });
+                document.getElementById('t-exp').innerText = `Ksh ${exp.toLocaleString()}`;
+                document.getElementById('t-in').innerText = `Ksh ${mIn.toLocaleString()}`;
+            }
+
+            // Calculate Paybill for selected branch
+            let paybillQuery = supabase.from('sales').select('*').eq('payment_method', 'KCB Paybill');
+            let adminQuery = supabase.from('admin_expenses').select('*').eq('payment_source', 'KCB Paybill');
+            
+            if (currentBranchId) {
+                paybillQuery = paybillQuery.eq('branch_id', currentBranchId);
+                adminQuery = adminQuery.eq('branch_id', currentBranchId);
+            }
+
+            const [{ data: allPaybillSales }, { data: adminRecords }] = await Promise.all([
+                paybillQuery,
+                adminQuery
+            ]);
+
+            let totalPaybillIncome = 0, pbProfit = 0;
+            allPaybillSales?.forEach(s => {
+                totalPaybillIncome += parseFloat(s.total_amount || 0);
+                pbProfit += (parseFloat(s.unit_price || 0) - parseFloat(s.cost_price || 0)) * parseInt(s.quantity || 0);
+            });
+
+            let manualFunding = 0;
+            let manualExpenses = 0;
+
+            adminRecords?.forEach(r => {
+                const val = parseFloat(r.amount || 0);
+                if(r.type === 'funding') {
+                    manualFunding += val;
+                } else {
+                    manualExpenses += val;
+                }
+            });
+
+            const netPaybillBalance = (totalPaybillIncome + manualFunding) - manualExpenses;
+
+            document.getElementById('pb-total').innerText = `Ksh ${netPaybillBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            document.getElementById('pb-profit').innerText = `Total Net Profit from Paybill: Ksh ${pbProfit.toLocaleString()}`;
+
+        } catch (error) {
+            console.error("Error loading dashboard data:", error);
+        }
+    }
+
+    async function loadProducts() {
+        let query = supabase.from('products').select('*, suppliers(name)');
+        
+        if (currentBranchId) {
+            query = query.eq('branch_id', currentBranchId);
+        }
+        
+        const { data: products } = await query.order('name');
         allProducts = products || [];
         calculateGasSummary();
         renderLists();
@@ -325,6 +622,7 @@
                 </div>
             </div>
         `).join('');
+        
         const stockItems = allProducts.filter(p => p.category !== 'Gas' && p.name.toLowerCase().includes(stockTerm));
         document.getElementById('stock-list').innerHTML = stockItems.slice(0, stockLimit).map(p => `
             <div class="item-card" style="${p.stock_quantity < 5 ? 'border-left:4px solid var(--danger)' : ''}">
@@ -344,13 +642,39 @@
     document.getElementById('gasSearch').oninput = renderLists;
     document.getElementById('invSearch').oninput = renderLists;
     document.getElementById('loadStockBtn').onclick = () => { stockLimit += 10; renderLists(); };
+    document.getElementById('month-picker').onchange = loadDashboardData;
 
     window.handleLogout = async () => {
         if(confirm("Exit Admin Mode?")) {
+            localStorage.removeItem('pos_session');
             await supabase.auth.signOut();
             window.location.href = 'index.html';
         }
     };
+
+    async function init() {
+        const hour = new Date().getHours();
+        const greetText = hour < 12 ? "GOOD MORNING!" : hour < 17 ? "GOOD AFTERNOON!" : "GOOD EVENING!";
+        document.getElementById('greeting-text').innerText = `${greetText} WELCOME BACK, ADMIN 👋`;
+
+        // Set date range
+        const today = new Date();
+        document.getElementById('dateRange').innerText = today.toLocaleDateString('en-GB', { 
+            day: 'numeric', month: 'long', year: 'numeric' 
+        });
+
+        // Load branches first
+        await loadBranches();
+        
+        // Load branch comparison
+        await loadBranchComparison();
+        
+        // Load dashboard data
+        await loadDashboardData();
+        
+        // Load products
+        await loadProducts();
+    }
 
     init();
 </script>
