@@ -552,11 +552,11 @@
     <div class="page-header">
         <div class="page-title">
             <h1>Debtors Management</h1>
-            <p><i class="fas fa-store"></i> <span id="branchIndicator">All Branches</span></p>
+            <p><i class="fas fa-store"></i> <span id="branchIndicator">MUTOMO BRANCH</span></p>
         </div>
         <div class="branch-filter-badge" id="branchBadge">
             <i class="fas fa-store"></i>
-            <span id="currentBranchDisplay">All Branches</span>
+            <span id="currentBranchDisplay">MUTOMO BRANCH</span>
         </div>
     </div>
 
@@ -615,7 +615,7 @@
             
             <div style="margin-top: 20px; padding: 12px; background: #fff7ed; border-radius: 12px; border-left: 4px solid var(--warning);">
                 <small style="color: #9a3412; font-weight: 600;">
-                    <i class="fas fa-info-circle"></i> Debt entries are automatically linked to the selected branch's inventory.
+                    <i class="fas fa-info-circle"></i> Debt entries are automatically linked to your current branch.
                 </small>
             </div>
         </div>
@@ -689,8 +689,8 @@
     let selectedDebt = null;
     let currentUser = null;
     let currentBranchId = null;
+    let currentBranch = null;
     let branches = {};
-    let branchIdMap = {};
 
     // ==================== BRANCH AWARE FUNCTIONS ====================
 
@@ -728,6 +728,7 @@
             if (error) throw error;
             
             currentBranchId = profile.branch_id;
+            currentBranch = profile.branches;
             
             const session = {
                 user: user,
@@ -759,10 +760,8 @@
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
         branches = {};
-        branchIdMap = {};
         data?.forEach(b => {
             branches[b.id] = b;
-            branchIdMap[b.code] = b.id;
         });
     }
 
@@ -777,17 +776,25 @@
         const branchId = getCurrentBranchId();
         
         // Load products only for this branch
-        const [prodRes, shiftRes] = await Promise.all([
+        const [prodRes, shiftRes, debtsRes] = await Promise.all([
             supabase.from('products').select('*').eq('branch_id', branchId),
             supabase.from('daily_shifts')
                 .select('*')
                 .eq('branch_id', branchId)
                 .eq('status', 'open')
-                .maybeSingle()
+                .maybeSingle(),
+            supabase.from('debtors')
+                .select(`
+                    *,
+                    products (*)
+                `)
+                .eq('branch_id', branchId)
+                .order('created_at', { ascending: false })
         ]);
 
         allProducts = prodRes.data || [];
         currentShift = shiftRes.data;
+        allDebts = debtsRes.data || [];
 
         // Populate product datalist
         const dList = document.getElementById('prod-list');
@@ -800,7 +807,7 @@
                 data-min="${p.min_price || 0}">
         `).join('');
         
-        await loadLedger();
+        renderLedger();
     }
 
     // ==================== PRODUCT SEARCH HANDLER ====================
@@ -816,25 +823,6 @@
     });
 
     // ==================== LEDGER FUNCTIONS ====================
-
-    async function loadLedger() {
-        const branchId = getCurrentBranchId();
-        
-        const { data } = await supabase
-            .from('debtors')
-            .select(`
-                *,
-                products(*),
-                sales!inner(
-                    branch_id
-                )
-            `)
-            .eq('sales.branch_id', branchId)
-            .order('created_at', { ascending: false });
-            
-        allDebts = data || [];
-        renderLedger();
-    }
 
     function renderLedger(searchTerm = '') {
         const tbody = document.getElementById('ledger-body');
@@ -861,8 +849,20 @@
         document.getElementById('total-profit').innerText = `Ksh ${profit.toLocaleString()}`;
         document.getElementById('active-debtors').innerText = allDebts.filter(d => d.status === 'Unpaid').length;
 
+        if (filtered.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px;">
+                        <i class="fas fa-inbox" style="font-size: 2rem; color: var(--text-dim); margin-bottom: 10px; display: block;"></i>
+                        No debt records found for ${currentBranch?.name || 'this branch'}
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
         tbody.innerHTML = filtered.map(d => {
-            const branch = branches[d.sales?.branch_id] || { name: 'Unknown', code: '--' };
+            const branch = branches[d.branch_id] || { name: 'Unknown', code: '--' };
             
             return `
             <tr>
@@ -897,7 +897,7 @@
         selectedDebt = { id, amt, name, item };
         document.getElementById('modal-info').innerHTML = `
             <strong>Customer:</strong> ${name}<br>
-            <strong>Item:</strong> ${item}<br>
+            <strong>Item:</strong> ${item || 'N/A'}<br>
             <strong>Amount:</strong> Ksh ${amt.toLocaleString()}
         `;
         document.getElementById('settle-modal').style.display = 'flex';
@@ -924,14 +924,22 @@
                 .update({ status: 'Paid' })
                 .eq('id', selectedDebt.id);
 
-            // 2. Update Sales Record
-            await supabase.from('sales')
-                .update({ 
-                    payment_method: method,
-                    discount_reason: `Debt settled - ${selectedDebt.name}` 
-                })
+            // 2. Find and update the related sale (if exists)
+            const { data: relatedSale } = await supabase
+                .from('sales')
+                .select('id')
                 .eq('payment_method', 'Debt')
-                .eq('discount_reason', `Debt for ${selectedDebt.name} [UNPAID]`);
+                .eq('discount_reason', `Debt for ${selectedDebt.name} [UNPAID]`)
+                .maybeSingle();
+
+            if (relatedSale) {
+                await supabase.from('sales')
+                    .update({ 
+                        payment_method: method,
+                        discount_reason: `Debt settled - ${selectedDebt.name}` 
+                    })
+                    .eq('id', relatedSale.id);
+            }
 
             // 3. Log recovery into Cash transactions
             await supabase.from('cash_transactions').insert([{
@@ -939,7 +947,7 @@
                 type: 'Money In',
                 category: method.includes('Cash') ? 'Cash' : method,
                 amount: selectedDebt.amt,
-                description: `Debt recovery: ${selectedDebt.name} - ${selectedDebt.item}`,
+                description: `Debt recovery: ${selectedDebt.name} - ${selectedDebt.item || 'Debt payment'}`,
                 branch_id: branchId,
                 user_id: currentUser.id
             }]);
@@ -947,8 +955,22 @@
             generateReceipt(selectedDebt, method);
             alert("✅ Debt cleared successfully!");
             closeModal();
-            await loadLedger();
+            
+            // Refresh debts
+            const { data: freshDebts } = await supabase
+                .from('debtors')
+                .select(`
+                    *,
+                    products (*)
+                `)
+                .eq('branch_id', branchId)
+                .order('created_at', { ascending: false });
+                
+            allDebts = freshDebts || [];
+            renderLedger();
+            
         } catch (err) {
+            console.error("Error:", err);
             alert("Error: " + err.message);
         } finally {
             btn.innerHTML = originalText;
@@ -972,7 +994,7 @@
                     <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
                     <p><strong>Receipt No:</strong> ${Date.now().toString().slice(-8)}</p>
                     <p><strong>Customer:</strong> ${debt.name}</p>
-                    <p><strong>Item:</strong> ${debt.item}</p>
+                    <p><strong>Item:</strong> ${debt.item || 'N/A'}</p>
                     <p><strong>Amount Paid:</strong> Ksh ${debt.amt.toLocaleString()}</p>
                     <p><strong>Payment Method:</strong> ${method}</p>
                     <p><strong>Cashier:</strong> ${currentUser?.email || 'Admin'}</p>
@@ -1039,18 +1061,20 @@
         const branchId = getCurrentBranchId();
 
         try {
-            // 1. Save to Debtors
-            const { data: debtData } = await supabase.from('debtors').insert([{
+            // 1. Save to Debtors (branch_id is directly in debtors table)
+            const { data: debtData, error: debtError } = await supabase.from('debtors').insert([{
                 customer_name: customer,
-                customer_phone: phone,
+                customer_phone: phone || null,
                 product_id: opt.dataset.id,
                 amount_owed: amount,
                 status: 'Unpaid',
                 branch_id: branchId
             }]).select();
 
+            if (debtError) throw debtError;
+
             // 2. Save to Sales (Marked as Debt/Unpaid)
-            const { data: saleData } = await supabase.from('sales').insert([{
+            const { error: saleError } = await supabase.from('sales').insert([{
                 product_id: opt.dataset.id,
                 item_name: searchVal,
                 quantity: 1,
@@ -1062,14 +1086,18 @@
                 branch_id: branchId,
                 user_id: currentUser.id,
                 discount_reason: `Debt for ${customer} [UNPAID]`
-            }]).select();
+            }]);
+
+            if (saleError) throw saleError;
 
             // 3. Update Inventory
             const newStock = parseInt(opt.dataset.stock) - 1;
-            await supabase.from('products')
+            const { error: stockError } = await supabase.from('products')
                 .update({ stock_quantity: newStock })
                 .eq('id', opt.dataset.id)
                 .eq('branch_id', branchId);
+
+            if (stockError) throw stockError;
 
             alert("✅ Debt Recorded Successfully!");
             
@@ -1079,7 +1107,18 @@
             document.getElementById('live-min').innerText = '-';
             document.getElementById('live-price').innerText = '-';
             
-            await loadLedger();
+            // Refresh debts
+            const { data: freshDebts } = await supabase
+                .from('debtors')
+                .select(`
+                    *,
+                    products (*)
+                `)
+                .eq('branch_id', branchId)
+                .order('created_at', { ascending: false });
+                
+            allDebts = freshDebts || [];
+            renderLedger();
             
         } catch (err) {
             console.error("Error:", err);
