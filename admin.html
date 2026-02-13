@@ -6,6 +6,7 @@
     <title>JEPE AUTOSPARES | Multi-Branch Admin</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { 
             --admin-dark: #0f172a;
@@ -91,7 +92,7 @@
         }
 
         .container { padding: 12px; max-width: 1200px; margin: auto; padding-bottom: 100px; }
-        .section-title { font-size: 0.85rem; font-weight: 800; color: var(--admin-dark); margin: 0 0 10px 0; display: flex; align-items: center; justify-content: space-between; }
+        .section-title { font-size: 0.85rem; font-weight: 800; color: var(--admin-dark); margin: 0 0 10px 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; }
         
         .card { background: white; padding: 15px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #eef2f6; margin-bottom: 15px; }
 
@@ -196,6 +197,22 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        
+        /* No data message */
+        .no-data-message {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px dashed var(--border);
+        }
+        .no-data-message i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #cbd5e1;
+        }
     </style>
 </head>
 <body>
@@ -258,14 +275,14 @@
 </header>
 
 <div class="container">
-    <!-- Branch Comparison Cards -->
+    <!-- Branch Comparison Cards - Always shows all branches regardless of filter -->
     <div class="branch-comparison-grid" id="branchComparison">
         <!-- Will be populated by JavaScript -->
     </div>
 
     <div class="card">
         <div class="section-title">
-            <span>🏦 TODAYS SHIFT OPENING FLOATS <span id="branchIndicator"></span></span>
+            <span>🏦 TODAY'S SHIFT OPENING FLOATS <span id="branchIndicator"></span></span>
             <div class="shift-timer-box">
                 <div id="disp-start" class="time-display" style="color:var(--success);">Opened: --:--</div>
                 <div id="disp-end" class="time-display" style="color:var(--danger);">Closed: --:--</div>
@@ -329,6 +346,7 @@
     let allProducts = [];
     let stockLimit = 6;
     let branches = {};
+    let branchIdMap = {}; // Map branch code to branch ID
     let currentBranchFilter = 'all';
     let currentBranchId = null;
     let currentUser = null;
@@ -348,12 +366,7 @@
 
     // Get branch ID from branch code
     function getBranchIdFromCode(code) {
-        for (let id in branches) {
-            if (branches[id].code === code) {
-                return id;
-            }
-        }
-        return null;
+        return branchIdMap[code] || null;
     }
 
     // Handle branch filter change
@@ -389,20 +402,30 @@
             }
         }
         
-        await loadDashboardData();
-        await loadProducts();
+        // Reload all data with new branch filter
+        await Promise.all([
+            loadDashboardData(),
+            loadProducts(),
+            loadBranchComparison() // Keep comparison cards showing all branches
+        ]);
     };
 
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
         branches = {};
+        branchIdMap = {};
         data?.forEach(b => {
             branches[b.id] = b;
+            branchIdMap[b.code] = b.id;
         });
         return branches;
     }
 
     async function loadBranchComparison() {
+        // Always show all branches regardless of filter
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
         const { data: sales } = await supabase
             .from('sales')
             .select(`
@@ -413,7 +436,7 @@
                 unit_price,
                 cost_price
             `)
-            .gte('created_at', new Date(new Date().setHours(0,0,0,0)).toISOString());
+            .gte('created_at', today.toISOString());
 
         const branchStats = {};
         
@@ -441,43 +464,53 @@
         const container = document.getElementById('branchComparison');
         let html = '';
         
-        Object.keys(branches).forEach(id => {
-            const branch = branches[id];
-            const stats = branchStats[id] || { sales: 0, profit: 0, transactions: 0, items: 0 };
-            const branchClass = branch.code === 'MUT' ? 'mutomo' : 'kitui';
-            
-            html += `
-                <div class="branch-stat-card ${branchClass}">
-                    <h4><i class="fas fa-store"></i> ${branch.name}</h4>
-                    <div class="stat-row">
-                        <span class="stat-label">Today's Sales</span>
-                        <span class="stat-value">Ksh ${stats.sales.toLocaleString()}</span>
+        if (Object.keys(branches).length === 0) {
+            html = '<div class="no-data-message"><i class="fas fa-store"></i><p>No branches found</p></div>';
+        } else {
+            Object.keys(branches).forEach(id => {
+                const branch = branches[id];
+                const stats = branchStats[id] || { sales: 0, profit: 0, transactions: 0, items: 0 };
+                const branchClass = branch.code === 'MUT' ? 'mutomo' : 'kitui';
+                
+                html += `
+                    <div class="branch-stat-card ${branchClass}" onclick="quickFilterBranch('${branch.code}')" style="cursor:pointer;">
+                        <h4><i class="fas fa-store"></i> ${branch.name}</h4>
+                        <div class="stat-row">
+                            <span class="stat-label">Today's Sales</span>
+                            <span class="stat-value">Ksh ${stats.sales.toLocaleString()}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Today's Profit</span>
+                            <span class="stat-value">Ksh ${stats.profit.toLocaleString()}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Transactions</span>
+                            <span class="stat-value">${stats.transactions}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Items Sold</span>
+                            <span class="stat-value">${stats.items}</span>
+                        </div>
+                        <div class="total-sales">
+                            ${stats.sales > 0 ? `Ksh ${stats.sales.toLocaleString()}` : 'No sales yet'}
+                        </div>
                     </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Today's Profit</span>
-                        <span class="stat-value">Ksh ${stats.profit.toLocaleString()}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Transactions</span>
-                        <span class="stat-value">${stats.transactions}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Items Sold</span>
-                        <span class="stat-value">${stats.items}</span>
-                    </div>
-                    <div class="total-sales">
-                        ${stats.sales > 0 ? `Ksh ${stats.sales.toLocaleString()}` : 'No sales yet'}
-                    </div>
-                </div>
-            `;
-        });
+                `;
+            });
+        }
 
         container.innerHTML = html;
     }
+    
+    // Quick filter by clicking on branch card
+    window.quickFilterBranch = function(branchCode) {
+        document.getElementById('branchFilter').value = branchCode;
+        handleBranchChange();
+    };
 
     async function loadDashboardData() {
         try {
-            // Get current shift based on filter
+            // Get current/latest shift based on filter
             let shiftQuery = supabase
                 .from('daily_shifts')
                 .select('*')
@@ -488,14 +521,15 @@
                 shiftQuery = shiftQuery.eq('branch_id', currentBranchId);
             }
 
-            const { data: shift } = await shiftQuery.single();
+            const { data: shifts } = await shiftQuery;
+            const shift = shifts && shifts.length > 0 ? shifts[0] : null;
 
             if (shift) {
                 document.getElementById('f-mpesa').innerText = `Ksh ${shift.open_mpesa?.toLocaleString() || 0}`;
                 document.getElementById('f-cash').innerText = `Ksh ${shift.open_cash?.toLocaleString() || 0}`;
                 document.getElementById('f-kcb').innerText = `Ksh ${shift.open_kcb?.toLocaleString() || 0}`;
                 document.getElementById('f-equity').innerText = `Ksh ${shift.open_equity?.toLocaleString() || 0}`;
-                document.getElementById('shift-status-text').innerText = shift.status.toUpperCase();
+                document.getElementById('shift-status-text').innerText = shift.status ? shift.status.toUpperCase() : 'CLOSED';
                 document.getElementById('status-dot').style.background = shift.status === 'open' ? '#10b981' : '#ef4444';
                 
                 const openTime = new Date(shift.start_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', day:'numeric', month:'short'});
@@ -503,41 +537,72 @@
                 if(shift.end_time) {
                     const closeTime = new Date(shift.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', day:'numeric', month:'short'});
                     document.getElementById('disp-end').innerText = `Closed: ${closeTime}`;
+                } else {
+                    document.getElementById('disp-end').innerText = `Closed: --`;
                 }
-
-                // Money Flow Logic
-                let salesQuery = supabase.from('sales').select('*').eq('shift_id', shift.id);
-                if (currentBranchId) {
-                    salesQuery = salesQuery.eq('branch_id', currentBranchId);
-                }
-                
-                const { data: shiftSales } = await salesQuery;
-                let rev = 0, prof = 0;
-                shiftSales?.forEach(s => {
-                    rev += parseFloat(s.total_amount || 0);
-                    prof += (parseFloat(s.unit_price || 0) - parseFloat(s.cost_price || 0)) * parseInt(s.quantity || 0);
-                });
-                document.getElementById('t-rev').innerText = `Ksh ${rev.toLocaleString()}`;
-                document.getElementById('t-prof').innerText = `Ksh ${prof.toLocaleString()}`;
-
-                let transQuery = supabase.from('cash_transactions').select('*').eq('shift_id', shift.id);
-                if (currentBranchId) {
-                    transQuery = transQuery.eq('branch_id', currentBranchId);
-                }
-                
-                const { data: tx } = await transQuery;
-                let exp = 0, mIn = 0;
-                tx?.forEach(t => {
-                    if(t.type === 'Money Out') exp += parseFloat(t.amount || 0);
-                    else if(t.type === 'Money In') mIn += parseFloat(t.amount || 0);
-                });
-                document.getElementById('t-exp').innerText = `Ksh ${exp.toLocaleString()}`;
-                document.getElementById('t-in').innerText = `Ksh ${mIn.toLocaleString()}`;
+            } else {
+                // No shift found
+                document.getElementById('f-mpesa').innerText = 'Ksh 0';
+                document.getElementById('f-cash').innerText = 'Ksh 0';
+                document.getElementById('f-kcb').innerText = 'Ksh 0';
+                document.getElementById('f-equity').innerText = 'Ksh 0';
+                document.getElementById('shift-status-text').innerText = 'NO SHIFT';
+                document.getElementById('status-dot').style.background = '#cbd5e1';
+                document.getElementById('disp-start').innerText = 'Opened: --';
+                document.getElementById('disp-end').innerText = 'Closed: --';
             }
 
+            // Money Flow Logic - Get sales for today
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            let salesQuery = supabase
+                .from('sales')
+                .select('*')
+                .gte('created_at', today.toISOString());
+                
+            if (currentBranchId) {
+                salesQuery = salesQuery.eq('branch_id', currentBranchId);
+            }
+            
+            const { data: todaySales } = await salesQuery;
+            let rev = 0, prof = 0;
+            todaySales?.forEach(s => {
+                rev += parseFloat(s.total_amount || 0);
+                prof += (parseFloat(s.unit_price || 0) - parseFloat(s.cost_price || 0)) * parseInt(s.quantity || 0);
+            });
+            document.getElementById('t-rev').innerText = `Ksh ${rev.toLocaleString()}`;
+            document.getElementById('t-prof').innerText = `Ksh ${prof.toLocaleString()}`;
+
+            // Get today's cash transactions
+            let transQuery = supabase
+                .from('cash_transactions')
+                .select('*')
+                .gte('created_at', today.toISOString());
+                
+            if (currentBranchId) {
+                transQuery = transQuery.eq('branch_id', currentBranchId);
+            }
+            
+            const { data: tx } = await transQuery;
+            let exp = 0, mIn = 0;
+            tx?.forEach(t => {
+                if(t.type === 'Money Out') exp += parseFloat(t.amount || 0);
+                else if(t.type === 'Money In') mIn += parseFloat(t.amount || 0);
+            });
+            document.getElementById('t-exp').innerText = `Ksh ${exp.toLocaleString()}`;
+            document.getElementById('t-in').innerText = `Ksh ${mIn.toLocaleString()}`;
+
             // Calculate Paybill for selected branch
-            let paybillQuery = supabase.from('sales').select('*').eq('payment_method', 'KCB Paybill');
-            let adminQuery = supabase.from('admin_expenses').select('*').eq('payment_source', 'KCB Paybill');
+            let paybillQuery = supabase
+                .from('sales')
+                .select('*')
+                .eq('payment_method', 'KCB Paybill');
+                
+            let adminQuery = supabase
+                .from('admin_expenses')
+                .select('*')
+                .eq('payment_source', 'KCB Paybill');
             
             if (currentBranchId) {
                 paybillQuery = paybillQuery.eq('branch_id', currentBranchId);
@@ -578,7 +643,9 @@
     }
 
     async function loadProducts() {
-        let query = supabase.from('products').select('*, suppliers(name)');
+        let query = supabase
+            .from('products')
+            .select('*, suppliers(name)');
         
         if (currentBranchId) {
             query = query.eq('branch_id', currentBranchId);
@@ -600,49 +667,78 @@
         });
         const grandFull = summary.reduce((sum, s) => sum + s.full, 0);
         const grandEmpty = summary.reduce((sum, s) => sum + s.empty, 0);
-        document.getElementById('gas-summary-body').innerHTML = summary.map(s => `
-            <tr><td>${s.cat}</td><td>${s.full}</td><td>${s.empty}</td><td>${s.total}</td></tr>
-        `).join('') + `
-            <tr class="row-total"><td><strong>GRAND</strong></td><td><strong>${grandFull}</strong></td><td><strong>${grandEmpty}</strong></td><td><strong>${grandFull + grandEmpty}</strong></td></tr>
-        `;
+        
+        if (summary.length > 0 && grandFull + grandEmpty > 0) {
+            document.getElementById('gas-summary-body').innerHTML = summary.map(s => `
+                <tr><td>${s.cat}</td><td>${s.full}</td><td>${s.empty}</td><td>${s.total}</td></tr>
+            `).join('') + `
+                <tr class="row-total"><td><strong>GRAND</strong></td><td><strong>${grandFull}</strong></td><td><strong>${grandEmpty}</strong></td><td><strong>${grandFull + grandEmpty}</strong></td></tr>
+            `;
+        } else {
+            document.getElementById('gas-summary-body').innerHTML = `
+                <tr><td colspan="4" style="text-align:center; padding:20px;">No gas products found for selected branch</td></tr>
+            `;
+        }
     }
 
     function renderLists() {
         const gasTerm = document.getElementById('gasSearch').value.toLowerCase();
         const stockTerm = document.getElementById('invSearch').value.toLowerCase();
-        const gasItems = allProducts.filter(p => p.category === 'Gas' && p.name.toLowerCase().includes(gasTerm));
-        document.getElementById('gas-list').innerHTML = gasItems.map(p => `
-            <div class="item-card">
-                <div style="font-weight:800; font-size:0.85rem; margin-bottom:8px; display:flex; justify-content:space-between;">
-                    <span>${p.name}</span><small style="color:var(--text-dim); font-size:0.65rem;">${p.weight_category || 'Gas'}</small>
-                </div>
-                <div style="display:flex; gap:8px;">
-                    <div class="gas-pill pill-full"><small style="display:block; font-size:0.55rem;">FULL</small><b>${p.stock_quantity}</b></div>
-                    <div class="gas-pill pill-empty"><small style="display:block; font-size:0.55rem;">EMPTY</small><b>${p.empty_quantity || 0}</b></div>
-                </div>
-            </div>
-        `).join('');
         
+        // Gas items
+        const gasItems = allProducts.filter(p => p.category === 'Gas' && p.name.toLowerCase().includes(gasTerm));
+        if (gasItems.length > 0) {
+            document.getElementById('gas-list').innerHTML = gasItems.map(p => `
+                <div class="item-card">
+                    <div style="font-weight:800; font-size:0.85rem; margin-bottom:8px; display:flex; justify-content:space-between;">
+                        <span>${p.name}</span><small style="color:var(--text-dim); font-size:0.65rem;">${p.weight_category || 'Gas'}</small>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <div class="gas-pill pill-full"><small style="display:block; font-size:0.55rem;">FULL</small><b>${p.stock_quantity}</b></div>
+                        <div class="gas-pill pill-empty"><small style="display:block; font-size:0.55rem;">EMPTY</small><b>${p.empty_quantity || 0}</b></div>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            document.getElementById('gas-list').innerHTML = '<div class="no-data-message"><i class="fas fa-gas-pump"></i><p>No gas products found</p></div>';
+        }
+        
+        // Stock items (non-gas)
         const stockItems = allProducts.filter(p => p.category !== 'Gas' && p.name.toLowerCase().includes(stockTerm));
-        document.getElementById('stock-list').innerHTML = stockItems.slice(0, stockLimit).map(p => `
-            <div class="item-card" style="${p.stock_quantity < 5 ? 'border-left:4px solid var(--danger)' : ''}">
-                <div style="display:flex; justify-content:space-between; align-items:start;">
-                    <div><div style="font-weight:800; font-size:0.85rem;">${p.name}</div><small style="color:var(--text-dim); font-size:0.65rem;">${p.part_type || 'Spare'}</small></div>
-                    <div style="font-weight:800; color:var(--admin-accent); font-size:0.85rem;">${p.stock_quantity} <small style="font-size:0.6rem">QTY</small></div>
+        if (stockItems.length > 0) {
+            document.getElementById('stock-list').innerHTML = stockItems.slice(0, stockLimit).map(p => `
+                <div class="item-card" style="${p.stock_quantity < 5 ? 'border-left:4px solid var(--danger)' : ''}">
+                    <div style="display:flex; justify-content:space-between; align-items:start;">
+                        <div><div style="font-weight:800; font-size:0.85rem;">${p.name}</div><small style="color:var(--text-dim); font-size:0.65rem;">${p.part_type || 'Spare'}</small></div>
+                        <div style="font-weight:800; color:var(--admin-accent); font-size:0.85rem;">${p.stock_quantity} <small style="font-size:0.6rem">QTY</small></div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:10px; border-top:1px solid #f1f5f9; padding-top:8px; font-size:0.7rem;">
+                        <div><label style="display:block; font-size:0.55rem; color:var(--text-dim);">BUY</label><b>${p.cost_price}</b></div>
+                        <div><label style="display:block; font-size:0.55rem; color:var(--text-dim);">SELL</label><b>${p.selling_price}</b></div>
+                        <div><label style="display:block; font-size:0.55rem; color:var(--text-dim);">PROFIT</label><b style="color:var(--success)">+${p.selling_price - p.cost_price}</b></div>
+                    </div>
                 </div>
-                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:10px; border-top:1px solid #f1f5f9; padding-top:8px; font-size:0.7rem;">
-                    <div><label style="display:block; font-size:0.55rem; color:var(--text-dim);">BUY</label><b>${p.cost_price}</b></div>
-                    <div><label style="display:block; font-size:0.55rem; color:var(--text-dim);">SELL</label><b>${p.selling_price}</b></div>
-                    <div><label style="display:block; font-size:0.55rem; color:var(--text-dim);">PROFIT</label><b style="color:var(--success)">+${p.selling_price - p.cost_price}</b></div>
-                </div>
-            </div>
-        `).join('');
+            `).join('');
+            
+            if (stockItems.length > stockLimit) {
+                document.getElementById('loadStockBtn').style.display = 'block';
+            } else {
+                document.getElementById('loadStockBtn').style.display = 'none';
+            }
+        } else {
+            document.getElementById('stock-list').innerHTML = '<div class="no-data-message"><i class="fas fa-box-open"></i><p>No spare parts found</p></div>';
+            document.getElementById('loadStockBtn').style.display = 'none';
+        }
     }
 
-    document.getElementById('gasSearch').oninput = renderLists;
-    document.getElementById('invSearch').oninput = renderLists;
-    document.getElementById('loadStockBtn').onclick = () => { stockLimit += 10; renderLists(); };
-    document.getElementById('month-picker').onchange = loadDashboardData;
+    // Event listeners
+    document.getElementById('gasSearch').addEventListener('input', renderLists);
+    document.getElementById('invSearch').addEventListener('input', renderLists);
+    document.getElementById('loadStockBtn').addEventListener('click', () => { 
+        stockLimit += 10; 
+        renderLists(); 
+    });
+    document.getElementById('month-picker').addEventListener('change', loadDashboardData);
 
     window.handleLogout = async () => {
         if(confirm("Exit Admin Mode?")) {
@@ -663,17 +759,19 @@
             day: 'numeric', month: 'long', year: 'numeric' 
         });
 
+        // Set default month picker to current month
+        const yearMonth = today.toISOString().slice(0, 7);
+        document.getElementById('month-picker').value = yearMonth;
+
         // Load branches first
         await loadBranches();
         
-        // Load branch comparison
-        await loadBranchComparison();
-        
-        // Load dashboard data
-        await loadDashboardData();
-        
-        // Load products
-        await loadProducts();
+        // Load all data
+        await Promise.all([
+            loadBranchComparison(),
+            loadDashboardData(),
+            loadProducts()
+        ]);
     }
 
     init();
