@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shift Audit | JEPE POS</title>
+    <title>Shift Audit | JEPE POS - Cashier</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -82,9 +82,11 @@
             transition: 0.2s; 
             font-size: 0.9rem; 
         }
-        .nav-item span { 
+        .nav-item i { 
             margin-right: 12px; 
             font-size: 1.1rem; 
+            width: 20px;
+            text-align: center;
         }
         .nav-item:hover { 
             background: rgba(255,255,255,0.05); 
@@ -151,6 +153,23 @@
             border: 1px solid var(--border); 
             margin-bottom: 24px; 
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); 
+        }
+
+        .branch-badge {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 6px 15px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-top: 10px;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+        }
+        
+        .branch-badge i {
+            margin-right: 6px;
         }
 
         /* --- MOBILE SLIDE INDICATOR --- */
@@ -519,43 +538,10 @@
             .shift-mobile-action-btn i {
                 font-size: 0.9rem;
             }
-            
-            .mobile-header {
-                display: flex;
-                align-items: center;
-                padding: 15px;
-                background: var(--sidebar-bg);
-                color: white;
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                z-index: 2000;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            }
-            
-            .mobile-header button {
-                background: none;
-                border: none;
-                color: white;
-                font-size: 1.5rem;
-                cursor: pointer;
-                padding: 5px;
-                margin-right: 10px;
-            }
-            
-            .mobile-header span {
-                font-weight: 700;
-                font-size: 1.1rem;
-            }
         }
         
         /* Desktop specific */
         @media (min-width: 769px) {
-            .mobile-header {
-                display: none;
-            }
-            
             .mobile-shifts-container {
                 display: none !important;
             }
@@ -629,7 +615,7 @@
         
         @media (max-width: 768px) {
             .refresh-btn {
-                bottom: 80px;
+                bottom: 20px;
                 right: 15px;
                 width: 45px;
                 height: 45px;
@@ -639,30 +625,27 @@
 </head>
 <body>
 
-<div class="mobile-header">
-    <button onclick="toggleMenu()">☰</button>
-    <span>Shift Audit Log</span>
-</div>
+<button class="menu-trigger" onclick="toggleMenu()">☰ MENU</button>
 
 <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
         JEPE CASHIER
-        <button class="close-menu" onclick="toggleMenu()">✕</button>
+        <button class="close-menu" onclick="toggleMenu()">×</button>
     </div>
     <div class="nav-list">
-        <a href="cashier.html" class="nav-item">📊 Dashboard</a>
-        <a href="cashiergashub.html" class="nav-item">⛽ Gas Hub</a>
-        <a href="low-stock-cashier.html" class="nav-item">⚠️ Low Stock</a>
-        <a href="debtors.html" class="nav-item">👥 Debtors</a>
-        <a href="supplierscashier.html" class="nav-item">🤝 Suppliers</a>
-        <a href="cashier_inventory.html" class="nav-item">🛒 Add Items</a>
-        <a href="moneyinout.html" class="nav-item">💸 Money History</a>
-        <a href="shift history cashier.html" class="nav-item active">⏳ Shift History</a>
-        <a href="sales_reports.html" class="nav-item">📜 Sales History</a>
-        <a href="pos.html" class="nav-item">📦 View Stock</a>
-        <a href="gas_delivery.html" class="nav-item">🏍 Deliveries</a>
-        <a href="cashier_report.html" class="nav-item">📝 Today's Report</a>
-        <a href="index.html" class="nav-item" style="color: #fb7185; margin-top: 20px;">🚪 Logout</a>
+        <a href="cashier.html" class="nav-item"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        <a href="cashiergashub.html" class="nav-item"><i class="fas fa-fire"></i> Gas Hub</a>
+        <a href="low-stock-cashier.html" class="nav-item"><i class="fas fa-exclamation-triangle"></i> Low Stock</a>
+        <a href="debtors.html" class="nav-item"><i class="fas fa-users"></i> Debtors</a>
+        <a href="supplierscashier.html" class="nav-item"><i class="fas fa-handshake"></i> Suppliers</a>
+        <a href="cashier_inventory.html" class="nav-item"><i class="fas fa-boxes"></i> Add Items</a>
+        <a href="moneyinout.html" class="nav-item"><i class="fas fa-money-bill-wave"></i> Money History</a>
+        <a href="shift history cashier.html" class="nav-item active"><i class="fas fa-history"></i> Shift History</a>
+        <a href="sales_reports.html" class="nav-item"><i class="fas fa-chart-line"></i> Sales History</a>
+        <a href="pos.html" class="nav-item"><i class="fas fa-shopping-cart"></i> View Stock</a>
+        <a href="gas_delivery.html" class="nav-item"><i class="fas fa-truck"></i> Deliveries</a>
+        <a href="cashier_report.html" class="nav-item"><i class="fas fa-file-alt"></i> Today's Report</a>
+        <a href="index.html" class="nav-item" style="color: #fb7185; margin-top: 20px;" onclick="logoutUser()"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 </nav>
 
@@ -670,6 +653,9 @@
     <div class="page-header">
         <h1 style="margin:0; font-size: 1.6rem;">DAILY SHIFT HISTORY</h1>
         <p style="margin:6px 0 0; color: var(--dim);">Comprehensive reconciliation of all physical and system balances.</p>
+        <div id="branchDisplay" class="branch-badge" style="display: none;">
+            <i class="fas fa-store"></i> <span id="branchName"></span>
+        </div>
     </div>
 
     <div class="slide-indicator" id="scrollHint">
@@ -727,9 +713,85 @@
     
     let allShifts = [], allTransactions = [], allSales = [];
     let isMobile = window.innerWidth <= 768;
+    let currentUser = null;
+    let currentBranchId = null;
+    let currentUserProfile = null;
+
+    // ============================================
+    // BRANCH-AWARE HELPER FUNCTIONS
+    // ============================================
+
+    // Get current user's branch ID from session
+    function getCurrentBranchId() {
+        const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
+        return session.branch?.id || currentBranchId;
+    }
+
+    // Load user profile with branch info
+    async function loadUserProfile() {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return null;
+            }
+            
+            currentUser = user;
+            
+            // Get profile with branch info
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select(`
+                    *,
+                    branches (
+                        id,
+                        name,
+                        code,
+                        location
+                    )
+                `)
+                .eq('id', user.id)
+                .single();
+            
+            if (error) throw error;
+            
+            currentUserProfile = profile;
+            currentBranchId = profile.branch_id;
+            
+            // Store in session for other functions
+            const session = {
+                user: user,
+                profile: profile,
+                branch: profile.branches,
+                role: profile.role
+            };
+            localStorage.setItem('pos_session', JSON.stringify(session));
+            
+            // Display branch in header
+            if (profile.branches) {
+                const branchDisplay = document.getElementById('branchDisplay');
+                const branchName = document.getElementById('branchName');
+                if (branchDisplay && branchName) {
+                    branchName.textContent = profile.branches.name;
+                    branchDisplay.style.display = 'inline-block';
+                }
+            }
+            
+            return profile;
+        } catch (error) {
+            console.error("Error loading profile:", error);
+            return null;
+        }
+    }
 
     window.toggleMenu = function() {
         document.getElementById('sidebar').classList.toggle('active');
+    };
+
+    window.logoutUser = async function() {
+        localStorage.removeItem('pos_session');
+        await supabase.auth.signOut();
+        window.location.href = 'index.html';
     };
 
     const scrollContainer = document.getElementById('scrollContainer');
@@ -747,10 +809,23 @@
         showLoading(true);
         
         try {
+            const branchId = getCurrentBranchId();
+            if (!branchId) {
+                console.error("No branch ID found");
+                return;
+            }
+
             const [shiftsRes, transRes, salesRes] = await Promise.all([
-                supabase.from('daily_shifts').select('*').order('start_time', { ascending: false }),
-                supabase.from('cash_transactions').select('shift_id, amount, type'),
-                supabase.from('sales').select('shift_id, total_amount, payment_method')
+                supabase.from('daily_shifts')
+                    .select('*')
+                    .eq('branch_id', branchId)
+                    .order('start_time', { ascending: false }),
+                supabase.from('cash_transactions')
+                    .select('shift_id, amount, type')
+                    .eq('branch_id', branchId),
+                supabase.from('sales')
+                    .select('shift_id, total_amount, payment_method')
+                    .eq('branch_id', branchId)
             ]);
 
             allShifts = shiftsRes.data || [];
@@ -806,7 +881,7 @@
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
-            const isClosed = sh.status === 'Closed';
+            const isClosed = sh.status === 'closed';
             const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             
@@ -824,7 +899,7 @@
                     varianceDisplay = 'VAR: +' + varianceVal.toLocaleString();
                     varianceClass = 'var-positive';
                 } else if (varianceVal < 0) {
-                    varianceDisplay = 'VAR: ' + varianceVal.toLocaleString(); // toLocaleString keeps the - sign
+                    varianceDisplay = 'VAR: ' + varianceVal.toLocaleString();
                     varianceClass = 'var-negative';
                 } else {
                     varianceDisplay = 'VAR: 0';
@@ -903,7 +978,7 @@
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
-            const isClosed = sh.status === 'Closed';
+            const isClosed = sh.status === 'closed';
             const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             const varianceVal = isClosed ? (closeTotal - expected) : 0;
@@ -1083,10 +1158,12 @@
         const btn = document.getElementById('refreshBtn');
         const originalHtml = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
         
         await fetchData();
         
         btn.innerHTML = originalHtml;
+        btn.disabled = false;
         
         // Show success feedback
         btn.style.background = '#10b981';
@@ -1105,8 +1182,11 @@
     });
 
     // Initialize on load
-    document.addEventListener('DOMContentLoaded', function() {
-        fetchData();
+    document.addEventListener('DOMContentLoaded', async function() {
+        const profile = await loadUserProfile();
+        if (profile) {
+            await fetchData();
+        }
         
         // Check if we're on mobile initially
         isMobile = window.innerWidth <= 768;
