@@ -3,12 +3,20 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JEPE AUTOSPARES | Multi-Branch Admin</title>
+    <title>JEPE AUTOSPARES | Multi-Branch Admin Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         :root { 
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
             --admin-dark: #0f172a;
             --admin-accent: #1e3a8a;
             --bg: #f1f5f9;
@@ -20,198 +28,533 @@
             --warning: #f59e0b;
             --blue: #2563eb;
             --switch-btn: #0ea5e9;
+            --border: #e2e8f0;
+            --shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); margin: 0; color: var(--text); min-height: 100vh; }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            min-height: 100vh;
+        }
 
-        /* --- NAVIGATION --- */
-        .nav-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(15px); z-index: 3000; display: none; flex-direction: column; padding: 60px 20px 40px 20px; overflow-y: auto; }
-        .nav-overlay.active { display: flex; animation: fadeIn 0.3s ease forwards; }
+        /* Navigation */
+        .nav-overlay { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(15, 23, 42, 0.98); 
+            backdrop-filter: blur(15px); 
+            z-index: 3000; 
+            display: none; 
+            flex-direction: column; 
+            padding: 60px 20px 40px; 
+            overflow-y: auto; 
+        }
+        .nav-overlay.active { display: flex; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .nav-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; max-width: 500px; margin: 0 auto; }
-        .nav-card { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 15px 8px; text-align: center; color: white; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        
+        .nav-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 10px; 
+            max-width: 500px; 
+            margin: 0 auto; 
+            width: 100%;
+        }
+        
+        .nav-card { 
+            background: rgba(255, 255, 255, 0.08); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            border-radius: 15px; 
+            padding: 15px 8px; 
+            text-align: center; 
+            color: white; 
+            text-decoration: none; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 5px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .nav-card:hover { background: rgba(255, 255, 255, 0.15); transform: translateY(-2px); }
         .nav-card span { font-size: 1.2rem; }
-        .nav-card small { font-size: 0.7rem; font-weight: 600; line-height: 1.2; }
-        .switch-card { background: var(--switch-btn); grid-column: span 2; margin-bottom: 10px; border: none; font-weight: 800; padding: 20px; }
-        .nav-header-title { color: white; text-align: center; font-weight: 800; font-size: 1.4rem; margin-bottom: 20px; letter-spacing: 1px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+        .nav-card small { font-size: 0.7rem; font-weight: 600; }
+        .switch-card { background: var(--switch-btn); grid-column: span 2; }
+        .nav-header-title { 
+            color: white; 
+            text-align: center; 
+            font-weight: 800; 
+            font-size: 1.4rem; 
+            margin-bottom: 20px; 
+            letter-spacing: 1px; 
+            border-bottom: 2px solid rgba(255,255,255,0.1); 
+            padding-bottom: 10px; 
+        }
 
-        /* --- FAB --- */
-        .fab-menu { position: fixed; bottom: 30px; left: 25px; width: 65px; height: 65px; background: var(--admin-accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.6rem; box-shadow: 0 10px 30px rgba(30, 58, 138, 0.4); border: 4px solid white; cursor: pointer; z-index: 2000; animation: swing 3s infinite ease-in-out; transform-origin: center bottom; }
-        @keyframes swing { 0%, 100% { transform: rotate(0deg); } 20% { transform: rotate(10deg); } 40% { transform: rotate(-10deg); } }
-        .guide-hand { position: fixed; bottom: 105px; left: 32px; z-index: 2500; display: flex; flex-direction: column; align-items: center; animation: bounce 1.5s infinite; }
+        /* FAB Menu */
+        .fab-menu { 
+            position: fixed; 
+            bottom: 30px; 
+            left: 25px; 
+            width: 65px; 
+            height: 65px; 
+            background: var(--admin-accent); 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: white; 
+            font-size: 1.6rem; 
+            box-shadow: 0 10px 30px rgba(30, 58, 138, 0.4); 
+            border: 4px solid white; 
+            cursor: pointer; 
+            z-index: 2000; 
+            transition: all 0.3s;
+        }
+        .fab-menu:hover { transform: scale(1.1); }
+        
+        .guide-hand { 
+            position: fixed; 
+            bottom: 105px; 
+            left: 32px; 
+            z-index: 2500; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            animation: bounce 1.5s infinite; 
+        }
         .guide-hand span { font-size: 1.8rem; }
-        .guide-label { background: var(--admin-dark); color: white; padding: 3px 8px; border-radius: 6px; font-size: 0.55rem; font-weight: 800; margin-bottom: 2px; border: 1px solid var(--admin-accent); }
+        .guide-label { 
+            background: var(--admin-dark); 
+            color: white; 
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 0.55rem; 
+            font-weight: 800; 
+            margin-bottom: 2px; 
+            border: 1px solid var(--admin-accent); 
+        }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
-        /* --- HEADER --- */
-        header { background: white; padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        header .brand-info h1 { margin: 0; font-size: 1.4rem; font-weight: 800; color: var(--admin-accent); line-height: 1; }
+        /* Header */
+        header { 
+            background: white; 
+            padding: 20px; 
+            border-bottom: 1px solid var(--border); 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+            box-shadow: var(--shadow);
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .brand-info h1 { 
+            font-size: 1.4rem; 
+            font-weight: 800; 
+            color: var(--admin-accent); 
+            line-height: 1.2;
+        }
+        .brand-info h2 { 
+            font-size: 0.9rem; 
+            font-weight: 600; 
+            color: var(--text-dim); 
+            margin-top: 5px; 
+        }
         
         /* Branch Filter */
+        .filter-section {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+        }
+        
         .branch-filter-container {
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-top: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
-        @media (min-width: 768px) {
-            .branch-filter-container {
-                margin-top: 0;
-            }
-        }
+        
         .branch-select {
-            padding: 10px 15px;
+            padding: 12px 20px;
             border-radius: 30px;
             border: 2px solid var(--admin-accent);
             background: white;
             font-weight: 600;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             color: var(--admin-dark);
             cursor: pointer;
-            min-width: 200px;
+            min-width: 220px;
+            outline: none;
+            transition: all 0.2s;
         }
+        .branch-select:hover { border-color: var(--primary); }
+        
         .branch-badge {
             background: var(--admin-accent);
             color: white;
-            padding: 6px 15px;
+            padding: 8px 18px;
             border-radius: 30px;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             font-weight: 700;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            white-space: nowrap;
         }
-        .branch-badge i {
-            font-size: 0.9rem;
-        }
-        .date-range {
-            font-size: 0.75rem;
-            color: var(--text-dim);
-            margin-left: 10px;
-        }
-
-        .container { padding: 12px; max-width: 1200px; margin: auto; padding-bottom: 100px; }
-        .section-title { font-size: 0.85rem; font-weight: 800; color: var(--admin-dark); margin: 0 0 10px 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; }
         
-        .card { background: white; padding: 15px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #eef2f6; margin-bottom: 15px; }
+        .status-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 0.85rem;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #cbd5e1;
+        }
+        
+        .date-range {
+            color: var(--text-dim);
+            font-weight: 500;
+        }
 
-        .float-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-        .float-item { background: #f8fafc; padding: 10px; border-radius: 12px; border: 1px solid #f1f5f9; }
-        .float-item label { display: block; font-size: 0.6rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 2px; }
-        .float-item span { font-size: 0.85rem; font-weight: 800; color: var(--admin-dark); }
+        /* Main Container */
+        .container { 
+            max-width: 1200px; 
+            margin: 20px auto; 
+            padding: 0 15px 100px; 
+        }
+
+        .section-title { 
+            font-size: 0.9rem; 
+            font-weight: 800; 
+            color: var(--admin-dark); 
+            margin-bottom: 15px; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .section-title i { color: var(--primary); }
+
+        .card { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 20px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
+            border: 1px solid var(--border); 
+            margin-bottom: 20px; 
+        }
 
         /* Branch Comparison Cards */
         .branch-comparison-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 12px;
-            margin-bottom: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
         }
+        
         .branch-stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 15px;
-            border-radius: 15px;
-            position: relative;
-            overflow: hidden;
+            padding: 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 3px solid transparent;
         }
-        .branch-stat-card.mutomo {
-            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+        .branch-stat-card:hover { 
+            transform: translateY(-5px); 
+            border-color: white;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
         }
-        .branch-stat-card.kitui {
-            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-        }
+        
+        .branch-stat-card.mutomo { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); }
+        .branch-stat-card.kitui { background: linear-gradient(135deg, #065f46 0%, #059669 100%); }
+        
         .branch-stat-card h4 {
-            margin: 0 0 10px 0;
-            font-size: 1rem;
+            margin: 0 0 15px;
+            font-size: 1.2rem;
             font-weight: 800;
             display: flex;
             align-items: center;
             gap: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+            padding-bottom: 10px;
         }
+        
         .branch-stat-card .stat-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 0.85rem;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-            padding-bottom: 5px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
         }
-        .branch-stat-card .stat-label {
-            opacity: 0.9;
-        }
-        .branch-stat-card .stat-value {
-            font-weight: 800;
-        }
+        
+        .branch-stat-card .stat-label { opacity: 0.9; }
+        .branch-stat-card .stat-value { font-weight: 800; }
+        
         .branch-stat-card .total-sales {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: 800;
-            margin-top: 10px;
+            margin-top: 15px;
             text-align: right;
+            border-top: 1px solid rgba(255,255,255,0.3);
+            padding-top: 10px;
         }
 
-        /* KCB PAYBILL BOX STYLING */
-        .paybill-box { margin-top: 12px; background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 15px; padding: 15px; display: flex; flex-direction: column; gap: 4px; }
-        .paybill-box label { font-size: 0.65rem; font-weight: 800; color: var(--blue); text-transform: uppercase; }
-        .paybill-main-val { font-size: 1.2rem; font-weight: 800; color: var(--admin-dark); }
-        .paybill-profit-val { font-size: 0.75rem; font-weight: 800; color: var(--success); }
+        /* Float Grid */
+        .float-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
+            gap: 12px; 
+            margin-top: 10px;
+        }
+        
+        .float-item { 
+            background: #f8fafc; 
+            padding: 15px; 
+            border-radius: 15px; 
+            border: 1px solid var(--border); 
+        }
+        .float-item label { 
+            display: block; 
+            font-size: 0.65rem; 
+            font-weight: 700; 
+            color: var(--text-dim); 
+            text-transform: uppercase; 
+            margin-bottom: 5px; 
+        }
+        .float-item span { 
+            font-size: 1rem; 
+            font-weight: 800; 
+            color: var(--admin-dark); 
+        }
 
-        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .stat-box { padding: 14px 12px; border-radius: 16px; color: white; }
-        .stat-box small { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; opacity: 0.85; }
-        .stat-box div { font-size: 0.95rem; font-weight: 800; margin-top: 3px; }
-        .rev-bg { background: linear-gradient(135deg, #3b82f6, #1e4ed8); }
-        .prof-bg { background: linear-gradient(135deg, #10b981, #059669); }
-        .in-bg { background: linear-gradient(135deg, #f59e0b, #d97706); }
-        .exp-bg { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+        /* Paybill Box */
+        .paybill-box { 
+            margin-top: 15px; 
+            background: #eff6ff; 
+            border: 2px solid #bfdbfe; 
+            border-radius: 15px; 
+            padding: 20px; 
+        }
+        .paybill-box label { 
+            font-size: 0.7rem; 
+            font-weight: 800; 
+            color: var(--blue); 
+            text-transform: uppercase; 
+        }
+        .paybill-main-val { 
+            font-size: 1.5rem; 
+            font-weight: 800; 
+            color: var(--admin-dark); 
+            margin: 5px 0;
+        }
+        .paybill-profit-val { 
+            font-size: 0.85rem; 
+            font-weight: 700; 
+            color: var(--success); 
+        }
+        
+        .btn-expense { 
+            background: var(--danger); 
+            color: white; 
+            border: none; 
+            padding: 12px 20px; 
+            border-radius: 10px; 
+            font-size: 0.75rem; 
+            font-weight: 800; 
+            cursor: pointer; 
+            text-decoration: none; 
+            display: inline-block; 
+            transition: all 0.2s;
+        }
+        .btn-expense:hover { background: #dc2626; transform: translateY(-2px); }
 
-        .summary-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
-        .summary-table th { text-align: left; padding: 6px 8px; border-bottom: 1px solid #f1f5f9; color: var(--text-dim); }
-        .summary-table td { padding: 6px 8px; border-bottom: solid 1px #f8fafc; font-weight: 700; }
-        .row-total { background: #f1f5f9; }
+        /* Stats Grid */
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 12px; 
+        }
+        .stat-box { 
+            padding: 15px; 
+            border-radius: 15px; 
+            color: white; 
+        }
+        .stat-box small { 
+            font-size: 0.65rem; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            opacity: 0.9; 
+        }
+        .stat-box div { 
+            font-size: 1.1rem; 
+            font-weight: 800; 
+            margin-top: 5px; 
+        }
+        .rev-bg { background: linear-gradient(135deg, #2563eb, #1e40af); }
+        .prof-bg { background: linear-gradient(135deg, #059669, #047857); }
+        .in-bg { background: linear-gradient(135deg, #d97706, #b45309); }
+        .exp-bg { background: linear-gradient(135deg, #dc2626, #b91c1c); }
 
-        .grid-list { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        /* Summary Table */
+        .summary-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: 0.85rem; 
+        }
+        .summary-table th { 
+            text-align: left; 
+            padding: 10px 8px; 
+            border-bottom: 2px solid var(--border); 
+            color: var(--text-dim); 
+            font-weight: 700;
+        }
+        .summary-table td { 
+            padding: 8px; 
+            border-bottom: 1px solid var(--border); 
+            font-weight: 600; 
+        }
+        .row-total { 
+            background: #f1f5f9; 
+            font-weight: 800; 
+        }
+
+        /* Grid Lists */
+        .grid-list { 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 12px; 
+        }
         @media (min-width: 768px) { .grid-list { grid-template-columns: repeat(2, 1fr); } }
 
-        .item-card { background: white; border: 1px solid #e2e8f0; border-radius: 15px; padding: 12px; transition: transform 0.2s; }
-        .gas-pill { flex: 1; padding: 6px; border-radius: 10px; text-align: center; }
-        .pill-full { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
-        .pill-empty { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
+        .item-card { 
+            background: white; 
+            border: 1px solid var(--border); 
+            border-radius: 15px; 
+            padding: 15px; 
+            transition: all 0.2s; 
+        }
+        .item-card:hover { box-shadow: var(--shadow); }
 
-        input[type="text"], input[type="month"], .branch-select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #cbd5e1; margin-bottom: 10px; font-family: inherit; font-size: 0.85rem; }
-        .load-more { width: 100%; padding: 12px; background: white; border: 2px dashed #cbd5e1; border-radius: 12px; color: var(--text-dim); font-weight: 800; cursor: pointer; margin-top: 5px; font-size: 0.8rem; }
-        
-        .btn-expense { background: var(--danger); color: white; border: none; padding: 10px; border-radius: 10px; font-size: 0.65rem; font-weight: 800; margin-top: 8px; cursor: pointer; display: inline-block; text-decoration: none; text-align: center; }
-        
-        /* Loading Spinner */
-        .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 3px solid rgba(255,255,255,.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
+        .gas-pill { 
+            flex: 1; 
+            padding: 8px; 
+            border-radius: 10px; 
+            text-align: center; 
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .pill-full { 
+            background: #ecfdf5; 
+            color: #065f46; 
+            border: 1px solid #a7f3d0; 
         }
-        
-        /* No data message */
+        .pill-empty { 
+            background: #fff7ed; 
+            color: #9a3412; 
+            border: 1px solid #fed7aa; 
+        }
+
+        /* Form Elements */
+        input[type="text"], 
+        input[type="month"], 
+        .branch-select { 
+            width: 100%; 
+            padding: 12px 15px; 
+            border-radius: 10px; 
+            border: 1px solid var(--border); 
+            font-family: inherit; 
+            font-size: 0.9rem; 
+            outline: none;
+            transition: all 0.2s;
+        }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+
+        .load-more { 
+            width: 100%; 
+            padding: 15px; 
+            background: white; 
+            border: 2px dashed var(--border); 
+            border-radius: 12px; 
+            color: var(--text-dim); 
+            font-weight: 800; 
+            cursor: pointer; 
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .load-more:hover { 
+            border-color: var(--primary); 
+            color: var(--primary); 
+        }
+
+        /* No Data Message */
         .no-data-message {
             text-align: center;
-            padding: 30px;
+            padding: 40px;
             color: var(--text-dim);
-            font-size: 0.9rem;
             background: #f8fafc;
-            border-radius: 12px;
-            border: 1px dashed var(--border);
+            border-radius: 15px;
+            border: 2px dashed var(--border);
         }
         .no-data-message i {
-            font-size: 2rem;
-            margin-bottom: 10px;
+            font-size: 3rem;
+            margin-bottom: 15px;
             color: #cbd5e1;
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Time Display */
+        .shift-timer-box {
+            display: flex;
+            gap: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .time-display { padding: 5px 10px; border-radius: 20px; background: #f8fafc; }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .header-content { flex-direction: column; align-items: flex-start; }
+            .filter-section { width: 100%; align-items: flex-start; }
+            .branch-filter-container { width: 100%; flex-direction: column; }
+            .branch-select { width: 100%; }
+            .branch-badge { width: 100%; justify-content: center; }
+            .status-section { width: 100%; justify-content: space-between; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .float-grid { grid-template-columns: 1fr 1fr; }
         }
     </style>
 </head>
@@ -226,63 +569,71 @@
     <button style="position:fixed; top:20px; right:20px; background:rgba(255,255,255,0.1); border:none; color:white; width:45px; height:45px; border-radius:50%; font-size:1.2rem; z-index: 3100;" onclick="toggleNav()">✕</button>
     <div class="nav-header-title">ADMIN HUB</div>
     <div class="nav-grid">
-        <a href="#" onclick="confirmSwitchToCashier(event)" class="nav-card switch-card"><span>🔄</span><small>SWITCH TO CASHIER MODE</small></a>
+        <a href="#" onclick="confirmSwitchToCashier(event)" class="nav-card switch-card">
+            <span>🔄</span>
+            <small>SWITCH TO CASHIER MODE</small>
+        </a>
         <a href="admin.html" class="nav-card" style="background: var(--admin-accent)"><span>📊</span><small>Dashboard</small></a>
-        <a href="admin_expenses.html" class="nav-card" style="background: var(--danger)"><span>💸</span><small>Paybill Transactions</small></a>
+        <a href="admin_expenses.html" class="nav-card"><span>💸</span><small>Paybill Transactions</small></a>
         <a href="gas_hub.html" class="nav-card"><span>🔥</span><small>Gas Hub</small></a>
-        <a href="spares_hub.html" class="nav-card"><span>📋</span><small>Spare Parts Hub</small></a>
-        <a href="motorbike_hub.html" class="nav-card"><span>🏍️</span><small>Motorbike Hub</small></a>
-        <a href="shift-history.html" class="nav-card"><span>📋</span><small>Daily Shifts Records</small></a>
+        <a href="spares_hub.html" class="nav-card"><span>⚙️</span><small>Spare Parts</small></a>
+        <a href="motorbike_hub.html" class="nav-card"><span>🏍️</span><small>Motorbikes</small></a>
+        <a href="shift-history.html" class="nav-card"><span>📋</span><small>Shift Records</small></a>
         <a href="money-history.html" class="nav-card"><span>💰</span><small>Money IN/OUT</small></a>
         <a href="sales-history.html" class="nav-card"><span>📜</span><small>Sales History</small></a>
-        <a href="inventory.html" class="nav-card"><span>➕</span><small>Add Stock/Inventory view</small></a>
+        <a href="inventory.html" class="nav-card"><span>➕</span><small>Inventory</small></a>
         <a href="sales_editor.html" class="nav-card"><span>✏️</span><small>Edit Stock</small></a>
         <a href="admin-debtors.html" class="nav-card"><span>👥</span><small>Debtors</small></a>
         <a href="low_stock.html" class="nav-card"><span>⚠️</span><small>Low Stock</small></a>
-        <a href="audit_trail.html" class="nav-card"><span>🔍</span><small>Inventory Track</small></a>
-        <a href="reports.html" class="nav-card"><span>📄</span><small>Summarized Reports</small></a>
-        <a href="price_audits.html" class="nav-card"><span>📉</span><small>Underpriced Items</small></a>
-        <a href="suppliers.html" class="nav-card"><span>🤝</span><small>Supplier Balances & Stocking</small></a>
-        <a href="admin.html" class="nav-card"><span>🏠</span><small>HOME</small></a>
-        <button onclick="handleLogout()" style="grid-column: span 2; margin-top:20px; background:var(--danger); color:white; border:none; padding:18px; border-radius:15px; font-weight:800;">🚪 LOGOUT SYSTEM</button>
+        <a href="audit_trail.html" class="nav-card"><span>🔍</span><small>Audit Trail</small></a>
+        <a href="reports.html" class="nav-card"><span>📄</span><small>Reports</small></a>
+        <a href="price_audits.html" class="nav-card"><span>📉</span><small>Price Audits</small></a>
+        <a href="suppliers.html" class="nav-card"><span>🤝</span><small>Suppliers</small></a>
+        <button onclick="handleLogout()" class="nav-card" style="background: var(--danger); grid-column: span 2; margin-top:10px;">
+            <span>🚪</span>
+            <small>LOGOUT SYSTEM</small>
+        </button>
     </div>
 </div>
 
 <button class="fab-menu" onclick="toggleNav()">☰</button>
 
 <header>
-    <div class="brand-info">
-        <h1>MULTI-BRANCH DASHBOARD</h1>
-        <h2 id="greeting-text">GOOD DAY! WELCOME BACK, ADMIN 👋</h2>
-    </div>
-    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
-        <div class="branch-filter-container">
-            <select id="branchFilter" class="branch-select" onchange="handleBranchChange()">
-                <option value="all">🏢 ALL BRANCHES</option>
-                <option value="MUTOMO">🏪 MUTOMO BRANCH</option>
-                <option value="KITUI">🏪 KITUI BRANCH</option>
-            </select>
-            <div class="branch-badge" id="branchBadge">
-                <i class="fas fa-store"></i> <span id="selectedBranchName">ALL BRANCHES</span>
-            </div>
+    <div class="header-content">
+        <div class="brand-info">
+            <h1>JEPE MULTI-BRANCH DASHBOARD</h1>
+            <h2 id="greeting-text">Welcome back, Administrator</h2>
         </div>
-        <div style="display:flex; align-items:center; gap:8px;">
-            <span id="shift-status-text" style="font-size: 0.75rem; font-weight: 800;">--</span>
-            <div id="status-dot" style="width: 12px; height: 12px; border-radius: 50%; background: #cbd5e1;"></div>
-            <span class="date-range" id="dateRange"></span>
+        <div class="filter-section">
+            <div class="branch-filter-container">
+                <select id="branchFilter" class="branch-select" onchange="handleBranchChange()">
+                    <option value="all">🏢 ALL BRANCHES (Consolidated View)</option>
+                    <option value="MUTOMO">🏪 MUTOMO BRANCH</option>
+                    <option value="KITUI">🏪 KITUI BRANCH</option>
+                </select>
+                <div class="branch-badge" id="branchBadge">
+                    <i class="fas fa-store"></i> 
+                    <span id="selectedBranchName">ALL BRANCHES</span>
+                </div>
+            </div>
+            <div class="status-section">
+                <span id="shift-status-text">--</span>
+                <div class="status-dot" id="status-dot"></div>
+                <span class="date-range" id="dateRange"></span>
+            </div>
         </div>
     </div>
 </header>
 
 <div class="container">
-    <!-- Branch Comparison Cards - Always shows all branches regardless of filter -->
-    <div class="branch-comparison-grid" id="branchComparison">
-        <!-- Will be populated by JavaScript -->
-    </div>
+    <!-- Branch Comparison Cards -->
+    <div class="branch-comparison-grid" id="branchComparison"></div>
 
+    <!-- Today's Shift & Floats -->
     <div class="card">
         <div class="section-title">
-            <span>🏦 TODAY'S SHIFT OPENING FLOATS <span id="branchIndicator"></span></span>
+            <i class="fas fa-wallet"></i>
+            <span>TODAY'S SHIFT OPENING FLOATS <span id="branchIndicator"></span></span>
             <div class="shift-timer-box">
                 <div id="disp-start" class="time-display" style="color:var(--success);">Opened: --:--</div>
                 <div id="disp-end" class="time-display" style="color:var(--danger);">Closed: --:--</div>
@@ -290,52 +641,79 @@
         </div>
         <div class="float-grid">
             <div class="float-item"><label>M-Pesa Float</label><span id="f-mpesa">Ksh 0</span></div>
-            <div class="float-item"><label>Cash balance</label><span id="f-cash">Ksh 0</span></div>
+            <div class="float-item"><label>Cash Balance</label><span id="f-cash">Ksh 0</span></div>
             <div class="float-item"><label>KCB Float</label><span id="f-kcb">Ksh 0</span></div>
             <div class="float-item"><label>Equity Float</label><span id="f-equity">Ksh 0</span></div>
         </div>
 
+        <!-- KCB Paybill Section -->
         <div class="paybill-box">
-            <div style="display:flex; justify-content:space-between; align-items:start; flex-wrap:wrap;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;">
                 <div>
-                    <label>KCB PAYBILL (NET ACCOUNT BALANCE) <span id="paybillBranch"></span></label>
-                    <div id="pb-total" class="paybill-main-val">Ksh 0</div>
+                    <label>KCB PAYBILL NET BALANCE <span id="paybillBranch"></span></label>
+                    <div id="pb-total" class="paybill-main-val">Ksh 0.00</div>
+                    <div id="pb-profit" class="paybill-profit-val">Net Profit: Ksh 0</div>
                 </div>
-                <a href="admin_expenses.html" class="btn-expense">CLICK TO PROCESS TRANSACTION FROM KCB PAYBILL SALES ACCOUNT</a>
+                <a href="admin_expenses.html" class="btn-expense">
+                    <i class="fas fa-exchange-alt"></i> Process Paybill Transaction
+                </a>
             </div>
-            <div id="pb-profit" class="paybill-profit-val">Total Net Profit from Paybill: Ksh 0</div>
         </div>
     </div>
 
+    <!-- Money Flow Stats -->
     <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
-            <h3 class="section-title" style="margin:0;">📈 MONEY FLOW <span id="moneyFlowBranch"></span></h3>
-            <input type="month" id="month-picker" style="width:auto; padding:6px; margin:0; font-size:0.75rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap;">
+            <h3 class="section-title" style="margin:0;">
+                <i class="fas fa-chart-line"></i>
+                MONEY FLOW <span id="moneyFlowBranch"></span>
+            </h3>
+            <input type="month" id="month-picker" style="width:auto; padding:8px 12px;">
         </div>
         <div class="stats-grid">
-            <div class="stat-box rev-bg"><small>Total Sales</small><div id="t-rev">Ksh 0</div></div>
-            <div class="stat-box prof-bg"><small>Total Profit</small><div id="t-prof">Ksh 0</div></div>
-            <div class="stat-box in-bg"><small>Money In</small><div id="t-in">Ksh 0</div></div>
-            <div class="stat-box exp-bg"><small>Money Out</small><div id="t-exp">Ksh 0</div></div>
+            <div class="stat-box rev-bg">
+                <small>Total Sales</small>
+                <div id="t-rev">Ksh 0</div>
+            </div>
+            <div class="stat-box prof-bg">
+                <small>Total Profit</small>
+                <div id="t-prof">Ksh 0</div>
+            </div>
+            <div class="stat-box in-bg">
+                <small>Money In</small>
+                <div id="t-in">Ksh 0</div>
+            </div>
+            <div class="stat-box exp-bg">
+                <small>Money Out</small>
+                <div id="t-exp">Ksh 0</div>
+            </div>
         </div>
     </div>
 
-    <h3 class="section-title">🔥 GAS INVENTORY HUB <span id="gasBranch"></span></h3>
-    <input type="text" id="gasSearch" placeholder="Search Gas Brands...">
-    <div class="grid-list" id="gas-list" style="margin-bottom:15px;"></div>
+    <!-- Gas Inventory -->
+    <h3 class="section-title">
+        <i class="fas fa-fire"></i>
+        GAS INVENTORY <span id="gasBranch"></span>
+    </h3>
+    <input type="text" id="gasSearch" class="search-input" placeholder="Search gas products...">
+    <div class="grid-list" id="gas-list"></div>
     
-    <div class="card" style="padding:10px;">
-        <div class="section-title" style="margin-bottom:5px;"><span>📊 GAS SUMMARY</span></div>
+    <div class="card" style="margin-top:15px;">
+        <div class="section-title">📊 GAS STOCK SUMMARY</div>
         <table class="summary-table">
             <thead>
-                <tr><th>Store</th><th>Full</th><th>Empty</th><th>Total</th></tr>
+                <tr><th>Size</th><th>Full</th><th>Empty</th><th>Total</th></tr>
             </thead>
             <tbody id="gas-summary-body"></tbody>
         </table>
     </div>
 
-    <h3 class="section-title" style="margin-top:20px;">📦 SPARE PARTS STOCK <span id="sparesBranch"></span></h3>
-    <input type="text" id="invSearch" placeholder="Search Spare Parts...">
+    <!-- Spare Parts -->
+    <h3 class="section-title" style="margin-top:25px;">
+        <i class="fas fa-boxes"></i>
+        SPARE PARTS <span id="sparesBranch"></span>
+    </h3>
+    <input type="text" id="invSearch" class="search-input" placeholder="Search spare parts...">
     <div class="grid-list" id="stock-list"></div>
     <button id="loadStockBtn" class="load-more">LOAD MORE SPARES</button>
 </div>
@@ -343,37 +721,46 @@
 <script type="module">
     import { supabase } from './auth.js';
 
+    // State management
     let allProducts = [];
     let stockLimit = 6;
     let branches = {};
-    let branchIdMap = {}; // Map branch code to branch ID
-    let currentBranchFilter = 'all';
+    let branchIdMap = {};
     let currentBranchId = null;
+    let currentBranchCode = 'all';
     let currentUser = null;
+
+    // ==================== UTILITY FUNCTIONS ====================
 
     window.toggleNav = () => {
         document.getElementById('navBanner').classList.toggle('active');
         document.getElementById('onboardingHand').style.display = 'none';
-        sessionStorage.setItem('menuClicked', 'true');
     };
 
     window.confirmSwitchToCashier = (e) => {
         e.preventDefault();
-        if(confirm("Are you sure you want to switch to Cashier Mode?")) {
+        const selectedBranch = document.getElementById('branchFilter').value;
+        let branchName = selectedBranch === 'all' ? 'ALL BRANCHES' : selectedBranch;
+        
+        if(confirm(`Switch to Cashier Mode for ${branchName}?\n\nYou will be redirected to the cashier dashboard.`)) {
+            // Store selected branch preference
+            localStorage.setItem('cashier_branch_preference', selectedBranch);
             window.location.href = "cashier.html";
         }
     };
 
-    // Get branch ID from branch code
+    // Get branch ID from code
     function getBranchIdFromCode(code) {
         return branchIdMap[code] || null;
     }
 
-    // Handle branch filter change
+    // ==================== BRANCH FILTER HANDLING ====================
+
     window.handleBranchChange = async function() {
         const filter = document.getElementById('branchFilter').value;
-        currentBranchFilter = filter;
+        currentBranchCode = filter;
         
+        // Update UI indicators
         const badge = document.getElementById('selectedBranchName');
         const branchIndicator = document.getElementById('branchIndicator');
         const moneyFlowBranch = document.getElementById('moneyFlowBranch');
@@ -405,10 +792,17 @@
         // Reload all data with new branch filter
         await Promise.all([
             loadDashboardData(),
-            loadProducts(),
-            loadBranchComparison() // Keep comparison cards showing all branches
+            loadProducts()
         ]);
     };
+
+    // Quick filter by clicking on branch card
+    window.quickFilterBranch = function(branchCode) {
+        document.getElementById('branchFilter').value = branchCode;
+        handleBranchChange();
+    };
+
+    // ==================== DATA LOADING FUNCTIONS ====================
 
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
@@ -422,7 +816,7 @@
     }
 
     async function loadBranchComparison() {
-        // Always show all branches regardless of filter
+        // Always show ALL branches for comparison regardless of filter
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
@@ -472,8 +866,14 @@
                 const stats = branchStats[id] || { sales: 0, profit: 0, transactions: 0, items: 0 };
                 const branchClass = branch.code === 'MUT' ? 'mutomo' : 'kitui';
                 
+                // Determine if this branch is currently selected
+                const isSelected = currentBranchId === id;
+                const selectedStyle = isSelected ? 'border: 3px solid white; transform: scale(1.02);' : '';
+                
                 html += `
-                    <div class="branch-stat-card ${branchClass}" onclick="quickFilterBranch('${branch.code}')" style="cursor:pointer;">
+                    <div class="branch-stat-card ${branchClass}" 
+                         onclick="quickFilterBranch('${branch.code}')" 
+                         style="cursor:pointer; ${selectedStyle}">
                         <h4><i class="fas fa-store"></i> ${branch.name}</h4>
                         <div class="stat-row">
                             <span class="stat-label">Today's Sales</span>
@@ -492,7 +892,7 @@
                             <span class="stat-value">${stats.items}</span>
                         </div>
                         <div class="total-sales">
-                            ${stats.sales > 0 ? `Ksh ${stats.sales.toLocaleString()}` : 'No sales yet'}
+                            ${stats.sales > 0 ? `Ksh ${stats.sales.toLocaleString()}` : 'No sales today'}
                         </div>
                     </div>
                 `;
@@ -501,16 +901,16 @@
 
         container.innerHTML = html;
     }
-    
-    // Quick filter by clicking on branch card
-    window.quickFilterBranch = function(branchCode) {
-        document.getElementById('branchFilter').value = branchCode;
-        handleBranchChange();
-    };
 
     async function loadDashboardData() {
         try {
-            // Get current/latest shift based on filter
+            // Get today's date range
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            // Get latest shift based on filter
             let shiftQuery = supabase
                 .from('daily_shifts')
                 .select('*')
@@ -524,76 +924,91 @@
             const { data: shifts } = await shiftQuery;
             const shift = shifts && shifts.length > 0 ? shifts[0] : null;
 
+            // Update shift display
             if (shift) {
-                document.getElementById('f-mpesa').innerText = `Ksh ${shift.open_mpesa?.toLocaleString() || 0}`;
-                document.getElementById('f-cash').innerText = `Ksh ${shift.open_cash?.toLocaleString() || 0}`;
-                document.getElementById('f-kcb').innerText = `Ksh ${shift.open_kcb?.toLocaleString() || 0}`;
-                document.getElementById('f-equity').innerText = `Ksh ${shift.open_equity?.toLocaleString() || 0}`;
+                document.getElementById('f-mpesa').innerText = `Ksh ${(shift.open_mpesa || 0).toLocaleString()}`;
+                document.getElementById('f-cash').innerText = `Ksh ${(shift.open_cash || 0).toLocaleString()}`;
+                document.getElementById('f-kcb').innerText = `Ksh ${(shift.open_kcb || 0).toLocaleString()}`;
+                document.getElementById('f-equity').innerText = `Ksh ${(shift.open_equity || 0).toLocaleString()}`;
                 document.getElementById('shift-status-text').innerText = shift.status ? shift.status.toUpperCase() : 'CLOSED';
                 document.getElementById('status-dot').style.background = shift.status === 'open' ? '#10b981' : '#ef4444';
                 
-                const openTime = new Date(shift.start_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', day:'numeric', month:'short'});
+                const openTime = new Date(shift.start_time).toLocaleString('en-GB', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    day: 'numeric',
+                    month: 'short'
+                });
                 document.getElementById('disp-start').innerText = `Opened: ${openTime}`;
+                
                 if(shift.end_time) {
-                    const closeTime = new Date(shift.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', day:'numeric', month:'short'});
+                    const closeTime = new Date(shift.end_time).toLocaleString('en-GB', { 
+                        hour: '2-digit', 
+                        minute: '2-digit',
+                        day: 'numeric',
+                        month: 'short'
+                    });
                     document.getElementById('disp-end').innerText = `Closed: ${closeTime}`;
                 } else {
                     document.getElementById('disp-end').innerText = `Closed: --`;
                 }
             } else {
-                // No shift found
+                // No shift found for this branch
                 document.getElementById('f-mpesa').innerText = 'Ksh 0';
                 document.getElementById('f-cash').innerText = 'Ksh 0';
                 document.getElementById('f-kcb').innerText = 'Ksh 0';
                 document.getElementById('f-equity').innerText = 'Ksh 0';
-                document.getElementById('shift-status-text').innerText = 'NO SHIFT';
-                document.getElementById('status-dot').style.background = '#cbd5e1';
+                document.getElementById('shift-status-text').innerText = 'NO ACTIVE SHIFT';
+                document.getElementById('status-dot').style.background = '#94a3b8';
                 document.getElementById('disp-start').innerText = 'Opened: --';
                 document.getElementById('disp-end').innerText = 'Closed: --';
             }
 
-            // Money Flow Logic - Get sales for today
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
+            // Get today's sales with branch filter
             let salesQuery = supabase
                 .from('sales')
                 .select('*')
-                .gte('created_at', today.toISOString());
+                .gte('created_at', today.toISOString())
+                .lt('created_at', tomorrow.toISOString());
                 
             if (currentBranchId) {
                 salesQuery = salesQuery.eq('branch_id', currentBranchId);
             }
             
             const { data: todaySales } = await salesQuery;
-            let rev = 0, prof = 0;
-            todaySales?.forEach(s => {
-                rev += parseFloat(s.total_amount || 0);
-                prof += (parseFloat(s.unit_price || 0) - parseFloat(s.cost_price || 0)) * parseInt(s.quantity || 0);
+            let totalRevenue = 0, totalProfit = 0;
+            
+            todaySales?.forEach(sale => {
+                totalRevenue += parseFloat(sale.total_amount || 0);
+                totalProfit += (parseFloat(sale.unit_price || 0) - parseFloat(sale.cost_price || 0)) * parseInt(sale.quantity || 0);
             });
-            document.getElementById('t-rev').innerText = `Ksh ${rev.toLocaleString()}`;
-            document.getElementById('t-prof').innerText = `Ksh ${prof.toLocaleString()}`;
+            
+            document.getElementById('t-rev').innerText = `Ksh ${totalRevenue.toLocaleString()}`;
+            document.getElementById('t-prof').innerText = `Ksh ${totalProfit.toLocaleString()}`;
 
-            // Get today's cash transactions
+            // Get today's cash transactions with branch filter
             let transQuery = supabase
                 .from('cash_transactions')
                 .select('*')
-                .gte('created_at', today.toISOString());
+                .gte('created_at', today.toISOString())
+                .lt('created_at', tomorrow.toISOString());
                 
             if (currentBranchId) {
                 transQuery = transQuery.eq('branch_id', currentBranchId);
             }
             
-            const { data: tx } = await transQuery;
-            let exp = 0, mIn = 0;
-            tx?.forEach(t => {
-                if(t.type === 'Money Out') exp += parseFloat(t.amount || 0);
-                else if(t.type === 'Money In') mIn += parseFloat(t.amount || 0);
+            const { data: transactions } = await transQuery;
+            let moneyIn = 0, moneyOut = 0;
+            
+            transactions?.forEach(t => {
+                if(t.type === 'Money In' || t.type === 'Money In') moneyIn += parseFloat(t.amount || 0);
+                else if(t.type === 'Money Out' || t.type === 'Money Out') moneyOut += parseFloat(t.amount || 0);
             });
-            document.getElementById('t-exp').innerText = `Ksh ${exp.toLocaleString()}`;
-            document.getElementById('t-in').innerText = `Ksh ${mIn.toLocaleString()}`;
+            
+            document.getElementById('t-in').innerText = `Ksh ${moneyIn.toLocaleString()}`;
+            document.getElementById('t-exp').innerText = `Ksh ${moneyOut.toLocaleString()}`;
 
-            // Calculate Paybill for selected branch
+            // Calculate Paybill with branch filter
             let paybillQuery = supabase
                 .from('sales')
                 .select('*')
@@ -609,33 +1024,28 @@
                 adminQuery = adminQuery.eq('branch_id', currentBranchId);
             }
 
-            const [{ data: allPaybillSales }, { data: adminRecords }] = await Promise.all([
+            const [{ data: paybillSales }, { data: adminRecords }] = await Promise.all([
                 paybillQuery,
                 adminQuery
             ]);
 
-            let totalPaybillIncome = 0, pbProfit = 0;
-            allPaybillSales?.forEach(s => {
+            let totalPaybillIncome = 0, paybillProfit = 0;
+            paybillSales?.forEach(s => {
                 totalPaybillIncome += parseFloat(s.total_amount || 0);
-                pbProfit += (parseFloat(s.unit_price || 0) - parseFloat(s.cost_price || 0)) * parseInt(s.quantity || 0);
+                paybillProfit += (parseFloat(s.unit_price || 0) - parseFloat(s.cost_price || 0)) * parseInt(s.quantity || 0);
             });
 
-            let manualFunding = 0;
-            let manualExpenses = 0;
-
+            let manualFunding = 0, manualExpenses = 0;
             adminRecords?.forEach(r => {
                 const val = parseFloat(r.amount || 0);
-                if(r.type === 'funding') {
-                    manualFunding += val;
-                } else {
-                    manualExpenses += val;
-                }
+                if(r.type === 'funding') manualFunding += val;
+                else manualExpenses += val;
             });
 
             const netPaybillBalance = (totalPaybillIncome + manualFunding) - manualExpenses;
 
             document.getElementById('pb-total').innerText = `Ksh ${netPaybillBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-            document.getElementById('pb-profit').innerText = `Total Net Profit from Paybill: Ksh ${pbProfit.toLocaleString()}`;
+            document.getElementById('pb-profit').innerText = `Net Profit: Ksh ${paybillProfit.toLocaleString()}`;
 
         } catch (error) {
             console.error("Error loading dashboard data:", error);
@@ -660,24 +1070,30 @@
     function calculateGasSummary() {
         const categories = ["6kg", "13kg", "50kg"];
         const summary = categories.map(cat => {
-            const items = allProducts.filter(p => p.category === 'Gas' && (p.weight_category === cat || p.name.includes(cat)));
+            const items = allProducts.filter(p => p.category === 'Gas' && 
+                (p.weight_category === cat || p.name.toLowerCase().includes(cat)));
             const full = items.reduce((sum, p) => sum + (p.stock_quantity || 0), 0);
             const empty = items.reduce((sum, p) => sum + (p.empty_quantity || 0), 0);
             return { cat, full, empty, total: full + empty };
         });
+        
         const grandFull = summary.reduce((sum, s) => sum + s.full, 0);
         const grandEmpty = summary.reduce((sum, s) => sum + s.empty, 0);
         
-        if (summary.length > 0 && grandFull + grandEmpty > 0) {
-            document.getElementById('gas-summary-body').innerHTML = summary.map(s => `
+        const tbody = document.getElementById('gas-summary-body');
+        if (summary.some(s => s.total > 0)) {
+            tbody.innerHTML = summary.map(s => `
                 <tr><td>${s.cat}</td><td>${s.full}</td><td>${s.empty}</td><td>${s.total}</td></tr>
             `).join('') + `
-                <tr class="row-total"><td><strong>GRAND</strong></td><td><strong>${grandFull}</strong></td><td><strong>${grandEmpty}</strong></td><td><strong>${grandFull + grandEmpty}</strong></td></tr>
+                <tr class="row-total">
+                    <td><strong>TOTAL</strong></td>
+                    <td><strong>${grandFull}</strong></td>
+                    <td><strong>${grandEmpty}</strong></td>
+                    <td><strong>${grandFull + grandEmpty}</strong></td>
+                </tr>
             `;
         } else {
-            document.getElementById('gas-summary-body').innerHTML = `
-                <tr><td colspan="4" style="text-align:center; padding:20px;">No gas products found for selected branch</td></tr>
-            `;
+            tbody.innerHTML = '<tr><td colspan="4" class="no-data-message">No gas products found</td></tr>';
         }
     }
 
@@ -687,93 +1103,128 @@
         
         // Gas items
         const gasItems = allProducts.filter(p => p.category === 'Gas' && p.name.toLowerCase().includes(gasTerm));
+        const gasList = document.getElementById('gas-list');
+        
         if (gasItems.length > 0) {
-            document.getElementById('gas-list').innerHTML = gasItems.map(p => `
+            gasList.innerHTML = gasItems.map(p => `
                 <div class="item-card">
-                    <div style="font-weight:800; font-size:0.85rem; margin-bottom:8px; display:flex; justify-content:space-between;">
-                        <span>${p.name}</span><small style="color:var(--text-dim); font-size:0.65rem;">${p.weight_category || 'Gas'}</small>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <span style="font-weight:800;">${p.name}</span>
+                        <span style="color:var(--text-dim); font-size:0.75rem;">${p.weight_category || 'Gas'}</span>
                     </div>
-                    <div style="display:flex; gap:8px;">
-                        <div class="gas-pill pill-full"><small style="display:block; font-size:0.55rem;">FULL</small><b>${p.stock_quantity}</b></div>
-                        <div class="gas-pill pill-empty"><small style="display:block; font-size:0.55rem;">EMPTY</small><b>${p.empty_quantity || 0}</b></div>
+                    <div style="display:flex; gap:10px;">
+                        <div class="gas-pill pill-full">
+                            <small style="display:block; font-size:0.6rem;">FULL</small>
+                            <b>${p.stock_quantity}</b>
+                        </div>
+                        <div class="gas-pill pill-empty">
+                            <small style="display:block; font-size:0.6rem;">EMPTY</small>
+                            <b>${p.empty_quantity || 0}</b>
+                        </div>
                     </div>
                 </div>
             `).join('');
         } else {
-            document.getElementById('gas-list').innerHTML = '<div class="no-data-message"><i class="fas fa-gas-pump"></i><p>No gas products found</p></div>';
+            gasList.innerHTML = '<div class="no-data-message"><i class="fas fa-gas-pump"></i><p>No gas products found</p></div>';
         }
         
-        // Stock items (non-gas)
+        // Stock items
         const stockItems = allProducts.filter(p => p.category !== 'Gas' && p.name.toLowerCase().includes(stockTerm));
+        const stockList = document.getElementById('stock-list');
+        
         if (stockItems.length > 0) {
-            document.getElementById('stock-list').innerHTML = stockItems.slice(0, stockLimit).map(p => `
-                <div class="item-card" style="${p.stock_quantity < 5 ? 'border-left:4px solid var(--danger)' : ''}">
-                    <div style="display:flex; justify-content:space-between; align-items:start;">
-                        <div><div style="font-weight:800; font-size:0.85rem;">${p.name}</div><small style="color:var(--text-dim); font-size:0.65rem;">${p.part_type || 'Spare'}</small></div>
-                        <div style="font-weight:800; color:var(--admin-accent); font-size:0.85rem;">${p.stock_quantity} <small style="font-size:0.6rem">QTY</small></div>
+            stockList.innerHTML = stockItems.slice(0, stockLimit).map(p => {
+                const isLowStock = p.stock_quantity < 5;
+                const profit = (p.selling_price || 0) - (p.cost_price || 0);
+                
+                return `
+                    <div class="item-card" style="${isLowStock ? 'border-left:4px solid var(--danger);' : ''}">
+                        <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:10px;">
+                            <div>
+                                <div style="font-weight:800;">${p.name}</div>
+                                <small style="color:var(--text-dim);">${p.part_type || 'Spare Part'}</small>
+                            </div>
+                            <div style="font-weight:800; color:${isLowStock ? 'var(--danger)' : 'var(--admin-accent)'};">
+                                ${p.stock_quantity} <small style="font-size:0.6rem;">QTY</small>
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding-top:8px; border-top:1px solid var(--border);">
+                            <div><small style="display:block; color:var(--text-dim);">BUY</small><b>Ksh ${p.cost_price}</b></div>
+                            <div><small style="display:block; color:var(--text-dim);">SELL</small><b>Ksh ${p.selling_price}</b></div>
+                            <div><small style="display:block; color:var(--text-dim);">PROFIT</small><b style="color:var(--success);">+Ksh ${profit}</b></div>
+                        </div>
                     </div>
-                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:10px; border-top:1px solid #f1f5f9; padding-top:8px; font-size:0.7rem;">
-                        <div><label style="display:block; font-size:0.55rem; color:var(--text-dim);">BUY</label><b>${p.cost_price}</b></div>
-                        <div><label style="display:block; font-size:0.55rem; color:var(--text-dim);">SELL</label><b>${p.selling_price}</b></div>
-                        <div><label style="display:block; font-size:0.55rem; color:var(--text-dim);">PROFIT</label><b style="color:var(--success)">+${p.selling_price - p.cost_price}</b></div>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
             
-            if (stockItems.length > stockLimit) {
-                document.getElementById('loadStockBtn').style.display = 'block';
-            } else {
-                document.getElementById('loadStockBtn').style.display = 'none';
-            }
+            document.getElementById('loadStockBtn').style.display = stockItems.length > stockLimit ? 'block' : 'none';
         } else {
-            document.getElementById('stock-list').innerHTML = '<div class="no-data-message"><i class="fas fa-box-open"></i><p>No spare parts found</p></div>';
+            stockList.innerHTML = '<div class="no-data-message"><i class="fas fa-box-open"></i><p>No spare parts found</p></div>';
             document.getElementById('loadStockBtn').style.display = 'none';
         }
     }
 
-    // Event listeners
+    // ==================== EVENT LISTENERS ====================
+
     document.getElementById('gasSearch').addEventListener('input', renderLists);
     document.getElementById('invSearch').addEventListener('input', renderLists);
+    
     document.getElementById('loadStockBtn').addEventListener('click', () => { 
         stockLimit += 10; 
         renderLists(); 
     });
+    
     document.getElementById('month-picker').addEventListener('change', loadDashboardData);
 
     window.handleLogout = async () => {
-        if(confirm("Exit Admin Mode?")) {
+        if(confirm("Are you sure you want to logout?")) {
             localStorage.removeItem('pos_session');
             await supabase.auth.signOut();
             window.location.href = 'index.html';
         }
     };
 
-    async function init() {
-        const hour = new Date().getHours();
-        const greetText = hour < 12 ? "GOOD MORNING!" : hour < 17 ? "GOOD AFTERNOON!" : "GOOD EVENING!";
-        document.getElementById('greeting-text').innerText = `${greetText} WELCOME BACK, ADMIN 👋`;
+    // ==================== INITIALIZATION ====================
 
-        // Set date range
+    async function init() {
+        // Set greeting
+        const hour = new Date().getHours();
+        let greeting = "Good ";
+        if (hour < 12) greeting += "Morning";
+        else if (hour < 17) greeting += "Afternoon";
+        else greeting += "Evening";
+        document.getElementById('greeting-text').innerText = `${greeting}, Administrator`;
+
+        // Set date
         const today = new Date();
         document.getElementById('dateRange').innerText = today.toLocaleDateString('en-GB', { 
             day: 'numeric', month: 'long', year: 'numeric' 
         });
 
-        // Set default month picker to current month
-        const yearMonth = today.toISOString().slice(0, 7);
-        document.getElementById('month-picker').value = yearMonth;
+        // Set month picker
+        document.getElementById('month-picker').value = today.toISOString().slice(0, 7);
 
-        // Load branches first
+        // Load branches
         await loadBranches();
         
-        // Load all data
+        // Check for stored branch preference
+        const savedBranch = localStorage.getItem('admin_branch_preference');
+        if (savedBranch && (savedBranch === 'all' || savedBranch === 'MUTOMO' || savedBranch === 'KITUI')) {
+            document.getElementById('branchFilter').value = savedBranch;
+        }
+        
+        // Initial data load
         await Promise.all([
             loadBranchComparison(),
             loadDashboardData(),
             loadProducts()
         ]);
+        
+        // Apply initial branch filter to UI
+        await handleBranchChange();
     }
 
+    // Start the app
     init();
 </script>
 </body>
