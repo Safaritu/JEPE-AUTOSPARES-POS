@@ -6,6 +6,7 @@
     <title>Inventory Management | JEPE COMPANY LIMITED</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { 
             --primary: #4f46e5; 
@@ -265,10 +266,84 @@
     </div>
 </div>
 
+
 <script type="module">
     import { supabase } from './auth.js';
 
     let allProducts = [];
+    let currentUser = null;
+    let currentBranchId = null;
+    let currentUserProfile = null;
+
+    // ============================================
+    // BRANCH-AWARE HELPER FUNCTIONS
+    // ============================================
+
+    // Get current user's branch ID from session
+    function getCurrentBranchId() {
+        const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
+        return session.branch?.id || currentBranchId;
+    }
+
+    // Load user profile with branch info
+    async function loadUserProfile() {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return null;
+            }
+            
+            currentUser = user;
+            
+            // Get profile with branch info
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select(`
+                    *,
+                    branches (
+                        id,
+                        name,
+                        code,
+                        location
+                    )
+                `)
+                .eq('id', user.id)
+                .single();
+            
+            if (error) throw error;
+            
+            currentUserProfile = profile;
+            currentBranchId = profile.branch_id;
+            
+            // Store in session for other functions
+            const session = {
+                user: user,
+                profile: profile,
+                branch: profile.branches,
+                role: profile.role
+            };
+            localStorage.setItem('pos_session', JSON.stringify(session));
+            
+            // Add branch display to header if not exists
+            const mobileHeader = document.querySelector('.mobile-header');
+            if (mobileHeader && profile.branches) {
+                // Check if branch badge already exists
+                if (!document.getElementById('branch-badge')) {
+                    const branchBadge = document.createElement('span');
+                    branchBadge.id = 'branch-badge';
+                    branchBadge.style.cssText = 'background: var(--primary); color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; margin-left: 10px;';
+                    branchBadge.innerHTML = `<i class="fas fa-store"></i> ${profile.branches.name}`;
+                    mobileHeader.appendChild(branchBadge);
+                }
+            }
+            
+            return profile;
+        } catch (error) {
+            console.error("Error loading profile:", error);
+            return null;
+        }
+    }
 
     window.toggleSidebar = () => {
         document.getElementById('sidebar').classList.toggle('active');
@@ -278,6 +353,7 @@
     };
 
     window.logoutUser = async () => { 
+        localStorage.removeItem('pos_session'); // Clear session
         await supabase.auth.signOut(); 
         location.href = 'index.html'; 
     };
@@ -288,11 +364,29 @@
     };
 
     async function load() {
-        const { data: sups } = await supabase.from('suppliers').select('id, name').order('name');
-        document.getElementById('prod-supplier').innerHTML = '<option value="">-- No Supplier --</option>' + 
-            sups.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        const branchId = getCurrentBranchId();
+        if (!branchId) {
+            console.error("No branch ID found");
+            return;
+        }
 
-        const { data, error } = await supabase.from('products').select('*, suppliers(name)').order('name');
+        // Only load suppliers for this branch
+        const { data: sups } = await supabase
+            .from('suppliers')
+            .select('id, name')
+            .eq('branch_id', branchId)
+            .order('name');
+            
+        document.getElementById('prod-supplier').innerHTML = '<option value="">-- No Supplier --</option>' + 
+            (sups || []).map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+        // Only load products for this branch
+        const { data, error } = await supabase
+            .from('products')
+            .select('*, suppliers(name)')
+            .eq('branch_id', branchId)
+            .order('name');
+            
         allProducts = data || [];
         render();
     }
@@ -342,12 +436,13 @@
         const { error } = await supabase
             .from('products')
             .update({ stock_quantity: current + val })
-            .eq('id', id);
+            .eq('id', id)
+            .eq('branch_id', getCurrentBranchId()); // Add branch_id check for security
 
         if(!error) {
             load(); 
         } else {
-            alert("Update failed");
+            alert("Update failed: " + error.message);
             btn.innerText = originalText;
             btn.disabled = false;
         }
@@ -356,6 +451,13 @@
     document.getElementById('cashier-form').onsubmit = async (e) => {
         e.preventDefault();
         const btn = e.target.querySelector('button');
+        const branchId = getCurrentBranchId();
+        
+        if (!branchId) {
+            alert("Error: Could not determine your branch. Please log out and log in again.");
+            return;
+        }
+        
         btn.innerText = "Processing...";
         btn.disabled = true;
 
@@ -368,7 +470,10 @@
             stock_quantity: parseInt(document.getElementById('stock').value),
             cost_price: parseFloat(document.getElementById('cost').value),
             selling_price: parseFloat(document.getElementById('sell').value),
-            min_price: parseFloat(document.getElementById('min_price').value)
+            min_price: parseFloat(document.getElementById('min_price').value),
+            min_selling_price: parseFloat(document.getElementById('min_price').value), // Add this if your schema has it
+            empty_quantity: 0,
+            branch_id: branchId // CRITICAL: Add the branch_id
         };
 
         const { error } = await supabase.from('products').insert([payload]);
@@ -377,7 +482,7 @@
         btn.disabled = false;
 
         if (!error) { 
-            alert("Product Registered!"); 
+            alert("Product Registered Successfully!"); 
             load(); 
             e.target.reset(); 
             toggleGas(); 
@@ -394,7 +499,13 @@
         ));
     };
 
-    load();
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', async function() {
+        const profile = await loadUserProfile();
+        if (profile) {
+            await load();
+        }
+    });
 </script>
 </body>
 </html>
