@@ -90,7 +90,7 @@
             color: #ffffff; 
         }
 
-        /* --- BRANCH BADGE IN SIDEBAR --- */
+        /* --- BRANCH INFO IN SIDEBAR --- */
         .branch-info {
             padding: 15px 25px;
             margin: 10px 15px 20px;
@@ -142,7 +142,7 @@
             overflow-x: hidden; 
         }
 
-        /* Page Header */
+        /* Page Header with Branch Selector */
         .page-header {
             display: flex;
             justify-content: space-between;
@@ -164,16 +164,42 @@
             margin-top: 5px;
         }
         
-        .branch-filter-badge {
+        .branch-selector-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .branch-select {
+            padding: 12px 20px;
+            border-radius: 30px;
+            border: 2px solid var(--primary);
+            background: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text);
+            cursor: pointer;
+            min-width: 220px;
+            outline: none;
+        }
+        
+        .branch-select:focus {
+            border-color: var(--primary-dark);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        .branch-badge {
             background: var(--primary);
             color: white;
-            padding: 10px 20px;
+            padding: 8px 18px;
             border-radius: 30px;
             font-size: 0.85rem;
             font-weight: 700;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
+            white-space: nowrap;
         }
 
         /* Report Summary Cards */
@@ -321,7 +347,7 @@
         table { 
             width: 100%; 
             border-collapse: collapse; 
-            min-width: 800px;
+            min-width: 900px;
         }
         
         th { 
@@ -457,6 +483,8 @@
             .mobile-header { display: flex; }
             .overlay.active { display: block; }
             .grid { grid-template-columns: 1fr; }
+            .branch-selector-container { width: 100%; }
+            .branch-select { width: 100%; }
             
             table, thead, tbody, th, td, tr { display: block; }
             thead { display: none; }
@@ -499,7 +527,7 @@
     
     <!-- Branch Info Display -->
     <div class="branch-info" id="sidebarBranchInfo">
-        <div class="branch-label">Current Branch View</div>
+        <div class="branch-label">Your Assigned Branch</div>
         <div class="branch-name" id="sidebarBranchName">
             <i class="fas fa-store"></i>
             <span>Loading...</span>
@@ -552,11 +580,18 @@
     <div class="page-header">
         <div class="page-title">
             <h1>Debtors Management</h1>
-            <p><i class="fas fa-store"></i> <span id="branchIndicator">MUTOMO BRANCH</span></p>
+            <p><i class="fas fa-store"></i> Viewing: <span id="branchIndicator">All Branches</span></p>
         </div>
-        <div class="branch-filter-badge" id="branchBadge">
-            <i class="fas fa-store"></i>
-            <span id="currentBranchDisplay">MUTOMO BRANCH</span>
+        <div class="branch-selector-container">
+            <select id="branchSelector" class="branch-select" onchange="handleBranchChange()">
+                <option value="all">🏢 ALL BRANCHES (Consolidated)</option>
+                <option value="MUTOMO">🏪 MUTOMO BRANCH</option>
+                <option value="KITUI">🏪 KITUI BRANCH</option>
+            </select>
+            <div class="branch-badge" id="branchBadge">
+                <i class="fas fa-store"></i>
+                <span id="currentBranchDisplay">ALL BRANCHES</span>
+            </div>
         </div>
     </div>
 
@@ -615,7 +650,7 @@
             
             <div style="margin-top: 20px; padding: 12px; background: #fff7ed; border-radius: 12px; border-left: 4px solid var(--warning);">
                 <small style="color: #9a3412; font-weight: 600;">
-                    <i class="fas fa-info-circle"></i> Debt entries are automatically linked to your current branch.
+                    <i class="fas fa-info-circle"></i> Debt entries are automatically linked to the selected branch.
                 </small>
             </div>
         </div>
@@ -690,14 +725,27 @@
     let currentUser = null;
     let currentBranchId = null;
     let currentBranch = null;
+    let selectedBranchId = null; // For branch selector
     let branches = {};
+    let branchIdMap = {};
 
-    // ==================== BRANCH AWARE FUNCTIONS ====================
+    // ==================== BRANCH FUNCTIONS ====================
 
-    // Get current user's branch from session
-    function getCurrentBranchId() {
-        const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
-        return session.branch?.id || currentBranchId;
+    // Load branches for mapping
+    async function loadBranches() {
+        const { data } = await supabase.from('branches').select('*');
+        branches = {};
+        branchIdMap = {};
+        data?.forEach(b => {
+            branches[b.id] = b;
+            branchIdMap[b.code] = b.id;
+        });
+        return branches;
+    }
+
+    // Get branch ID from code
+    function getBranchIdFromCode(code) {
+        return branchIdMap[code] || null;
     }
 
     // Load user profile and branch info
@@ -738,15 +786,10 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
-            // Update UI with branch info
-            const branchDisplay = document.getElementById('currentBranchDisplay');
-            const branchIndicator = document.getElementById('branchIndicator');
+            // Update sidebar with user's assigned branch
             const sidebarBranchName = document.querySelector('#sidebarBranchName span');
-            
-            if (profile.branches) {
-                if (branchDisplay) branchDisplay.textContent = profile.branches.name;
-                if (branchIndicator) branchIndicator.textContent = profile.branches.name;
-                if (sidebarBranchName) sidebarBranchName.textContent = profile.branches.name;
+            if (profile.branches && sidebarBranchName) {
+                sidebarBranchName.textContent = profile.branches.name;
             }
             
             return profile;
@@ -756,40 +799,61 @@
         }
     }
 
-    // Load branches for mapping
-    async function loadBranches() {
-        const { data } = await supabase.from('branches').select('*');
-        branches = {};
-        data?.forEach(b => {
-            branches[b.id] = b;
-        });
-    }
+    // Handle branch selector change
+    window.handleBranchChange = async function() {
+        const selector = document.getElementById('branchSelector');
+        const selectedCode = selector.value;
+        
+        // Update UI
+        const branchDisplay = document.getElementById('currentBranchDisplay');
+        const branchIndicator = document.getElementById('branchIndicator');
+        
+        if (selectedCode === 'all') {
+            branchDisplay.textContent = 'ALL BRANCHES';
+            branchIndicator.textContent = 'All Branches';
+            selectedBranchId = null;
+        } else {
+            const branchId = getBranchIdFromCode(selectedCode);
+            if (branchId) {
+                selectedBranchId = branchId;
+                branchDisplay.textContent = branches[branchId].name;
+                branchIndicator.textContent = branches[branchId].name;
+            }
+        }
+        
+        await loadData();
+    };
 
-    // ==================== INITIALIZATION ====================
+    // Load all data based on selected branch
+    async function loadData() {
+        const branchId = selectedBranchId; // Use selected branch, null means all branches
+        
+        // Build queries
+        let productsQuery = supabase.from('products').select('*');
+        let shiftsQuery = supabase.from('daily_shifts')
+            .select('*')
+            .eq('status', 'open')
+            .order('start_time', { ascending: false })
+            .limit(1);
+        let debtsQuery = supabase
+            .from('debtors')
+            .select(`
+                *,
+                products (*)
+            `)
+            .order('created_at', { ascending: false });
+        
+        // Apply branch filter if a specific branch is selected
+        if (branchId) {
+            productsQuery = productsQuery.eq('branch_id', branchId);
+            shiftsQuery = shiftsQuery.eq('branch_id', branchId);
+            debtsQuery = debtsQuery.eq('branch_id', branchId);
+        }
 
-    async function init() {
-        await loadBranches();
-        const profile = await loadUserProfile();
-        
-        if (!profile) return;
-        
-        const branchId = getCurrentBranchId();
-        
-        // Load products only for this branch
         const [prodRes, shiftRes, debtsRes] = await Promise.all([
-            supabase.from('products').select('*').eq('branch_id', branchId),
-            supabase.from('daily_shifts')
-                .select('*')
-                .eq('branch_id', branchId)
-                .eq('status', 'open')
-                .maybeSingle(),
-            supabase.from('debtors')
-                .select(`
-                    *,
-                    products (*)
-                `)
-                .eq('branch_id', branchId)
-                .order('created_at', { ascending: false })
+            productsQuery,
+            shiftsQuery.maybeSingle(),
+            debtsQuery
         ]);
 
         allProducts = prodRes.data || [];
@@ -854,7 +918,7 @@
                 <tr>
                     <td colspan="7" style="text-align: center; padding: 40px;">
                         <i class="fas fa-inbox" style="font-size: 2rem; color: var(--text-dim); margin-bottom: 10px; display: block;"></i>
-                        No debt records found for ${currentBranch?.name || 'this branch'}
+                        No debt records found for this branch
                     </td>
                 </tr>
             `;
@@ -917,7 +981,7 @@
         btn.disabled = true;
 
         try {
-            const branchId = getCurrentBranchId();
+            const branchId = selectedBranchId || currentBranchId; // Use selected branch or user's branch
             
             // 1. Update Debt Status
             await supabase.from('debtors')
@@ -956,18 +1020,8 @@
             alert("✅ Debt cleared successfully!");
             closeModal();
             
-            // Refresh debts
-            const { data: freshDebts } = await supabase
-                .from('debtors')
-                .select(`
-                    *,
-                    products (*)
-                `)
-                .eq('branch_id', branchId)
-                .order('created_at', { ascending: false });
-                
-            allDebts = freshDebts || [];
-            renderLedger();
+            // Refresh data
+            await loadData();
             
         } catch (err) {
             console.error("Error:", err);
@@ -1058,18 +1112,18 @@
         const customer = document.getElementById('cust-name').value;
         const phone = document.getElementById('cust-phone').value;
         const amount = parseFloat(document.getElementById('debt-amt').value);
-        const branchId = getCurrentBranchId();
+        const branchId = selectedBranchId || currentBranchId; // Use selected branch or user's branch
 
         try {
-            // 1. Save to Debtors (branch_id is directly in debtors table)
-            const { data: debtData, error: debtError } = await supabase.from('debtors').insert([{
+            // 1. Save to Debtors
+            const { error: debtError } = await supabase.from('debtors').insert([{
                 customer_name: customer,
                 customer_phone: phone || null,
                 product_id: opt.dataset.id,
                 amount_owed: amount,
                 status: 'Unpaid',
                 branch_id: branchId
-            }]).select();
+            }]);
 
             if (debtError) throw debtError;
 
@@ -1107,18 +1161,8 @@
             document.getElementById('live-min').innerText = '-';
             document.getElementById('live-price').innerText = '-';
             
-            // Refresh debts
-            const { data: freshDebts } = await supabase
-                .from('debtors')
-                .select(`
-                    *,
-                    products (*)
-                `)
-                .eq('branch_id', branchId)
-                .order('created_at', { ascending: false });
-                
-            allDebts = freshDebts || [];
-            renderLedger();
+            // Refresh data
+            await loadData();
             
         } catch (err) {
             console.error("Error:", err);
@@ -1130,6 +1174,17 @@
     };
 
     // ==================== START THE APP ====================
+    
+    async function init() {
+        await loadBranches();
+        await loadUserProfile();
+        
+        // Set default to ALL BRANCHES
+        document.getElementById('branchSelector').value = 'all';
+        selectedBranchId = null;
+        
+        await loadData();
+    }
     
     init();
 </script>
