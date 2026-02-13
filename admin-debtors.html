@@ -841,6 +841,8 @@
             .eq('status', 'open')
             .order('start_time', { ascending: false })
             .limit(1);
+        
+        // IMPORTANT FIX: Always filter debts by branch_id if a branch is selected
         let debtsQuery = supabase
             .from('debtors')
             .select(`
@@ -867,10 +869,15 @@
         currentShift = shiftRes.data;
         allDebts = debtsRes.data || [];
         
-        console.log(`Loaded ${allDebts.length} debt records`);
-        if (allDebts.length > 0) {
-            console.log("First debt branch_id:", allDebts[0].branch_id);
-        }
+        console.log(`Loaded ${allDebts.length} debt records for selected branch`);
+        
+        // Log the branch distribution of loaded debts
+        const branchCounts = {};
+        allDebts.forEach(d => {
+            const id = d.branch_id || 'null';
+            branchCounts[id] = (branchCounts[id] || 0) + 1;
+        });
+        console.log("Debt distribution by branch:", branchCounts);
 
         // Populate product datalist
         const dList = document.getElementById('prod-list');
@@ -903,7 +910,7 @@
     function renderLedger(searchTerm = '') {
         const tbody = document.getElementById('ledger-body');
         
-        // Apply filters
+        // Apply filters - currentFilter (All/Unpaid/Paid) and search term
         const filtered = allDebts.filter(d => {
             const matchesFilter = currentFilter === 'All' || d.status === currentFilter;
             const matchesSearch = d.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -911,7 +918,7 @@
             return matchesFilter && matchesSearch;
         });
 
-        // Calculate summary - ONLY from filtered debts (current branch)
+        // Calculate summary - ONLY from currently loaded debts (which are already filtered by branch)
         let outstanding = 0, recovered = 0, profit = 0;
         allDebts.forEach(d => {
             if(d.status === 'Unpaid') {
@@ -1179,6 +1186,7 @@
         await loadBranches();
         await loadUserProfile();
         
+        // Set default to ALL BRANCHES
         document.getElementById('branchSelector').value = 'all';
         selectedBranchId = null;
         
