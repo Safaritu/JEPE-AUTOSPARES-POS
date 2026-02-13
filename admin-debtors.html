@@ -725,13 +725,12 @@
     let currentUser = null;
     let currentBranchId = null;
     let currentBranch = null;
-    let selectedBranchId = null; // For branch selector
+    let selectedBranchId = null;
     let branches = {};
     let branchIdMap = {};
 
     // ==================== BRANCH FUNCTIONS ====================
 
-    // Load branches for mapping
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
         branches = {};
@@ -740,15 +739,14 @@
             branches[b.id] = b;
             branchIdMap[b.code] = b.id;
         });
+        console.log("Branches loaded:", branches);
         return branches;
     }
 
-    // Get branch ID from code
     function getBranchIdFromCode(code) {
         return branchIdMap[code] || null;
     }
 
-    // Load user profile and branch info
     async function loadUserProfile() {
         try {
             const { data: { user } } = await supabase.auth.getUser();
@@ -786,7 +784,6 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
-            // Update sidebar with user's assigned branch
             const sidebarBranchName = document.querySelector('#sidebarBranchName span');
             if (profile.branches && sidebarBranchName) {
                 sidebarBranchName.textContent = profile.branches.name;
@@ -799,12 +796,10 @@
         }
     }
 
-    // Handle branch selector change
     window.handleBranchChange = async function() {
         const selector = document.getElementById('branchSelector');
         const selectedCode = selector.value;
         
-        // Update UI
         const branchDisplay = document.getElementById('currentBranchDisplay');
         const branchIndicator = document.getElementById('branchIndicator');
         
@@ -812,21 +807,32 @@
             branchDisplay.textContent = 'ALL BRANCHES';
             branchIndicator.textContent = 'All Branches';
             selectedBranchId = null;
+            console.log("Selected: ALL BRANCHES");
         } else {
             const branchId = getBranchIdFromCode(selectedCode);
             if (branchId) {
                 selectedBranchId = branchId;
                 branchDisplay.textContent = branches[branchId].name;
                 branchIndicator.textContent = branches[branchId].name;
+                console.log(`Selected branch: ${branches[branchId].name} (ID: ${branchId})`);
             }
         }
         
         await loadData();
     };
 
-    // Load all data based on selected branch
     async function loadData() {
-        const branchId = selectedBranchId; // Use selected branch, null means all branches
+        console.log("Loading data for branch ID:", selectedBranchId);
+        
+        // Show loading state
+        document.getElementById('ledger-body').innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 40px;">
+                    <div class="spinner" style="margin: 0 auto 10px;"></div>
+                    Loading data...
+                </td>
+            </tr>
+        `;
         
         // Build queries
         let productsQuery = supabase.from('products').select('*');
@@ -844,10 +850,11 @@
             .order('created_at', { ascending: false });
         
         // Apply branch filter if a specific branch is selected
-        if (branchId) {
-            productsQuery = productsQuery.eq('branch_id', branchId);
-            shiftsQuery = shiftsQuery.eq('branch_id', branchId);
-            debtsQuery = debtsQuery.eq('branch_id', branchId);
+        if (selectedBranchId) {
+            productsQuery = productsQuery.eq('branch_id', selectedBranchId);
+            shiftsQuery = shiftsQuery.eq('branch_id', selectedBranchId);
+            debtsQuery = debtsQuery.eq('branch_id', selectedBranchId);
+            console.log("Filtering debts by branch_id:", selectedBranchId);
         }
 
         const [prodRes, shiftRes, debtsRes] = await Promise.all([
@@ -859,6 +866,11 @@
         allProducts = prodRes.data || [];
         currentShift = shiftRes.data;
         allDebts = debtsRes.data || [];
+        
+        console.log(`Loaded ${allDebts.length} debt records`);
+        if (allDebts.length > 0) {
+            console.log("First debt branch_id:", allDebts[0].branch_id);
+        }
 
         // Populate product datalist
         const dList = document.getElementById('prod-list');
@@ -890,6 +902,8 @@
 
     function renderLedger(searchTerm = '') {
         const tbody = document.getElementById('ledger-body');
+        
+        // Apply filters
         const filtered = allDebts.filter(d => {
             const matchesFilter = currentFilter === 'All' || d.status === currentFilter;
             const matchesSearch = d.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -897,7 +911,7 @@
             return matchesFilter && matchesSearch;
         });
 
-        // Calculate summary
+        // Calculate summary - ONLY from filtered debts (current branch)
         let outstanding = 0, recovered = 0, profit = 0;
         allDebts.forEach(d => {
             if(d.status === 'Unpaid') {
@@ -914,11 +928,12 @@
         document.getElementById('active-debtors').innerText = allDebts.filter(d => d.status === 'Unpaid').length;
 
         if (filtered.length === 0) {
+            const branchName = selectedBranchId ? branches[selectedBranchId]?.name : 'All Branches';
             tbody.innerHTML = `
                 <tr>
                     <td colspan="7" style="text-align: center; padding: 40px;">
                         <i class="fas fa-inbox" style="font-size: 2rem; color: var(--text-dim); margin-bottom: 10px; display: block;"></i>
-                        No debt records found for this branch
+                        No debt records found for ${branchName}
                     </td>
                 </tr>
             `;
@@ -981,14 +996,12 @@
         btn.disabled = true;
 
         try {
-            const branchId = selectedBranchId || currentBranchId; // Use selected branch or user's branch
+            const branchId = selectedBranchId || currentBranchId;
             
-            // 1. Update Debt Status
             await supabase.from('debtors')
                 .update({ status: 'Paid' })
                 .eq('id', selectedDebt.id);
 
-            // 2. Find and update the related sale (if exists)
             const { data: relatedSale } = await supabase
                 .from('sales')
                 .select('id')
@@ -1005,7 +1018,6 @@
                     .eq('id', relatedSale.id);
             }
 
-            // 3. Log recovery into Cash transactions
             await supabase.from('cash_transactions').insert([{
                 shift_id: currentShift.id,
                 type: 'Money In',
@@ -1020,7 +1032,6 @@
             alert("✅ Debt cleared successfully!");
             closeModal();
             
-            // Refresh data
             await loadData();
             
         } catch (err) {
@@ -1031,8 +1042,6 @@
             btn.disabled = false;
         }
     };
-
-    // ==================== RECEIPT GENERATION ====================
 
     function generateReceipt(debt, method) {
         const area = document.getElementById('print-area');
@@ -1073,7 +1082,7 @@
         currentFilter = status;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         btn.classList.add('active');
-        renderLedger();
+        renderLedger(document.getElementById('ledger-search').value);
     };
 
     window.handleSearch = (val) => renderLedger(val);
@@ -1085,8 +1094,6 @@
             window.location.href = 'index.html';
         }
     };
-
-    // ==================== FORM SUBMISSION ====================
 
     document.getElementById('debt-form').onsubmit = async (e) => {
         e.preventDefault();
@@ -1112,10 +1119,9 @@
         const customer = document.getElementById('cust-name').value;
         const phone = document.getElementById('cust-phone').value;
         const amount = parseFloat(document.getElementById('debt-amt').value);
-        const branchId = selectedBranchId || currentBranchId; // Use selected branch or user's branch
+        const branchId = selectedBranchId || currentBranchId;
 
         try {
-            // 1. Save to Debtors
             const { error: debtError } = await supabase.from('debtors').insert([{
                 customer_name: customer,
                 customer_phone: phone || null,
@@ -1127,7 +1133,6 @@
 
             if (debtError) throw debtError;
 
-            // 2. Save to Sales (Marked as Debt/Unpaid)
             const { error: saleError } = await supabase.from('sales').insert([{
                 product_id: opt.dataset.id,
                 item_name: searchVal,
@@ -1144,7 +1149,6 @@
 
             if (saleError) throw saleError;
 
-            // 3. Update Inventory
             const newStock = parseInt(opt.dataset.stock) - 1;
             const { error: stockError } = await supabase.from('products')
                 .update({ stock_quantity: newStock })
@@ -1155,13 +1159,11 @@
 
             alert("✅ Debt Recorded Successfully!");
             
-            // Reset form
             e.target.reset();
             document.getElementById('live-stock').innerText = '-';
             document.getElementById('live-min').innerText = '-';
             document.getElementById('live-price').innerText = '-';
             
-            // Refresh data
             await loadData();
             
         } catch (err) {
@@ -1173,13 +1175,10 @@
         }
     };
 
-    // ==================== START THE APP ====================
-    
     async function init() {
         await loadBranches();
         await loadUserProfile();
         
-        // Set default to ALL BRANCHES
         document.getElementById('branchSelector').value = 'all';
         selectedBranchId = null;
         
