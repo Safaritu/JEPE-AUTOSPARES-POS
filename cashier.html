@@ -100,22 +100,21 @@
         box-shadow: 0 0 8px rgba(79, 70, 229, 0.4) !important;
         border: 2px solid white !important;
     }
-    
-    /* Branch badge */
-    .branch-badge {
-        background: var(--primary);
-        color: white;
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 0.7rem;
-        font-weight: 700;
-        margin-right: 10px;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        border: 2px solid white;
-        box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
-    }
+        /* Branch badge */
+.branch-badge {
+    background: var(--primary);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-right: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 2px solid white;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+}
     
     /* Start button with larger font */
     .start-btn-large {
@@ -1609,8 +1608,7 @@
         <button class="btn btn-danger" style="margin-top:20px; width:100%" id="confirm-close">FINALIZE & CLOSE</button>
     </div>
 </div>
-
-<script type="module">
+    <script type="module">
     import { supabase } from './auth.js';
 
     let inventory = [];
@@ -1633,16 +1631,19 @@
     // BRANCH-AWARE HELPER FUNCTIONS
     // ============================================
 
+    // Get current user's branch ID from session
     function getCurrentBranchId() {
         const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
         return session.branch?.id || currentBranchId;
     }
 
+    // Check if user is admin (though this is cashier page, but for completeness)
     function isAdmin() {
         const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
         return session.role === 'admin';
     }
 
+    // Load user profile with branch info
     async function loadUserProfile() {
         try {
             const { data: { user } } = await supabase.auth.getUser();
@@ -1650,6 +1651,7 @@
             
             currentUser = user;
             
+            // Get profile with branch info
             const { data: profile, error } = await supabase
                 .from('profiles')
                 .select(`
@@ -1669,6 +1671,7 @@
             currentUserProfile = profile;
             currentBranchId = profile.branch_id;
             
+            // Store in session for other functions
             const session = {
                 user: user,
                 profile: profile,
@@ -1677,6 +1680,7 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
+            // Update profile info in UI
             const profileUserName = document.getElementById('profileUserName');
             const profileUserEmail = document.getElementById('profileUserEmail');
             const branchNameEl = document.getElementById('branch-name-display');
@@ -1684,6 +1688,7 @@
             if (profileUserName) profileUserName.textContent = profile.full_name || user.email?.split('@')[0] || 'Cashier';
             if (profileUserEmail) profileUserEmail.textContent = user.email;
             
+            // Add branch display to header if not exists
             if (!branchNameEl && profile.branches) {
                 const headerRight = document.querySelector('.header-right');
                 if (headerRight) {
@@ -1732,6 +1737,7 @@
         refundingSale = null;
     };
 
+    // Process refund function - FIXED VERSION WITH BRANCH_ID
     window.processRefund = async function() {
         if (!refundingSale || !currentShift) return;
         
@@ -1766,17 +1772,18 @@
         submitBtn.innerHTML = '<span class="spinner"></span> PROCESSING...';
         
         try {
+            // 1. Create a NEGATIVE sale entry with branch_id
             const { error: saleError } = await supabase.from('sales').insert([{
                 shift_id: currentShift.id,
                 product_id: refundingSale.product_id,
                 item_name: `REFUND: ${refundingSale.item_name}`,
                 part_type: refundingSale.part_type,
-                quantity: -refundingSale.quantity,
+                quantity: -refundingSale.quantity, // Negative quantity
                 unit_price: refundingSale.unit_price,
-                total_amount: -refundAmount,
+                total_amount: -refundAmount, // Negative amount
                 payment_method: refundMethod,
                 cost_price: refundingSale.cost_price || 0,
-                amount: -refundAmount,
+                amount: -refundAmount, // Negative amount
                 category: refundingSale.category,
                 user_id: currentUser.id,
                 weight_category: refundingSale.weight_category,
@@ -1785,11 +1792,12 @@
                 refund_method: refundMethod,
                 refund_reason: refundReason,
                 refunded_at: new Date().toISOString(),
-                branch_id: branchId
+                branch_id: branchId // Add branch_id
             }]);
             
             if (saleError) throw saleError;
             
+            // 2. Mark original sale as refunded
             const { error: updateError } = await supabase.from('sales')
                 .update({ 
                     refunded: true,
@@ -1801,18 +1809,20 @@
             
             if (updateError) throw updateError;
             
+            // 3. Record money out transaction for the refund with branch_id
             const { error: transError } = await supabase.from('cash_transactions').insert([{
                 shift_id: currentShift.id,
                 type: 'Money Out',
                 category: refundMethod,
                 amount: refundAmount,
                 description: `Refund: ${refundingSale.item_name}${refundReason ? ' - ' + refundReason : ''}`,
-                branch_id: branchId,
+                branch_id: branchId, // Add branch_id
                 user_id: currentUser.id
             }]);
             
             if (transError) throw transError;
             
+            // 4. Restore stock quantity
             const { data: product } = await supabase.from('products')
                 .select('stock_quantity')
                 .eq('id', refundingSale.product_id)
@@ -1827,8 +1837,10 @@
                 if (stockError) throw stockError;
             }
             
+            // 5. Show success message
             alert(`✅ Refund processed successfully!\n\nRefund of Ksh ${refundAmount.toLocaleString()} processed via ${refundMethod}. Stock has been restored.`);
             
+            // 6. Close modal and refresh data
             closeRefundModal();
             await fetchInventory();
             await loadShiftData();
@@ -1848,6 +1860,7 @@
         dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
     };
 
+    // Close dropdown when clicking outside
     document.addEventListener('click', function(event) {
         const dropdown = document.getElementById('profileDropdown');
         const profileBtn = document.getElementById('profileBtn');
@@ -1857,6 +1870,7 @@
         }
     });
 
+    // Check for low floats
     function checkLowFloats() {
         const floatItems = [
             { id: 'float-cash-item', element: document.getElementById('float-cash'), value: parseFloat(document.getElementById('float-cash')?.innerText.replace(/,/g, '')) || 0 },
@@ -1880,6 +1894,7 @@
         });
     }
 
+    // Refresh data function
     window.refreshData = async function() {
         const btn = event.target.closest('button');
         const originalText = btn.innerHTML;
@@ -1897,13 +1912,14 @@
         alert('Data refreshed successfully!');
     };
 
+    // --- REALTIME: Sync Inventory Automatically ---
     const productSubscription = supabase
         .channel('inventory-sync')
         .on('postgres_changes', { 
             event: '*', 
             schema: 'public', 
             table: 'products',
-            filter: `branch_id=eq.${getCurrentBranchId()}`
+            filter: `branch_id=eq.${getCurrentBranchId()}` // Only listen to current branch
         }, (payload) => {
             console.log("Database Change Detected. Syncing...");
             fetchInventory(); 
@@ -1918,6 +1934,7 @@
                 return;
             }
             
+            // Only fetch products for current branch
             const { data } = await supabase
                 .from('products')
                 .select('*')
@@ -1940,6 +1957,7 @@
         }
     }
 
+    // Helper to handle the Red Pulsing Logic
     function updateStockDisplay(item) {
         const hStock = document.getElementById('hint-stock');
         if (hStock) {
@@ -1970,12 +1988,13 @@
         if (onboardingHand) onboardingHand.style.display = 'none';
         sessionStorage.setItem('menuClicked', 'true');
         
+        // Close profile dropdown if open
         const dropdown = document.getElementById('profileDropdown');
         if (dropdown) dropdown.style.display = 'none';
     };
 
     window.logoutUser = async () => { 
-        localStorage.removeItem('pos_session');
+        localStorage.removeItem('pos_session'); // Clear session
         await supabase.auth.signOut(); 
         location.href = 'index.html'; 
     };
@@ -2035,6 +2054,7 @@
 
     async function init() {
         try {
+            // Load user profile first
             const profile = await loadUserProfile();
             if (!profile) {
                 window.location.href = 'index.html';
@@ -2048,6 +2068,7 @@
             setInterval(updateGreeting, 60000);
 
             try {
+                // Fetch products only for this branch
                 const [prodRes, shiftRes] = await Promise.all([
                     supabase.from('products').select('*').eq('branch_id', branchId),
                     supabase.from('daily_shifts')
@@ -2071,6 +2092,7 @@
                         </button>
                     `;
                     
+                    // Update float displays safely
                     const floatCash = document.getElementById('float-cash');
                     const floatMpesa = document.getElementById('float-mpesa');
                     const floatKcb = document.getElementById('float-kcb');
@@ -2131,7 +2153,9 @@
             updateStockDisplay(selectedItem);
             updateTotal();
             
+            // Check if it's a gas item
             if (selectedItem.category === 'Gas') {
+                // Show gas redirect modal
                 const gasModal = document.getElementById('gasRedirectModal');
                 if (gasModal) gasModal.style.display = 'flex';
             }
@@ -2166,6 +2190,7 @@
             return;
         }
         
+        // Prevent gas sales from this page
         if (selectedItem.category === 'Gas') {
             const gasModal = document.getElementById('gasRedirectModal');
             if (gasModal) gasModal.style.display = 'flex';
@@ -2201,7 +2226,7 @@
             part_type: selectedItem.part_type || 'N/A', 
             discount_reason: selectedItem.tempReason || "",
             user_id: currentUser.id,
-            branch_id: branchId
+            branch_id: branchId // Add branch_id
         };
 
         if (method === 'Split') {
@@ -2221,6 +2246,7 @@
             
             if (error) throw error;
 
+            // Update stock quantity
             const newStock = selectedItem.stock_quantity - qty;
             const { error: updateError } = await supabase
                 .from('products')
@@ -2229,6 +2255,7 @@
             
             if (updateError) throw updateError;
 
+            // Record debt if applicable
             if(method === "Debt") {
                 const dName = prompt("Customer Name:");
                 if(dName) {
@@ -2237,14 +2264,16 @@
                         amount_owed: total, 
                         sale_id: sData[0].id,
                         shift_id: currentShift.id,
-                        branch_id: branchId
+                        branch_id: branchId // Add branch_id
                     }]);
                 }
             }
 
+            // Sync UI without full page reload
             await fetchInventory(); 
             await loadShiftData();
             
+            // Reset Form
             document.getElementById('sale-form').reset();
             document.getElementById('pSearch').value = '';
             
@@ -2261,6 +2290,7 @@
             btn.disabled = false;
             btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
             
+            // Show success message
             alert("Sale Saved Successfully!");
         } catch (error) { 
             console.error("Sale Error:", error);
@@ -2292,6 +2322,7 @@
             const sales = salesRes.data || [];
             const trans = transRes.data || [];
 
+            // Filter out refunds (negative sales) for KCB total
             currentKcbSalesTotal = sales
                 .filter(s => s.payment_method === 'KCB Paybill' && !s.refunded && s.total_amount > 0)
                 .reduce((a, b) => a + b.total_amount, 0);
@@ -2332,6 +2363,7 @@
                 `).join('');
             }
 
+            // Calculate money in/out totals
             let totalMoneyIn = 0;
             let totalMoneyOut = 0;
             
@@ -2343,6 +2375,7 @@
                 }
             });
             
+            // Update summary cards
             const totalMoneyInFullEl = document.getElementById('total-money-in-full');
             const totalMoneyOutFullEl = document.getElementById('total-money-out-full');
             
@@ -2364,6 +2397,7 @@
                 `).join('');
             }
             
+            // Check for low floats after data is loaded
             checkLowFloats();
         } catch (error) {
             console.error("Error loading shift data:", error);
@@ -2401,7 +2435,7 @@
             open_mpesa: mpesa,
             open_kcb: kcb,
             open_equity: equity,
-            status: 'open',
+            status: 'open', // Note: lowercase 'open' to match your DB
             start_time: new Date().toISOString()
         };
         
@@ -2417,44 +2451,17 @@
     });
 
     document.getElementById('confirm-close').addEventListener('click', async function() {
-        // Validate that closing details are provided
-        const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
-        const clK = parseFloat(document.getElementById('c-kcb').value || 0);
-        const clE = parseFloat(document.getElementById('c-equity').value || 0);
-        const clC = parseFloat(document.getElementById('c-cash').value || 0);
-        
-        // Check if all required fields have values
-        if (clM === 0 && clK === 0 && clE === 0 && clC === 0) {
-            alert("Please enter closing amounts for all floats before closing the shift.");
-            return;
-        }
-        
-        if (clM === 0) {
-            const confirmZero = confirm("Mpesa closing amount is 0. Is this correct?");
-            if (!confirmZero) return;
-        }
-        
-        if (clK === 0) {
-            const confirmZero = confirm("KCB Float closing amount is 0. Is this correct?");
-            if (!confirmZero) return;
-        }
-        
-        if (clE === 0) {
-            const confirmZero = confirm("Equity Float closing amount is 0. Is this correct?");
-            if (!confirmZero) return;
-        }
-        
-        if (clC === 0) {
-            const confirmZero = confirm("Cash closing amount is 0. Is this correct?");
-            if (!confirmZero) return;
-        }
-        
         this.disabled = true;
         this.innerHTML = '<span class="spinner"></span> FINALIZING...';
         
         try {
+            const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
+            const clK = parseFloat(document.getElementById('c-kcb').value || 0);
+            const clE = parseFloat(document.getElementById('c-equity').value || 0);
             const clB = currentKcbSalesTotal;
+            const clC = parseFloat(document.getElementById('c-cash').value || 0);
 
+            // Filter out refunds and negative sales
             const { data: sales } = await supabase.from('sales')
                 .select('total_amount')
                 .eq('shift_id', currentShift.id)
@@ -2486,7 +2493,7 @@
                 close_equity: clE, 
                 close_kcb_bank: clB, 
                 close_cash: clC,
-                status: 'closed',
+                status: 'closed', // Note: lowercase 'closed' to match your DB
                 end_time: new Date().toISOString(), 
                 variance_note: note, 
                 system_expected_total: expected
@@ -2541,6 +2548,7 @@
                 }
             }
             
+            // Check screen size and render appropriately
             if (window.innerWidth <= 768) {
                 renderMobileHistory(allShifts, allTransactions, allSales, searchQuery);
             } else {
@@ -2757,6 +2765,7 @@
         mobileContainer.innerHTML = mobileHtml || '<div style="text-align:center; padding:50px;">No records found.</div>';
     }
 
+    // Setup scroll indicator for shift history table
     const scrollContainer = document.getElementById('scrollContainer');
     const scrollHint = document.getElementById('scrollHint');
     if (scrollContainer && scrollHint) {
@@ -2787,6 +2796,7 @@
         loadHistory(); 
     });
     
+    // MONEY IN/OUT RECORD BUTTON FUNCTION
     document.getElementById('record-expense-btn').addEventListener('click', async function() {
         const amt = parseFloat(document.getElementById('exp-amt').value);
         const desc = document.getElementById('exp-desc').value;
@@ -2807,7 +2817,7 @@
                 category: document.getElementById('exp-method').value, 
                 amount: amt, 
                 description: desc,
-                branch_id: branchId,
+                branch_id: branchId, // Add branch_id
                 user_id: currentUser.id
             }]);
 
@@ -2828,6 +2838,7 @@
         }
     });
 
+    // Handle window resize for responsive display
     window.addEventListener('resize', function() {
         if (allShifts.length > 0) {
             if (window.innerWidth <= 768) {
@@ -2842,6 +2853,7 @@
         }
     });
 
+    // Initialize when page loads
     document.addEventListener('DOMContentLoaded', function() {
         init();
         setInterval(checkLowFloats, 30000);
