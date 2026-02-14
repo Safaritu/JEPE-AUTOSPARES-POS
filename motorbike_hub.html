@@ -285,6 +285,13 @@
             padding: 20px; 
             border-radius: 15px; 
             border: 1px solid var(--border); 
+            height: 300px;
+            position: relative;
+        }
+        
+        .chart-box canvas {
+            max-height: 250px;
+            width: 100% !important;
         }
 
         .table-container { 
@@ -374,6 +381,7 @@
             .branch-selector-container { flex-direction: column; align-items: flex-start; }
             .branch-filter { width: 100%; }
             .branch-select { width: 100%; }
+            .chart-box { height: 250px; }
         }
     </style>
 </head>
@@ -463,11 +471,11 @@
 
         <div class="charts-container">
             <div class="chart-box">
-                <h4 style="margin-top:0;">Stock vs Sold by Model</h4>
+                <h4 style="margin-top:0; margin-bottom:15px;">Stock vs Sold by Model</h4>
                 <canvas id="motoStockChart"></canvas>
             </div>
             <div class="chart-box">
-                <h4 style="margin-top:0;">Revenue Generation</h4>
+                <h4 style="margin-top:0; margin-bottom:15px;">Revenue Generation</h4>
                 <canvas id="motoRevChart"></canvas>
             </div>
         </div>
@@ -651,11 +659,11 @@
                 // Build sales query
                 let salesQuery = supabase
                     .from('sales')
-                    .select('*, products!inner(branch_id)')
+                    .select('*')
                     .eq('category', 'Motorbike');
                 
                 if (selectedBranchId) {
-                    salesQuery = salesQuery.eq('products.branch_id', selectedBranchId);
+                    salesQuery = salesQuery.eq('branch_id', selectedBranchId);
                 }
 
                 const [productsRes, salesRes] = await Promise.all([
@@ -742,11 +750,21 @@
             allMotoData = Object.values(perfMap).sort((a, b) => b.rev - a.rev);
             
             // Destroy existing charts if they exist
-            if (motoStockChart) motoStockChart.destroy();
-            if (motoRevChart) motoRevChart.destroy();
+            if (motoStockChart) {
+                motoStockChart.destroy();
+                motoStockChart = null;
+            }
+            if (motoRevChart) {
+                motoRevChart.destroy();
+                motoRevChart = null;
+            }
             
             displayTable();
-            updateCharts(allMotoData);
+            
+            // Small delay to ensure canvas is ready
+            setTimeout(() => {
+                updateCharts(allMotoData);
+            }, 100);
         }
 
         function displayTable() {
@@ -782,27 +800,65 @@
         }
 
         function updateCharts(data) {
+            // Only show top 5 models in charts
             const chartData = data.slice(0, 5);
-            const labels = chartData.map(d => d.name);
             
-            // Stock vs Sold Chart
+            if (chartData.length === 0) {
+                // Clear charts if no data
+                const stockCtx = document.getElementById('motoStockChart').getContext('2d');
+                const revCtx = document.getElementById('motoRevChart').getContext('2d');
+                stockCtx.clearRect(0, 0, stockCtx.canvas.width, stockCtx.canvas.height);
+                revCtx.clearRect(0, 0, revCtx.canvas.width, revCtx.canvas.height);
+                return;
+            }
+            
+            const labels = chartData.map(d => d.name.length > 15 ? d.name.substring(0, 12) + '...' : d.name);
+            
+            // Stock vs Sold Chart - Using original simple styling
             const stockCtx = document.getElementById('motoStockChart').getContext('2d');
             motoStockChart = new Chart(stockCtx, {
                 type: 'bar',
                 data: {
                     labels,
                     datasets: [
-                        { label: 'Stock', data: chartData.map(d => d.stock), backgroundColor: '#f59e0b' },
-                        { label: 'Sold', data: chartData.map(d => d.sold), backgroundColor: '#10b981' }
+                        { 
+                            label: 'Stock', 
+                            data: chartData.map(d => d.stock), 
+                            backgroundColor: '#f59e0b',
+                            barPercentage: 0.8,
+                            categoryPercentage: 0.9
+                        },
+                        { 
+                            label: 'Sold', 
+                            data: chartData.map(d => d.sold), 
+                            backgroundColor: '#10b981',
+                            barPercentage: 0.8,
+                            categoryPercentage: 0.9
+                        }
                     ]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { font: { size: 11 } }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { font: { size: 10 } }
+                        },
+                        x: {
+                            ticks: { font: { size: 10 } }
+                        }
+                    }
                 }
             });
             
-            // Revenue Chart
+            // Revenue Chart - Using original simple styling
             const revCtx = document.getElementById('motoRevChart').getContext('2d');
             motoRevChart = new Chart(revCtx, {
                 type: 'doughnut',
@@ -810,12 +866,20 @@
                     labels,
                     datasets: [{
                         data: chartData.map(d => d.rev),
-                        backgroundColor: ['#2563eb', '#6366f1', '#f59e0b', '#10b981', '#0f172a']
+                        backgroundColor: ['#2563eb', '#6366f1', '#f59e0b', '#10b981', '#0f172a'],
+                        borderWidth: 0
                     }]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { font: { size: 10 } }
+                        }
+                    },
+                    cutout: '60%'
                 }
             });
         }
