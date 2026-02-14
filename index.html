@@ -168,6 +168,27 @@
         .contact-info { font-weight: 700; color: #ffffff; margin-top: 2px; font-size: 0.8rem; }
 
         .hidden { display: none !important; }
+        
+        /* Branch selection styling */
+        .branch-selector {
+            margin: 6px 0;
+        }
+        .branch-info-text {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            margin-top: 2px;
+            text-align: left;
+        }
+        .branch-note {
+            background: rgba(99, 102, 241, 0.1);
+            border-left: 3px solid var(--primary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 0.75rem;
+            color: #cbd5e1;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
@@ -214,10 +235,20 @@
         </div>
 
         <div id="register-fields" class="hidden">
-            <select id="role">
-                <option value="cashier">Cashier Access</option>
-                <option value="admin">Administrator Access</option>
+            <select id="role" class="branch-selector">
+                <option value="cashier">Cashier</option>
+                <option value="admin">Administrator</option>
             </select>
+            
+            <select id="branch" class="branch-selector">
+                <option value="" disabled selected>Select Branch *</option>
+                <option value="5326e4c6-6d0d-4500-83d9-f322c859b9fb">MUTOMO BRANCH</option>
+                <option value="ea91a65e-7c6e-43fd-b71e-3f2cc4f714a9">KITUI BRANCH</option>
+            </select>
+            <div class="branch-note">
+                <i class="fas fa-info-circle"></i> 
+                <span id="branch-note-text">Cashiers must select their branch. Administrators can access all branches.</span>
+            </div>
         </div>
 
         <button id="main-btn" onclick="handleAuth()">Sign In</button>
@@ -240,7 +271,7 @@
 </div>
 
 <script type="module">
-    import { supabase } from './auth.js';
+    import { supabase, BRANCHES } from './auth.js';
 
     let isLogin = true;
 
@@ -253,10 +284,22 @@
         document.getElementById('toggle-text').innerHTML = isLogin ? "New staff? <b>Create Account</b>" : "Already have an account? <b>Sign In</b>";
     };
 
+    // Update branch note based on role selection
+    document.getElementById('role').addEventListener('change', (e) => {
+        const role = e.target.value;
+        const noteText = document.getElementById('branch-note-text');
+        if (role === 'admin') {
+            noteText.innerText = 'Administrators can access all branches. Branch selection is for reference only.';
+        } else {
+            noteText.innerText = 'Cashiers must select their branch. You will only have access to this branch.';
+        }
+    });
+
     window.handleAuth = async () => {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
-        const role = document.getElementById('role').value;
+        const role = document.getElementById('role')?.value;
+        const branchId = document.getElementById('branch')?.value;
         const btn = document.getElementById('main-btn');
 
         if(!email || !password) return alert("Please fill all fields");
@@ -271,27 +314,44 @@
                 checkRoleAndRedirect(data.user.id);
             } else {
                 // SIGN UP LOGIC
+                if (!branchId) {
+                    alert("Please select your branch");
+                    btn.disabled = false;
+                    btn.innerText = "Register Now";
+                    return;
+                }
+
                 const { data, error } = await supabase.auth.signUp({ 
                     email, 
                     password,
                     options: {
-                        // This metadata ensures the profile can be created via a Trigger or upon confirmation
-                        data: { role: role } 
+                        data: { role: role, branch_id: branchId } 
                     }
                 });
                 
                 if (error) throw error;
 
                 if (data.user) {
-                    // Attempt to create profile. 
-                    // NOTE: If this fails due to email confirmation, you should set up a 
-                    // Supabase Database Trigger (SQL) to handle this automatically.
+                    // Create profile with branch_id
                     const { error: profileError } = await supabase
                         .from('profiles')
-                        .insert([{ id: data.user.id, role: role, email: email }]);
+                        .insert([{ 
+                            id: data.user.id, 
+                            role: role, 
+                            email: email,
+                            branch_id: branchId 
+                        }]);
 
-                    alert("Registration successful! Please check your email to confirm your account.");
+                    if (profileError) {
+                        console.error("Profile creation error:", profileError);
+                        alert("Account created but profile setup failed. Please contact admin.");
+                    } else {
+                        alert("Registration successful! Please check your email to confirm your account.");
+                    }
+                    
                     window.toggleMode();
+                    document.getElementById('email').value = '';
+                    document.getElementById('password').value = '';
                 }
             }
         } catch (err) {
@@ -303,23 +363,27 @@
     };
 
     async function checkRoleAndRedirect(userId) {
-        const { data, error } = await supabase.from('profiles').select('role').eq('id', userId).single();
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('role, branch_id, branches(name)')
+            .eq('id', userId)
+            .single();
         
         if (data) {
             const overlay = document.getElementById('welcome-overlay');
             overlay.classList.remove('hidden');
+            
+            const branchName = data.branches?.name || '';
             document.getElementById('welcome-name').innerText = `WELCOME ${data.role.toUpperCase()}`;
+            document.getElementById('welcome-role').innerText = data.role === 'admin' 
+                ? 'Administrator Access - All Branches' 
+                : (branchName ? `Assigned to ${branchName}` : 'Initializing Workspace...');
             
             setTimeout(() => {
                 window.location.href = (data.role === 'admin') ? 'admin.html' : 'cashier.html';
             }, 2000);
         } else {
-            // This happens if the user confirmed email but the profile row wasn't created
-            alert("Profile not found. Creating a default staff profile...");
-            const { data: { user } } = await supabase.auth.getUser();
-            // Fallback: Create profile now if it's missing
-            await supabase.from('profiles').insert([{ id: user.id, email: user.email, role: 'cashier' }]);
-            window.location.reload();
+            alert("Profile not found. Please contact admin.");
         }
     }
 
@@ -339,6 +403,7 @@
         }
     };
 
+    // Check if user is already logged in
     const { data: { user } } = await supabase.auth.getUser();
     if (user) checkRoleAndRedirect(user.id);
 </script>
