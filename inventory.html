@@ -586,7 +586,7 @@
 </div>
 
 <script type="module">
-    import { supabase, getCurrentUser, BRANCHES } from './auth.js';
+    import { supabase } from './auth.js';
     
     let allProducts = [];
     let displayLimit = 15;
@@ -597,8 +597,65 @@
     let branches = {};
     let branchIdMap = {};
 
-    // ==================== BRANCH FUNCTIONS ====================
+    // ==================== HELPER FUNCTIONS ====================
 
+    // Get current user's branch from session
+    function getCurrentBranchId() {
+        const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
+        return session.branch?.id || currentBranchId;
+    }
+
+    // Load user profile and branch info
+    async function loadUserProfile() {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return null;
+            }
+            
+            currentUser = user;
+            
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select(`
+                    *,
+                    branches (
+                        id,
+                        name,
+                        code,
+                        location
+                    )
+                `)
+                .eq('id', user.id)
+                .single();
+            
+            if (error) throw error;
+            
+            currentBranchId = profile.branch_id;
+            currentBranch = profile.branches;
+            
+            const session = {
+                user: user,
+                profile: profile,
+                branch: profile.branches,
+                role: profile.role
+            };
+            localStorage.setItem('pos_session', JSON.stringify(session));
+            
+            const sidebarBranchName = document.querySelector('#sidebarBranchName span');
+            if (currentBranch && sidebarBranchName) {
+                sidebarBranchName.textContent = currentBranch.name;
+            }
+            
+            return profile;
+        } catch (error) {
+            console.error("Error loading profile:", error);
+            return null;
+        }
+    }
+
+    // Load branches for mapping
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
         branches = {};
@@ -612,25 +669,6 @@
 
     function getBranchIdFromCode(code) {
         return branchIdMap[code] || null;
-    }
-
-    async function loadUserProfile() {
-        const userData = await getCurrentUser();
-        if (!userData?.user) {
-            window.location.href = 'index.html';
-            return null;
-        }
-        
-        currentUser = userData.user;
-        currentBranchId = userData.profile?.branch_id;
-        currentBranch = userData.profile?.branches;
-        
-        const sidebarBranchName = document.querySelector('#sidebarBranchName span');
-        if (currentBranch && sidebarBranchName) {
-            sidebarBranchName.textContent = currentBranch.name;
-        }
-        
-        return userData.profile;
     }
 
     window.handleBranchChange = async function() {
@@ -692,26 +730,24 @@
             `;
 
             // 1. Shift Stats (based on selected branch)
-            let shiftQuery = supabase.from('daily_shifts').select('id').eq('status', 'open').limit(1);
+            let shiftQuery = supabase.from('daily_shifts').select('*').eq('status', 'open').order('start_time', { ascending: false }).limit(1);
             if (selectedBranchId) {
                 shiftQuery = shiftQuery.eq('branch_id', selectedBranchId);
             }
             
-            const { data: openShift } = await shiftQuery.maybeSingle();
+            const { data: shifts } = await shiftQuery;
+            const openShift = shifts && shifts.length > 0 ? shifts[0] : null;
             
             let shiftToDisplay = null;
             let labelPrefix = "Active Shift";
 
             if (openShift) {
-                const { count } = await supabase.from('sales').select('id', { count: 'exact', head: true }).eq('shift_id', openShift.id);
-                if (count > 0) shiftToDisplay = openShift.id;
-            }
-
-            if (!shiftToDisplay) {
-                const { data: latestSale } = await supabase.from('sales').select('shift_id').order('created_at', { ascending: false }).limit(1).maybeSingle();
-                if (latestSale) {
-                    shiftToDisplay = latestSale.shift_id;
-                    labelPrefix = "Latest Record";
+                shiftToDisplay = openShift.id;
+            } else {
+                const { data: latestShift } = await supabase.from('daily_shifts').select('id').order('start_time', { ascending: false }).limit(1).maybeSingle();
+                if (latestShift) {
+                    shiftToDisplay = latestShift.id;
+                    labelPrefix = "Latest Shift";
                 }
             }
 
@@ -867,10 +903,13 @@
             btn.disabled = true;
             
             try {
+                const branchId = selectedBranchId || currentBranchId;
+                
                 const { error } = await supabase
                     .from('products')
                     .update({ stock_quantity: current + val })
-                    .eq('id', id);
+                    .eq('id', id)
+                    .eq('branch_id', branchId);
                     
                 if(!error) {
                     await loadData();
@@ -895,6 +934,13 @@
         btn.disabled = true;
 
         const branchId = selectedBranchId || currentBranchId;
+        
+        if (!branchId) {
+            alert("Please select a branch first");
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            return;
+        }
         
         const payload = {
             name: document.getElementById('name').value,
