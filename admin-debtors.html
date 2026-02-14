@@ -3,530 +3,96 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JEPE ADMIN | Debtors & Recovery - Multi-Branch</title>
+    <title>JEPE ADMIN | Debtors & Recovery</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { 
-            --primary: #4f46e5; 
-            --primary-dark: #4338ca;
-            --bg: #f8fafc; 
-            --card: #ffffff; 
-            --border: #e2e8f0; 
-            --text: #1e293b; 
-            --text-dim: #64748b;
-            --danger: #ef4444; 
-            --success: #10b981; 
-            --sidebar-width: 280px;
+            --primary: #4f46e5; --bg: #f8fafc; --card: #ffffff; 
+            --border: #e2e8f0; --text: #1e293b; --text-dim: #64748b;
+            --danger: #ef4444; --success: #10b981; --sidebar-width: 280px;
             --sidebar-bg: #0f172a;
-            --warning: #f59e0b;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-        
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background: var(--bg); 
-            color: var(--text); 
-            margin: 0; 
-            display: flex; 
-            min-height: 100vh; 
-        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; min-height: 100vh; }
 
         /* --- SIDEBAR --- */
         .sidebar {
-            width: var(--sidebar-width); 
-            background: var(--sidebar-bg);
-            display: flex; 
-            flex-direction: column; 
-            position: fixed; 
-            left: 0; 
-            top: 0; 
-            height: 100vh; 
-            z-index: 3000;
+            width: var(--sidebar-width); background: var(--sidebar-bg);
+            display: flex; flex-direction: column; position: fixed; 
+            left: 0; top: 0; height: 100vh; z-index: 3000;
             transition: transform 0.3s ease;
-            overflow-y: auto;
         }
-        
-        .sidebar-header { 
-            padding: 30px 25px; 
-            font-weight: 800; 
-            color: #ffffff; 
-            font-size: 1.3rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .sidebar-header i { color: var(--primary); }
-        
-        .nav-list { 
-            list-style: none; 
-            padding: 20px 15px; 
-            margin: 0; 
-            flex-grow: 1; 
-        }
-        
+        .sidebar-header { padding: 30px 25px; font-weight: 800; color: #ffffff; font-size: 1.3rem; }
+        .nav-list { list-style: none; padding: 0 15px; margin: 0; flex-grow: 1; overflow-y: auto; }
         .nav-item {
-            display: flex; 
-            align-items: center; 
-            padding: 14px 18px; 
-            text-decoration: none; 
-            color: #94a3b8; 
-            font-weight: 600; 
-            font-size: 0.9rem; 
-            border-radius: 12px; 
-            margin-bottom: 6px; 
-            gap: 12px;
-            transition: all 0.2s;
+            display: flex; align-items: center; padding: 14px 18px; 
+            text-decoration: none; color: #94a3b8; font-weight: 600; 
+            font-size: 0.85rem; border-radius: 12px; margin-bottom: 6px; gap: 12px;
         }
-        
-        .nav-item i { width: 20px; text-align: center; }
-        
-        .nav-item:hover { 
-            background: rgba(255,255,255,0.1); 
-            color: white; 
-        }
-        
-        .nav-item.active { 
-            background: var(--primary); 
-            color: #ffffff; 
-        }
-
-        /* --- BRANCH INFO IN SIDEBAR --- */
-        .branch-info {
-            padding: 15px 25px;
-            margin: 10px 15px 20px;
-            background: rgba(79, 70, 229, 0.2);
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .branch-label {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            color: #94a3b8;
-            letter-spacing: 0.5px;
-        }
-        
-        .branch-name {
-            font-weight: 800;
-            color: white;
-            font-size: 0.95rem;
-            margin-top: 3px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .branch-name i { color: var(--primary); }
+        .nav-item.active { background: var(--primary); color: #ffffff; }
 
         /* --- MOBILE HEADER --- */
         .mobile-header {
-            display: none; 
-            background: var(--sidebar-bg); 
-            color: white; 
-            padding: 0 20px; 
-            position: fixed; 
-            top: 0; 
-            width: 100%; 
-            height: 64px;
-            z-index: 1000; 
-            justify-content: space-between; 
-            align-items: center;
-        }
-
-        .mobile-header button {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.5rem;
-            cursor: pointer;
+            display: none; background: var(--sidebar-bg); color: white; 
+            padding: 0 20px; position: fixed; top: 0; width: 100%; height: 64px;
+            z-index: 1000; justify-content: space-between; align-items: center;
         }
 
         /* --- MAIN CONTENT --- */
-        .main-content { 
-            margin-left: var(--sidebar-width); 
-            flex-grow: 1; 
-            padding: 30px; 
-            width: 100%; 
-            overflow-x: hidden; 
-        }
+        .main-content { margin-left: var(--sidebar-width); flex-grow: 1; padding: 40px; width: 100%; overflow-x: hidden; }
 
-        /* Page Header with Branch Selector */
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        .page-title h1 {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--text);
-        }
-        
-        .page-title p {
-            color: var(--text-dim);
-            font-size: 0.85rem;
-            margin-top: 5px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .branch-selector-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .branch-select {
-            padding: 12px 20px;
-            border-radius: 30px;
-            border: 2px solid var(--primary);
-            background: white;
-            font-weight: 600;
-            font-size: 0.9rem;
-            color: var(--text);
-            cursor: pointer;
-            min-width: 220px;
-            outline: none;
-        }
-        
-        .branch-select:focus {
-            border-color: var(--primary-dark);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-        
-        .branch-badge {
-            background: var(--primary);
-            color: white;
-            padding: 8px 18px;
-            border-radius: 30px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            white-space: nowrap;
-        }
-
-        .shift-status-badge {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 700;
-        }
-        
-        .status-open {
-            background: #dcfce7;
-            color: #166534;
-        }
-        
-        .status-closed {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        /* Report Summary Cards */
         .report-summary { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px; 
-            margin-bottom: 30px; 
+            display: flex; gap: 15px; margin-bottom: 30px; overflow-x: auto; 
+            padding-bottom: 10px; scrollbar-width: none;
         }
+        .report-summary::-webkit-scrollbar { display: none; }
         
         .summary-box { 
-            padding: 20px; 
-            border-radius: 20px; 
-            background: white; 
+            min-width: 160px; flex: 1; padding: 20px; border-radius: 20px; background: white; 
             border: 1px solid var(--border);
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
         }
-        
-        .summary-box small { 
-            display: block; 
-            font-size: 0.65rem; 
-            font-weight: 800; 
-            color: var(--text-dim); 
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .summary-box span { 
-            font-size: 1.4rem; 
-            font-weight: 800; 
-            display: block; 
-            margin-top: 8px; 
-        }
+        .summary-box small { display: block; font-size: 0.65rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase; }
+        .summary-box span { font-size: 1.2rem; font-weight: 800; display: block; margin-top: 5px; }
 
-        .grid { 
-            display: grid; 
-            grid-template-columns: 380px 1fr; 
-            gap: 30px; 
+        .grid { display: grid; grid-template-columns: 380px 1fr; gap: 30px; }
+        .card { background: var(--card); border-radius: 24px; border: 1px solid var(--border); padding: 20px; }
+        
+        input, select { 
+            width: 100%; padding: 14px; border: 1px solid var(--border); 
+            border-radius: 12px; font-size: 16px; background: #fcfcfc; outline: none;
         }
-        
-        .card { 
-            background: var(--card); 
-            border-radius: 24px; 
-            border: 1px solid var(--border); 
-            padding: 25px;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
-        }
-        
-        .card-title {
-            font-size: 0.85rem;
-            font-weight: 800;
-            color: var(--primary);
-            text-transform: uppercase;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            letter-spacing: 0.5px;
-        }
-        
-        .card-title i { font-size: 1rem; }
-        
-        input, select, textarea { 
-            width: 100%; 
-            padding: 14px 16px; 
-            border: 1px solid var(--border); 
-            border-radius: 14px; 
-            font-size: 0.9rem; 
-            background: #fcfcfc; 
-            outline: none;
-            transition: all 0.2s;
-            font-family: inherit;
-        }
-        
-        input:focus, select:focus, textarea:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-        
         .btn-primary { 
-            width: 100%; 
-            padding: 16px; 
-            background: var(--primary); 
-            color: white; 
-            border: none; 
-            border-radius: 14px; 
-            font-weight: 700; 
-            font-size: 0.95rem; 
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-        }
-        
-        .btn-primary:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
+            width: 100%; padding: 16px; background: var(--primary); color: white; 
+            border: none; border-radius: 14px; font-weight: 700; font-size: 1rem; cursor: pointer;
         }
 
-        /* Stock Info Cards */
-        .stock-info {
-            display: flex;
-            gap: 10px;
-            margin: 15px 0;
-        }
-        
-        .stock-box {
-            flex: 1;
-            padding: 12px;
-            background: #f8fafc;
-            border-radius: 12px;
-            text-align: center;
-            border: 1px solid var(--border);
-        }
-        
-        .stock-box small {
-            font-size: 0.6rem;
-            color: var(--text-dim);
-            display: block;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-        
-        .stock-box span {
-            font-weight: 800;
-            font-size: 1rem;
-            display: block;
-            margin-top: 4px;
-        }
-        
-        .stock-box.warning span { color: var(--danger); }
-        .stock-box.primary span { color: var(--primary); }
+        .table-container { width: 100%; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 15px; background: #f8fafc; font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; }
+        td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
 
-        /* Table Styles */
-        .table-container { 
-            width: 100%; 
-            overflow-x: auto;
-            margin-top: 15px;
-        }
+        .badge { padding: 6px 12px; border-radius: 10px; font-size: 0.7rem; font-weight: 800; }
+        .bg-unpaid { background: #fee2e2; color: #991b1b; }
+        .bg-paid { background: #dcfce7; color: #166534; }
         
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            min-width: 900px;
-        }
-        
-        th { 
-            text-align: left; 
-            padding: 15px; 
-            background: #f8fafc; 
-            font-size: 0.7rem; 
-            color: var(--text-dim); 
-            text-transform: uppercase;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-        }
-        
-        td { 
-            padding: 15px; 
-            border-bottom: 1px solid var(--border); 
-            font-size: 0.9rem; 
-            vertical-align: middle;
-        }
+        .tabs { display: flex; gap: 5px; background: #f1f5f9; padding: 5px; border-radius: 14px; margin-bottom: 20px; }
+        .tab { flex: 1; padding: 10px; border-radius: 10px; border: none; font-weight: 700; font-size: 0.8rem; cursor: pointer; color: var(--text-dim); background: none; }
+        .tab.active { background: white; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
-        .badge { 
-            padding: 6px 12px; 
-            border-radius: 10px; 
-            font-size: 0.7rem; 
-            font-weight: 800; 
-            display: inline-block;
-        }
-        
-        .bg-unpaid { 
-            background: #fee2e2; 
-            color: #991b1b; 
-        }
-        
-        .bg-paid { 
-            background: #dcfce7; 
-            color: #166534; 
-        }
-        
-        .tabs { 
-            display: flex; 
-            gap: 5px; 
-            background: #f1f5f9; 
-            padding: 5px; 
-            border-radius: 14px; 
-            margin-bottom: 20px; 
-        }
-        
-        .tab { 
-            flex: 1; 
-            padding: 10px; 
-            border-radius: 10px; 
-            border: none; 
-            font-weight: 700; 
-            font-size: 0.8rem; 
-            cursor: pointer; 
-            color: var(--text-dim); 
-            background: none;
-            transition: all 0.2s;
-        }
-        
-        .tab.active { 
-            background: white; 
-            color: var(--primary); 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
-        }
+        .overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); display: none; z-index: 2500; backdrop-filter: blur(4px); }
 
         /* Modal Styles */
-        .overlay { 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(15, 23, 42, 0.6); 
-            display: none; 
-            z-index: 3500; 
-            backdrop-filter: blur(4px); 
-        }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 4000; padding: 20px; }
+        .modal-content { background: white; padding: 30px; border-radius: 20px; width: 100%; max-width: 400px; }
 
-        .modal { 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(0,0,0,0.7); 
-            display: none; 
-            align-items: center; 
-            justify-content: center; 
-            z-index: 4000; 
-            padding: 20px; 
-        }
-        
-        .modal-content { 
-            background: white; 
-            padding: 30px; 
-            border-radius: 24px; 
-            width: 100%; 
-            max-width: 420px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-        }
-        
-        .modal-content h3 {
-            margin: 0 0 10px;
-            font-size: 1.2rem;
-        }
-        
-        .modal-info {
-            background: #f8fafc;
-            padding: 15px;
-            border-radius: 12px;
-            margin: 15px 0;
-            border-left: 4px solid var(--success);
-        }
-
-        /* Loading Spinner */
-        .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 3px solid rgba(255,255,255,.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .loading-spinner {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 40px;
-        }
-        
-        .big-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid var(--border);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        /* Print Styles */
         @media print {
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
             #print-area { position: absolute; left: 0; top: 0; width: 100%; }
         }
 
-        /* Mobile Responsive */
         @media (max-width: 1100px) {
             .sidebar { transform: translateX(-100%); }
             .sidebar.active { transform: translateX(0); }
@@ -534,36 +100,10 @@
             .mobile-header { display: flex; }
             .overlay.active { display: block; }
             .grid { grid-template-columns: 1fr; }
-            .branch-selector-container { width: 100%; }
-            .branch-select { width: 100%; }
-            .report-summary { grid-template-columns: 1fr 1fr; }
-            
-            table, thead, tbody, th, td, tr { display: block; }
             thead { display: none; }
-            tr { 
-                display: block; 
-                background: white; 
-                border: 1px solid var(--border); 
-                border-radius: 16px; 
-                margin-bottom: 15px; 
-                padding: 15px; 
-            }
-            td { 
-                display: flex; 
-                justify-content: space-between; 
-                align-items: center; 
-                padding: 8px 0; 
-                border: none; 
-                text-align: right; 
-            }
-            td::before { 
-                content: attr(data-label); 
-                font-weight: 700; 
-                color: var(--text-dim); 
-                font-size: 0.75rem; 
-                text-transform: uppercase; 
-                text-align: left; 
-            }
+            tr { display: block; background: white; border: 1px solid var(--border); border-radius: 16px; margin-bottom: 15px; padding: 15px; }
+            td { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border: none; text-align: right; }
+            td::before { content: attr(data-label); font-weight: 700; color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase; text-align: left; }
         }
     </style>
 </head>
@@ -573,141 +113,83 @@
 <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
 <nav class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <i class="fas fa-store"></i> JEPE ADMIN
-    </div>
-    
-    <!-- Branch Info Display -->
-    <div class="branch-info" id="sidebarBranchInfo">
-        <div class="branch-label">Your Assigned Branch</div>
-        <div class="branch-name" id="sidebarBranchName">
-            <i class="fas fa-store"></i>
-            <span>Loading...</span>
-        </div>
-    </div>
-    
+    <div class="sidebar-header">JEPE ADMIN</div>
     <div class="nav-list">
-        <a href="admin.html" class="nav-item"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-        <a href="gas_hub.html" class="nav-item"><i class="fas fa-fire"></i> Gas Hub</a>
-        <a href="spares_hub.html" class="nav-item"><i class="fas fa-cogs"></i> Spare Parts</a>
-        <a href="motorbike_hub.html" class="nav-item"><i class="fas fa-motorcycle"></i> Motorbikes</a>
+        <a href="admin.html" class="nav-item"><span>📊</span> Dashboard</a>
+        <a href="gas_hub.html" class="nav-item"><span>🔥</span> Gas Hub</a>
+        <a href="spares_hub.html" class="nav-item"><span>⚙️</span> Spare Parts Hub</a>
+        <a href="motorbike_hub.html" class="nav-item"><span>🏍️</span> Motorbike Hub</a>
 
-        <div style="height:1px; background:rgba(255,255,255,0.1); margin:15px 0;"></div>
+        <a href="shift-history.html" class="nav-item "><span>📋</span> Daily Shifts</a>
+        <a href="money-history.html" class="nav-item"><span>💰</span> Money IN/OUT</a>
+        <a href="sales-history.html" class="nav-item"><span>📜</span> Sales History</a>
 
-        <a href="shift-history.html" class="nav-item"><i class="fas fa-history"></i> Daily Shifts</a>
-        <a href="money-history.html" class="nav-item"><i class="fas fa-money-bill-wave"></i> Money IN/OUT</a>
-        <a href="sales-history.html" class="nav-item"><i class="fas fa-chart-line"></i> Sales History</a>
+        <a href="inventory.html" class="nav-item"><span>➕</span> Add Stock</a>
+        <a href="sales_editor.html" class="nav-item"><span>✏️</span> Edit Stock</a>
+        <a href="admin-debtors.html" class="nav-item active"><span>👥</span> Debtors</a>
+        <a href="low_stock.html" class="nav-item"><span>⚠️</span> Low Stock</a>
+        <a href="audit_trail.html" class="nav-item"><span>🔍</span> Inventory Track</a>
 
-        <div style="height:1px; background:rgba(255,255,255,0.1); margin:15px 0;"></div>
-
-        <a href="inventory.html" class="nav-item"><i class="fas fa-plus-circle"></i> Add Stock</a>
-        <a href="sales_editor.html" class="nav-item"><i class="fas fa-edit"></i> Edit Stock</a>
-        <a href="admin-debtors.html" class="nav-item active"><i class="fas fa-users"></i> Debtors</a>
-        <a href="low_stock.html" class="nav-item"><i class="fas fa-exclamation-triangle"></i> Low Stock</a>
-        <a href="audit_trail.html" class="nav-item"><i class="fas fa-search"></i> Inventory Track</a>
-
-        <div style="height:1px; background:rgba(255,255,255,0.1); margin:15px 0;"></div>
-
-        <a href="reports.html" class="nav-item"><i class="fas fa-file-alt"></i> Reports</a>
-        <a href="price_audits.html" class="nav-item"><i class="fas fa-tags"></i> Underpriced</a>
-        <a href="suppliers.html" class="nav-item"><i class="fas fa-handshake"></i> Suppliers</a>
+        <a href="reports.html" class="nav-item"><span>📄</span> Reports</a>
+        <a href="price_audits.html" class="nav-item"><span>📉</span> Underpriced</a>
+        <a href="suppliers.html" class="nav-item"><span>🤝</span> Suppliers</a>
+        <a href="admin.html" class="nav-item"><span>🏠</span> HOME</a>
         
-        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <a href="#" onclick="handleLogout()" class="nav-item" style="color: var(--danger);">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </a>
+        <div style="margin-top: 20px; padding-bottom: 20px;">
+            <a href="#" onclick="handleLogout()" class="nav-item" style="color: var(--danger);">🚪 Logout</a>
         </div>
     </div>
 </nav>
 
 <div class="mobile-header">
-    <button onclick="toggleMenu()">
-        <i class="fas fa-bars"></i>
-    </button>
+    <button onclick="toggleMenu()" style="background:none; border:none; color:white; font-size:1.5rem;">☰</button>
     <div style="font-weight:800;">DEBTORS HUB</div>
     <div style="width:24px;"></div>
 </div>
 
 <main class="main-content">
-    <div class="page-header">
-        <div class="page-title">
-            <h1>Debtors Management</h1>
-            <p>
-                <i class="fas fa-store"></i> 
-                Viewing: <span id="branchIndicator">All Branches</span>
-            </p>
-        </div>
-        <div class="branch-selector-container">
-            <select id="branchSelector" class="branch-select" onchange="handleBranchChange()">
-                <option value="all">🏢 ALL BRANCHES (Consolidated)</option>
-                <option value="MUTOMO">🏪 MUTOMO BRANCH</option>
-                <option value="KITUI">🏪 KITUI BRANCH</option>
-            </select>
-            <div class="branch-badge" id="branchBadge">
-                <i class="fas fa-store"></i>
-                <span id="currentBranchDisplay">ALL BRANCHES</span>
-            </div>
-        </div>
-    </div>
-
     <div class="report-summary">
         <div class="summary-box">
-            <small><i class="fas fa-clock"></i> Outstanding</small>
+            <small>Outstanding</small>
             <span id="total-debt" style="color: var(--danger);">Ksh 0</span>
         </div>
         <div class="summary-box">
-            <small><i class="fas fa-check-circle"></i> Recovered</small>
+            <small>Recovered</small>
             <span id="total-recovered" style="color: var(--success);">Ksh 0</span>
         </div>
         <div class="summary-box">
-            <small><i class="fas fa-chart-pie"></i> Uncollected Profit</small>
+            <small>Uncoll. Profit</small>
             <span id="total-profit" style="color: var(--primary);">Ksh 0</span>
         </div>
         <div class="summary-box">
-            <small><i class="fas fa-user-clock"></i> Active Debtors</small>
+            <small>Active</small>
             <span id="active-debtors">0</span>
         </div>
     </div>
 
     <div class="grid">
         <div class="card">
-            <div class="card-title">
-                <i class="fas fa-pen-alt"></i>
-                New Debt Entry
-            </div>
+            <span style="font-size: 0.85rem; font-weight: 800; color: var(--primary); text-transform: uppercase; margin-bottom: 20px; display: block;">New Debt Entry</span>
             <form id="debt-form">
-                <input type="text" id="cust-name" placeholder="Customer Name *" required>
-                <input type="tel" id="cust-phone" placeholder="Phone Number (Optional)">
-                <input type="text" id="prod-search" list="prod-list" placeholder="Search & Select Product..." required>
+                <input type="text" id="cust-name" placeholder="Customer Name" required style="margin-bottom: 12px;">
+                <input type="tel" id="cust-phone" placeholder="Phone Number" style="margin-bottom: 12px;">
+                <input type="text" id="prod-search" list="prod-list" placeholder="Select Product..." required style="margin-bottom: 12px;">
                 <datalist id="prod-list"></datalist>
                 
-                <div class="stock-info">
-                    <div class="stock-box">
-                        <small>Available Stock</small>
-                        <span id="live-stock">-</span>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <div style="flex: 1; padding: 10px; background: #f8fafc; border-radius: 12px; text-align: center;">
+                        <small style="font-size:0.6rem; color:var(--text-dim); display:block;">STOCK</small>
+                        <span id="live-stock" style="font-weight:800; color:var(--primary)">-</span>
                     </div>
-                    <div class="stock-box warning">
-                        <small>Min Price</small>
-                        <span id="live-min">-</span>
-                    </div>
-                    <div class="stock-box primary">
-                        <small>Selling Price</small>
-                        <span id="live-price">-</span>
+                    <div style="flex: 1; padding: 10px; background: #fef2f2; border-radius: 12px; text-align: center;">
+                        <small style="font-size:0.6rem; color:var(--danger); display:block;">MIN PRICE</small>
+                        <span id="live-min" style="font-weight:800; color:var(--danger)">-</span>
                     </div>
                 </div>
 
                 <input type="number" id="debt-amt" placeholder="Debt Amount (Ksh)" step="0.01" required>
-                
-                <button type="submit" id="submit-btn" class="btn-primary">
-                    <i class="fas fa-save"></i> RECORD DEBT ENTRY
-                </button>
+                <button type="submit" id="submit-btn" class="btn-primary" style="margin-top: 20px;">RECORD ENTRY</button>
             </form>
-            
-            <div style="margin-top: 20px; padding: 12px; background: #fff7ed; border-radius: 12px; border-left: 4px solid var(--warning);">
-                <small style="color: #9a3412; font-weight: 600;">
-                    <i class="fas fa-info-circle"></i> Debt entries are automatically linked to the selected branch.
-                </small>
-            </div>
         </div>
 
         <div class="card">
@@ -717,7 +199,7 @@
                 <button class="tab" onclick="filterTable('Paid', this)">Paid</button>
             </div>
             
-            <input type="text" id="ledger-search" placeholder="Search by customer or product..." oninput="handleSearch(this.value)">
+            <input type="text" id="ledger-search" placeholder="Search entries..." oninput="handleSearch(this.value)" style="margin-bottom: 15px;">
             
             <div class="table-container">
                 <table id="debt-table">
@@ -728,18 +210,10 @@
                             <th>Item</th>
                             <th>Amount</th>
                             <th>Status</th>
-                            <th>Branch</th>
                             <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody id="ledger-body">
-                        <tr>
-                            <td colspan="7" style="text-align: center; padding: 40px;">
-                                <div class="big-spinner"></div>
-                                Loading debt records...
-                            </td>
-                        </tr>
-                    </tbody>
+                    <tbody id="ledger-body"></tbody>
                 </table>
             </div>
         </div>
@@ -748,274 +222,71 @@
 
 <div class="modal" id="settle-modal">
     <div class="modal-content">
-        <h3><i class="fas fa-hand-holding-usd" style="color: var(--success);"></i> Settle Debt</h3>
-        
-        <div class="modal-info" id="modal-info">
-            Loading...
-        </div>
-        
-        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase; margin-bottom: 5px; display: block;">
-            Payment Method
-        </label>
-        <select id="settle-method" style="margin: 5px 0 20px 0;">
-            <option value="Cash">💵 Cash</option>
-            <option value="Mpesa">📱 M-Pesa</option>
-            <option value="KCB Paybill">🏦 KCB Paybill</option>
-            <option value="KCB Float">💳 KCB Float</option>
-            <option value="Equity Float">💳 Equity Float</option>
+        <h3 style="margin-top:0;">Settle Debt</h3>
+        <p id="modal-info" style="color: var(--text-dim); margin-bottom: 20px; font-size: 0.9rem;"></p>
+        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase;">Payment Method</label>
+        <select id="settle-method" style="margin: 10px 0 20px 0;">
+            <option value="Cash">Cash</option>
+            <option value="Mpesa">Mpesa</option>
+            <option value="Bank">Bank Transfer</option>
+            <option value="KCB Paybill">KCB Paybill</option>
         </select>
-        
-        <button class="btn-primary" id="confirm-settle-btn">
-            <i class="fas fa-check-circle"></i> CLEAR & PRINT RECEIPT
-        </button>
-        
-        <button onclick="closeModal()" style="width:100%; background:none; border:none; color:var(--text-dim); font-weight:700; margin-top:15px; cursor:pointer;">
-            Cancel
-        </button>
+        <button class="btn-primary" id="confirm-settle-btn">CLEAR & PRINT RECEIPT</button>
+        <button onclick="closeModal()" style="width:100%; background:none; border:none; color:var(--text-dim); font-weight:700; margin-top:15px; cursor:pointer;">Cancel</button>
     </div>
 </div>
 
 <script type="module">
     import { supabase } from './auth.js';
 
-    // ==================== STATE MANAGEMENT ====================
     let allDebts = [];
-    let allProducts = [];
     let currentFilter = 'All';
     let currentShift = null;
     let selectedDebt = null;
-    let currentUser = null;
-    let currentBranchId = null;
-    let currentBranch = null;
-    let selectedBranchId = null;
-    let branches = {};
-    let branchIdMap = {};
-
-    // ==================== UTILITY FUNCTIONS ====================
 
     window.toggleMenu = () => {
         document.getElementById('sidebar').classList.toggle('active');
         document.getElementById('overlay').classList.toggle('active');
     };
 
-    // ==================== BRANCH FUNCTIONS ====================
+    async function init() {
+        const [prodRes, shiftRes] = await Promise.all([
+            supabase.from('products').select('*'),
+            supabase.from('daily_shifts').select('*').eq('status', 'Open').maybeSingle()
+        ]);
 
-    async function loadBranches() {
-        const { data } = await supabase.from('branches').select('*');
-        branches = {};
-        branchIdMap = {};
-        data?.forEach(b => {
-            branches[b.id] = b;
-            branchIdMap[b.code] = b.id;
-        });
-        console.log("✅ Branches loaded:", branches);
-        return branches;
+        const prods = prodRes.data || [];
+        currentShift = shiftRes.data;
+
+        const dList = document.getElementById('prod-list');
+        dList.innerHTML = prods.map(p => `
+            <option value="${p.name}" 
+                data-id="${p.id}" 
+                data-price="${p.selling_price}" 
+                data-stock="${p.stock_quantity}" 
+                data-cost="${p.buying_price || 0}"
+                data-min="${p.min_price || 0}">
+        `).join('');
+        loadLedger();
     }
 
-    function getBranchIdFromCode(code) {
-        return branchIdMap[code] || null;
-    }
-
-    async function loadUserProfile() {
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                window.location.href = 'index.html';
-                return null;
-            }
-            
-            currentUser = user;
-            console.log("👤 User ID:", user.id);
-            
-            const { data: profile, error } = await supabase
-                .from('profiles')
-                .select(`
-                    *,
-                    branches (
-                        id,
-                        name,
-                        code,
-                        location
-                    )
-                `)
-                .eq('id', user.id)
-                .single();
-            
-            if (error) throw error;
-            
-            currentBranchId = profile.branch_id;
-            currentBranch = profile.branches;
-            console.log("🏢 User's assigned branch:", currentBranch?.name);
-            
-            const session = {
-                user: user,
-                profile: profile,
-                branch: profile.branches,
-                role: profile.role
-            };
-            localStorage.setItem('pos_session', JSON.stringify(session));
-            
-            const sidebarBranchName = document.querySelector('#sidebarBranchName span');
-            if (profile.branches && sidebarBranchName) {
-                sidebarBranchName.textContent = profile.branches.name;
-            }
-            
-            return profile;
-        } catch (error) {
-            console.error("❌ Error loading profile:", error);
-            return null;
-        }
-    }
-
-    // ==================== BRANCH FILTER HANDLING ====================
-
-    window.handleBranchChange = async function() {
-        const selector = document.getElementById('branchSelector');
-        const selectedCode = selector.value;
-        
-        console.log("🔄 Branch changed to:", selectedCode);
-        
-        const branchDisplay = document.getElementById('currentBranchDisplay');
-        const branchIndicator = document.getElementById('branchIndicator');
-        
-        if (selectedCode === 'all') {
-            branchDisplay.textContent = 'ALL BRANCHES';
-            branchIndicator.textContent = 'All Branches';
-            selectedBranchId = null;
-            console.log("📊 Selected: ALL BRANCHES");
-        } else {
-            const branchId = getBranchIdFromCode(selectedCode);
-            if (branchId) {
-                selectedBranchId = branchId;
-                branchDisplay.textContent = branches[branchId].name;
-                branchIndicator.textContent = branches[branchId].name;
-                console.log(`📌 Selected branch: ${branches[branchId].name} (ID: ${branchId})`);
-            }
-        }
-        
-        await loadData();
-    };
-
-    // ==================== DATA LOADING ====================
-
-    async function loadData() {
-        console.log("📥 Loading data for branch ID:", selectedBranchId || 'ALL');
-        
-        // Show loading state
-        document.getElementById('ledger-body').innerHTML = `
-            <tr>
-                <td colspan="7" style="text-align: center; padding: 40px;">
-                    <div class="big-spinner"></div>
-                    Loading debt records...
-                </td>
-            </tr>
-        `;
-        
-        try {
-            // Load products
-            let productsQuery = supabase.from('products').select('*');
-            if (selectedBranchId) {
-                productsQuery = productsQuery.eq('branch_id', selectedBranchId);
-            }
-            
-            // Load shifts
-            let shiftsQuery = supabase.from('daily_shifts')
-                .select('*')
-                .eq('status', 'open')
-                .order('start_time', { ascending: false })
-                .limit(1);
-            if (selectedBranchId) {
-                shiftsQuery = shiftsQuery.eq('branch_id', selectedBranchId);
-            }
-            
-            // Load debts
-            let debtsQuery = supabase
-                .from('debtors')
-                .select(`
-                    *,
-                    products (*)
-                `)
-                .order('created_at', { ascending: false });
-            
-            // Apply branch filter if a specific branch is selected
-            if (selectedBranchId) {
-                debtsQuery = debtsQuery.eq('branch_id', selectedBranchId);
-                console.log("🔍 Filtering debts by branch_id:", selectedBranchId);
-            } else {
-                console.log("🔍 Showing ALL branches (no branch filter)");
-            }
-
-            const [prodRes, shiftRes, debtsRes] = await Promise.all([
-                productsQuery,
-                shiftsQuery.maybeSingle(),
-                debtsQuery
-            ]);
-
-            allProducts = prodRes.data || [];
-            currentShift = shiftRes.data;
-            allDebts = debtsRes.data || [];
-            
-            console.log(`📊 Loaded ${allDebts.length} debt records`);
-            
-            // Log branch distribution
-            if (allDebts.length > 0) {
-                const branchStats = {};
-                allDebts.forEach(d => {
-                    const bid = d.branch_id || 'null';
-                    branchStats[bid] = (branchStats[bid] || 0) + 1;
-                });
-                console.log("📈 Debt distribution by branch_id:", branchStats);
-            }
-
-            // Populate product datalist
-            const dList = document.getElementById('prod-list');
-            dList.innerHTML = allProducts.map(p => {
-                const displayName = `${p.name}${p.weight_category ? ` (${p.weight_category})` : ''}`;
-                return `<option value="${displayName}" 
-                    data-id="${p.id}" 
-                    data-price="${p.selling_price}" 
-                    data-stock="${p.stock_quantity}" 
-                    data-cost="${p.cost_price || 0}"
-                    data-min="${p.min_price || 0}">`;
-            }).join('');
-            
-            renderLedger();
-            
-        } catch (error) {
-            console.error("❌ Error loading data:", error);
-            document.getElementById('ledger-body').innerHTML = `
-                <tr>
-                    <td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">
-                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                        Error loading data: ${error.message}
-                    </td>
-                </tr>
-            `;
-        }
-    }
-
-    // ==================== PRODUCT SEARCH HANDLER ====================
-
-    document.getElementById('prod-search').addEventListener('input', (e) => {
-        const searchValue = e.target.value;
-        const opt = Array.from(document.querySelectorAll('#prod-list option')).find(
-            opt => opt.value === searchValue
-        );
-        
+    document.getElementById('prod-search').oninput = (e) => {
+        const opt = document.querySelector(`#prod-list option[value="${e.target.value}"]`);
         if (opt) {
             document.getElementById('debt-amt').value = opt.dataset.price;
             document.getElementById('live-stock').innerText = opt.dataset.stock;
-            document.getElementById('live-min').innerText = `Ksh ${parseFloat(opt.dataset.min).toLocaleString()}`;
-            document.getElementById('live-price').innerText = `Ksh ${parseFloat(opt.dataset.price).toLocaleString()}`;
+            document.getElementById('live-min').innerText = `${parseFloat(opt.dataset.min).toLocaleString()}`;
         }
-    });
+    };
 
-    // ==================== LEDGER FUNCTIONS ====================
+    async function loadLedger() {
+        const { data } = await supabase.from('debtors').select('*, products(*)').order('created_at', { ascending: false });
+        allDebts = data || [];
+        renderLedger();
+    }
 
     function renderLedger(searchTerm = '') {
         const tbody = document.getElementById('ledger-body');
-        
-        // Apply filters
         const filtered = allDebts.filter(d => {
             const matchesFilter = currentFilter === 'All' || d.status === currentFilter;
             const matchesSearch = d.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -1023,77 +294,35 @@
             return matchesFilter && matchesSearch;
         });
 
-        // Calculate summary
-        let outstanding = 0, recovered = 0, profit = 0;
+        let out = 0, rec = 0, prof = 0;
         allDebts.forEach(d => {
             if(d.status === 'Unpaid') {
-                outstanding += d.amount_owed;
-                profit += (d.amount_owed - (d.products?.cost_price || 0));
-            } else { 
-                recovered += d.amount_owed; 
-            }
+                out += d.amount_owed;
+                prof += (d.amount_owed - (d.products?.buying_price || 0));
+            } else { rec += d.amount_owed; }
         });
 
-        document.getElementById('total-debt').innerText = `Ksh ${outstanding.toLocaleString()}`;
-        document.getElementById('total-recovered').innerText = `Ksh ${recovered.toLocaleString()}`;
-        document.getElementById('total-profit').innerText = `Ksh ${profit.toLocaleString()}`;
+        document.getElementById('total-debt').innerText = `Ksh ${out.toLocaleString()}`;
+        document.getElementById('total-recovered').innerText = `Ksh ${rec.toLocaleString()}`;
+        document.getElementById('total-profit').innerText = `Ksh ${prof.toLocaleString()}`;
         document.getElementById('active-debtors').innerText = allDebts.filter(d => d.status === 'Unpaid').length;
 
-        if (filtered.length === 0) {
-            const branchName = selectedBranchId ? branches[selectedBranchId]?.name : 'All Branches';
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" style="text-align: center; padding: 40px;">
-                        <i class="fas fa-inbox" style="font-size: 2rem; color: var(--text-dim); margin-bottom: 10px; display: block;"></i>
-                        No debt records found for ${branchName}
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-
-        tbody.innerHTML = filtered.map(d => {
-            const branch = branches[d.branch_id] || { name: 'Unknown', code: '--' };
-            
-            return `
+        tbody.innerHTML = filtered.map(d => `
             <tr>
                 <td data-label="Date"><small>${new Date(d.created_at).toLocaleDateString()}</small></td>
-                <td data-label="Customer">
-                    <b>${d.customer_name}</b>
-                    ${d.customer_phone ? `<br><small style="color:var(--text-dim);">${d.customer_phone}</small>` : ''}
-                </td>
+                <td data-label="Customer"><b>${d.customer_name}</b></td>
                 <td data-label="Item">${d.products?.name || 'Manual Entry'}</td>
                 <td data-label="Amount" style="font-weight:800">Ksh ${d.amount_owed.toLocaleString()}</td>
                 <td data-label="Status"><span class="badge ${d.status === 'Unpaid' ? 'bg-unpaid' : 'bg-paid'}">${d.status}</span></td>
-                <td data-label="Branch"><span class="badge" style="background:#f1f5f9;">${branch.code}</span></td>
-                <td data-label="Action">
-                    ${d.status === 'Unpaid' ? 
-                        `<button onclick='openSettleModal("${d.id}", ${d.amount_owed}, "${d.customer_name}", "${d.products?.name}")' 
-                            style="background:var(--success); color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:700; width:100%;">
-                            <i class="fas fa-hand-holding-usd"></i> SETTLE
-                        </button>` 
-                        : 
-                        '<span style="color:var(--success);"><i class="fas fa-check-circle"></i> Fully Paid</span>'
-                    }
-                </td>
+                <td data-label="Action">${d.status === 'Unpaid' ? `<button onclick="openSettleModal('${d.id}', ${d.amount_owed}, '${d.customer_name}', '${d.products?.name}')" style="background:var(--success); color:white; border:none; padding:8px 15px; border-radius:10px; cursor:pointer; font-weight:700; width:100%;">SETTLE</button>` : '✅ Fully Paid'}</td>
             </tr>
-        `}).join('');
+        `).join('');
     }
 
-    // ==================== SETTLEMENT MODAL ====================
-
     window.openSettleModal = (id, amt, name, item) => {
-        if (!currentShift) {
-            alert("You must have an open shift to settle debts!");
-            return;
-        }
-        
+        if (!currentShift) return alert("You must have an open shift to settle debts!");
         selectedDebt = { id, amt, name, item };
-        document.getElementById('modal-info').innerHTML = `
-            <strong>Customer:</strong> ${name}<br>
-            <strong>Item:</strong> ${item || 'N/A'}<br>
-            <strong>Amount:</strong> Ksh ${amt.toLocaleString()}
-        `;
+        document.getElementById('modal-info').innerText = `Settling Ksh ${amt.toLocaleString()} for ${name}`;
         document.getElementById('settle-modal').style.display = 'flex';
     };
 
@@ -1105,213 +334,126 @@
     document.getElementById('confirm-settle-btn').onclick = async () => {
         const method = document.getElementById('settle-method').value;
         const btn = document.getElementById('confirm-settle-btn');
-        const originalText = btn.innerHTML;
-        
-        btn.innerHTML = '<span class="spinner"></span> PROCESSING...';
         btn.disabled = true;
 
         try {
-            const branchId = selectedBranchId || currentBranchId;
-            
             // 1. Update Debt Status
-            await supabase.from('debtors')
-                .update({ status: 'Paid' })
-                .eq('id', selectedDebt.id);
+            await supabase.from('debtors').update({ status: 'Paid' }).eq('id', selectedDebt.id);
 
-            // 2. Find and update the related sale
-            const { data: relatedSale } = await supabase
-                .from('sales')
-                .select('id')
+            // 2. Update Sales Record for specifically this unpaid entry
+            await supabase.from('sales')
+                .update({ 
+                    payment_method: method,
+                    discount_reason: `Debt for ${selectedDebt.name} [SOLVED]` 
+                })
                 .eq('payment_method', 'Debt')
-                .eq('discount_reason', `Debt for ${selectedDebt.name} [UNPAID]`)
-                .maybeSingle();
-
-            if (relatedSale) {
-                await supabase.from('sales')
-                    .update({ 
-                        payment_method: method,
-                        discount_reason: `Debt settled - ${selectedDebt.name}` 
-                    })
-                    .eq('id', relatedSale.id);
-            }
+                .eq('discount_reason', `Debt for ${selectedDebt.name} [UNPAID]`);
 
             // 3. Log recovery into Cash transactions
             await supabase.from('cash_transactions').insert([{
                 shift_id: currentShift.id,
                 type: 'Money In',
-                category: method.includes('Cash') ? 'Cash' : method,
+                category: (method === 'Cash') ? 'Cash' : 'Mpesa',
                 amount: selectedDebt.amt,
-                description: `Debt recovery: ${selectedDebt.name} - ${selectedDebt.item || 'Debt payment'}`,
-                branch_id: branchId,
-                user_id: currentUser.id
+                description: `Debt recovery: ${selectedDebt.name}`
             }]);
 
             generateReceipt(selectedDebt, method);
-            alert("✅ Debt cleared successfully!");
+            alert("Debt cleared successfully!");
             closeModal();
-            
-            await loadData();
-            
+            loadLedger();
         } catch (err) {
-            console.error("Error settling debt:", err);
             alert("Error: " + err.message);
         } finally {
-            btn.innerHTML = originalText;
             btn.disabled = false;
         }
     };
 
     function generateReceipt(debt, method) {
         const area = document.getElementById('print-area');
-        const branchName = document.getElementById('currentBranchDisplay').textContent;
-        
         area.innerHTML = `
-            <div style="text-align:center; font-family: 'Courier New', monospace; padding: 20px; border: 2px solid #000; max-width: 350px; margin: auto;">
-                <h2 style="margin:0; color: var(--primary);">JEPE AUTOSPARES</h2>
-                <h3 style="margin:5px 0;">${branchName}</h3>
-                <p style="font-size:0.8rem;">DEBT SETTLEMENT RECEIPT</p>
+            <div style="text-align:center; font-family: 'Courier New', monospace; padding: 20px; border: 1px dashed #000; width: 300px; margin: auto;">
+                <h2 style="margin:0;">JEPE ADMIN</h2>
+                <p>OFFICIAL DEBT RECEIPT</p>
                 <hr>
-                <div style="text-align:left;">
-                    <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
-                    <p><strong>Receipt No:</strong> ${Date.now().toString().slice(-8)}</p>
-                    <p><strong>Customer:</strong> ${debt.name}</p>
-                    <p><strong>Item:</strong> ${debt.item || 'N/A'}</p>
-                    <p><strong>Amount Paid:</strong> Ksh ${debt.amt.toLocaleString()}</p>
-                    <p><strong>Payment Method:</strong> ${method}</p>
-                    <p><strong>Cashier:</strong> ${currentUser?.email || 'Admin'}</p>
-                </div>
+                <p style="text-align:left;">Date: ${new Date().toLocaleString()}</p>
+                <p style="text-align:left;">Customer: ${debt.name}</p>
+                <p style="text-align:left;">Item: ${debt.item}</p>
                 <hr>
-                <p style="font-weight:800;">PAYMENT RECEIVED & VERIFIED</p>
-                <p style="font-size:0.7rem; margin-top:20px;">Thank you for your business!</p>
+                <h3 style="margin:10px 0;">PAID: Ksh ${debt.amt.toLocaleString()}</h3>
+                <p>Method: ${method}</p>
+                <hr>
+                <p>Payment Received & Verified</p>
             </div>
         `;
         window.print();
         area.innerHTML = '';
     }
 
-    // ==================== UI EVENT HANDLERS ====================
-
     window.filterTable = (status, btn) => {
         currentFilter = status;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         btn.classList.add('active');
-        renderLedger(document.getElementById('ledger-search').value);
+        renderLedger();
     };
 
-    window.handleSearch = (val) => {
-        renderLedger(val);
-    };
+    window.handleSearch = (val) => renderLedger(val);
 
     window.handleLogout = async () => {
-        if(confirm("Are you sure you want to logout?")) {
-            localStorage.removeItem('pos_session');
-            await supabase.auth.signOut();
-            window.location.href = 'index.html';
-        }
+        await supabase.auth.signOut();
+        window.location.href = 'index.html';
     };
-
-    // ==================== FORM SUBMISSION ====================
 
     document.getElementById('debt-form').onsubmit = async (e) => {
         e.preventDefault();
-        
-        if (!currentShift) {
-            alert("Please open a shift first!");
-            return;
-        }
+        if (!currentShift) return alert("Please open a shift first!");
         
         const searchVal = document.getElementById('prod-search').value;
-        const opt = Array.from(document.querySelectorAll('#prod-list option')).find(
-            opt => opt.value === searchVal
-        );
-        
-        if(!opt) {
-            alert("Please select a valid product from the list");
-            return;
-        }
+        const opt = document.querySelector(`#prod-list option[value="${searchVal}"]`);
+        if(!opt) return alert("Please select a valid product");
 
         const btn = document.getElementById('submit-btn');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="spinner"></span> PROCESSING...';
         btn.disabled = true;
 
         const customer = document.getElementById('cust-name').value;
-        const phone = document.getElementById('cust-phone').value;
         const amount = parseFloat(document.getElementById('debt-amt').value);
-        const branchId = selectedBranchId || currentBranchId;
 
         try {
             // 1. Save to Debtors
-            const { error: debtError } = await supabase.from('debtors').insert([{
+            await supabase.from('debtors').insert([{
                 customer_name: customer,
-                customer_phone: phone || null,
+                customer_phone: document.getElementById('cust-phone').value,
                 product_id: opt.dataset.id,
                 amount_owed: amount,
-                status: 'Unpaid',
-                branch_id: branchId
+                status: 'Unpaid'
             }]);
 
-            if (debtError) throw debtError;
-
-            // 2. Save to Sales
-            const { error: saleError } = await supabase.from('sales').insert([{
+            // 2. Save to Sales (Marked as Debt/Unpaid)
+            await supabase.from('sales').insert([{
                 product_id: opt.dataset.id,
                 item_name: searchVal,
                 quantity: 1,
                 unit_price: amount,
-                total_amount: amount,
+                amount: amount,
                 payment_method: 'Debt',
                 cost_price: parseFloat(opt.dataset.cost),
                 shift_id: currentShift.id,
-                branch_id: branchId,
-                user_id: currentUser.id,
                 discount_reason: `Debt for ${customer} [UNPAID]`
             }]);
 
-            if (saleError) throw saleError;
-
             // 3. Update Inventory
             const newStock = parseInt(opt.dataset.stock) - 1;
-            const { error: stockError } = await supabase.from('products')
-                .update({ stock_quantity: newStock })
-                .eq('id', opt.dataset.id)
-                .eq('branch_id', branchId);
+            await supabase.from('products').update({ stock_quantity: newStock }).eq('id', opt.dataset.id);
 
-            if (stockError) throw stockError;
-
-            alert("✅ Debt Recorded Successfully!");
-            
-            e.target.reset();
-            document.getElementById('live-stock').innerText = '-';
-            document.getElementById('live-min').innerText = '-';
-            document.getElementById('live-price').innerText = '-';
-            
-            await loadData();
-            
+            alert("Debt Recorded & Stock Updated!");
+            location.reload();
         } catch (err) {
-            console.error("Error recording debt:", err);
             alert("Error: " + err.message);
         } finally {
-            btn.innerHTML = originalText;
             btn.disabled = false;
         }
     };
 
-    // ==================== INITIALIZATION ====================
-    
-    async function init() {
-        console.log("🚀 Initializing Admin Debtors Page...");
-        
-        await loadBranches();
-        await loadUserProfile();
-        
-        // Set default to ALL BRANCHES
-        document.getElementById('branchSelector').value = 'all';
-        selectedBranchId = null;
-        
-        await loadData();
-    }
-    
     init();
 </script>
 </body>
