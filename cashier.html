@@ -1631,19 +1631,16 @@
     // BRANCH-AWARE HELPER FUNCTIONS
     // ============================================
 
-    // Get current user's branch ID from session
     function getCurrentBranchId() {
         const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
         return session.branch?.id || currentBranchId;
     }
 
-    // Check if user is admin
     function isAdmin() {
         const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
         return session.role === 'admin';
     }
 
-    // Load user profile with branch info
     async function loadUserProfile() {
         try {
             const { data: { user } } = await supabase.auth.getUser();
@@ -1651,7 +1648,6 @@
             
             currentUser = user;
             
-            // Get profile with branch info - using only existing columns
             const { data: profile, error } = await supabase
                 .from('profiles')
                 .select(`
@@ -1671,7 +1667,6 @@
             currentUserProfile = profile;
             currentBranchId = profile.branch_id;
             
-            // Store in session for other functions
             const session = {
                 user: user,
                 profile: profile,
@@ -1680,7 +1675,6 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
-            // Update profile info in UI - use email instead of full_name
             const profileUserName = document.getElementById('profileUserName');
             const profileUserEmail = document.getElementById('profileUserEmail');
             const branchNameEl = document.getElementById('branch-name-display');
@@ -1688,7 +1682,6 @@
             if (profileUserName) profileUserName.textContent = user.email?.split('@')[0] || 'Cashier';
             if (profileUserEmail) profileUserEmail.textContent = user.email;
             
-            // Add branch display to header if not exists
             if (!branchNameEl && profile.branches) {
                 const headerRight = document.querySelector('.header-right');
                 if (headerRight) {
@@ -1708,7 +1701,6 @@
         }
     }
 
-    // Gas redirect functions
     window.closeGasRedirect = function() {
         document.getElementById('gasRedirectModal').style.display = 'none';
         document.getElementById('pSearch').value = '';
@@ -1721,7 +1713,6 @@
         window.location.href = 'cashiergashub.html';
     };
 
-    // Refund modal functions
     window.openRefundModal = function(sale) {
         refundingSale = sale;
         document.getElementById('refund-item-name').textContent = sale.item_name || 'Unknown Item';
@@ -1737,7 +1728,6 @@
         refundingSale = null;
     };
 
-    // Process refund function
     window.processRefund = async function() {
         if (!refundingSale || !currentShift) return;
         
@@ -1772,7 +1762,6 @@
         submitBtn.innerHTML = '<span class="spinner"></span> PROCESSING...';
         
         try {
-            // 1. Create a NEGATIVE sale entry with branch_id
             const { error: saleError } = await supabase.from('sales').insert([{
                 shift_id: currentShift.id,
                 product_id: refundingSale.product_id,
@@ -1797,7 +1786,6 @@
             
             if (saleError) throw saleError;
             
-            // 2. Mark original sale as refunded
             const { error: updateError } = await supabase.from('sales')
                 .update({ 
                     refunded: true,
@@ -1809,7 +1797,6 @@
             
             if (updateError) throw updateError;
             
-            // 3. Record money out transaction for the refund with branch_id
             const { error: transError } = await supabase.from('cash_transactions').insert([{
                 shift_id: currentShift.id,
                 type: 'Money Out',
@@ -1822,7 +1809,6 @@
             
             if (transError) throw transError;
             
-            // 4. Restore stock quantity
             const { data: product } = await supabase.from('products')
                 .select('stock_quantity')
                 .eq('id', refundingSale.product_id)
@@ -1852,13 +1838,11 @@
         }
     };
 
-    // Profile dropdown functions
     window.toggleProfileDropdown = function() {
         const dropdown = document.getElementById('profileDropdown');
         dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
     };
 
-    // Close dropdown when clicking outside
     document.addEventListener('click', function(event) {
         const dropdown = document.getElementById('profileDropdown');
         const profileBtn = document.getElementById('profileBtn');
@@ -1868,7 +1852,6 @@
         }
     });
 
-    // Check for low floats
     function checkLowFloats() {
         const floatItems = [
             { id: 'float-cash-item', element: document.getElementById('float-cash'), value: parseFloat(document.getElementById('float-cash')?.innerText.replace(/,/g, '')) || 0 },
@@ -1892,7 +1875,6 @@
         });
     }
 
-    // Refresh data function
     window.refreshData = async function() {
         const btn = event.target.closest('button');
         const originalText = btn.innerHTML;
@@ -1910,7 +1892,6 @@
         alert('Data refreshed successfully!');
     };
 
-    // --- REALTIME: Sync Inventory Automatically ---
     const productSubscription = supabase
         .channel('inventory-sync')
         .on('postgres_changes', { 
@@ -1954,7 +1935,6 @@
         }
     }
 
-    // Helper to handle the Red Pulsing Logic
     function updateStockDisplay(item) {
         const hStock = document.getElementById('hint-stock');
         if (hStock) {
@@ -2048,7 +2028,6 @@
         }
     }
 
-    // Check if there's already an open shift for this branch
     async function checkForOpenShift(branchId) {
         const { data } = await supabase
             .from('daily_shifts')
@@ -2091,7 +2070,7 @@
                 if (shiftRes.data) {
                     currentShift = shiftRes.data;
                     actionBtnContainer.innerHTML = `
-                        <button class="btn btn-danger special-action-btn" onclick="showCloseConfirmation()">🔴 CLOSE DAY</button>
+                        <button class="btn btn-danger special-action-btn" onclick="showCloseModal()">🔴 CLOSE DAY</button>
                         <button class="btn" onclick="refreshData()" style="background: #e2e8f0; padding: 8px 12px; font-size: 0.8rem;">
                             <i class="fas fa-sync-alt"></i> Refresh
                         </button>
@@ -2453,103 +2432,26 @@
         }
     });
 
-    // Add this to your HTML to create the confirmation card
-    function createCloseConfirmationCard() {
+    // Simple close function - just use the modal directly
+    window.showCloseModal = function() {
+        document.getElementById('close-modal').style.display = 'flex';
+    };
+
+    // Modified close handler - use the modal directly without extra confirmation
+    document.getElementById('confirm-close').addEventListener('click', async function() {
         const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
         const clK = parseFloat(document.getElementById('c-kcb').value || 0);
         const clE = parseFloat(document.getElementById('c-equity').value || 0);
         const clC = parseFloat(document.getElementById('c-cash').value || 0);
         const clB = currentKcbSalesTotal;
-        
-        const card = document.createElement('div');
-        card.className = 'overlay';
-        card.id = 'close-confirm-card';
-        card.style.display = 'flex';
-        card.innerHTML = `
-            <div class="modal" style="max-width: 500px;">
-                <h3 style="color: var(--danger); margin-top: 0;">🔒 Confirm Shift Closing</h3>
-                
-                <div style="background: #f8fafc; border-radius: 12px; padding: 15px; margin: 15px 0;">
-                    <h4 style="margin: 0 0 10px 0; font-size: 0.9rem;">Closing Floats Summary</h4>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <div style="background: white; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
-                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem;">MPESA</small>
-                            <span style="font-weight: 800; font-size: 1.1rem;">Ksh ${clM.toLocaleString()}</span>
-                        </div>
-                        <div style="background: white; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
-                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem;">KCB FLOAT</small>
-                            <span style="font-weight: 800; font-size: 1.1rem;">Ksh ${clK.toLocaleString()}</span>
-                        </div>
-                        <div style="background: white; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
-                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem;">EQUITY</small>
-                            <span style="font-weight: 800; font-size: 1.1rem;">Ksh ${clE.toLocaleString()}</span>
-                        </div>
-                        <div style="background: white; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
-                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem;">CASH</small>
-                            <span style="font-weight: 800; font-size: 1.1rem;">Ksh ${clC.toLocaleString()}</span>
-                        </div>
-                        <div style="grid-column: span 2; background: #f0f9ff; padding: 10px; border-radius: 8px; border: 1px solid #bae6fd;">
-                            <small style="display: block; color: #0369a1; font-size: 0.65rem;">KCB PAYBILL</small>
-                            <span style="font-weight: 800; font-size: 1.1rem; color: var(--primary);">Ksh ${clB.toLocaleString()}</span>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-top: 15px; padding: 10px; background: #fff7ed; border-radius: 8px; border-left: 4px solid var(--warning);">
-                        <small style="color: #9a3412; font-weight: 600;">
-                            <i class="fas fa-info-circle"></i> Please verify all amounts before confirming.
-                        </small>
-                    </div>
-                </div>
-                
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn btn-danger" style="flex: 1;" onclick="processCloseShift()">✅ CONFIRM & CLOSE</button>
-                    <button class="btn" style="flex: 1; background: #e2e8f0;" onclick="closeCloseConfirmation()">✕ CANCEL</button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(card);
-    }
-
-    window.showCloseConfirmation = function() {
-        // First validate the inputs
-        const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
-        const clK = parseFloat(document.getElementById('c-kcb').value || 0);
-        const clE = parseFloat(document.getElementById('c-equity').value || 0);
-        const clC = parseFloat(document.getElementById('c-cash').value || 0);
         
         if (clM === 0 && clK === 0 && clE === 0 && clC === 0) {
             alert("❌ Please enter closing amounts for all floats before closing the shift.");
             return;
         }
         
-        // Hide the original modal and show confirmation card
-        document.getElementById('close-modal').style.display = 'none';
-        createCloseConfirmationCard();
-    };
-
-    window.closeCloseConfirmation = function() {
-        const card = document.getElementById('close-confirm-card');
-        if (card) card.remove();
-        document.getElementById('close-modal').style.display = 'flex';
-    };
-
-    window.processCloseShift = async function() {
-        const card = document.getElementById('close-confirm-card');
-        if (!card) return;
-        
-        const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
-        const clK = parseFloat(document.getElementById('c-kcb').value || 0);
-        const clE = parseFloat(document.getElementById('c-equity').value || 0);
-        const clC = parseFloat(document.getElementById('c-cash').value || 0);
-        const clB = currentKcbSalesTotal;
-        
-        card.remove();
-        
-        const btn = document.getElementById('confirm-close');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> FINALIZING...';
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner"></span> FINALIZING...';
         
         try {
             const { data: sales } = await supabase.from('sales')
@@ -2577,8 +2479,8 @@
                 const sign = variance > 0 ? "+" : "-";
                 note = prompt(`Variance: ${sign}${Math.abs(variance).toFixed(2)}. Please enter reason:`);
                 if (!note) {
-                    btn.disabled = false;
-                    btn.innerHTML = 'FINALIZE & CLOSE';
+                    this.disabled = false;
+                    this.innerHTML = 'FINALIZE & CLOSE';
                     return;
                 }
                 note = `${sign}${Math.abs(variance).toFixed(2)} - ${note}`;
@@ -2599,10 +2501,10 @@
             location.reload();
         } catch (error) {
             alert("Error closing shift: " + error.message);
-            btn.disabled = false;
-            btn.innerHTML = 'FINALIZE & CLOSE';
+            this.disabled = false;
+            this.innerHTML = 'FINALIZE & CLOSE';
         }
-    };
+    });
 
     async function loadHistory(searchQuery = "") {
         try {
@@ -2861,7 +2763,6 @@
         mobileContainer.innerHTML = mobileHtml || '<div style="text-align:center; padding:50px;">No records found.</div>';
     }
 
-    // Setup scroll indicator for shift history table
     const scrollContainer = document.getElementById('scrollContainer');
     const scrollHint = document.getElementById('scrollHint');
     if (scrollContainer && scrollHint) {
