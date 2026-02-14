@@ -179,6 +179,16 @@
             margin-top: 2px;
             text-align: left;
         }
+        .branch-note {
+            background: rgba(99, 102, 241, 0.1);
+            border-left: 3px solid var(--primary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 0.75rem;
+            color: #cbd5e1;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
@@ -226,14 +236,19 @@
 
         <div id="register-fields" class="hidden">
             <select id="role" class="branch-selector">
-                <option value="cashier">Cashier Access</option>
-                <option value="admin">Administrator Access</option>
+                <option value="cashier">Cashier</option>
+                <option value="admin">Administrator</option>
             </select>
             
             <select id="branch" class="branch-selector">
                 <option value="" disabled selected>Select Branch *</option>
+                <option value="5326e4c6-6d0d-4500-83d9-f322c859b9fb">MUTOMO BRANCH</option>
+                <option value="ea91a65e-7c6e-43fd-b71e-3f2cc4f714a9">KITUI BRANCH</option>
             </select>
-            <div class="branch-info-text">Select your assigned branch</div>
+            <div class="branch-note">
+                <i class="fas fa-info-circle"></i> 
+                <span id="branch-note-text">Cashiers must select their branch. Administrators can access all branches.</span>
+            </div>
         </div>
 
         <button id="main-btn" onclick="handleAuth()">Sign In</button>
@@ -256,20 +271,9 @@
 </div>
 
 <script type="module">
-    import { supabase } from './auth.js';
+    import { supabase, BRANCHES } from './auth.js';
 
     let isLogin = true;
-    let branches = [];
-
-    // Load branches for registration
-    async function loadBranches() {
-        const { data } = await supabase.from('branches').select('id, name, code').eq('is_active', true);
-        branches = data || [];
-        
-        const branchSelect = document.getElementById('branch');
-        branchSelect.innerHTML = '<option value="" disabled selected>Select Branch *</option>' + 
-            branches.map(b => `<option value="${b.id}">${b.name} (${b.code})</option>`).join('');
-    }
 
     window.toggleMode = () => {
         isLogin = !isLogin;
@@ -278,11 +282,18 @@
         document.getElementById('forgot-link').classList.toggle('hidden', !isLogin);
         document.getElementById('main-btn').innerText = isLogin ? "Sign In" : "Register Now";
         document.getElementById('toggle-text').innerHTML = isLogin ? "New staff? <b>Create Account</b>" : "Already have an account? <b>Sign In</b>";
-        
-        if (!isLogin && branches.length === 0) {
-            loadBranches();
-        }
     };
+
+    // Update branch note based on role selection
+    document.getElementById('role').addEventListener('change', (e) => {
+        const role = e.target.value;
+        const noteText = document.getElementById('branch-note-text');
+        if (role === 'admin') {
+            noteText.innerText = 'Administrators can access all branches. Branch selection is for reference only.';
+        } else {
+            noteText.innerText = 'Cashiers must select their branch. You will only have access to this branch.';
+        }
+    });
 
     window.handleAuth = async () => {
         const email = document.getElementById('email').value;
@@ -364,29 +375,15 @@
             
             const branchName = data.branches?.name || '';
             document.getElementById('welcome-name').innerText = `WELCOME ${data.role.toUpperCase()}`;
-            document.getElementById('welcome-role').innerText = branchName ? `Assigned to ${branchName}` : 'Initializing Workspace...';
+            document.getElementById('welcome-role').innerText = data.role === 'admin' 
+                ? 'Administrator Access - All Branches' 
+                : (branchName ? `Assigned to ${branchName}` : 'Initializing Workspace...');
             
             setTimeout(() => {
                 window.location.href = (data.role === 'admin') ? 'admin.html' : 'cashier.html';
             }, 2000);
         } else {
-            // This happens if the user confirmed email but the profile row wasn't created
-            alert("Profile not found. Creating a default staff profile...");
-            const { data: { user } } = await supabase.auth.getUser();
-            // Get default branch (MUTOMO)
-            const { data: defaultBranch } = await supabase
-                .from('branches')
-                .select('id')
-                .eq('code', 'MUT')
-                .single();
-                
-            await supabase.from('profiles').insert([{ 
-                id: user.id, 
-                email: user.email, 
-                role: 'cashier',
-                branch_id: defaultBranch?.id 
-            }]);
-            window.location.reload();
+            alert("Profile not found. Please contact admin.");
         }
     }
 
@@ -409,9 +406,6 @@
     // Check if user is already logged in
     const { data: { user } } = await supabase.auth.getUser();
     if (user) checkRoleAndRedirect(user.id);
-    
-    // Preload branches
-    loadBranches();
 </script>
 </body>
 </html>
