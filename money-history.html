@@ -504,19 +504,25 @@
         const branchDisplay = document.getElementById('currentBranchDisplay');
         const dateRange = document.getElementById('dateRange');
         
+        console.log("Branch changed to:", selectedCode);
+        
         if (selectedCode === 'all') {
             branchDisplay.textContent = 'ALL BRANCHES';
             selectedBranchId = null;
             dateRange.textContent = 'Showing all branches';
+            console.log("Selected: ALL BRANCHES (no filter)");
         } else {
             const branchId = getBranchIdFromCode(selectedCode);
             if (branchId) {
                 selectedBranchId = branchId;
                 branchDisplay.textContent = branches[branchId].name;
                 dateRange.textContent = `Showing ${branches[branchId].name} only`;
+                console.log(`Selected branch ID: ${branchId} (${branches[branchId].name})`);
             }
         }
         
+        // Reset limit and reload data with new filter
+        limit = 20;
         await fetchData();
     };
 
@@ -539,7 +545,9 @@
         `;
 
         try {
-            // Build query with branch filter
+            console.log("Fetching data with branch filter:", selectedBranchId);
+            
+            // Start building query
             let query = supabase
                 .from('cash_transactions')
                 .select(`
@@ -552,10 +560,12 @@
                 .order('created_at', { ascending: false })
                 .limit(limit);
 
-            // Apply branch filter if a specific branch is selected
+            // IMPORTANT: Apply branch filter if a specific branch is selected
             if (selectedBranchId) {
                 query = query.eq('branch_id', selectedBranchId);
-                console.log("🔍 Filtering by branch:", selectedBranchId);
+                console.log("🔍 Filtering by branch_id:", selectedBranchId);
+            } else {
+                console.log("🔍 No branch filter - showing ALL branches");
             }
 
             const { data, error } = await query;
@@ -567,6 +577,16 @@
 
             allTransactions = data || [];
             console.log(`📊 Loaded ${allTransactions.length} transactions`);
+            
+            // Log branch distribution for debugging
+            if (allTransactions.length > 0) {
+                const branchCounts = {};
+                allTransactions.forEach(t => {
+                    const branchCode = t.branches?.code || 'unknown';
+                    branchCounts[branchCode] = (branchCounts[branchCode] || 0) + 1;
+                });
+                console.log("📈 Transactions by branch:", branchCounts);
+            }
             
             renderTransactions(allTransactions);
         } catch (error) {
@@ -600,7 +620,7 @@
             mobileHTML = `
                 <div style="text-align: center; padding: 40px; color: var(--text-dim);">
                     <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                    <p>No transactions found</p>
+                    <p>No transactions found for ${branchName}</p>
                 </div>
             `;
         } else {
@@ -664,14 +684,14 @@
         document.getElementById('data-body-desktop').innerHTML = desktopHTML;
         document.getElementById('data-body-mobile').innerHTML = mobileHTML;
         
-        // Update summary
-        document.getElementById('net-balance').innerHTML = `Ksh ${net.toLocaleString()}`;
-        document.getElementById('net-balance').style.color = net >= 0 ? 'var(--success)' : 'var(--danger)';
+        // Update summary - these should reflect the filtered data, not all data
+        document.getElementById('net-balance').innerHTML = `Ksh ${(totalIn - totalOut).toLocaleString()}`;
+        document.getElementById('net-balance').style.color = (totalIn - totalOut) >= 0 ? 'var(--success)' : 'var(--danger)';
         document.getElementById('total-in').innerHTML = `Ksh ${totalIn.toLocaleString()}`;
         document.getElementById('total-out').innerHTML = `Ksh ${totalOut.toLocaleString()}`;
     }
 
-    // Search Logic
+    // Search Logic - search within currently filtered transactions
     document.getElementById('txnSearch').addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
         const filtered = allTransactions.filter(t => 
