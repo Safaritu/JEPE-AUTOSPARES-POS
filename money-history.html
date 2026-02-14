@@ -426,11 +426,18 @@
             branchIdMap[b.code] = b.id;
         });
         console.log("✅ Branches loaded:", branches);
+        
+        // Log the branch IDs for verification
+        console.log("MUTOMO Branch ID:", branchIdMap['MUTOMO']);
+        console.log("KITUI Branch ID:", branchIdMap['KITUI']);
+        
         return branches;
     }
 
     function getBranchIdFromCode(code) {
-        return branchIdMap[code] || null;
+        const id = branchIdMap[code] || null;
+        console.log(`Getting branch ID for code ${code}:`, id);
+        return id;
     }
 
     async function loadUserProfile() {
@@ -470,7 +477,6 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
-            // Update sidebar with user's assigned branch
             const sidebarBranchName = document.querySelector('#sidebarBranchName span');
             if (profile.branches && sidebarBranchName) {
                 sidebarBranchName.textContent = profile.branches.name;
@@ -504,22 +510,27 @@
         const branchDisplay = document.getElementById('currentBranchDisplay');
         const dateRange = document.getElementById('dateRange');
         
-        console.log("Branch changed to:", selectedCode);
+        console.log("========== BRANCH CHANGE ==========");
+        console.log("Selected code from dropdown:", selectedCode);
         
         if (selectedCode === 'all') {
             branchDisplay.textContent = 'ALL BRANCHES';
             selectedBranchId = null;
             dateRange.textContent = 'Showing all branches';
-            console.log("Selected: ALL BRANCHES (no filter)");
+            console.log("Selected: ALL BRANCHES (filter disabled)");
         } else {
             const branchId = getBranchIdFromCode(selectedCode);
             if (branchId) {
                 selectedBranchId = branchId;
                 branchDisplay.textContent = branches[branchId].name;
                 dateRange.textContent = `Showing ${branches[branchId].name} only`;
-                console.log(`Selected branch ID: ${branchId} (${branches[branchId].name})`);
+                console.log(`Selected branch: ${branches[branchId].name} (ID: ${branchId})`);
+            } else {
+                console.error(`Could not find branch ID for code: ${selectedCode}`);
             }
         }
+        
+        console.log("selectedBranchId variable set to:", selectedBranchId);
         
         // Reset limit and reload data with new filter
         limit = 20;
@@ -545,7 +556,9 @@
         `;
 
         try {
-            console.log("Fetching data with branch filter:", selectedBranchId);
+            console.log("========== FETCHING DATA ==========");
+            console.log("Current selectedBranchId:", selectedBranchId);
+            console.log("Type of selectedBranchId:", typeof selectedBranchId);
             
             // Start building query
             let query = supabase
@@ -562,12 +575,13 @@
 
             // IMPORTANT: Apply branch filter if a specific branch is selected
             if (selectedBranchId) {
+                console.log("🔍 Applying filter: branch_id =", selectedBranchId);
                 query = query.eq('branch_id', selectedBranchId);
-                console.log("🔍 Filtering by branch_id:", selectedBranchId);
             } else {
-                console.log("🔍 No branch filter - showing ALL branches");
+                console.log("🔍 No branch filter - fetching ALL branches");
             }
 
+            console.log("Executing query...");
             const { data, error } = await query;
 
             if (error) {
@@ -576,21 +590,26 @@
             }
 
             allTransactions = data || [];
-            console.log(`📊 Loaded ${allTransactions.length} transactions`);
+            console.log(`📊 Query returned ${allTransactions.length} transactions`);
             
-            // Log branch distribution for debugging
+            // Log each transaction's branch_id for verification
             if (allTransactions.length > 0) {
+                console.log("Transaction branch distribution:");
                 const branchCounts = {};
-                allTransactions.forEach(t => {
+                allTransactions.forEach((t, index) => {
                     const branchCode = t.branches?.code || 'unknown';
+                    const branchName = t.branches?.name || 'unknown';
+                    console.log(`Transaction ${index + 1}: ID=${t.id}, branch_id=${t.branch_id}, branch_code=${branchCode}, amount=${t.amount}`);
                     branchCounts[branchCode] = (branchCounts[branchCode] || 0) + 1;
                 });
-                console.log("📈 Transactions by branch:", branchCounts);
+                console.log("📈 Summary by branch code:", branchCounts);
+            } else {
+                console.log("No transactions returned from query");
             }
             
             renderTransactions(allTransactions);
         } catch (error) {
-            console.error("Error fetching data:", error);
+            console.error("Error in fetchData:", error);
             document.getElementById('data-body-desktop').innerHTML = `
                 <tr>
                     <td colspan="6" style="text-align: center; padding: 40px; color: var(--danger);">
@@ -606,6 +625,8 @@
         let net = 0, totalIn = 0, totalOut = 0;
         let desktopHTML = '';
         let mobileHTML = '';
+
+        console.log("Rendering transactions. Count:", transactions.length);
 
         if (transactions.length === 0) {
             const branchName = selectedBranchId ? branches[selectedBranchId]?.name : 'All Branches';
@@ -684,30 +705,33 @@
         document.getElementById('data-body-desktop').innerHTML = desktopHTML;
         document.getElementById('data-body-mobile').innerHTML = mobileHTML;
         
-        // Update summary - these should reflect the filtered data, not all data
+        // Update summary
         document.getElementById('net-balance').innerHTML = `Ksh ${(totalIn - totalOut).toLocaleString()}`;
         document.getElementById('net-balance').style.color = (totalIn - totalOut) >= 0 ? 'var(--success)' : 'var(--danger)';
         document.getElementById('total-in').innerHTML = `Ksh ${totalIn.toLocaleString()}`;
         document.getElementById('total-out').innerHTML = `Ksh ${totalOut.toLocaleString()}`;
     }
 
-    // Search Logic - search within currently filtered transactions
+    // Search Logic
     document.getElementById('txnSearch').addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
         const filtered = allTransactions.filter(t => 
             (t.category && t.category.toLowerCase().includes(term)) || 
             (t.description && t.description.toLowerCase().includes(term))
         );
+        console.log(`Search filtered: ${filtered.length} of ${allTransactions.length} transactions`);
         renderTransactions(filtered);
     });
 
     document.getElementById('loadMore').addEventListener('click', () => { 
         limit += 20; 
+        console.log("Load more clicked, new limit:", limit);
         fetchData(); 
     });
 
     // Initialize
     async function init() {
+        console.log("========== INITIALIZING PAGE ==========");
         await loadBranches();
         await loadUserProfile();
         
@@ -720,6 +744,7 @@
         // Set default branch selector
         document.getElementById('branchSelector').value = 'all';
         selectedBranchId = null;
+        console.log("Default: ALL BRANCHES");
         
         await fetchData();
     }
