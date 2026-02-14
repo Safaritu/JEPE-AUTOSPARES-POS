@@ -1608,7 +1608,7 @@
         <button class="btn btn-danger" style="margin-top:20px; width:100%" id="confirm-close">FINALIZE & CLOSE</button>
     </div>
 </div>
-    <script type="module">
+   <script type="module">
     import { supabase } from './auth.js';
 
     let inventory = [];
@@ -2052,6 +2052,18 @@
         }
     }
 
+    // Check if there's already an open shift for this branch
+    async function checkForOpenShift(branchId) {
+        const { data } = await supabase
+            .from('daily_shifts')
+            .select('*')
+            .eq('branch_id', branchId)
+            .eq('status', 'open')
+            .maybeSingle();
+        
+        return data;
+    }
+
     async function init() {
         try {
             // Load user profile first
@@ -2073,7 +2085,6 @@
                     supabase.from('products').select('*').eq('branch_id', branchId),
                     supabase.from('daily_shifts')
                         .select('*')
-                        .eq('user_id', currentUser.id)
                         .eq('branch_id', branchId)
                         .eq('status', 'open')
                         .maybeSingle()
@@ -2181,7 +2192,7 @@
         const branchId = getCurrentBranchId();
         
         if (!currentShift) {
-            alert("Open shift first!");
+            alert("❌ You must open a shift first before making sales!");
             return;
         }
         
@@ -2291,10 +2302,10 @@
             btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
             
             // Show success message
-            alert("Sale Saved Successfully!");
+            alert("✅ Sale Saved Successfully!");
         } catch (error) { 
             console.error("Sale Error:", error);
-            alert("Error: " + error.message); 
+            alert("❌ Error: " + error.message); 
             btn.disabled = false;
             btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
         }
@@ -2405,12 +2416,24 @@
     }
 
     document.getElementById('confirm-open').addEventListener('click', async function() {
+        const branchId = getCurrentBranchId();
+        
+        // Check if there's already an open shift for this branch
+        const existingOpenShift = await checkForOpenShift(branchId);
+        
+        if (existingOpenShift) {
+            alert("❌ There is already an open shift for this branch. Please close the existing shift before starting a new one.");
+            this.disabled = false;
+            this.innerHTML = 'START DAY';
+            document.getElementById('open-modal').style.display = 'none';
+            return;
+        }
+        
         const cash = parseFloat(document.getElementById('o-cash').value || 0);
         const mpesa = parseFloat(document.getElementById('o-mpesa').value || 0);
         const kcb = parseFloat(document.getElementById('o-kcb').value || 0);
         const equity = parseFloat(document.getElementById('o-equity').value || 0);
         const total = cash + mpesa + kcb + equity;
-        const branchId = getCurrentBranchId();
         
         const confirmed = confirm(
             `Are these the correct opening floats? Please confirm before starting your shift.\n\n` +
@@ -2435,7 +2458,7 @@
             open_mpesa: mpesa,
             open_kcb: kcb,
             open_equity: equity,
-            status: 'open', // Note: lowercase 'open' to match your DB
+            status: 'open',
             start_time: new Date().toISOString()
         };
         
@@ -2451,15 +2474,44 @@
     });
 
     document.getElementById('confirm-close').addEventListener('click', async function() {
+        // Validate that closing details are provided
+        const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
+        const clK = parseFloat(document.getElementById('c-kcb').value || 0);
+        const clE = parseFloat(document.getElementById('c-equity').value || 0);
+        const clC = parseFloat(document.getElementById('c-cash').value || 0);
+        
+        // Check if all required fields have values
+        if (clM === 0 && clK === 0 && clE === 0 && clC === 0) {
+            alert("❌ Please enter closing amounts for all floats before closing the shift.");
+            return;
+        }
+        
+        // Confirm zero values with user
+        if (clM === 0) {
+            const confirmZero = confirm("Mpesa closing amount is 0. Is this correct?");
+            if (!confirmZero) return;
+        }
+        
+        if (clK === 0) {
+            const confirmZero = confirm("KCB Float closing amount is 0. Is this correct?");
+            if (!confirmZero) return;
+        }
+        
+        if (clE === 0) {
+            const confirmZero = confirm("Equity Float closing amount is 0. Is this correct?");
+            if (!confirmZero) return;
+        }
+        
+        if (clC === 0) {
+            const confirmZero = confirm("Cash closing amount is 0. Is this correct?");
+            if (!confirmZero) return;
+        }
+        
         this.disabled = true;
         this.innerHTML = '<span class="spinner"></span> FINALIZING...';
         
         try {
-            const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
-            const clK = parseFloat(document.getElementById('c-kcb').value || 0);
-            const clE = parseFloat(document.getElementById('c-equity').value || 0);
             const clB = currentKcbSalesTotal;
-            const clC = parseFloat(document.getElementById('c-cash').value || 0);
 
             // Filter out refunds and negative sales
             const { data: sales } = await supabase.from('sales')
@@ -2493,7 +2545,7 @@
                 close_equity: clE, 
                 close_kcb_bank: clB, 
                 close_cash: clC,
-                status: 'closed', // Note: lowercase 'closed' to match your DB
+                status: 'closed',
                 end_time: new Date().toISOString(), 
                 variance_note: note, 
                 system_expected_total: expected
@@ -2803,7 +2855,7 @@
         const branchId = getCurrentBranchId();
         
         if (!amt || !desc || !currentShift) {
-            alert("Please fill all fields and make sure a shift is active");
+            alert("❌ Please fill all fields and make sure a shift is active");
             return;
         }
         
@@ -2827,12 +2879,12 @@
                 await loadShiftData();
                 this.disabled = false;
                 this.innerHTML = 'RECORD MONEY';
-                alert("Transaction recorded successfully!");
+                alert("✅ Transaction recorded successfully!");
             } else {
                 throw error;
             }
         } catch (error) {
-            alert("Error recording transaction: " + error.message);
+            alert("❌ Error recording transaction: " + error.message);
             this.disabled = false;
             this.innerHTML = 'RECORD MONEY';
         }
