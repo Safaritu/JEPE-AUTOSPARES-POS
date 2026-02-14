@@ -10,6 +10,12 @@ export const supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
     }
 });
 
+// Branch constants - only MUTOMO and KITUI
+export const BRANCHES = {
+    MUTOMO: { id: '5326e4c6-6d0d-4500-83d9-f322c859b9fb', name: 'MUTOMO BRANCH', code: 'MUT' },
+    KITUI: { id: 'ea91a65e-7c6e-43fd-b71e-3f2cc4f714a9', name: 'KITUI BRANCH', code: 'KIT' }
+};
+
 // Helper function to get current user with profile and branch info
 export async function getCurrentUser() {
     try {
@@ -61,22 +67,42 @@ export async function getUserBranch() {
 }
 
 // Helper function to add branch filter to queries
-export function withBranchFilter(query, branchId) {
-    if (branchId) {
-        return query.eq('branch_id', branchId);
+// If user is admin and no specific branchId provided, returns query without filter (all branches)
+// If user is cashier, always filters by their branch
+export async function withBranchFilter(query, customBranchId = null) {
+    const userData = await getCurrentUser();
+    const isAdminUser = userData?.profile?.role === 'admin';
+    
+    // If custom branch ID is provided (admin selecting a branch), use that
+    if (customBranchId) {
+        return query.eq('branch_id', customBranchId);
     }
+    
+    // If user is cashier, filter by their branch
+    if (!isAdminUser && userData?.profile?.branch_id) {
+        return query.eq('branch_id', userData.profile.branch_id);
+    }
+    
+    // Admin with no custom filter - return all branches
     return query;
 }
 
-// Helper function to get branch-aware query based on current user
+// Helper function to get branch-aware query based on current user and optional branch selection
 export async function getBranchAwareQuery(table, options = {}) {
     const userData = await getCurrentUser();
+    const isAdminUser = userData?.profile?.role === 'admin';
+    
     let query = supabase.from(table).select(options.select || '*');
     
-    // If user is cashier, filter by their branch
-    if (userData?.profile?.role === 'cashier' && userData?.profile?.branch_id) {
+    // Apply branch filter based on user role and custom branch
+    if (options.branchId) {
+        // Admin explicitly selected a branch
+        query = query.eq('branch_id', options.branchId);
+    } else if (!isAdminUser && userData?.profile?.branch_id) {
+        // Cashier - always filter by their branch
         query = query.eq('branch_id', userData.profile.branch_id);
     }
+    // Admin with no branch filter - see all branches
     
     // Add any additional filters
     if (options.filters) {
