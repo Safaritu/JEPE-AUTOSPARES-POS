@@ -3,65 +3,411 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JEPE ADMIN | Spares Hub</title>
+    <title>JEPE ADMIN | Spares Hub - Multi-Branch</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { 
-            --admin-dark: #0f172a; --admin-accent: #6366f1; --bg: #f8fafc;
-            --white: #ffffff; --text: #1e293b; --border: #e2e8f0; --sidebar-width: 260px;
-            --sidebar-collapsed: 70px; --green: #10b981; --red: #ef4444;
+            --admin-dark: #0f172a; 
+            --admin-accent: #6366f1; 
+            --bg: #f8fafc;
+            --white: #ffffff; 
+            --text: #1e293b; 
+            --border: #e2e8f0; 
+            --sidebar-width: 260px;
+            --sidebar-collapsed: 70px; 
+            --green: #10b981; 
+            --red: #ef4444;
+            --primary: #4f46e5;
         }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); margin: 0; display: flex; color: var(--text); min-height: 100vh; }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg); 
+            margin: 0; 
+            display: flex; 
+            color: var(--text); 
+            min-height: 100vh; 
+        }
         
         /* Sidebar Styles */
-        .sidebar { width: var(--sidebar-collapsed); height: 100vh; background: var(--admin-dark); color: white; padding: 20px 10px; position: fixed; transition: 0.3s; overflow-x: hidden; z-index: 2000; }
-        .sidebar:hover, .sidebar.mobile-active { width: var(--sidebar-width); }
-        .sidebar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; padding: 0 10px; }
-        .sidebar h2 { font-size: 1.2rem; margin: 0; white-space: nowrap; opacity: 0; transition: 0.3s; }
-        .sidebar:hover h2, .sidebar.mobile-active h2 { opacity: 1; }
+        .sidebar { 
+            width: var(--sidebar-collapsed); 
+            height: 100vh; 
+            background: var(--admin-dark); 
+            color: white; 
+            padding: 20px 10px; 
+            position: fixed; 
+            transition: 0.3s; 
+            overflow-x: hidden; 
+            z-index: 2000; 
+        }
         
-        .close-btn { display: none; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+        .sidebar:hover, .sidebar.mobile-active { 
+            width: var(--sidebar-width); 
+        }
+        
+        .sidebar-header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            margin-bottom: 30px; 
+            padding: 0 10px; 
+        }
+        
+        .sidebar h2 { 
+            font-size: 1.2rem; 
+            margin: 0; 
+            white-space: nowrap; 
+            opacity: 0; 
+            transition: 0.3s; 
+        }
+        
+        .sidebar:hover h2, .sidebar.mobile-active h2 { 
+            opacity: 1; 
+        }
+        
+        .close-btn { 
+            display: none; 
+            background: none; 
+            border: none; 
+            color: white; 
+            font-size: 1.5rem; 
+            cursor: pointer; 
+        }
 
-        .nav-link { display: flex; align-items: center; padding: 12px; color: #94a3b8; text-decoration: none; border-radius: 8px; margin-bottom: 5px; transition: 0.3s; }
-        .nav-link span:first-child { min-width: 30px; font-size: 1.2rem; text-align: center; }
-        .nav-link span:last-child { opacity: 0; white-space: nowrap; transition: 0.3s; margin-left: 15px; }
-        .sidebar:hover .nav-link span:last-child, .sidebar.mobile-active .nav-link span:last-child { opacity: 1; }
-        .nav-link:hover, .nav-link.active { background: var(--admin-accent); color: white; }
+        /* Branch Info in Sidebar */
+        .branch-info {
+            padding: 10px;
+            margin: 10px 0 20px;
+            background: rgba(79, 70, 229, 0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .branch-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            color: #94a3b8;
+        }
+        
+        .branch-name {
+            font-weight: 800;
+            color: white;
+            font-size: 0.85rem;
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .branch-name i { color: var(--admin-accent); }
+
+        .nav-link { 
+            display: flex; 
+            align-items: center; 
+            padding: 12px; 
+            color: #94a3b8; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            margin-bottom: 5px; 
+            transition: 0.3s; 
+        }
+        
+        .nav-link i { 
+            min-width: 30px; 
+            font-size: 1.2rem; 
+            text-align: center; 
+        }
+        
+        .nav-link span { 
+            opacity: 0; 
+            white-space: nowrap; 
+            transition: 0.3s; 
+            margin-left: 15px; 
+        }
+        
+        .sidebar:hover .nav-link span, 
+        .sidebar.mobile-active .nav-link span { 
+            opacity: 1; 
+        }
+        
+        .nav-link:hover, .nav-link.active { 
+            background: var(--admin-accent); 
+            color: white; 
+        }
         
         /* Menu Trigger */
-        .menu-trigger { display: none; position: fixed; top: 15px; left: 15px; z-index: 1500; background: var(--admin-dark); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .menu-trigger { 
+            display: none; 
+            position: fixed; 
+            top: 15px; 
+            left: 15px; 
+            z-index: 1500; 
+            background: var(--admin-dark); 
+            color: white; 
+            border: none; 
+            padding: 10px 15px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+            font-weight: 700; 
+        }
 
-        .main-content { margin-left: var(--sidebar-collapsed); padding: 30px; width: calc(100% - var(--sidebar-collapsed)); transition: 0.3s; box-sizing: border-box; }
+        .main-content { 
+            margin-left: var(--sidebar-collapsed); 
+            padding: 30px; 
+            width: calc(100% - var(--sidebar-collapsed)); 
+            transition: 0.3s; 
+            box-sizing: border-box; 
+        }
+        
+        /* Branch Selector */
+        .branch-selector-container {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        
+        .branch-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .branch-select {
+            padding: 12px 20px;
+            border-radius: 30px;
+            border: 2px solid var(--primary);
+            background: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text);
+            cursor: pointer;
+            min-width: 220px;
+            outline: none;
+        }
+        
+        .branch-badge {
+            background: var(--primary);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .date-range {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
         
         /* Stats Grid */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 25px; }
-        .stat-card { padding: 20px; border-radius: 15px; color: white; position: relative; overflow: hidden; }
-        .card-blue { background: #2563eb; } .card-green { background: #10b981; } .card-dark { background: #1e293b; } .card-orange { background: #f59e0b; }
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
+            gap: 20px; 
+            margin-bottom: 25px; 
+        }
+        
+        .stat-card { 
+            padding: 20px; 
+            border-radius: 15px; 
+            color: white; 
+            position: relative; 
+            overflow: hidden; 
+        }
+        
+        .stat-card small { 
+            display: block; 
+            font-size: 0.65rem; 
+            text-transform: uppercase; 
+            opacity: 0.9; 
+            margin-bottom: 5px; 
+        }
+        
+        .card-blue { background: #2563eb; } 
+        .card-green { background: #10b981; } 
+        .card-dark { background: #1e293b; } 
+        .card-orange { background: #f59e0b; }
         
         /* Segmentation Section */
-        .segment-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .segment-card { background: white; border-radius: 15px; border: 1px solid var(--border); padding: 20px; }
-        .segment-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-        .segment-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; }
-        .segment-row span:last-child { font-weight: 700; }
-
-        .charts-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .chart-box { background: white; padding: 20px; border-radius: 15px; border: 1px solid var(--border); }
-
-        .table-container { background: white; border-radius: 15px; padding: 20px; border: 1px solid var(--border); margin-bottom: 30px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th { text-align: left; color: #64748b; font-size: 0.75rem; text-transform: uppercase; padding: 12px; border-bottom: 1px solid var(--border); }
-        td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+        .segment-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 20px; 
+            margin-bottom: 30px; 
+        }
         
-        .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
-        .badge-copy { background: #fee2e2; color: #ef4444; }
-        .badge-original { background: #dcfce7; color: #10b981; }
-        .badge-general { background: #f1f5f9; color: #64748b; }
+        .segment-card { 
+            background: white; 
+            border-radius: 15px; 
+            border: 1px solid var(--border); 
+            padding: 20px; 
+        }
+        
+        .segment-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 15px; 
+            border-bottom: 1px solid var(--border); 
+            padding-bottom: 10px; 
+        }
+        
+        .segment-header span:first-child { 
+            font-weight: 800; 
+        }
+        
+        .segment-row { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 8px; 
+            font-size: 0.9rem; 
+        }
+        
+        .segment-row span:last-child { 
+            font-weight: 700; 
+        }
 
-        .btn-load { display: block; width: 200px; margin: 20px auto; padding: 12px; background: white; border: 2px solid var(--admin-accent); color: var(--admin-accent); border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.3s; }
-        .btn-load:hover { background: var(--admin-accent); color: white; }
+        .charts-container { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); 
+            gap: 20px; 
+            margin-bottom: 30px; 
+        }
+        
+        .chart-box { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 15px; 
+            border: 1px solid var(--border); 
+            height: 300px;
+            position: relative;
+        }
+        
+        .chart-box canvas {
+            max-height: 230px;
+            width: 100% !important;
+        }
+
+        .table-container { 
+            background: white; 
+            border-radius: 15px; 
+            padding: 20px; 
+            border: 1px solid var(--border); 
+            margin-bottom: 30px; 
+            overflow-x: auto; 
+        }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            min-width: 700px; 
+        }
+        
+        th { 
+            text-align: left; 
+            color: #64748b; 
+            font-size: 0.75rem; 
+            text-transform: uppercase; 
+            padding: 12px; 
+            border-bottom: 1px solid var(--border); 
+            font-weight: 800;
+        }
+        
+        td { 
+            padding: 12px; 
+            border-bottom: 1px solid var(--border); 
+            font-size: 0.85rem; 
+        }
+        
+        .badge { 
+            padding: 4px 8px; 
+            border-radius: 6px; 
+            font-size: 0.7rem; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            display: inline-block;
+        }
+        
+        .badge-copy { 
+            background: #fee2e2; 
+            color: #ef4444; 
+        }
+        
+        .badge-original { 
+            background: #dcfce7; 
+            color: #10b981; 
+        }
+        
+        .badge-general { 
+            background: #f1f5f9; 
+            color: #64748b; 
+        }
+        
+        .branch-pill {
+            background: #f1f5f9;
+            color: var(--text-dim);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .btn-load { 
+            display: block; 
+            width: 200px; 
+            margin: 20px auto; 
+            padding: 12px; 
+            background: white; 
+            border: 2px solid var(--admin-accent); 
+            color: var(--admin-accent); 
+            border-radius: 10px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: 0.3s; 
+        }
+        
+        .btn-load:hover { 
+            background: var(--admin-accent); 
+            color: white; 
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-dim);
+        }
 
         @media (max-width: 768px) {
             .menu-trigger { display: block; }
@@ -69,8 +415,12 @@
             .sidebar.mobile-active { transform: translateX(0); }
             .sidebar:hover { width: var(--sidebar-width); }
             .close-btn { display: block; }
-            .main-content { margin-left: 0; width: 100%; padding: 70px 20px 20px 20px; }
+            .main-content { margin-left: 0; width: 100%; padding: 70px 20px 20px; }
             .charts-container { grid-template-columns: 1fr; }
+            .branch-selector-container { flex-direction: column; align-items: flex-start; }
+            .branch-filter { width: 100%; }
+            .branch-select { width: 100%; }
+            .chart-box { height: 250px; }
         }
     </style>
 </head>
@@ -82,31 +432,53 @@
             <h2>JEPE ADMIN</h2>
             <button class="close-btn" onclick="toggleSidebar()">×</button>
         </div>
+        
+        <!-- Branch Info Display -->
+        <div class="branch-info" id="sidebarBranchInfo">
+            <div class="branch-label">Your Assigned Branch</div>
+            <div class="branch-name" id="sidebarBranchName">
+                <i class="fas fa-store"></i>
+                <span>Loading...</span>
+            </div>
+        </div>
+        
         <nav>
-            <a href="admin.html" class="nav-link"><span>📊</span> <span>Dashboard</span></a>
-            <a href="gas_hub.html" class="nav-link"><span>🔥</span> <span>Gas Hub</span></a>
-            <a href="spares_hub.html" class="nav-link active"><span>⚙️</span> <span>Spare Parts Hub</span></a>
-            <a href="motorbike_hub.html" class="nav-link"><span>🏍️</span> <span>Motorbike Hub</span></a>
-            <a href="shift-history.html" class="nav-link"><span>📋</span> <span>Daily Shifts</span></a>
-            <a href="money-history.html" class="nav-link"><span>💰</span> <span>Money IN/OUT</span></a>
-            <a href="sales-history.html" class="nav-link"><span>📜</span> <span>Sales History</span></a>
-            <a href="inventory.html" class="nav-link"><span>➕</span> <span>Add Stock</span></a>
-            <a href="sales_editor.html" class="nav-link"><span>✏️</span> <span>Edit Stock</span></a>
-            <a href="admin-debtors.html" class="nav-link"><span>👥</span> <span>Debtors</span></a>
-            <a href="low_stock.html" class="nav-link"><span>⚠️</span> <span>Low Stock</span></a>
-            <a href="audit_trail.html" class="nav-link"><span>🔍</span> <span>Inventory Track</span></a>
-            <a href="reports.html" class="nav-link"><span>📄</span> <span>Reports</span></a>
-            <a href="price_audits.html" class="nav-link"><span>📉</span> <span>Underpriced</span></a>
-            <a href="suppliers.html" class="nav-link"><span>🤝</span> <span>Suppliers</span></a>
-            <a href="admin.html" class="nav-link"><span>🏠</span> <span>HOME</span></a>
+            <a href="admin.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            <a href="gas_hub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
+            <a href="spares_hub.html" class="nav-link active"><i class="fas fa-cogs"></i> <span>Spare Parts Hub</span></a>
+            <a href="motorbike_hub.html" class="nav-link"><i class="fas fa-motorcycle"></i> <span>Motorbike Hub</span></a>
+            <a href="shift-history.html" class="nav-link"><i class="fas fa-history"></i> <span>Daily Shifts</span></a>
+            <a href="money-history.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
+            <a href="sales-history.html" class="nav-link"><i class="fas fa-chart-line"></i> <span>Sales History</span></a>
+            <a href="inventory.html" class="nav-link"><i class="fas fa-plus-circle"></i> <span>Add Stock</span></a>
+            <a href="sales_editor.html" class="nav-link"><i class="fas fa-edit"></i> <span>Edit Stock</span></a>
+            <a href="admin-debtors.html" class="nav-link"><i class="fas fa-users"></i> <span>Debtors</span></a>
+            <a href="low_stock.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
+            <a href="audit_trail.html" class="nav-link"><i class="fas fa-search"></i> <span>Inventory Track</span></a>
+            <a href="reports.html" class="nav-link"><i class="fas fa-file-alt"></i> <span>Reports</span></a>
+            <a href="price_audits.html" class="nav-link"><i class="fas fa-tags"></i> <span>Underpriced</span></a>
+            <a href="suppliers.html" class="nav-link"><i class="fas fa-handshake"></i> <span>Suppliers</span></a>
+            <a href="admin.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
         </nav>
     </div>
 
     <div class="main-content">
-        <header style="margin-bottom: 25px;">
-            <h1 style="margin:0;">Spares Hub Financials</h1>
-            <p style="color: #64748b;">Live data comparison: Original vs Copy vs General.</p>
-        </header>
+        <!-- Branch Selector -->
+        <div class="branch-selector-container">
+            <div class="branch-filter">
+                <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
+                <select id="branchSelector" class="branch-select" onchange="handleBranchChange()">
+                    <option value="all">🏢 ALL BRANCHES (Consolidated)</option>
+                    <option value="MUT">🏪 MUTOMO BRANCH</option>
+                    <option value="KIT">🏪 KITUI BRANCH</option>
+                </select>
+            </div>
+            <div class="branch-badge" id="currentBranchBadge">
+                <i class="fas fa-store"></i>
+                <span id="currentBranchDisplay">ALL BRANCHES</span>
+            </div>
+            <span class="date-range" id="dateRange"></span>
+        </div>
 
         <div class="stats-grid">
             <div class="stat-card card-blue"><small>TODAY'S SALES</small><div id="shift-sales" style="font-size:1.4rem; font-weight:800;">Ksh 0</div></div>
@@ -118,7 +490,7 @@
         <div class="segment-grid">
             <div class="segment-card">
                 <div class="segment-header">
-                    <span style="font-weight:800; color:var(--green)">✓ ORIGINAL</span>
+                    <span style="color:var(--green)"><i class="fas fa-check-circle"></i> ORIGINAL</span>
                     <span id="count-original" class="badge badge-original">0</span>
                 </div>
                 <div class="segment-row"><span>Stock Cost:</span> <span id="cost-original">Ksh 0</span></div>
@@ -127,7 +499,7 @@
             </div>
             <div class="segment-card">
                 <div class="segment-header">
-                    <span style="font-weight:800; color:var(--red)">⚠ COPY</span>
+                    <span style="color:var(--red)"><i class="fas fa-exclamation-triangle"></i> COPY</span>
                     <span id="count-copy" class="badge badge-copy">0</span>
                 </div>
                 <div class="segment-row"><span>Stock Cost:</span> <span id="cost-copy">Ksh 0</span></div>
@@ -136,7 +508,7 @@
             </div>
             <div class="segment-card">
                 <div class="segment-header">
-                    <span style="font-weight:800; color:var(--text)">📁 GENERAL</span>
+                    <span style="color:var(--text)"><i class="fas fa-folder"></i> GENERAL</span>
                     <span id="count-general" class="badge badge-general">0</span>
                 </div>
                 <div class="segment-row"><span>Stock Cost:</span> <span id="cost-general">Ksh 0</span></div>
@@ -157,10 +529,27 @@
         </div>
 
         <div class="table-container">
-            <h3>📈 Spares Performance</h3>
+            <h3>📈 Spares Performance <span id="tableBranch" style="font-size:0.8rem; color:var(--text-dim);">(All Branches)</span></h3>
             <table id="performance-table">
-                <thead><tr><th>Item Name</th><th>Type</th><th>Stock</th><th>Sold</th><th>Revenue</th><th>Profit</th></tr></thead>
-                <tbody id="performance-table-body"></tbody>
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Type</th>
+                        <th>Stock</th>
+                        <th>Sold</th>
+                        <th>Revenue</th>
+                        <th>Profit</th>
+                        <th>Branch</th>
+                    </tr>
+                </thead>
+                <tbody id="performance-table-body">
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px;">
+                            <div class="spinner" style="margin: 0 auto;"></div>
+                            Loading data...
+                        </td>
+                    </tr>
+                </tbody>
             </table>
             <button id="loadMoreBtn" class="btn-load">Load More Spares</button>
         </div>
@@ -171,17 +560,176 @@
 
         let displayLimit = 15;
         let allPerformanceData = [];
-        let charts = {};
+        let profitChart = null;
+        let invChart = null;
+        let currentUser = null;
+        let currentBranchId = null;
+        let currentBranch = null;
+        let selectedBranchId = null;
+        let branches = {};
+        let branchIdMap = {};
+
+        // ==================== BRANCH FUNCTIONS ====================
+
+        async function loadBranches() {
+            const { data } = await supabase.from('branches').select('*');
+            branches = {};
+            branchIdMap = {};
+            data?.forEach(b => {
+                branches[b.id] = b;
+                branchIdMap[b.code] = b.id;
+            });
+            console.log("✅ Branches loaded:", branches);
+            return branches;
+        }
+
+        function getBranchIdFromCode(code) {
+            return branchIdMap[code] || null;
+        }
+
+        async function loadUserProfile() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    window.location.href = 'index.html';
+                    return null;
+                }
+                
+                currentUser = user;
+                
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select(`
+                        *,
+                        branches (
+                            id,
+                            name,
+                            code,
+                            location
+                        )
+                    `)
+                    .eq('id', user.id)
+                    .single();
+                
+                if (error) throw error;
+                
+                currentBranchId = profile.branch_id;
+                currentBranch = profile.branches;
+                
+                const session = {
+                    user: user,
+                    profile: profile,
+                    branch: profile.branches,
+                    role: profile.role
+                };
+                localStorage.setItem('pos_session', JSON.stringify(session));
+                
+                // Update sidebar with user's assigned branch
+                const sidebarBranchName = document.querySelector('#sidebarBranchName span');
+                if (profile.branches && sidebarBranchName) {
+                    sidebarBranchName.textContent = profile.branches.name;
+                }
+                
+                return profile;
+            } catch (error) {
+                console.error("❌ Error loading profile:", error);
+                return null;
+            }
+        }
 
         // Sidebar Toggle for Mobile
         window.toggleSidebar = function() {
             document.getElementById('sidebar').classList.toggle('mobile-active');
         }
 
-        async function init() {
-            const { data: products } = await supabase.from('products').select('*').eq('category', 'Spare Part');
-            const { data: sales } = await supabase.from('sales').select('*');
-            if (products) render(products, sales || []);
+        window.handleBranchChange = async function() {
+            const selector = document.getElementById('branchSelector');
+            const selectedCode = selector.value;
+            
+            const branchDisplay = document.getElementById('currentBranchDisplay');
+            const tableBranch = document.getElementById('tableBranch');
+            const dateRange = document.getElementById('dateRange');
+            
+            console.log("========== BRANCH CHANGE ==========");
+            console.log("Selected code:", selectedCode);
+            
+            if (selectedCode === 'all') {
+                branchDisplay.textContent = 'ALL BRANCHES';
+                if (tableBranch) tableBranch.textContent = '(All Branches)';
+                selectedBranchId = null;
+                dateRange.textContent = 'Showing all branches';
+            } else {
+                const branchId = getBranchIdFromCode(selectedCode);
+                if (branchId) {
+                    selectedBranchId = branchId;
+                    branchDisplay.textContent = branches[branchId].name;
+                    if (tableBranch) tableBranch.textContent = `(${branches[branchId].name})`;
+                    dateRange.textContent = `Showing ${branches[branchId].name} only`;
+                    console.log(`Selected branch: ${branches[branchId].name} (ID: ${branchId})`);
+                }
+            }
+            
+            // Reset and reload data
+            displayLimit = 15;
+            await loadData();
+        };
+
+        async function loadData() {
+            // Show loading state
+            document.getElementById('performance-table-body').innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px;">
+                        <div class="spinner" style="margin: 0 auto;"></div>
+                        Loading data...
+                    </td>
+                </tr>
+            `;
+
+            try {
+                console.log("Loading spare parts for branch ID:", selectedBranchId || 'ALL');
+                
+                // Build product query
+                let productsQuery = supabase
+                    .from('products')
+                    .select('*')
+                    .eq('category', 'Spare Part');
+                
+                if (selectedBranchId) {
+                    productsQuery = productsQuery.eq('branch_id', selectedBranchId);
+                }
+                
+                // Build sales query
+                let salesQuery = supabase
+                    .from('sales')
+                    .select('*')
+                    .eq('category', 'Spare Part');
+                
+                if (selectedBranchId) {
+                    salesQuery = salesQuery.eq('branch_id', selectedBranchId);
+                }
+
+                const [productsRes, salesRes] = await Promise.all([
+                    productsQuery,
+                    salesQuery
+                ]);
+
+                const products = productsRes.data || [];
+                const sales = salesRes.data || [];
+                
+                console.log(`Loaded ${products.length} spare parts, ${sales.length} sales`);
+                
+                render(products, sales);
+            } catch (error) {
+                console.error("Error loading data:", error);
+                document.getElementById('performance-table-body').innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                            Error loading data: ${error.message}
+                        </td>
+                    </tr>
+                `;
+            }
         }
 
         function render(products, sales) {
@@ -203,7 +751,15 @@
                 stats[type].cost += stockVal;
                 stats[type].count++;
                 totalStockValue += stockVal;
-                perfMap[p.id] = { name: p.name, type: type, stock: p.stock_quantity, sold: 0, rev: 0, prof: 0 };
+                perfMap[p.id] = { 
+                    name: p.name, 
+                    type: type, 
+                    stock: p.stock_quantity, 
+                    sold: 0, 
+                    rev: 0, 
+                    prof: 0,
+                    branch_code: branches[p.branch_id]?.code || '--'
+                };
             });
 
             sales.forEach(s => {
@@ -213,10 +769,13 @@
                     const profit = amt - ((s.cost_price || 0) * (s.quantity || 0));
                     stats[type].sales += amt;
                     stats[type].profit += profit;
-                    if (new Date(s.created_at).toLocaleDateString() === today) {
+                    
+                    const saleDate = new Date(s.created_at).toLocaleDateString();
+                    if (saleDate === today) {
                         todaySales += amt;
                         todayProfit += profit;
                     }
+                    
                     if (perfMap[s.product_id]) {
                         perfMap[s.product_id].sold += (s.quantity || 0);
                         perfMap[s.product_id].rev += amt;
@@ -225,6 +784,7 @@
                 }
             });
 
+            // Update summary stats
             document.getElementById('shift-sales').innerText = `Ksh ${todaySales.toLocaleString()}`;
             document.getElementById('shift-profit').innerText = `Ksh ${todayProfit.toLocaleString()}`;
             document.getElementById('total-items').innerText = products.length;
@@ -239,54 +799,153 @@
             });
 
             allPerformanceData = Object.values(perfMap).sort((a, b) => b.rev - a.rev);
+            
+            // Destroy existing charts if they exist
+            if (profitChart) {
+                profitChart.destroy();
+                profitChart = null;
+            }
+            if (invChart) {
+                invChart.destroy();
+                invChart = null;
+            }
+            
             displayTable();
-            updateCharts(stats);
+            
+            // Small delay to ensure canvas is ready
+            setTimeout(() => {
+                updateCharts(stats);
+            }, 100);
         }
 
         function displayTable() {
             const tbody = document.getElementById('performance-table-body');
-            tbody.innerHTML = allPerformanceData.slice(0, displayLimit).map(b => `
+            
+            if (allPerformanceData.length === 0) {
+                const branchName = selectedBranchId ? branches[selectedBranchId]?.name : 'All Branches';
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-dim);">
+                            <i class="fas fa-box-open" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                            No spare parts found for ${branchName}
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('loadMoreBtn').style.display = 'none';
+                return;
+            }
+            
+            tbody.innerHTML = allPerformanceData.slice(0, displayLimit).map(b => {
+                let badgeClass = 'badge-general';
+                if (b.type === 'Original') badgeClass = 'badge-original';
+                if (b.type === 'Copy') badgeClass = 'badge-copy';
+                
+                return `
                 <tr>
-                    <td>${b.name}</td>
-                    <td><span class="badge badge-${b.type.toLowerCase()}">${b.type}</span></td>
+                    <td><strong>${b.name}</strong></td>
+                    <td><span class="badge ${badgeClass}">${b.type}</span></td>
                     <td>${b.stock}</td>
                     <td>${b.sold}</td>
                     <td>Ksh ${b.rev.toLocaleString()}</td>
                     <td style="color:var(--green)">Ksh ${b.prof.toLocaleString()}</td>
+                    <td><span class="branch-pill">${b.branch_code}</span></td>
                 </tr>
-            `).join('');
+            `}).join('');
+            
             document.getElementById('loadMoreBtn').style.display = displayLimit >= allPerformanceData.length ? 'none' : 'block';
         }
 
         function updateCharts(stats) {
             const labels = ['Original', 'Copy', 'General'];
-            new Chart(document.getElementById('profitChart'), {
+            const profitData = labels.map(l => stats[l].profit);
+            const costData = labels.map(l => stats[l].cost);
+            
+            // Profit Chart
+            const profitCtx = document.getElementById('profitChart').getContext('2d');
+            profitChart = new Chart(profitCtx, {
                 type: 'bar',
                 data: {
                     labels,
                     datasets: [{
                         label: 'Total Profit',
-                        data: labels.map(l => stats[l].profit),
-                        backgroundColor: ['#10b981', '#ef4444', '#64748b']
+                        data: profitData,
+                        backgroundColor: ['#10b981', '#ef4444', '#64748b'],
+                        borderRadius: 6
                     }]
                 },
-                options: { responsive: true, plugins: { legend: { display: false } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: true,
+                    plugins: { 
+                        legend: { display: false } 
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { 
+                                callback: function(value) { return 'Ksh ' + value.toLocaleString(); }
+                            }
+                        }
+                    }
+                }
             });
 
-            new Chart(document.getElementById('invChart'), {
+            // Inventory Chart
+            const invCtx = document.getElementById('invChart').getContext('2d');
+            invChart = new Chart(invCtx, {
                 type: 'doughnut',
                 data: {
                     labels,
                     datasets: [{
-                        data: labels.map(l => stats[l].cost),
-                        backgroundColor: ['#10b981', '#ef4444', '#64748b']
+                        data: costData,
+                        backgroundColor: ['#10b981', '#ef4444', '#64748b'],
+                        borderWidth: 0
                     }]
                 },
-                options: { responsive: true }
+                options: { 
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    let value = context.raw || 0;
+                                    return `${label}: Ksh ${value.toLocaleString()}`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
             });
         }
 
-        document.getElementById('loadMoreBtn').onclick = () => { displayLimit += 15; displayTable(); };
+        document.getElementById('loadMoreBtn').addEventListener('click', () => { 
+            displayLimit += 15; 
+            displayTable(); 
+        });
+
+        async function init() {
+            console.log("========== INITIALIZING PAGE ==========");
+            
+            await loadBranches();
+            await loadUserProfile();
+            
+            // Set today's date
+            const today = new Date();
+            document.getElementById('dateRange').textContent = today.toLocaleDateString('en-GB', { 
+                day: 'numeric', month: 'long', year: 'numeric' 
+            });
+            
+            // Set default branch selector
+            document.getElementById('branchSelector').value = 'all';
+            selectedBranchId = null;
+            
+            await loadData();
+        }
+
         init();
     </script>
 </body>
