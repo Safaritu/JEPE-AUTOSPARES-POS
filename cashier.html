@@ -1608,7 +1608,7 @@
         <button class="btn btn-danger" style="margin-top:20px; width:100%" id="confirm-close">FINALIZE & CLOSE</button>
     </div>
 </div>
-  <script type="module">
+ <script type="module">
     import { supabase } from './auth.js';
 
     let inventory = [];
@@ -1637,7 +1637,7 @@
         return session.branch?.id || currentBranchId;
     }
 
-    // Check if user is admin (though this is cashier page, but for completeness)
+    // Check if user is admin
     function isAdmin() {
         const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
         return session.role === 'admin';
@@ -1651,7 +1651,7 @@
             
             currentUser = user;
             
-            // Get profile with branch info
+            // Get profile with branch info - using only existing columns
             const { data: profile, error } = await supabase
                 .from('profiles')
                 .select(`
@@ -1680,12 +1680,12 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
-            // Update profile info in UI
+            // Update profile info in UI - use email instead of full_name
             const profileUserName = document.getElementById('profileUserName');
             const profileUserEmail = document.getElementById('profileUserEmail');
             const branchNameEl = document.getElementById('branch-name-display');
             
-            if (profileUserName) profileUserName.textContent = profile.full_name || user.email?.split('@')[0] || 'Cashier';
+            if (profileUserName) profileUserName.textContent = user.email?.split('@')[0] || 'Cashier';
             if (profileUserEmail) profileUserEmail.textContent = user.email;
             
             // Add branch display to header if not exists
@@ -1737,7 +1737,7 @@
         refundingSale = null;
     };
 
-    // Process refund function - FIXED VERSION WITH BRANCH_ID
+    // Process refund function
     window.processRefund = async function() {
         if (!refundingSale || !currentShift) return;
         
@@ -1778,12 +1778,12 @@
                 product_id: refundingSale.product_id,
                 item_name: `REFUND: ${refundingSale.item_name}`,
                 part_type: refundingSale.part_type,
-                quantity: -refundingSale.quantity, // Negative quantity
+                quantity: -refundingSale.quantity,
                 unit_price: refundingSale.unit_price,
-                total_amount: -refundAmount, // Negative amount
+                total_amount: -refundAmount,
                 payment_method: refundMethod,
                 cost_price: refundingSale.cost_price || 0,
-                amount: -refundAmount, // Negative amount
+                amount: -refundAmount,
                 category: refundingSale.category,
                 user_id: currentUser.id,
                 weight_category: refundingSale.weight_category,
@@ -1792,7 +1792,7 @@
                 refund_method: refundMethod,
                 refund_reason: refundReason,
                 refunded_at: new Date().toISOString(),
-                branch_id: branchId // Add branch_id
+                branch_id: branchId
             }]);
             
             if (saleError) throw saleError;
@@ -1816,7 +1816,7 @@
                 category: refundMethod,
                 amount: refundAmount,
                 description: `Refund: ${refundingSale.item_name}${refundReason ? ' - ' + refundReason : ''}`,
-                branch_id: branchId, // Add branch_id
+                branch_id: branchId,
                 user_id: currentUser.id
             }]);
             
@@ -1837,10 +1837,8 @@
                 if (stockError) throw stockError;
             }
             
-            // 5. Show success message
             alert(`✅ Refund processed successfully!\n\nRefund of Ksh ${refundAmount.toLocaleString()} processed via ${refundMethod}. Stock has been restored.`);
             
-            // 6. Close modal and refresh data
             closeRefundModal();
             await fetchInventory();
             await loadShiftData();
@@ -1919,7 +1917,7 @@
             event: '*', 
             schema: 'public', 
             table: 'products',
-            filter: `branch_id=eq.${getCurrentBranchId()}` // Only listen to current branch
+            filter: `branch_id=eq.${getCurrentBranchId()}`
         }, (payload) => {
             console.log("Database Change Detected. Syncing...");
             fetchInventory(); 
@@ -1934,7 +1932,6 @@
                 return;
             }
             
-            // Only fetch products for current branch
             const { data } = await supabase
                 .from('products')
                 .select('*')
@@ -1988,13 +1985,12 @@
         if (onboardingHand) onboardingHand.style.display = 'none';
         sessionStorage.setItem('menuClicked', 'true');
         
-        // Close profile dropdown if open
         const dropdown = document.getElementById('profileDropdown');
         if (dropdown) dropdown.style.display = 'none';
     };
 
     window.logoutUser = async () => { 
-        localStorage.removeItem('pos_session'); // Clear session
+        localStorage.removeItem('pos_session');
         await supabase.auth.signOut(); 
         location.href = 'index.html'; 
     };
@@ -2058,7 +2054,7 @@
             .from('daily_shifts')
             .select('*')
             .eq('branch_id', branchId)
-            .eq('status', 'Open') // Note: Capital 'O' as per your schema default
+            .eq('status', 'Open')
             .maybeSingle();
         
         return data;
@@ -2066,7 +2062,6 @@
 
     async function init() {
         try {
-            // Load user profile first
             const profile = await loadUserProfile();
             if (!profile) {
                 window.location.href = 'index.html';
@@ -2080,13 +2075,12 @@
             setInterval(updateGreeting, 60000);
 
             try {
-                // Fetch products only for this branch
                 const [prodRes, shiftRes] = await Promise.all([
                     supabase.from('products').select('*').eq('branch_id', branchId),
                     supabase.from('daily_shifts')
                         .select('*')
                         .eq('branch_id', branchId)
-                        .eq('status', 'Open') // Note: Capital 'O' to match schema
+                        .eq('status', 'Open')
                         .maybeSingle()
                 ]);
 
@@ -2097,13 +2091,12 @@
                 if (shiftRes.data) {
                     currentShift = shiftRes.data;
                     actionBtnContainer.innerHTML = `
-                        <button class="btn btn-danger special-action-btn" onclick="document.getElementById('close-modal').style.display='flex'">🔴 CLOSE DAY</button>
+                        <button class="btn btn-danger special-action-btn" onclick="showCloseConfirmation()">🔴 CLOSE DAY</button>
                         <button class="btn" onclick="refreshData()" style="background: #e2e8f0; padding: 8px 12px; font-size: 0.8rem;">
                             <i class="fas fa-sync-alt"></i> Refresh
                         </button>
                     `;
                     
-                    // Update float displays safely
                     const floatCash = document.getElementById('float-cash');
                     const floatMpesa = document.getElementById('float-mpesa');
                     const floatKcb = document.getElementById('float-kcb');
@@ -2164,9 +2157,7 @@
             updateStockDisplay(selectedItem);
             updateTotal();
             
-            // Check if it's a gas item
             if (selectedItem.category === 'Gas') {
-                // Show gas redirect modal
                 const gasModal = document.getElementById('gasRedirectModal');
                 if (gasModal) gasModal.style.display = 'flex';
             }
@@ -2201,7 +2192,6 @@
             return;
         }
         
-        // Prevent gas sales from this page
         if (selectedItem.category === 'Gas') {
             const gasModal = document.getElementById('gasRedirectModal');
             if (gasModal) gasModal.style.display = 'flex';
@@ -2237,7 +2227,7 @@
             part_type: selectedItem.part_type || 'N/A', 
             discount_reason: selectedItem.tempReason || "",
             user_id: currentUser.id,
-            branch_id: branchId // Add branch_id
+            branch_id: branchId
         };
 
         if (method === 'Split') {
@@ -2257,7 +2247,6 @@
             
             if (error) throw error;
 
-            // Update stock quantity
             const newStock = selectedItem.stock_quantity - qty;
             const { error: updateError } = await supabase
                 .from('products')
@@ -2266,7 +2255,6 @@
             
             if (updateError) throw updateError;
 
-            // Record debt if applicable
             if(method === "Debt") {
                 const dName = prompt("Customer Name:");
                 if(dName) {
@@ -2275,16 +2263,14 @@
                         amount_owed: total, 
                         sale_id: sData[0].id,
                         shift_id: currentShift.id,
-                        branch_id: branchId // Add branch_id
+                        branch_id: branchId
                     }]);
                 }
             }
 
-            // Sync UI without full page reload
             await fetchInventory(); 
             await loadShiftData();
             
-            // Reset Form
             document.getElementById('sale-form').reset();
             document.getElementById('pSearch').value = '';
             
@@ -2301,7 +2287,6 @@
             btn.disabled = false;
             btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
             
-            // Show success message
             alert("✅ Sale Saved Successfully!");
         } catch (error) { 
             console.error("Sale Error:", error);
@@ -2333,7 +2318,6 @@
             const sales = salesRes.data || [];
             const trans = transRes.data || [];
 
-            // Filter out refunds (negative sales) for KCB total
             currentKcbSalesTotal = sales
                 .filter(s => s.payment_method === 'KCB Paybill' && !s.refunded && s.total_amount > 0)
                 .reduce((a, b) => a + b.total_amount, 0);
@@ -2374,7 +2358,6 @@
                 `).join('');
             }
 
-            // Calculate money in/out totals
             let totalMoneyIn = 0;
             let totalMoneyOut = 0;
             
@@ -2386,7 +2369,6 @@
                 }
             });
             
-            // Update summary cards
             const totalMoneyInFullEl = document.getElementById('total-money-in-full');
             const totalMoneyOutFullEl = document.getElementById('total-money-out-full');
             
@@ -2408,7 +2390,6 @@
                 `).join('');
             }
             
-            // Check for low floats after data is loaded
             checkLowFloats();
         } catch (error) {
             console.error("Error loading shift data:", error);
@@ -2418,7 +2399,6 @@
     document.getElementById('confirm-open').addEventListener('click', async function() {
         const branchId = getCurrentBranchId();
         
-        // Check if there's already an open shift for this branch
         const existingOpenShift = await checkForOpenShift(branchId);
         
         if (existingOpenShift) {
@@ -2458,7 +2438,7 @@
             open_mpesa: mpesa,
             open_kcb: kcb,
             open_equity: equity,
-            status: 'Open', // Note: Capital 'O' to match schema default
+            status: 'Open',
             start_time: new Date().toISOString()
         };
         
@@ -2473,38 +2453,105 @@
         }
     });
 
-    document.getElementById('confirm-close').addEventListener('click', async function() {
-        // Get all closing values
+    // Add this to your HTML to create the confirmation card
+    function createCloseConfirmationCard() {
+        const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
+        const clK = parseFloat(document.getElementById('c-kcb').value || 0);
+        const clE = parseFloat(document.getElementById('c-equity').value || 0);
+        const clC = parseFloat(document.getElementById('c-cash').value || 0);
+        const clB = currentKcbSalesTotal;
+        
+        const card = document.createElement('div');
+        card.className = 'overlay';
+        card.id = 'close-confirm-card';
+        card.style.display = 'flex';
+        card.innerHTML = `
+            <div class="modal" style="max-width: 500px;">
+                <h3 style="color: var(--danger); margin-top: 0;">🔒 Confirm Shift Closing</h3>
+                
+                <div style="background: #f8fafc; border-radius: 12px; padding: 15px; margin: 15px 0;">
+                    <h4 style="margin: 0 0 10px 0; font-size: 0.9rem;">Closing Floats Summary</h4>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div style="background: white; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem;">MPESA</small>
+                            <span style="font-weight: 800; font-size: 1.1rem;">Ksh ${clM.toLocaleString()}</span>
+                        </div>
+                        <div style="background: white; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem;">KCB FLOAT</small>
+                            <span style="font-weight: 800; font-size: 1.1rem;">Ksh ${clK.toLocaleString()}</span>
+                        </div>
+                        <div style="background: white; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem;">EQUITY</small>
+                            <span style="font-weight: 800; font-size: 1.1rem;">Ksh ${clE.toLocaleString()}</span>
+                        </div>
+                        <div style="background: white; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem;">CASH</small>
+                            <span style="font-weight: 800; font-size: 1.1rem;">Ksh ${clC.toLocaleString()}</span>
+                        </div>
+                        <div style="grid-column: span 2; background: #f0f9ff; padding: 10px; border-radius: 8px; border: 1px solid #bae6fd;">
+                            <small style="display: block; color: #0369a1; font-size: 0.65rem;">KCB PAYBILL</small>
+                            <span style="font-weight: 800; font-size: 1.1rem; color: var(--primary);">Ksh ${clB.toLocaleString()}</span>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 15px; padding: 10px; background: #fff7ed; border-radius: 8px; border-left: 4px solid var(--warning);">
+                        <small style="color: #9a3412; font-weight: 600;">
+                            <i class="fas fa-info-circle"></i> Please verify all amounts before confirming.
+                        </small>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-danger" style="flex: 1;" onclick="processCloseShift()">✅ CONFIRM & CLOSE</button>
+                    <button class="btn" style="flex: 1; background: #e2e8f0;" onclick="closeCloseConfirmation()">✕ CANCEL</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(card);
+    }
+
+    window.showCloseConfirmation = function() {
+        // First validate the inputs
         const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
         const clK = parseFloat(document.getElementById('c-kcb').value || 0);
         const clE = parseFloat(document.getElementById('c-equity').value || 0);
         const clC = parseFloat(document.getElementById('c-cash').value || 0);
         
-        // Check if all fields are empty
         if (clM === 0 && clK === 0 && clE === 0 && clC === 0) {
             alert("❌ Please enter closing amounts for all floats before closing the shift.");
             return;
         }
         
-        // Single confirmation for all zero values
-        const zeroFields = [];
-        if (clM === 0) zeroFields.push("Mpesa");
-        if (clK === 0) zeroFields.push("KCB Float");
-        if (clE === 0) zeroFields.push("Equity Float");
-        if (clC === 0) zeroFields.push("Cash");
+        // Hide the original modal and show confirmation card
+        document.getElementById('close-modal').style.display = 'none';
+        createCloseConfirmationCard();
+    };
+
+    window.closeCloseConfirmation = function() {
+        const card = document.getElementById('close-confirm-card');
+        if (card) card.remove();
+        document.getElementById('close-modal').style.display = 'flex';
+    };
+
+    window.processCloseShift = async function() {
+        const card = document.getElementById('close-confirm-card');
+        if (!card) return;
         
-        if (zeroFields.length > 0) {
-            const confirmZero = confirm(`The following fields have zero amounts: ${zeroFields.join(', ')}.\n\nIs this correct?`);
-            if (!confirmZero) return;
-        }
+        const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
+        const clK = parseFloat(document.getElementById('c-kcb').value || 0);
+        const clE = parseFloat(document.getElementById('c-equity').value || 0);
+        const clC = parseFloat(document.getElementById('c-cash').value || 0);
+        const clB = currentKcbSalesTotal;
         
-        this.disabled = true;
-        this.innerHTML = '<span class="spinner"></span> FINALIZING...';
+        card.remove();
+        
+        const btn = document.getElementById('confirm-close');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> FINALIZING...';
         
         try {
-            const clB = currentKcbSalesTotal;
-
-            // Filter out refunds and negative sales
             const { data: sales } = await supabase.from('sales')
                 .select('total_amount')
                 .eq('shift_id', currentShift.id)
@@ -2523,7 +2570,6 @@
             const actual = clM + clK + clE + clB + clC;
             const variance = actual - expected;
 
-            // Handle variance note with sign indicator
             let note = "";
             if (Math.abs(variance) < 1) {
                 note = "Balanced";
@@ -2531,11 +2577,10 @@
                 const sign = variance > 0 ? "+" : "-";
                 note = prompt(`Variance: ${sign}${Math.abs(variance).toFixed(2)}. Please enter reason:`);
                 if (!note) {
-                    this.disabled = false;
-                    this.innerHTML = 'FINALIZE & CLOSE';
+                    btn.disabled = false;
+                    btn.innerHTML = 'FINALIZE & CLOSE';
                     return;
                 }
-                // Include the variance sign in the note for clarity
                 note = `${sign}${Math.abs(variance).toFixed(2)} - ${note}`;
             }
 
@@ -2545,7 +2590,7 @@
                 close_equity: clE, 
                 close_kcb_bank: clB, 
                 close_cash: clC,
-                status: 'Closed', // Note: Capital 'C' to match schema default
+                status: 'Closed',
                 end_time: new Date().toISOString(), 
                 variance_note: note, 
                 system_expected_total: expected
@@ -2554,10 +2599,10 @@
             location.reload();
         } catch (error) {
             alert("Error closing shift: " + error.message);
-            this.disabled = false;
-            this.innerHTML = 'FINALIZE & CLOSE';
+            btn.disabled = false;
+            btn.innerHTML = 'FINALIZE & CLOSE';
         }
-    });
+    };
 
     async function loadHistory(searchQuery = "") {
         try {
@@ -2586,7 +2631,7 @@
             allTransactions = transactions || [];
             allSales = sales || [];
             
-            const lastClosed = allShifts.find(s => s.status === 'Closed'); // Note: Capital 'C'
+            const lastClosed = allShifts.find(s => s.status === 'Closed');
             if (lastClosed) {
                 const clT = (lastClosed.close_cash||0) + (lastClosed.close_mpesa||0) + (lastClosed.close_kcb||0) + (lastClosed.close_equity||0) + (lastClosed.close_kcb_bank || 0);
                 if (Math.abs(clT - (lastClosed.system_expected_total || 0)) < 1) {
@@ -2600,7 +2645,6 @@
                 }
             }
             
-            // Check screen size and render appropriately
             if (window.innerWidth <= 768) {
                 renderMobileHistory(allShifts, allTransactions, allSales, searchQuery);
             } else {
@@ -2634,7 +2678,7 @@
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
-            const isClosed = sh.status === 'Closed'; // Note: Capital 'C' to match schema
+            const isClosed = sh.status === 'Closed';
             const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             
@@ -2739,7 +2783,7 @@
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
-            const isClosed = sh.status === 'Closed'; // Note: Capital 'C' to match schema
+            const isClosed = sh.status === 'Closed';
             const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             const varianceVal = isClosed ? (closeTotal - expected) : 0;
@@ -2848,7 +2892,6 @@
         loadHistory(); 
     });
     
-    // MONEY IN/OUT RECORD BUTTON FUNCTION
     document.getElementById('record-expense-btn').addEventListener('click', async function() {
         const amt = parseFloat(document.getElementById('exp-amt').value);
         const desc = document.getElementById('exp-desc').value;
@@ -2869,7 +2912,7 @@
                 category: document.getElementById('exp-method').value, 
                 amount: amt, 
                 description: desc,
-                branch_id: branchId, // Add branch_id
+                branch_id: branchId,
                 user_id: currentUser.id
             }]);
 
@@ -2890,7 +2933,6 @@
         }
     });
 
-    // Handle window resize for responsive display
     window.addEventListener('resize', function() {
         if (allShifts.length > 0) {
             if (window.innerWidth <= 768) {
@@ -2905,7 +2947,6 @@
         }
     });
 
-    // Initialize when page loads
     document.addEventListener('DOMContentLoaded', function() {
         init();
         setInterval(checkLowFloats, 30000);
@@ -2917,6 +2958,5 @@
         });
     });
 </script>
-
 </body>
 </html>
