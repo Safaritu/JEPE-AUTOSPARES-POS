@@ -141,53 +141,6 @@
 
         .container { padding: 15px; max-width: 1200px; margin: auto; }
 
-        /* Branch Selector */
-        .branch-selector-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 20px;
-            background: white;
-            padding: 15px;
-            border-radius: 16px;
-            border: 1px solid #e2e8f0;
-        }
-        
-        .branch-filter {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .branch-select {
-            padding: 10px 15px;
-            border-radius: 30px;
-            border: 2px solid var(--admin-accent);
-            background: white;
-            font-weight: 600;
-            font-size: 0.85rem;
-            color: var(--admin-dark);
-            cursor: pointer;
-            min-width: 200px;
-            outline: none;
-        }
-        
-        .branch-badge {
-            background: var(--admin-accent);
-            color: white;
-            padding: 6px 15px;
-            border-radius: 30px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .branch-badge i { font-size: 0.9rem; }
-
         .stats-grid { 
             display: grid; 
             grid-template-columns: repeat(2, 1fr); 
@@ -468,22 +421,6 @@
     </div>
 
     <div class="container">
-        <!-- Branch Selector for Admin -->
-        <div class="branch-selector-container">
-            <div class="branch-filter">
-                <i class="fas fa-store" style="color: var(--admin-accent);"></i>
-                <select id="branchSelector" class="branch-select" onchange="handleBranchChange()">
-                    <option value="all">🏢 ALL BRANCHES</option>
-                    <option value="MUTOMO">🏪 MUTOMO BRANCH</option>
-                    <option value="KITUI">🏪 KITUI BRANCH</option>
-                </select>
-            </div>
-            <div class="branch-badge" id="currentBranchBadge">
-                <i class="fas fa-store"></i>
-                <span id="currentBranchDisplay">ALL BRANCHES</span>
-            </div>
-        </div>
-
         <div class="stats-grid">
             <div class="stat-box" style="background:var(--blue);">
                 <small id="shift-label">Shift Sales</small>
@@ -505,7 +442,7 @@
 
          <div class="card" style="border-top: 4px solid var(--admin-accent);">
             <h3 style="margin: 0 0 15px 0; font-size: 0.85rem; color: var(--admin-accent); font-weight: 800;">
-                📈 STOCK VALUATION & ALL-TIME SALES <span id="valuationBranch"></span>
+                📈 STOCK VALUATION & ALL-TIME SALES
             </h3>
             <div class="financial-summary">
                 <div class="summary-item">
@@ -529,7 +466,7 @@
 
         <div class="card">
             <h3 style="margin: 0 0 15px 0; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
-                <span>📦</span> Register New Item <span id="newItemBranch"></span>
+                <span>📦</span> Register New Item
             </h3>
             <form id="admin-form">
                 <div class="form-row">
@@ -593,7 +530,6 @@
     let currentUser = null;
     let currentBranchId = null;
     let currentBranch = null;
-    let selectedBranchId = null;
     let branches = {};
     let branchIdMap = {};
 
@@ -667,36 +603,6 @@
         return branches;
     }
 
-    function getBranchIdFromCode(code) {
-        return branchIdMap[code] || null;
-    }
-
-    window.handleBranchChange = async function() {
-        const selector = document.getElementById('branchSelector');
-        const selectedCode = selector.value;
-        
-        const branchDisplay = document.getElementById('currentBranchDisplay');
-        const valuationBranch = document.getElementById('valuationBranch');
-        const newItemBranch = document.getElementById('newItemBranch');
-        
-        if (selectedCode === 'all') {
-            branchDisplay.textContent = 'ALL BRANCHES';
-            if (valuationBranch) valuationBranch.textContent = '(All Branches)';
-            if (newItemBranch) newItemBranch.textContent = '(All Branches)';
-            selectedBranchId = null;
-        } else {
-            const branchId = getBranchIdFromCode(selectedCode);
-            if (branchId) {
-                selectedBranchId = branchId;
-                branchDisplay.textContent = branches[branchId].name;
-                if (valuationBranch) valuationBranch.textContent = `(${branches[branchId].name})`;
-                if (newItemBranch) newItemBranch.textContent = `(${branches[branchId].name})`;
-            }
-        }
-        
-        await loadData();
-    };
-
     window.toggleSidebar = () => {
         const sidebar = document.getElementById('sidebar');
         const wrapper = document.getElementById('main-wrapper');
@@ -729,10 +635,12 @@
                 </div>
             `;
 
-            // 1. Shift Stats (based on selected branch)
+            const branchId = getCurrentBranchId();
+
+            // 1. Shift Stats (based on user's branch)
             let shiftQuery = supabase.from('daily_shifts').select('*').eq('status', 'open').order('start_time', { ascending: false }).limit(1);
-            if (selectedBranchId) {
-                shiftQuery = shiftQuery.eq('branch_id', selectedBranchId);
+            if (branchId) {
+                shiftQuery = shiftQuery.eq('branch_id', branchId);
             }
             
             const { data: shifts } = await shiftQuery;
@@ -744,7 +652,7 @@
             if (openShift) {
                 shiftToDisplay = openShift.id;
             } else {
-                const { data: latestShift } = await supabase.from('daily_shifts').select('id').order('start_time', { ascending: false }).limit(1).maybeSingle();
+                const { data: latestShift } = await supabase.from('daily_shifts').select('id').eq('branch_id', branchId).order('start_time', { ascending: false }).limit(1).maybeSingle();
                 if (latestShift) {
                     shiftToDisplay = latestShift.id;
                     labelPrefix = "Latest Shift";
@@ -753,8 +661,8 @@
 
             if (shiftToDisplay) {
                 let salesQuery = supabase.from('sales').select('total_amount, unit_price, cost_price, quantity').eq('shift_id', shiftToDisplay);
-                if (selectedBranchId) {
-                    salesQuery = salesQuery.eq('branch_id', selectedBranchId);
+                if (branchId) {
+                    salesQuery = salesQuery.eq('branch_id', branchId);
                 }
                 
                 const { data: shiftSales } = await salesQuery;
@@ -771,8 +679,8 @@
 
             // 2. Global Sales History (filtered by branch)
             let salesQuery = supabase.from('sales').select('total_amount, unit_price, cost_price, quantity');
-            if (selectedBranchId) {
-                salesQuery = salesQuery.eq('branch_id', selectedBranchId);
+            if (branchId) {
+                salesQuery = salesQuery.eq('branch_id', branchId);
             }
             
             const { data: allSales } = await salesQuery;
@@ -786,8 +694,8 @@
 
             // 3. Suppliers (filtered by branch)
             let suppliersQuery = supabase.from('suppliers').select('id, name').order('name');
-            if (selectedBranchId) {
-                suppliersQuery = suppliersQuery.eq('branch_id', selectedBranchId);
+            if (branchId) {
+                suppliersQuery = suppliersQuery.eq('branch_id', branchId);
             }
             
             const { data: sups } = await suppliersQuery;
@@ -801,8 +709,8 @@
 
             // 4. Products & Valuation (filtered by branch)
             let productsQuery = supabase.from('products').select('*, suppliers(name)').order('name');
-            if (selectedBranchId) {
-                productsQuery = productsQuery.eq('branch_id', selectedBranchId);
+            if (branchId) {
+                productsQuery = productsQuery.eq('branch_id', branchId);
             }
             
             const { data: items } = await productsQuery;
@@ -903,7 +811,7 @@
             btn.disabled = true;
             
             try {
-                const branchId = selectedBranchId || currentBranchId;
+                const branchId = getCurrentBranchId();
                 
                 const { error } = await supabase
                     .from('products')
@@ -933,10 +841,10 @@
         btn.innerHTML = '<span class="spinner"></span> ADDING...';
         btn.disabled = true;
 
-        const branchId = selectedBranchId || currentBranchId;
+        const branchId = getCurrentBranchId();
         
         if (!branchId) {
-            alert("Please select a branch first");
+            alert("Branch information not found. Please log out and log in again.");
             btn.innerHTML = originalText;
             btn.disabled = false;
             return;
@@ -988,16 +896,7 @@
     async function init() {
         await loadBranches();
         await loadUserProfile();
-        
-        // Set default branch selector
-        const savedBranch = localStorage.getItem('admin_branch_preference');
-        if (savedBranch && (savedBranch === 'all' || savedBranch === 'MUTOMO' || savedBranch === 'KITUI')) {
-            document.getElementById('branchSelector').value = savedBranch;
-        } else {
-            document.getElementById('branchSelector').value = 'all';
-        }
-        
-        await handleBranchChange();
+        await loadData();
     }
     
     init();
