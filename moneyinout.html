@@ -3,9 +3,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JEPE ADMIN | Cash Transactions</title>
+    <title>JEPE CASHIER | Cash Transactions</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { 
             --primary: #4f46e5; 
@@ -36,6 +37,7 @@
             left: 0; top: 0; height: 100vh; z-index: 4000;
             transform: translateX(-100%);
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
         }
         
         @media (min-width: 1025px) {
@@ -47,15 +49,43 @@
         .sidebar.active { transform: translateX(0); }
 
         .sidebar-header {
-            padding: 25px; font-weight: 800; font-size: 1.1rem; color: #fff;
-            display: flex; align-items: center; justify-content: space-between;
+            padding: 25px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: #fff;
             border-bottom: 1px solid rgba(255,255,255,0.05);
         }
+        
+        .branch-info {
+            background: rgba(79, 70, 229, 0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px;
+        }
+        .branch-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            color: #94a3b8;
+        }
+        .branch-name {
+            font-weight: 800;
+            color: white;
+            font-size: 0.9rem;
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .branch-name i { color: var(--primary); }
 
         .close-sidebar {
             background: rgba(255,255,255,0.1); border: none; color: white;
             width: 35px; height: 35px; border-radius: 8px; font-size: 1.5rem;
             display: flex; align-items: center; justify-content: center; cursor: pointer;
+            position: absolute;
+            top: 20px;
+            right: 20px;
         }
 
         .nav-list { list-style: none; padding: 15px; margin: 0; flex-grow: 1; overflow-y: auto; }
@@ -64,7 +94,7 @@
             color: #94a3b8; font-weight: 600; font-size: 0.85rem; border-radius: 10px;
             margin-bottom: 2px; transition: 0.2s; gap: 12px;
         }
-        .nav-link span { font-size: 1.1rem; }
+        .nav-link i { width: 20px; text-align: center; }
         .nav-link:hover { background: rgba(255,255,255,0.05); color: #fff; }
         .nav-link.active { background: var(--primary); color: #fff; }
 
@@ -77,23 +107,66 @@
             position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); z-index: 2000;
         }
 
+        /* Branch Badge */
+        .branch-badge {
+            background: var(--primary);
+            color: white;
+            padding: 6px 15px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .summary-banner {
             background: white; border: 1px solid var(--border); border-radius: 16px;
             padding: 20px; display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .card { background: var(--card); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 30px;}
         
         .table-responsive { width: 100%; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; min-width: 800px; }
-        th { text-align: left; padding: 15px 20px; background: #f8fafc; font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border); }
-        td { padding: 15px 20px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+        th { 
+            text-align: left; 
+            padding: 15px 20px; 
+            background: #f8fafc; 
+            font-size: 0.7rem; 
+            text-transform: uppercase; 
+            color: var(--text-dim); 
+            border-bottom: 1px solid var(--border); 
+            font-weight: 800;
+        }
+        td { 
+            padding: 15px 20px; 
+            border-bottom: 1px solid var(--border); 
+            font-size: 0.85rem; 
+            vertical-align: middle;
+        }
 
         .mobile-list { display: none; }
-        .transaction-card { padding: 16px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; }
+        .transaction-card { 
+            padding: 16px; 
+            border-bottom: 1px solid var(--border); 
+            display: flex; 
+            flex-direction: column; 
+            gap: 6px; 
+            background: white;
+        }
 
-        .type-pill { padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; }
+        .type-pill { 
+            padding: 4px 8px; 
+            border-radius: 6px; 
+            font-size: 0.65rem; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            display: inline-block;
+        }
         .type-in { background: #dcfce7; color: #166534; }
         .type-out { background: #fee2e2; color: #991b1b; }
 
@@ -104,21 +177,47 @@
         .overlay.active { display: block; }
 
         /* --- FAB & GUIDES --- */
-        .fab-menu { position: fixed; bottom: 30px; left: 25px; width: 65px; height: 65px; background: #4f46e5; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.6rem; box-shadow: 0 10px 30px rgba(79, 70, 229, 0.4); border: 4px solid white; cursor: pointer; z-index: 4500; }
+        .fab-menu { 
+            position: fixed; bottom: 30px; left: 25px; width: 65px; height: 65px; 
+            background: var(--primary); border-radius: 50%; display: flex; 
+            align-items: center; justify-content: center; color: white; 
+            font-size: 1.6rem; box-shadow: 0 10px 30px rgba(79, 70, 229, 0.4); 
+            border: 4px solid white; cursor: pointer; z-index: 4500; 
+        }
         
-        .guide-hand { position: fixed; bottom: 105px; left: 32px; z-index: 4600; display: flex; flex-direction: column; align-items: center; animation: bounce 1.5s infinite; }
-        .guide-label { background: #0f172a; color: white; padding: 3px 8px; border-radius: 6px; font-size: 0.55rem; font-weight: 800; margin-bottom: 2px; border: 1px solid #4f46e5; }
+        .guide-hand { 
+            position: fixed; bottom: 105px; left: 32px; z-index: 4600; 
+            display: flex; flex-direction: column; align-items: center; 
+            animation: bounce 1.5s infinite; 
+        }
+        .guide-label { 
+            background: #0f172a; color: white; padding: 3px 8px; 
+            border-radius: 6px; font-size: 0.55rem; font-weight: 800; 
+            margin-bottom: 2px; border: 1px solid var(--primary); 
+        }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
         .btn-load { 
             width: 100%; padding: 18px; background: #fff; border: none; 
-            color: var(--primary); font-weight: 800; cursor: pointer; border-top: 1px solid var(--border);
+            color: var(--primary); font-weight: 800; cursor: pointer; 
+            border-top: 1px solid var(--border);
         }
+        
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         @media (max-width: 1024px) {
             .table-responsive { display: none; }
             .mobile-list { display: block; }
-            .summary-banner { flex-direction: column; gap: 12px; text-align: center; }
+            .summary-banner { flex-direction: column; text-align: center; }
             .main-content { padding: 15px; margin-top: calc(var(--header-height) + 15px); }
         }
     </style>
@@ -129,29 +228,39 @@
 
 <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="background: var(--primary); width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: white; font-weight: 800;">J</div> 
-            <span>JEPE HUB</span>
-        </div>
-        <button onclick="toggleSidebar()" class="close-sidebar">&times;</button>
+        <i class="fas fa-store"></i> JEPE CASHIER
     </div>
+    
+    <!-- Branch Info Display -->
+    <div class="branch-info" id="sidebarBranchInfo">
+        <div class="branch-label">Your Assigned Branch</div>
+        <div class="branch-name" id="sidebarBranchName">
+            <i class="fas fa-store"></i>
+            <span>Loading...</span>
+        </div>
+    </div>
+    
+    <button onclick="toggleSidebar()" class="close-sidebar">&times;</button>
+    
     <div class="nav-list">
-        <a href="cashier.html" class="nav-link"><span>📊</span> Dashboard</a>
-        <a href="cashiergashub.html" class="nav-link"><span>⛽</span> Gas Hub</a>
-        <a href="pos.html" class="nav-link"><span>🛒</span> Shopping / POS</a>
-        <a href="moneyinout.html" class="nav-link active"><span>💸</span> Money In/Out</a>
-        <a href="shift history cashier.html" class="nav-link"><span>⏳</span> Shift History</a>
-        <a href="sales_reports.html" class="nav-link"><span>📈</span> Sales History</a>
-        <a href="low-stock-cashier.html" class="nav-link"><span>⚠️</span> Low Stock</a>
-        <a href="debtors.html" class="nav-link"><span>👥</span> Debtors</a>
-        <a href="supplierscashier.html" class="nav-link"><span>🤝</span> Suppliers</a>
-        <a href="gas_delivery.html" class="nav-link"><span>🏍️</span> Delivery Hub</a>
-        <a href="cashier_inventory.html" class="nav-link"><span>➕</span> Manage Items</a>
-        <a href="sale edit cashier.html" class="nav-link"><span>✏️</span> Edit Sales</a>
-        <a href="cashier_report.html" class="nav-link"><span>📝</span> Daily Report</a>
+        <a href="cashier.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        <a href="cashiergashub.html" class="nav-link"><i class="fas fa-fire"></i> Gas Hub</a>
+        <a href="pos.html" class="nav-link"><i class="fas fa-shopping-cart"></i> Shopping / POS</a>
+        <a href="moneyinout.html" class="nav-link active"><i class="fas fa-money-bill-wave"></i> Money In/Out</a>
+        <a href="shift history cashier.html" class="nav-link"><i class="fas fa-history"></i> Shift History</a>
+        <a href="sales_reports.html" class="nav-link"><i class="fas fa-chart-line"></i> Sales History</a>
+        <a href="low-stock-cashier.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> Low Stock</a>
+        <a href="debtors.html" class="nav-link"><i class="fas fa-users"></i> Debtors</a>
+        <a href="supplierscashier.html" class="nav-link"><i class="fas fa-handshake"></i> Suppliers</a>
+        <a href="gas_delivery.html" class="nav-link"><i class="fas fa-truck"></i> Delivery Hub</a>
+        <a href="cashier_inventory.html" class="nav-link"><i class="fas fa-boxes"></i> Manage Items</a>
+        <a href="sale edit cashier.html" class="nav-link"><i class="fas fa-edit"></i> Edit Sales</a>
+        <a href="cashier_report.html" class="nav-link"><i class="fas fa-file-alt"></i> Daily Report</a>
        
         <div style="margin-top: 20px; padding: 15px; border-top: 1px solid rgba(255,255,255,0.05);">
-            <button onclick="logoutUser()" style="width:100%; background:#ef4444; color:white; border:none; padding:12px; border-radius:10px; font-weight:700; cursor:pointer;">🚪 Logout System</button>
+            <button onclick="logoutUser()" style="width:100%; background:var(--danger); color:white; border:none; padding:12px; border-radius:10px; font-weight:700; cursor:pointer;">
+                <i class="fas fa-sign-out-alt"></i> Logout System
+            </button>
         </div>
     </div>
 </nav>
@@ -170,11 +279,20 @@
 
 <main class="main-content">
     <div class="summary-banner">
-        <div>
-            <small style="color:var(--text-dim); font-weight:800; text-transform:uppercase; font-size:0.65rem;">Total Ledger Balance</small>
-            <span id="net-balance" style="font-size:1.7rem; font-weight:800; display:block; margin-top: 4px;">Ksh 0</span>
+        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+            <div>
+                <small style="color:var(--text-dim); font-weight:800; text-transform:uppercase; font-size:0.65rem;">
+                    <i class="fas fa-scale-balanced"></i> Ledger Balance
+                </small>
+                <span id="net-balance" style="font-size:1.7rem; font-weight:800; display:block; margin-top: 4px;">Ksh 0</span>
+            </div>
+            <span class="branch-badge" id="branchDisplay">
+                <i class="fas fa-store"></i> <span>Loading...</span>
+            </span>
         </div>
-        <div id="record-count" style="font-weight:700; color:var(--primary); font-size:0.75rem; background: #eef2ff; padding: 8px 16px; border-radius: 20px;">0 Records</div>
+        <div id="record-count" style="font-weight:700; color:var(--primary); font-size:0.75rem; background: #eef2ff; padding: 8px 16px; border-radius: 20px;">
+            0 Records
+        </div>
     </div>
 
     <div class="card">
@@ -189,17 +307,91 @@
                         <th>Description</th>
                     </tr>
                 </thead>
-                <tbody id="data-body-desktop"></tbody>
+                <tbody id="data-body-desktop">
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px;">
+                            <div class="spinner" style="margin: 0 auto;"></div>
+                            Loading transactions...
+                        </td>
+                    </tr>
+                </tbody>
             </table>
         </div>
-        <div id="data-body-mobile" class="mobile-list"></div>
+        <div id="data-body-mobile" class="mobile-list">
+            <div style="text-align: center; padding: 40px;">
+                <div class="spinner" style="margin: 0 auto;"></div>
+                <p>Loading transactions...</p>
+            </div>
+        </div>
         <button id="loadMore" class="btn-load">LOAD MORE TRANSACTIONS</button>
     </div>
 </main>
 
 <script type="module">
     import { supabase } from './auth.js';
+    
     let limit = 20;
+    let allTransactions = [];
+    let currentUser = null;
+    let currentBranchId = null;
+    let currentBranch = null;
+
+    // ==================== BRANCH FUNCTIONS ====================
+
+    async function loadUserProfile() {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return null;
+            }
+            
+            currentUser = user;
+            
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select(`
+                    *,
+                    branches (
+                        id,
+                        name,
+                        code,
+                        location
+                    )
+                `)
+                .eq('id', user.id)
+                .single();
+            
+            if (error) throw error;
+            
+            currentBranchId = profile.branch_id;
+            currentBranch = profile.branches;
+            
+            const session = {
+                user: user,
+                profile: profile,
+                branch: profile.branches,
+                role: profile.role
+            };
+            localStorage.setItem('pos_session', JSON.stringify(session));
+            
+            // Update UI with branch info
+            const branchDisplay = document.getElementById('branchDisplay');
+            const sidebarBranch = document.getElementById('sidebarBranchName');
+            
+            if (branchDisplay && profile.branches) {
+                branchDisplay.innerHTML = `<i class="fas fa-store"></i> ${profile.branches.name}`;
+            }
+            if (sidebarBranch && profile.branches) {
+                sidebarBranch.textContent = profile.branches.name;
+            }
+            
+            return profile;
+        } catch (error) {
+            console.error("Error loading profile:", error);
+            return null;
+        }
+    }
 
     window.toggleSidebar = () => {
         const sidebar = document.getElementById('sidebar');
@@ -214,6 +406,7 @@
     };
 
     window.logoutUser = async () => { 
+        localStorage.removeItem('pos_session');
         await supabase.auth.signOut(); 
         location.href = 'index.html'; 
     };
@@ -224,65 +417,136 @@
     }
 
     async function fetchData() {
-        const { data, error } = await supabase
-            .from('cash_transactions')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(limit);
+        try {
+            if (!currentBranchId) {
+                console.error("No branch ID found");
+                return;
+            }
 
-        if (error) return;
+            const { data, error } = await supabase
+                .from('cash_transactions')
+                .select('*')
+                .eq('branch_id', currentBranchId) // Auto-filter by cashier's branch
+                .order('created_at', { ascending: false })
+                .limit(limit);
 
+            if (error) throw error;
+
+            allTransactions = data || [];
+            console.log(`Loaded ${allTransactions.length} transactions for branch ${currentBranch?.name}`);
+            
+            renderTransactions(allTransactions);
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            document.getElementById('data-body-desktop').innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 40px; color: var(--danger);">
+                        <i class="fas fa-exclamation-triangle"></i> Error loading transactions
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    function renderTransactions(transactions) {
         let net = 0;
+        let totalIn = 0;
+        let totalOut = 0;
         let desktopHTML = '';
         let mobileHTML = '';
 
-        data.forEach(t => {
-            const isMoneyIn = t.type === 'Money In' || t.type === 'In';
-            const amount = parseFloat(t.amount);
-            net += isMoneyIn ? amount : -amount;
-            
-            const dt = new Date(t.created_at);
-            const date = dt.toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
-            const time = dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-
-            desktopHTML += `
+        if (transactions.length === 0) {
+            desktopHTML = `
                 <tr>
-                    <td><b>${date}</b> <small style="color:var(--text-dim)">${time}</small></td>
-                    <td><span class="type-pill ${isMoneyIn ? 'type-in' : 'type-out'}">${t.type}</span></td>
-                    <td><b>${t.category || 'Other'}</b></td>
-                    <td style="color:${isMoneyIn ? 'var(--success)' : 'var(--danger)'}; font-weight:800;">
-                        ${isMoneyIn ? '+' : '-'} Ksh ${amount.toLocaleString()}
+                    <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-dim);">
+                        <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        No transactions found
                     </td>
-                    <td style="color:var(--text-dim); font-size:0.8rem;">${t.description || '-'}</td>
-                </tr>`;
+                </tr>
+            `;
+            mobileHTML = `
+                <div style="text-align: center; padding: 40px; color: var(--text-dim);">
+                    <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <p>No transactions found</p>
+                </div>
+            `;
+        } else {
+            transactions.forEach(t => {
+                const isMoneyIn = t.type === 'Money In' || t.type === 'In';
+                const amount = parseFloat(t.amount || 0);
+                
+                if (isMoneyIn) {
+                    totalIn += amount;
+                    net += amount;
+                } else {
+                    totalOut += amount;
+                    net -= amount;
+                }
+                
+                const dt = new Date(t.created_at);
+                const date = dt.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+                const time = dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
 
-            mobileHTML += `
-                <div class="transaction-card">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <b style="font-size:0.9rem;">${t.category || 'General'}</b>
-                        <span style="font-weight:800; color:${isMoneyIn ? 'var(--success)' : 'var(--danger)'}">
+                desktopHTML += `
+                    <tr>
+                        <td>
+                            <b>${date}</b>
+                            <br><small style="color:var(--text-dim); font-size:0.7rem;">${time}</small>
+                        </td>
+                        <td><span class="type-pill ${isMoneyIn ? 'type-in' : 'type-out'}">${t.type}</span></td>
+                        <td><b>${t.category || 'Other'}</b></td>
+                        <td style="color:${isMoneyIn ? 'var(--success)' : 'var(--danger)'}; font-weight:800;">
                             ${isMoneyIn ? '+' : '-'} Ksh ${amount.toLocaleString()}
-                        </span>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
-                        <span class="type-pill ${isMoneyIn ? 'type-in' : 'type-out'}">${t.type}</span>
-                        <small style="color:var(--text-dim); font-size:0.7rem;">${date}, ${time}</small>
-                    </div>
-                    ${t.description ? `<small style="color:var(--text-dim); font-style:italic; margin-top:4px;">${t.description}</small>` : ''}
-                </div>`;
-        });
+                        </td>
+                        <td style="color:var(--text-dim); font-size:0.8rem;">${t.description || '-'}</td>
+                    </tr>`;
+
+                mobileHTML += `
+                    <div class="transaction-card">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span class="type-pill ${isMoneyIn ? 'type-in' : 'type-out'}">${t.type}</span>
+                            <small style="color:var(--text-dim);">${date} • ${time}</small>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <b>${t.category || 'General'}</b>
+                            <span style="font-weight:800; color:${isMoneyIn ? 'var(--success)' : 'var(--danger)'};">
+                                ${isMoneyIn ? '+' : '-'} Ksh ${amount.toLocaleString()}
+                            </span>
+                        </div>
+                        ${t.description ? `
+                            <div style="background:#f1f5f9; padding:8px; border-radius:8px; font-size:0.75rem; color:var(--text-dim); margin-top:5px;">
+                                <i class="fas fa-comment"></i> ${t.description}
+                            </div>
+                        ` : ''}
+                    </div>`;
+            });
+        }
 
         document.getElementById('data-body-desktop').innerHTML = desktopHTML;
         document.getElementById('data-body-mobile').innerHTML = mobileHTML;
         
         const netEl = document.getElementById('net-balance');
-        netEl.innerText = `Ksh ${net.toLocaleString()}`;
+        netEl.innerHTML = `Ksh ${net.toLocaleString()}`;
         netEl.style.color = net >= 0 ? 'var(--success)' : 'var(--danger)';
-        document.getElementById('record-count').innerText = `${data.length} Transactions`;
+        
+        document.getElementById('record-count').innerHTML = `
+            <i class="fas fa-list"></i> ${transactions.length} Transaction${transactions.length !== 1 ? 's' : ''}
+        `;
     }
 
-    document.getElementById('loadMore').onclick = () => { limit += 20; fetchData(); };
-    fetchData();
+    document.getElementById('loadMore').addEventListener('click', () => { 
+        limit += 20; 
+        fetchData(); 
+    });
+
+    async function init() {
+        const profile = await loadUserProfile();
+        if (profile) {
+            await fetchData();
+        }
+    }
+
+    init();
 </script>
 </body>
 </html>
