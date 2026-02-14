@@ -3,208 +3,208 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JEPE ADMIN | Debtors & Recovery - Multi-Branch</title>
+    <title>JEPE AUTOSPARES | Multi-Branch Admin Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { 
-            --primary: #4f46e5; 
-            --primary-dark: #4338ca;
-            --bg: #f8fafc; 
-            --card: #ffffff; 
-            --border: #e2e8f0; 
-            --text: #1e293b; 
-            --text-dim: #64748b;
-            --danger: #ef4444; 
-            --success: #10b981; 
-            --sidebar-width: 280px;
-            --sidebar-bg: #0f172a;
-            --warning: #f59e0b;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-        
+        :root { 
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --admin-dark: #0f172a;
+            --admin-accent: #1e3a8a;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-dim: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --blue: #2563eb;
+            --switch-btn: #0ea5e9;
+            --border: #e2e8f0;
+            --shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
             background: var(--bg); 
             color: var(--text); 
-            margin: 0; 
-            display: flex; 
-            min-height: 100vh; 
+            min-height: 100vh;
         }
 
-        /* --- SIDEBAR --- */
-        .sidebar {
-            width: var(--sidebar-width); 
-            background: var(--sidebar-bg);
+        /* Navigation */
+        .nav-overlay { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(15, 23, 42, 0.98); 
+            backdrop-filter: blur(15px); 
+            z-index: 3000; 
+            display: none; 
+            flex-direction: column; 
+            padding: 60px 20px 40px; 
+            overflow-y: auto; 
+        }
+        .nav-overlay.active { display: flex; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .nav-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 10px; 
+            max-width: 500px; 
+            margin: 0 auto; 
+            width: 100%;
+        }
+        
+        .nav-card { 
+            background: rgba(255, 255, 255, 0.08); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            border-radius: 15px; 
+            padding: 15px 8px; 
+            text-align: center; 
+            color: white; 
+            text-decoration: none; 
             display: flex; 
             flex-direction: column; 
-            position: fixed; 
-            left: 0; 
-            top: 0; 
-            height: 100vh; 
-            z-index: 3000;
-            transition: transform 0.3s ease;
-            overflow-y: auto;
-        }
-        
-        .sidebar-header { 
-            padding: 30px 25px; 
-            font-weight: 800; 
-            color: #ffffff; 
-            font-size: 1.3rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .nav-list { 
-            list-style: none; 
-            padding: 20px 15px; 
-            margin: 0; 
-            flex-grow: 1; 
-        }
-        
-        .nav-item {
-            display: flex; 
             align-items: center; 
-            padding: 14px 18px; 
-            text-decoration: none; 
-            color: #94a3b8; 
-            font-weight: 600; 
-            font-size: 0.9rem; 
-            border-radius: 12px; 
-            margin-bottom: 6px; 
-            gap: 12px;
+            gap: 5px;
             transition: all 0.2s;
-        }
-        
-        .nav-item i { width: 20px; text-align: center; }
-        
-        .nav-item:hover { 
-            background: rgba(255,255,255,0.1); 
-            color: white; 
-        }
-        
-        .nav-item.active { 
-            background: var(--primary); 
-            color: #ffffff; 
-        }
-
-        /* --- BRANCH INFO IN SIDEBAR --- */
-        .branch-info {
-            padding: 15px 25px;
-            margin: 10px 15px 20px;
-            background: rgba(79, 70, 229, 0.2);
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .branch-label {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            color: #94a3b8;
-            letter-spacing: 0.5px;
-        }
-        
-        .branch-name {
-            font-weight: 800;
-            color: white;
-            font-size: 0.95rem;
-            margin-top: 3px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .branch-name i { color: var(--primary); }
-
-        /* --- MOBILE HEADER --- */
-        .mobile-header {
-            display: none; 
-            background: var(--sidebar-bg); 
-            color: white; 
-            padding: 0 20px; 
-            position: fixed; 
-            top: 0; 
-            width: 100%; 
-            height: 64px;
-            z-index: 1000; 
-            justify-content: space-between; 
-            align-items: center;
-        }
-
-        .mobile-header button {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.5rem;
             cursor: pointer;
         }
-
-        /* --- MAIN CONTENT --- */
-        .main-content { 
-            margin-left: var(--sidebar-width); 
-            flex-grow: 1; 
-            padding: 30px; 
-            width: 100%; 
-            overflow-x: hidden; 
+        .nav-card:hover { background: rgba(255, 255, 255, 0.15); transform: translateY(-2px); }
+        .nav-card span { font-size: 1.2rem; }
+        .nav-card small { font-size: 0.7rem; font-weight: 600; }
+        .switch-card { background: var(--switch-btn); grid-column: span 2; }
+        .nav-header-title { 
+            color: white; 
+            text-align: center; 
+            font-weight: 800; 
+            font-size: 1.4rem; 
+            margin-bottom: 20px; 
+            letter-spacing: 1px; 
+            border-bottom: 2px solid rgba(255,255,255,0.1); 
+            padding-bottom: 10px; 
         }
 
-        /* Page Header with Branch Selector */
-        .page-header {
+        /* FAB Menu */
+        .fab-menu { 
+            position: fixed; 
+            bottom: 30px; 
+            left: 25px; 
+            width: 65px; 
+            height: 65px; 
+            background: var(--admin-accent); 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: white; 
+            font-size: 1.6rem; 
+            box-shadow: 0 10px 30px rgba(30, 58, 138, 0.4); 
+            border: 4px solid white; 
+            cursor: pointer; 
+            z-index: 2000; 
+            transition: all 0.3s;
+        }
+        .fab-menu:hover { transform: scale(1.1); }
+        
+        .guide-hand { 
+            position: fixed; 
+            bottom: 105px; 
+            left: 32px; 
+            z-index: 2500; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            animation: bounce 1.5s infinite; 
+        }
+        .guide-hand span { font-size: 1.8rem; }
+        .guide-label { 
+            background: var(--admin-dark); 
+            color: white; 
+            padding: 3px 8px; 
+            border-radius: 6px; 
+            font-size: 0.55rem; 
+            font-weight: 800; 
+            margin-bottom: 2px; 
+            border: 1px solid var(--admin-accent); 
+        }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+        /* Header */
+        header { 
+            background: white; 
+            padding: 20px; 
+            border-bottom: 1px solid var(--border); 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+            box-shadow: var(--shadow);
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
             display: flex;
+            flex-wrap: wrap;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
             gap: 15px;
         }
         
-        .page-title h1 {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--text);
+        .brand-info h1 { 
+            font-size: 1.4rem; 
+            font-weight: 800; 
+            color: var(--admin-accent); 
+            line-height: 1.2;
+        }
+        .brand-info h2 { 
+            font-size: 0.9rem; 
+            font-weight: 600; 
+            color: var(--text-dim); 
+            margin-top: 5px; 
         }
         
-        .page-title p {
-            color: var(--text-dim);
-            font-size: 0.85rem;
-            margin-top: 5px;
+        /* Branch Filter */
+        .filter-section {
             display: flex;
-            align-items: center;
-            gap: 5px;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
         }
         
-        .branch-selector-container {
+        .branch-filter-container {
             display: flex;
             align-items: center;
             gap: 10px;
             flex-wrap: wrap;
+            justify-content: flex-end;
         }
         
         .branch-select {
             padding: 12px 20px;
             border-radius: 30px;
-            border: 2px solid var(--primary);
+            border: 2px solid var(--admin-accent);
             background: white;
             font-weight: 600;
             font-size: 0.9rem;
-            color: var(--text);
+            color: var(--admin-dark);
             cursor: pointer;
             min-width: 220px;
             outline: none;
+            transition: all 0.2s;
         }
-        
-        .branch-select:focus {
-            border-color: var(--primary-dark);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
+        .branch-select:hover { border-color: var(--primary); }
         
         .branch-badge {
-            background: var(--primary);
+            background: var(--admin-accent);
             color: white;
             padding: 8px 18px;
             border-radius: 30px;
@@ -215,282 +215,318 @@
             gap: 8px;
             white-space: nowrap;
         }
+        
+        .status-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 0.85rem;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #cbd5e1;
+        }
+        
+        .date-range {
+            color: var(--text-dim);
+            font-weight: 500;
+        }
 
-        /* Report Summary Cards */
-        .report-summary { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px; 
-            margin-bottom: 30px; 
+        /* Main Container */
+        .container { 
+            max-width: 1200px; 
+            margin: 20px auto; 
+            padding: 0 15px 100px; 
         }
-        
-        .summary-box { 
-            padding: 20px; 
-            border-radius: 20px; 
-            background: white; 
-            border: 1px solid var(--border);
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-        }
-        
-        .summary-box small { 
-            display: block; 
-            font-size: 0.65rem; 
+
+        .section-title { 
+            font-size: 0.9rem; 
             font-weight: 800; 
-            color: var(--text-dim); 
+            color: var(--admin-dark); 
+            margin-bottom: 15px; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        
-        .summary-box span { 
-            font-size: 1.4rem; 
-            font-weight: 800; 
-            display: block; 
-            margin-top: 8px; 
+        .section-title i { color: var(--primary); }
+
+        .card { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 20px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
+            border: 1px solid var(--border); 
+            margin-bottom: 20px; 
         }
 
-        .grid { 
-            display: grid; 
-            grid-template-columns: 380px 1fr; 
-            gap: 30px; 
+        /* Branch Comparison Cards */
+        .branch-comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
         }
         
-        .card { 
-            background: var(--card); 
-            border-radius: 24px; 
-            border: 1px solid var(--border); 
-            padding: 25px;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+        .branch-stat-card {
+            color: white;
+            padding: 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 3px solid transparent;
+        }
+        .branch-stat-card:hover { 
+            transform: translateY(-5px); 
+            border-color: white;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
         }
         
-        .card-title {
-            font-size: 0.85rem;
+        .branch-stat-card.mutomo { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); }
+        .branch-stat-card.kitui { background: linear-gradient(135deg, #065f46 0%, #059669 100%); }
+        
+        .branch-stat-card h4 {
+            margin: 0 0 15px;
+            font-size: 1.2rem;
             font-weight: 800;
-            color: var(--primary);
-            text-transform: uppercase;
-            margin-bottom: 20px;
             display: flex;
             align-items: center;
             gap: 8px;
-            letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+            padding-bottom: 10px;
         }
         
-        .card-title i { font-size: 1rem; }
-        
-        input, select, textarea { 
-            width: 100%; 
-            padding: 14px 16px; 
-            border: 1px solid var(--border); 
-            border-radius: 14px; 
-            font-size: 0.9rem; 
-            background: #fcfcfc; 
-            outline: none;
-            transition: all 0.2s;
-            font-family: inherit;
-        }
-        
-        input:focus, select:focus, textarea:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-        
-        .btn-primary { 
-            width: 100%; 
-            padding: 16px; 
-            background: var(--primary); 
-            color: white; 
-            border: none; 
-            border-radius: 14px; 
-            font-weight: 700; 
-            font-size: 0.95rem; 
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-        }
-        
-        .btn-primary:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* Stock Info Cards */
-        .stock-info {
+        .branch-stat-card .stat-row {
             display: flex;
-            gap: 10px;
-            margin: 15px 0;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
         }
         
-        .stock-box {
-            flex: 1;
-            padding: 12px;
-            background: #f8fafc;
-            border-radius: 12px;
-            text-align: center;
-            border: 1px solid var(--border);
-        }
+        .branch-stat-card .stat-label { opacity: 0.9; }
+        .branch-stat-card .stat-value { font-weight: 800; }
         
-        .stock-box small {
-            font-size: 0.6rem;
-            color: var(--text-dim);
-            display: block;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-        
-        .stock-box span {
+        .branch-stat-card .total-sales {
+            font-size: 1.3rem;
             font-weight: 800;
-            font-size: 1rem;
-            display: block;
-            margin-top: 4px;
-        }
-        
-        .stock-box.warning span { color: var(--danger); }
-        .stock-box.primary span { color: var(--primary); }
-
-        /* Table Styles */
-        .table-container { 
-            width: 100%; 
-            overflow-x: auto;
             margin-top: 15px;
+            text-align: right;
+            border-top: 1px solid rgba(255,255,255,0.3);
+            padding-top: 10px;
+        }
+
+        /* Float Grid */
+        .float-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
+            gap: 12px; 
+            margin-top: 10px;
         }
         
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            min-width: 900px;
-        }
-        
-        th { 
-            text-align: left; 
-            padding: 15px; 
+        .float-item { 
             background: #f8fafc; 
-            font-size: 0.7rem; 
-            color: var(--text-dim); 
-            text-transform: uppercase;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-        }
-        
-        td { 
             padding: 15px; 
-            border-bottom: 1px solid var(--border); 
-            font-size: 0.9rem; 
-            vertical-align: middle;
+            border-radius: 15px; 
+            border: 1px solid var(--border); 
         }
-
-        .badge { 
-            padding: 6px 12px; 
-            border-radius: 10px; 
-            font-size: 0.7rem; 
-            font-weight: 800; 
-            display: inline-block;
-        }
-        
-        .bg-unpaid { 
-            background: #fee2e2; 
-            color: #991b1b; 
-        }
-        
-        .bg-paid { 
-            background: #dcfce7; 
-            color: #166534; 
-        }
-        
-        .tabs { 
-            display: flex; 
-            gap: 5px; 
-            background: #f1f5f9; 
-            padding: 5px; 
-            border-radius: 14px; 
-            margin-bottom: 20px; 
-        }
-        
-        .tab { 
-            flex: 1; 
-            padding: 10px; 
-            border-radius: 10px; 
-            border: none; 
+        .float-item label { 
+            display: block; 
+            font-size: 0.65rem; 
             font-weight: 700; 
-            font-size: 0.8rem; 
-            cursor: pointer; 
             color: var(--text-dim); 
-            background: none;
-            transition: all 0.2s;
+            text-transform: uppercase; 
+            margin-bottom: 5px; 
         }
-        
-        .tab.active { 
-            background: white; 
-            color: var(--primary); 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
-        }
-
-        /* Modal Styles */
-        .overlay { 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(15, 23, 42, 0.6); 
-            display: none; 
-            z-index: 3500; 
-            backdrop-filter: blur(4px); 
+        .float-item span { 
+            font-size: 1rem; 
+            font-weight: 800; 
+            color: var(--admin-dark); 
         }
 
-        .modal { 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(0,0,0,0.7); 
-            display: none; 
-            align-items: center; 
-            justify-content: center; 
-            z-index: 4000; 
+        /* Paybill Box */
+        .paybill-box { 
+            margin-top: 15px; 
+            background: #eff6ff; 
+            border: 2px solid #bfdbfe; 
+            border-radius: 15px; 
             padding: 20px; 
         }
+        .paybill-box label { 
+            font-size: 0.7rem; 
+            font-weight: 800; 
+            color: var(--blue); 
+            text-transform: uppercase; 
+        }
+        .paybill-main-val { 
+            font-size: 1.5rem; 
+            font-weight: 800; 
+            color: var(--admin-dark); 
+            margin: 5px 0;
+        }
+        .paybill-profit-val { 
+            font-size: 0.85rem; 
+            font-weight: 700; 
+            color: var(--success); 
+        }
         
-        .modal-content { 
-            background: white; 
-            padding: 30px; 
-            border-radius: 24px; 
+        .btn-expense { 
+            background: var(--danger); 
+            color: white; 
+            border: none; 
+            padding: 12px 20px; 
+            border-radius: 10px; 
+            font-size: 0.75rem; 
+            font-weight: 800; 
+            cursor: pointer; 
+            text-decoration: none; 
+            display: inline-block; 
+            transition: all 0.2s;
+        }
+        .btn-expense:hover { background: #dc2626; transform: translateY(-2px); }
+
+        /* Stats Grid */
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 12px; 
+        }
+        .stat-box { 
+            padding: 15px; 
+            border-radius: 15px; 
+            color: white; 
+        }
+        .stat-box small { 
+            font-size: 0.65rem; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            opacity: 0.9; 
+        }
+        .stat-box div { 
+            font-size: 1.1rem; 
+            font-weight: 800; 
+            margin-top: 5px; 
+        }
+        .rev-bg { background: linear-gradient(135deg, #2563eb, #1e40af); }
+        .prof-bg { background: linear-gradient(135deg, #059669, #047857); }
+        .in-bg { background: linear-gradient(135deg, #d97706, #b45309); }
+        .exp-bg { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+
+        /* Summary Table */
+        .summary-table { 
             width: 100%; 
-            max-width: 420px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            border-collapse: collapse; 
+            font-size: 0.85rem; 
         }
-        
-        .modal-content h3 {
-            margin: 0 0 10px;
-            font-size: 1.2rem;
+        .summary-table th { 
+            text-align: left; 
+            padding: 10px 8px; 
+            border-bottom: 2px solid var(--border); 
+            color: var(--text-dim); 
+            font-weight: 700;
         }
-        
-        .modal-info {
+        .summary-table td { 
+            padding: 8px; 
+            border-bottom: 1px solid var(--border); 
+            font-weight: 600; 
+        }
+        .row-total { 
+            background: #f1f5f9; 
+            font-weight: 800; 
+        }
+
+        /* Grid Lists */
+        .grid-list { 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 12px; 
+        }
+        @media (min-width: 768px) { .grid-list { grid-template-columns: repeat(2, 1fr); } }
+
+        .item-card { 
+            background: white; 
+            border: 1px solid var(--border); 
+            border-radius: 15px; 
+            padding: 15px; 
+            transition: all 0.2s; 
+        }
+        .item-card:hover { box-shadow: var(--shadow); }
+
+        .gas-pill { 
+            flex: 1; 
+            padding: 8px; 
+            border-radius: 10px; 
+            text-align: center; 
+        }
+        .pill-full { 
+            background: #ecfdf5; 
+            color: #065f46; 
+            border: 1px solid #a7f3d0; 
+        }
+        .pill-empty { 
+            background: #fff7ed; 
+            color: #9a3412; 
+            border: 1px solid #fed7aa; 
+        }
+
+        /* Form Elements */
+        input[type="text"], 
+        input[type="month"], 
+        .branch-select { 
+            width: 100%; 
+            padding: 12px 15px; 
+            border-radius: 10px; 
+            border: 1px solid var(--border); 
+            font-family: inherit; 
+            font-size: 0.9rem; 
+            outline: none;
+            transition: all 0.2s;
+        }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+
+        .load-more { 
+            width: 100%; 
+            padding: 15px; 
+            background: white; 
+            border: 2px dashed var(--border); 
+            border-radius: 12px; 
+            color: var(--text-dim); 
+            font-weight: 800; 
+            cursor: pointer; 
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .load-more:hover { 
+            border-color: var(--primary); 
+            color: var(--primary); 
+        }
+
+        /* No Data Message */
+        .no-data-message {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-dim);
             background: #f8fafc;
-            padding: 15px;
-            border-radius: 12px;
-            margin: 15px 0;
-            border-left: 4px solid var(--success);
+            border-radius: 15px;
+            border: 2px dashed var(--border);
+        }
+        .no-data-message i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #cbd5e1;
         }
 
         /* Loading Spinner */
-        .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 3px solid rgba(255,255,255,.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
         .loading-spinner {
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 40px;
         }
-        
-        .big-spinner {
+        .spinner {
             width: 40px;
             height: 40px;
             border: 4px solid var(--border);
@@ -498,287 +534,275 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Print Styles */
-        @media print {
-            body * { visibility: hidden; }
-            #print-area, #print-area * { visibility: visible; }
-            #print-area { position: absolute; left: 0; top: 0; width: 100%; }
+        /* Time Display */
+        .shift-timer-box {
+            display: flex;
+            gap: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
         }
+        .time-display { padding: 5px 10px; border-radius: 20px; background: #f8fafc; }
 
         /* Mobile Responsive */
-        @media (max-width: 1100px) {
-            .sidebar { transform: translateX(-100%); }
-            .sidebar.active { transform: translateX(0); }
-            .main-content { margin-left: 0; padding: 84px 15px 40px; }
-            .mobile-header { display: flex; }
-            .overlay.active { display: block; }
-            .grid { grid-template-columns: 1fr; }
-            .branch-selector-container { width: 100%; }
+        @media (max-width: 768px) {
+            .header-content { flex-direction: column; align-items: flex-start; }
+            .filter-section { width: 100%; align-items: flex-start; }
+            .branch-filter-container { width: 100%; flex-direction: column; }
             .branch-select { width: 100%; }
-            .report-summary { grid-template-columns: 1fr 1fr; }
-            
-            table, thead, tbody, th, td, tr { display: block; }
-            thead { display: none; }
-            tr { 
-                display: block; 
-                background: white; 
-                border: 1px solid var(--border); 
-                border-radius: 16px; 
-                margin-bottom: 15px; 
-                padding: 15px; 
-            }
-            td { 
-                display: flex; 
-                justify-content: space-between; 
-                align-items: center; 
-                padding: 8px 0; 
-                border: none; 
-                text-align: right; 
-            }
-            td::before { 
-                content: attr(data-label); 
-                font-weight: 700; 
-                color: var(--text-dim); 
-                font-size: 0.75rem; 
-                text-transform: uppercase; 
-                text-align: left; 
-            }
+            .branch-badge { width: 100%; justify-content: center; }
+            .status-section { width: 100%; justify-content: space-between; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .float-grid { grid-template-columns: 1fr 1fr; }
         }
     </style>
 </head>
 <body>
 
-<div id="print-area"></div>
-<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
-
-<nav class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <i class="fas fa-store"></i> JEPE ADMIN
-    </div>
-    
-    <!-- Branch Info Display -->
-    <div class="branch-info" id="sidebarBranchInfo">
-        <div class="branch-label">Your Assigned Branch</div>
-        <div class="branch-name" id="sidebarBranchName">
-            <i class="fas fa-store"></i>
-            <span>Loading...</span>
-        </div>
-    </div>
-    
-    <div class="nav-list">
-        <a href="admin.html" class="nav-item"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-        <a href="gas_hub.html" class="nav-item"><i class="fas fa-fire"></i> Gas Hub</a>
-        <a href="spares_hub.html" class="nav-item"><i class="fas fa-cogs"></i> Spare Parts</a>
-        <a href="motorbike_hub.html" class="nav-item"><i class="fas fa-motorcycle"></i> Motorbikes</a>
-
-        <div style="height:1px; background:rgba(255,255,255,0.1); margin:15px 0;"></div>
-
-        <a href="shift-history.html" class="nav-item"><i class="fas fa-history"></i> Daily Shifts</a>
-        <a href="money-history.html" class="nav-item"><i class="fas fa-money-bill-wave"></i> Money IN/OUT</a>
-        <a href="sales-history.html" class="nav-item"><i class="fas fa-chart-line"></i> Sales History</a>
-
-        <div style="height:1px; background:rgba(255,255,255,0.1); margin:15px 0;"></div>
-
-        <a href="inventory.html" class="nav-item"><i class="fas fa-plus-circle"></i> Add Stock</a>
-        <a href="sales_editor.html" class="nav-item"><i class="fas fa-edit"></i> Edit Stock</a>
-        <a href="admin-debtors.html" class="nav-item active"><i class="fas fa-users"></i> Debtors</a>
-        <a href="low_stock.html" class="nav-item"><i class="fas fa-exclamation-triangle"></i> Low Stock</a>
-        <a href="audit_trail.html" class="nav-item"><i class="fas fa-search"></i> Inventory Track</a>
-
-        <div style="height:1px; background:rgba(255,255,255,0.1); margin:15px 0;"></div>
-
-        <a href="reports.html" class="nav-item"><i class="fas fa-file-alt"></i> Reports</a>
-        <a href="price_audits.html" class="nav-item"><i class="fas fa-tags"></i> Underpriced</a>
-        <a href="suppliers.html" class="nav-item"><i class="fas fa-handshake"></i> Suppliers</a>
-        
-        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <a href="#" onclick="handleLogout()" class="nav-item" style="color: var(--danger);">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </a>
-        </div>
-    </div>
-</nav>
-
-<div class="mobile-header">
-    <button onclick="toggleMenu()">
-        <i class="fas fa-bars"></i>
-    </button>
-    <div style="font-weight:800;">DEBTORS HUB</div>
-    <div style="width:24px;"></div>
+<div class="guide-hand" id="onboardingHand">
+    <div class="guide-label">CLICK FOR MENU</div>
+    <span>👇</span>
 </div>
 
-<main class="main-content">
-    <div class="page-header">
-        <div class="page-title">
-            <h1>Debtors Management</h1>
-            <p>
-                <i class="fas fa-store"></i> 
-                Viewing: <span id="branchIndicator">All Branches</span>
-            </p>
-        </div>
-        <div class="branch-selector-container">
-            <select id="branchSelector" class="branch-select" onchange="handleBranchChange()">
-                <option value="all">🏢 ALL BRANCHES (Consolidated)</option>
-                <option value="MUTOMO">🏪 MUTOMO BRANCH</option>
-                <option value="KITUI">🏪 KITUI BRANCH</option>
-            </select>
-            <div class="branch-badge" id="branchBadge">
-                <i class="fas fa-store"></i>
-                <span id="currentBranchDisplay">ALL BRANCHES</span>
-            </div>
-        </div>
+<div class="nav-overlay" id="navBanner">
+    <button style="position:fixed; top:20px; right:20px; background:rgba(255,255,255,0.1); border:none; color:white; width:45px; height:45px; border-radius:50%; font-size:1.2rem; z-index: 3100;" onclick="toggleNav()">✕</button>
+    <div class="nav-header-title">ADMIN HUB</div>
+    <div class="nav-grid">
+        <a href="#" onclick="confirmSwitchToCashier(event)" class="nav-card switch-card">
+            <span>🔄</span>
+            <small>SWITCH TO CASHIER MODE</small>
+        </a>
+        <a href="admin.html" class="nav-card" style="background: var(--admin-accent)"><span>📊</span><small>Dashboard</small></a>
+        <a href="admin_expenses.html" class="nav-card"><span>💸</span><small>Paybill Transactions</small></a>
+        <a href="gas_hub.html" class="nav-card"><span>🔥</span><small>Gas Hub</small></a>
+        <a href="spares_hub.html" class="nav-card"><span>⚙️</span><small>Spare Parts</small></a>
+        <a href="motorbike_hub.html" class="nav-card"><span>🏍️</span><small>Motorbikes</small></a>
+        <a href="shift-history.html" class="nav-card"><span>📋</span><small>Shift Records</small></a>
+        <a href="money-history.html" class="nav-card"><span>💰</span><small>Money IN/OUT</small></a>
+        <a href="sales-history.html" class="nav-card"><span>📜</span><small>Sales History</small></a>
+        <a href="inventory.html" class="nav-card"><span>➕</span><small>Inventory</small></a>
+        <a href="sales_editor.html" class="nav-card"><span>✏️</span><small>Edit Stock</small></a>
+        <a href="admin-debtors.html" class="nav-card"><span>👥</span><small>Debtors</small></a>
+        <a href="low_stock.html" class="nav-card"><span>⚠️</span><small>Low Stock</small></a>
+        <a href="audit_trail.html" class="nav-card"><span>🔍</span><small>Audit Trail</small></a>
+        <a href="reports.html" class="nav-card"><span>📄</span><small>Reports</small></a>
+        <a href="price_audits.html" class="nav-card"><span>📉</span><small>Price Audits</small></a>
+        <a href="suppliers.html" class="nav-card"><span>🤝</span><small>Suppliers</small></a>
+        <button onclick="handleLogout()" class="nav-card" style="background: var(--danger); grid-column: span 2; margin-top:10px;">
+            <span>🚪</span>
+            <small>LOGOUT SYSTEM</small>
+        </button>
     </div>
+</div>
 
-    <div class="report-summary">
-        <div class="summary-box">
-            <small><i class="fas fa-clock"></i> Outstanding</small>
-            <span id="total-debt" style="color: var(--danger);">Ksh 0</span>
-        </div>
-        <div class="summary-box">
-            <small><i class="fas fa-check-circle"></i> Recovered</small>
-            <span id="total-recovered" style="color: var(--success);">Ksh 0</span>
-        </div>
-        <div class="summary-box">
-            <small><i class="fas fa-chart-pie"></i> Uncollected Profit</small>
-            <span id="total-profit" style="color: var(--primary);">Ksh 0</span>
-        </div>
-        <div class="summary-box">
-            <small><i class="fas fa-user-clock"></i> Active Debtors</small>
-            <span id="active-debtors">0</span>
-        </div>
-    </div>
+<button class="fab-menu" onclick="toggleNav()">☰</button>
 
-    <div class="grid">
-        <div class="card">
-            <div class="card-title">
-                <i class="fas fa-pen-alt"></i>
-                New Debt Entry
-            </div>
-            <form id="debt-form">
-                <input type="text" id="cust-name" placeholder="Customer Name *" required>
-                <input type="tel" id="cust-phone" placeholder="Phone Number (Optional)">
-                <input type="text" id="prod-search" list="prod-list" placeholder="Search & Select Product..." required>
-                <datalist id="prod-list"></datalist>
-                
-                <div class="stock-info">
-                    <div class="stock-box">
-                        <small>Available Stock</small>
-                        <span id="live-stock">-</span>
-                    </div>
-                    <div class="stock-box warning">
-                        <small>Min Price</small>
-                        <span id="live-min">-</span>
-                    </div>
-                    <div class="stock-box primary">
-                        <small>Selling Price</small>
-                        <span id="live-price">-</span>
-                    </div>
+<header>
+    <div class="header-content">
+        <div class="brand-info">
+            <h1>JEPE MULTI-BRANCH DASHBOARD</h1>
+            <h2 id="greeting-text">Welcome back, Administrator</h2>
+        </div>
+        <div class="filter-section">
+            <div class="branch-filter-container">
+                <select id="branchFilter" class="branch-select" onchange="handleBranchChange()">
+                    <option value="all">🏢 ALL BRANCHES (Consolidated View)</option>
+                    <option value="MUTOMO">🏪 MUTOMO BRANCH</option>
+                    <option value="KITUI">🏪 KITUI BRANCH</option>
+                </select>
+                <div class="branch-badge" id="branchBadge">
+                    <i class="fas fa-store"></i> 
+                    <span id="selectedBranchName">ALL BRANCHES</span>
                 </div>
-
-                <input type="number" id="debt-amt" placeholder="Debt Amount (Ksh)" step="0.01" required>
-                
-                <button type="submit" id="submit-btn" class="btn-primary">
-                    <i class="fas fa-save"></i> RECORD DEBT ENTRY
-                </button>
-            </form>
-            
-            <div style="margin-top: 20px; padding: 12px; background: #fff7ed; border-radius: 12px; border-left: 4px solid var(--warning);">
-                <small style="color: #9a3412; font-weight: 600;">
-                    <i class="fas fa-info-circle"></i> Debt entries are automatically linked to the selected branch.
-                </small>
             </div>
-        </div>
-
-        <div class="card">
-            <div class="tabs">
-                <button class="tab active" onclick="filterTable('All', this)">All</button>
-                <button class="tab" onclick="filterTable('Unpaid', this)">Unpaid</button>
-                <button class="tab" onclick="filterTable('Paid', this)">Paid</button>
-            </div>
-            
-            <input type="text" id="ledger-search" placeholder="Search by customer or product..." oninput="handleSearch(this.value)">
-            
-            <div class="table-container">
-                <table id="debt-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Customer</th>
-                            <th>Item</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                            <th>Branch</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="ledger-body">
-                        <tr>
-                            <td colspan="7" style="text-align: center; padding: 40px;">
-                                <div class="big-spinner"></div>
-                                Loading debt records...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="status-section">
+                <span id="shift-status-text">--</span>
+                <div class="status-dot" id="status-dot"></div>
+                <span class="date-range" id="dateRange"></span>
             </div>
         </div>
     </div>
-</main>
+</header>
 
-<div class="modal" id="settle-modal">
-    <div class="modal-content">
-        <h3><i class="fas fa-hand-holding-usd" style="color: var(--success);"></i> Settle Debt</h3>
-        
-        <div class="modal-info" id="modal-info">
-            Loading...
+<div class="container">
+    <!-- Branch Comparison Cards -->
+    <div class="branch-comparison-grid" id="branchComparison"></div>
+
+    <!-- Today's Shift & Floats -->
+    <div class="card">
+        <div class="section-title">
+            <i class="fas fa-wallet"></i>
+            <span>TODAY'S SHIFT OPENING FLOATS <span id="branchIndicator"></span></span>
+            <div class="shift-timer-box">
+                <div id="disp-start" class="time-display" style="color:var(--success);">Opened: --:--</div>
+                <div id="disp-end" class="time-display" style="color:var(--danger);">Closed: --:--</div>
+            </div>
         </div>
-        
-        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase; margin-bottom: 5px; display: block;">
-            Payment Method
-        </label>
-        <select id="settle-method" style="margin: 5px 0 20px 0;">
-            <option value="Cash">💵 Cash</option>
-            <option value="Mpesa">📱 M-Pesa</option>
-            <option value="KCB Paybill">🏦 KCB Paybill</option>
-            <option value="KCB Float">💳 KCB Float</option>
-            <option value="Equity Float">💳 Equity Float</option>
-        </select>
-        
-        <button class="btn-primary" id="confirm-settle-btn">
-            <i class="fas fa-check-circle"></i> CLEAR & PRINT RECEIPT
-        </button>
-        
-        <button onclick="closeModal()" style="width:100%; background:none; border:none; color:var(--text-dim); font-weight:700; margin-top:15px; cursor:pointer;">
-            Cancel
-        </button>
+        <div class="float-grid">
+            <div class="float-item"><label>M-Pesa Float</label><span id="f-mpesa">Ksh 0</span></div>
+            <div class="float-item"><label>Cash Balance</label><span id="f-cash">Ksh 0</span></div>
+            <div class="float-item"><label>KCB Float</label><span id="f-kcb">Ksh 0</span></div>
+            <div class="float-item"><label>Equity Float</label><span id="f-equity">Ksh 0</span></div>
+        </div>
+
+        <!-- KCB Paybill Section -->
+        <div class="paybill-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;">
+                <div>
+                    <label>KCB PAYBILL NET BALANCE <span id="paybillBranch"></span></label>
+                    <div id="pb-total" class="paybill-main-val">Ksh 0.00</div>
+                    <div id="pb-profit" class="paybill-profit-val">Net Profit: Ksh 0</div>
+                </div>
+                <a href="admin_expenses.html" class="btn-expense">
+                    <i class="fas fa-exchange-alt"></i> Process Paybill Transaction
+                </a>
+            </div>
+        </div>
     </div>
+
+    <!-- Money Flow Stats -->
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap;">
+            <h3 class="section-title" style="margin:0;">
+                <i class="fas fa-chart-line"></i>
+                MONEY FLOW <span id="moneyFlowBranch"></span>
+            </h3>
+            <input type="month" id="month-picker" style="width:auto; padding:8px 12px;">
+        </div>
+        <div class="stats-grid">
+            <div class="stat-box rev-bg">
+                <small>Total Sales</small>
+                <div id="t-rev">Ksh 0</div>
+            </div>
+            <div class="stat-box prof-bg">
+                <small>Total Profit</small>
+                <div id="t-prof">Ksh 0</div>
+            </div>
+            <div class="stat-box in-bg">
+                <small>Money In</small>
+                <div id="t-in">Ksh 0</div>
+            </div>
+            <div class="stat-box exp-bg">
+                <small>Money Out</small>
+                <div id="t-exp">Ksh 0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gas Inventory -->
+    <h3 class="section-title">
+        <i class="fas fa-fire"></i>
+        GAS INVENTORY <span id="gasBranch"></span>
+    </h3>
+    <input type="text" id="gasSearch" class="search-input" placeholder="Search gas products...">
+    <div class="grid-list" id="gas-list"></div>
+    
+    <div class="card" style="margin-top:15px;">
+        <div class="section-title">📊 GAS STOCK SUMMARY</div>
+        <table class="summary-table">
+            <thead>
+                <tr><th>Size</th><th>Full</th><th>Empty</th><th>Total</th></tr>
+            </thead>
+            <tbody id="gas-summary-body"></tbody>
+        </table>
+    </div>
+
+    <!-- Spare Parts -->
+    <h3 class="section-title" style="margin-top:25px;">
+        <i class="fas fa-boxes"></i>
+        SPARE PARTS <span id="sparesBranch"></span>
+    </h3>
+    <input type="text" id="invSearch" class="search-input" placeholder="Search spare parts...">
+    <div class="grid-list" id="stock-list"></div>
+    <button id="loadStockBtn" class="load-more">LOAD MORE SPARES</button>
 </div>
 
 <script type="module">
     import { supabase } from './auth.js';
 
-    // ==================== STATE MANAGEMENT ====================
-    let allDebts = [];
+    // State management
     let allProducts = [];
-    let currentFilter = 'All';
-    let currentShift = null;
-    let selectedDebt = null;
-    let currentUser = null;
-    let currentBranchId = null;
-    let currentBranch = null;
-    let selectedBranchId = null;
+    let stockLimit = 6;
     let branches = {};
     let branchIdMap = {};
+    let currentBranchId = null;
+    let currentBranchCode = 'all';
+    let currentUser = null;
 
     // ==================== UTILITY FUNCTIONS ====================
 
-    window.toggleMenu = () => {
-        document.getElementById('sidebar').classList.toggle('active');
-        document.getElementById('overlay').classList.toggle('active');
+    window.toggleNav = () => {
+        document.getElementById('navBanner').classList.toggle('active');
+        document.getElementById('onboardingHand').style.display = 'none';
     };
 
-    // ==================== BRANCH FUNCTIONS ====================
+    window.confirmSwitchToCashier = (e) => {
+        e.preventDefault();
+        const selectedBranch = document.getElementById('branchFilter').value;
+        let branchName = selectedBranch === 'all' ? 'ALL BRANCHES' : selectedBranch;
+        
+        if(confirm(`Switch to Cashier Mode for ${branchName}?\n\nYou will be redirected to the cashier dashboard.`)) {
+            // Store selected branch preference
+            localStorage.setItem('cashier_branch_preference', selectedBranch);
+            window.location.href = "cashier.html";
+        }
+    };
+
+    // Get branch ID from code
+    function getBranchIdFromCode(code) {
+        return branchIdMap[code] || null;
+    }
+
+    // ==================== BRANCH FILTER HANDLING ====================
+
+    window.handleBranchChange = async function() {
+        const filter = document.getElementById('branchFilter').value;
+        currentBranchCode = filter;
+        
+        // Update UI indicators
+        const badge = document.getElementById('selectedBranchName');
+        const branchIndicator = document.getElementById('branchIndicator');
+        const moneyFlowBranch = document.getElementById('moneyFlowBranch');
+        const gasBranch = document.getElementById('gasBranch');
+        const sparesBranch = document.getElementById('sparesBranch');
+        const paybillBranch = document.getElementById('paybillBranch');
+        
+        if (filter === 'all') {
+            badge.textContent = 'ALL BRANCHES';
+            if (branchIndicator) branchIndicator.textContent = '(All Branches)';
+            if (moneyFlowBranch) moneyFlowBranch.textContent = '(All Branches)';
+            if (gasBranch) gasBranch.textContent = '(All Branches)';
+            if (sparesBranch) sparesBranch.textContent = '(All Branches)';
+            if (paybillBranch) paybillBranch.textContent = '(All Branches)';
+            currentBranchId = null;
+        } else {
+            const branchId = getBranchIdFromCode(filter);
+            if (branchId) {
+                currentBranchId = branchId;
+                badge.textContent = branches[branchId].name;
+                if (branchIndicator) branchIndicator.textContent = `(${branches[branchId].name})`;
+                if (moneyFlowBranch) moneyFlowBranch.textContent = `(${branches[branchId].name})`;
+                if (gasBranch) gasBranch.textContent = `(${branches[branchId].name})`;
+                if (sparesBranch) sparesBranch.textContent = `(${branches[branchId].name})`;
+                if (paybillBranch) paybillBranch.textContent = `(${branches[branchId].name})`;
+            }
+        }
+        
+        // Reload all data with new branch filter
+        await Promise.all([
+            loadDashboardData(),
+            loadProducts()
+        ]);
+    };
+
+    // Quick filter by clicking on branch card
+    window.quickFilterBranch = function(branchCode) {
+        document.getElementById('branchFilter').value = branchCode;
+        handleBranchChange();
+    };
+
+    // ==================== DATA LOADING FUNCTIONS ====================
 
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
@@ -788,399 +812,369 @@
             branches[b.id] = b;
             branchIdMap[b.code] = b.id;
         });
-        console.log("✅ Branches loaded:", branches);
         return branches;
     }
 
-    function getBranchIdFromCode(code) {
-        return branchIdMap[code] || null;
-    }
+    async function loadBranchComparison() {
+        // Always show ALL branches for comparison regardless of filter
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const { data: sales } = await supabase
+            .from('sales')
+            .select(`
+                branch_id,
+                total_amount,
+                created_at,
+                quantity,
+                unit_price,
+                cost_price
+            `)
+            .gte('created_at', today.toISOString());
 
-    async function loadUserProfile() {
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                window.location.href = 'index.html';
-                return null;
-            }
-            
-            currentUser = user;
-            console.log("👤 User ID:", user.id);
-            
-            const { data: profile, error } = await supabase
-                .from('profiles')
-                .select(`
-                    *,
-                    branches (
-                        id,
-                        name,
-                        code,
-                        location
-                    )
-                `)
-                .eq('id', user.id)
-                .single();
-            
-            if (error) throw error;
-            
-            currentBranchId = profile.branch_id;
-            currentBranch = profile.branches;
-            console.log("🏢 User's assigned branch:", currentBranch?.name);
-            
-            const session = {
-                user: user,
-                profile: profile,
-                branch: profile.branches,
-                role: profile.role
+        const branchStats = {};
+        
+        // Initialize stats for all branches
+        Object.keys(branches).forEach(id => {
+            branchStats[id] = {
+                sales: 0,
+                profit: 0,
+                transactions: 0,
+                items: 0
             };
-            localStorage.setItem('pos_session', JSON.stringify(session));
-            
-            const sidebarBranchName = document.querySelector('#sidebarBranchName span');
-            if (profile.branches && sidebarBranchName) {
-                sidebarBranchName.textContent = profile.branches.name;
+        });
+
+        // Calculate stats
+        sales?.forEach(sale => {
+            if (branchStats[sale.branch_id]) {
+                branchStats[sale.branch_id].sales += sale.total_amount || 0;
+                branchStats[sale.branch_id].transactions++;
+                branchStats[sale.branch_id].items += sale.quantity || 0;
+                branchStats[sale.branch_id].profit += ((sale.unit_price || 0) - (sale.cost_price || 0)) * (sale.quantity || 0);
             }
-            
-            return profile;
-        } catch (error) {
-            console.error("❌ Error loading profile:", error);
-            return null;
+        });
+
+        // Render comparison cards
+        const container = document.getElementById('branchComparison');
+        let html = '';
+        
+        if (Object.keys(branches).length === 0) {
+            html = '<div class="no-data-message"><i class="fas fa-store"></i><p>No branches found</p></div>';
+        } else {
+            Object.keys(branches).forEach(id => {
+                const branch = branches[id];
+                const stats = branchStats[id] || { sales: 0, profit: 0, transactions: 0, items: 0 };
+                const branchClass = branch.code === 'MUT' ? 'mutomo' : 'kitui';
+                
+                // Determine if this branch is currently selected
+                const isSelected = currentBranchId === id;
+                const selectedStyle = isSelected ? 'border: 3px solid white; transform: scale(1.02);' : '';
+                
+                html += `
+                    <div class="branch-stat-card ${branchClass}" 
+                         onclick="quickFilterBranch('${branch.code}')" 
+                         style="cursor:pointer; ${selectedStyle}">
+                        <h4><i class="fas fa-store"></i> ${branch.name}</h4>
+                        <div class="stat-row">
+                            <span class="stat-label">Today's Sales</span>
+                            <span class="stat-value">Ksh ${stats.sales.toLocaleString()}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Today's Profit</span>
+                            <span class="stat-value">Ksh ${stats.profit.toLocaleString()}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Transactions</span>
+                            <span class="stat-value">${stats.transactions}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Items Sold</span>
+                            <span class="stat-value">${stats.items}</span>
+                        </div>
+                        <div class="total-sales">
+                            ${stats.sales > 0 ? `Ksh ${stats.sales.toLocaleString()}` : 'No sales today'}
+                        </div>
+                    </div>
+                `;
+            });
         }
+
+        container.innerHTML = html;
     }
 
-    // ==================== BRANCH FILTER HANDLING ====================
-
-    window.handleBranchChange = async function() {
-        const selector = document.getElementById('branchSelector');
-        const selectedCode = selector.value;
-        
-        console.log("🔄 Branch changed to:", selectedCode);
-        
-        const branchDisplay = document.getElementById('currentBranchDisplay');
-        const branchIndicator = document.getElementById('branchIndicator');
-        
-        if (selectedCode === 'all') {
-            branchDisplay.textContent = 'ALL BRANCHES';
-            branchIndicator.textContent = 'All Branches';
-            selectedBranchId = null;
-            console.log("📊 Selected: ALL BRANCHES");
-        } else {
-            const branchId = getBranchIdFromCode(selectedCode);
-            if (branchId) {
-                selectedBranchId = branchId;
-                branchDisplay.textContent = branches[branchId].name;
-                branchIndicator.textContent = branches[branchId].name;
-                console.log(`📌 Selected branch: ${branches[branchId].name} (ID: ${branchId})`);
-            }
-        }
-        
-        await loadData();
-    };
-
-    // ==================== DATA LOADING ====================
-
-    async function loadData() {
-        console.log("📥 Loading data for branch ID:", selectedBranchId || 'ALL');
-        
-        // Show loading state
-        document.getElementById('ledger-body').innerHTML = `
-            <tr>
-                <td colspan="7" style="text-align: center; padding: 40px;">
-                    <div class="big-spinner"></div>
-                    Loading debt records...
-                </td>
-            </tr>
-        `;
-        
+    async function loadDashboardData() {
         try {
-            // Load products
-            let productsQuery = supabase.from('products').select('*');
-            if (selectedBranchId) {
-                productsQuery = productsQuery.eq('branch_id', selectedBranchId);
-            }
-            
-            // Load shifts
-            let shiftsQuery = supabase.from('daily_shifts')
+            // Get today's date range
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            // Get latest shift based on filter
+            let shiftQuery = supabase
+                .from('daily_shifts')
                 .select('*')
-                .eq('status', 'open')
                 .order('start_time', { ascending: false })
                 .limit(1);
-            if (selectedBranchId) {
-                shiftsQuery = shiftsQuery.eq('branch_id', selectedBranchId);
-            }
-            
-            // Load debts - THIS IS THE CRITICAL PART
-            let debtsQuery = supabase
-                .from('debtors')
-                .select(`
-                    *,
-                    products (*)
-                `)
-                .order('created_at', { ascending: false });
-            
-            // Apply branch filter if a specific branch is selected
-            if (selectedBranchId) {
-                debtsQuery = debtsQuery.eq('branch_id', selectedBranchId);
-                console.log("🔍 Filtering debts by branch_id:", selectedBranchId);
-            } else {
-                console.log("🔍 Showing ALL branches (no branch filter)");
+
+            if (currentBranchId) {
+                shiftQuery = shiftQuery.eq('branch_id', currentBranchId);
             }
 
-            const [prodRes, shiftRes, debtsRes] = await Promise.all([
-                productsQuery,
-                shiftsQuery.maybeSingle(),
-                debtsQuery
+            const { data: shifts } = await shiftQuery;
+            const shift = shifts && shifts.length > 0 ? shifts[0] : null;
+
+            // Update shift display
+            if (shift) {
+                document.getElementById('f-mpesa').innerText = `Ksh ${(shift.open_mpesa || 0).toLocaleString()}`;
+                document.getElementById('f-cash').innerText = `Ksh ${(shift.open_cash || 0).toLocaleString()}`;
+                document.getElementById('f-kcb').innerText = `Ksh ${(shift.open_kcb || 0).toLocaleString()}`;
+                document.getElementById('f-equity').innerText = `Ksh ${(shift.open_equity || 0).toLocaleString()}`;
+                document.getElementById('shift-status-text').innerText = shift.status ? shift.status.toUpperCase() : 'CLOSED';
+                document.getElementById('status-dot').style.background = shift.status === 'open' ? '#10b981' : '#ef4444';
+                
+                const openTime = new Date(shift.start_time).toLocaleString('en-GB', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    day: 'numeric',
+                    month: 'short'
+                });
+                document.getElementById('disp-start').innerText = `Opened: ${openTime}`;
+                
+                if(shift.end_time) {
+                    const closeTime = new Date(shift.end_time).toLocaleString('en-GB', { 
+                        hour: '2-digit', 
+                        minute: '2-digit',
+                        day: 'numeric',
+                        month: 'short'
+                    });
+                    document.getElementById('disp-end').innerText = `Closed: ${closeTime}`;
+                } else {
+                    document.getElementById('disp-end').innerText = `Closed: --`;
+                }
+            } else {
+                // No shift found for this branch
+                document.getElementById('f-mpesa').innerText = 'Ksh 0';
+                document.getElementById('f-cash').innerText = 'Ksh 0';
+                document.getElementById('f-kcb').innerText = 'Ksh 0';
+                document.getElementById('f-equity').innerText = 'Ksh 0';
+                document.getElementById('shift-status-text').innerText = 'NO ACTIVE SHIFT';
+                document.getElementById('status-dot').style.background = '#94a3b8';
+                document.getElementById('disp-start').innerText = 'Opened: --';
+                document.getElementById('disp-end').innerText = 'Closed: --';
+            }
+
+            // Get today's sales with branch filter
+            let salesQuery = supabase
+                .from('sales')
+                .select('*')
+                .gte('created_at', today.toISOString())
+                .lt('created_at', tomorrow.toISOString());
+                
+            if (currentBranchId) {
+                salesQuery = salesQuery.eq('branch_id', currentBranchId);
+            }
+            
+            const { data: todaySales } = await salesQuery;
+            let totalRevenue = 0, totalProfit = 0;
+            
+            todaySales?.forEach(sale => {
+                totalRevenue += parseFloat(sale.total_amount || 0);
+                totalProfit += (parseFloat(sale.unit_price || 0) - parseFloat(sale.cost_price || 0)) * parseInt(sale.quantity || 0);
+            });
+            
+            document.getElementById('t-rev').innerText = `Ksh ${totalRevenue.toLocaleString()}`;
+            document.getElementById('t-prof').innerText = `Ksh ${totalProfit.toLocaleString()}`;
+
+            // Get today's cash transactions with branch filter
+            let transQuery = supabase
+                .from('cash_transactions')
+                .select('*')
+                .gte('created_at', today.toISOString())
+                .lt('created_at', tomorrow.toISOString());
+                
+            if (currentBranchId) {
+                transQuery = transQuery.eq('branch_id', currentBranchId);
+            }
+            
+            const { data: transactions } = await transQuery;
+            let moneyIn = 0, moneyOut = 0;
+            
+            transactions?.forEach(t => {
+                if(t.type === 'Money In' || t.type === 'Money In') moneyIn += parseFloat(t.amount || 0);
+                else if(t.type === 'Money Out' || t.type === 'Money Out') moneyOut += parseFloat(t.amount || 0);
+            });
+            
+            document.getElementById('t-in').innerText = `Ksh ${moneyIn.toLocaleString()}`;
+            document.getElementById('t-exp').innerText = `Ksh ${moneyOut.toLocaleString()}`;
+
+            // Calculate Paybill with branch filter
+            let paybillQuery = supabase
+                .from('sales')
+                .select('*')
+                .eq('payment_method', 'KCB Paybill');
+                
+            let adminQuery = supabase
+                .from('admin_expenses')
+                .select('*')
+                .eq('payment_source', 'KCB Paybill');
+            
+            if (currentBranchId) {
+                paybillQuery = paybillQuery.eq('branch_id', currentBranchId);
+                adminQuery = adminQuery.eq('branch_id', currentBranchId);
+            }
+
+            const [{ data: paybillSales }, { data: adminRecords }] = await Promise.all([
+                paybillQuery,
+                adminQuery
             ]);
 
-            allProducts = prodRes.data || [];
-            currentShift = shiftRes.data;
-            allDebts = debtsRes.data || [];
-            
-            console.log(`📊 Loaded ${allDebts.length} debt records`);
-            
-            // Log branch distribution of loaded debts
-            if (allDebts.length > 0) {
-                const branchStats = {};
-                allDebts.forEach(d => {
-                    const bid = d.branch_id || 'null';
-                    branchStats[bid] = (branchStats[bid] || 0) + 1;
-                });
-                console.log("📈 Debt distribution by branch_id:", branchStats);
-            }
+            let totalPaybillIncome = 0, paybillProfit = 0;
+            paybillSales?.forEach(s => {
+                totalPaybillIncome += parseFloat(s.total_amount || 0);
+                paybillProfit += (parseFloat(s.unit_price || 0) - parseFloat(s.cost_price || 0)) * parseInt(s.quantity || 0);
+            });
 
-            // Populate product datalist
-            const dList = document.getElementById('prod-list');
-            dList.innerHTML = allProducts.map(p => {
-                const displayName = `${p.name}${p.weight_category ? ` (${p.weight_category})` : ''}`;
-                return `<option value="${displayName}" 
-                    data-id="${p.id}" 
-                    data-price="${p.selling_price}" 
-                    data-stock="${p.stock_quantity}" 
-                    data-cost="${p.cost_price || 0}"
-                    data-min="${p.min_price || 0}">`;
+            let manualFunding = 0, manualExpenses = 0;
+            adminRecords?.forEach(r => {
+                const val = parseFloat(r.amount || 0);
+                if(r.type === 'funding') manualFunding += val;
+                else manualExpenses += val;
+            });
+
+            const netPaybillBalance = (totalPaybillIncome + manualFunding) - manualExpenses;
+
+            document.getElementById('pb-total').innerText = `Ksh ${netPaybillBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            document.getElementById('pb-profit').innerText = `Net Profit: Ksh ${paybillProfit.toLocaleString()}`;
+
+        } catch (error) {
+            console.error("Error loading dashboard data:", error);
+        }
+    }
+
+    async function loadProducts() {
+        let query = supabase
+            .from('products')
+            .select('*, suppliers(name)');
+        
+        if (currentBranchId) {
+            query = query.eq('branch_id', currentBranchId);
+        }
+        
+        const { data: products } = await query.order('name');
+        allProducts = products || [];
+        calculateGasSummary();
+        renderLists();
+    }
+
+    function calculateGasSummary() {
+        const categories = ["6kg", "13kg", "50kg"];
+        const summary = categories.map(cat => {
+            const items = allProducts.filter(p => p.category === 'Gas' && 
+                (p.weight_category === cat || p.name.toLowerCase().includes(cat)));
+            const full = items.reduce((sum, p) => sum + (p.stock_quantity || 0), 0);
+            const empty = items.reduce((sum, p) => sum + (p.empty_quantity || 0), 0);
+            return { cat, full, empty, total: full + empty };
+        });
+        
+        const grandFull = summary.reduce((sum, s) => sum + s.full, 0);
+        const grandEmpty = summary.reduce((sum, s) => sum + s.empty, 0);
+        
+        const tbody = document.getElementById('gas-summary-body');
+        if (summary.some(s => s.total > 0)) {
+            tbody.innerHTML = summary.map(s => `
+                <tr><td>${s.cat}</td><td>${s.full}</td><td>${s.empty}</td><td>${s.total}</td></tr>
+            `).join('') + `
+                <tr class="row-total">
+                    <td><strong>TOTAL</strong></td>
+                    <td><strong>${grandFull}</strong></td>
+                    <td><strong>${grandEmpty}</strong></td>
+                    <td><strong>${grandFull + grandEmpty}</strong></td>
+                </tr>
+            `;
+        } else {
+            tbody.innerHTML = '<tr><td colspan="4" class="no-data-message">No gas products found</td></tr>';
+        }
+    }
+
+    function renderLists() {
+        const gasTerm = document.getElementById('gasSearch').value.toLowerCase();
+        const stockTerm = document.getElementById('invSearch').value.toLowerCase();
+        
+        // Gas items
+        const gasItems = allProducts.filter(p => p.category === 'Gas' && p.name.toLowerCase().includes(gasTerm));
+        const gasList = document.getElementById('gas-list');
+        
+        if (gasItems.length > 0) {
+            gasList.innerHTML = gasItems.map(p => `
+                <div class="item-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <span style="font-weight:800;">${p.name}</span>
+                        <span style="color:var(--text-dim); font-size:0.75rem;">${p.weight_category || 'Gas'}</span>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <div class="gas-pill pill-full">
+                            <small style="display:block; font-size:0.6rem;">FULL</small>
+                            <b>${p.stock_quantity}</b>
+                        </div>
+                        <div class="gas-pill pill-empty">
+                            <small style="display:block; font-size:0.6rem;">EMPTY</small>
+                            <b>${p.empty_quantity || 0}</b>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            gasList.innerHTML = '<div class="no-data-message"><i class="fas fa-gas-pump"></i><p>No gas products found</p></div>';
+        }
+        
+        // Stock items
+        const stockItems = allProducts.filter(p => p.category !== 'Gas' && p.name.toLowerCase().includes(stockTerm));
+        const stockList = document.getElementById('stock-list');
+        
+        if (stockItems.length > 0) {
+            stockList.innerHTML = stockItems.slice(0, stockLimit).map(p => {
+                const isLowStock = p.stock_quantity < 5;
+                const profit = (p.selling_price || 0) - (p.cost_price || 0);
+                
+                return `
+                    <div class="item-card" style="${isLowStock ? 'border-left:4px solid var(--danger);' : ''}">
+                        <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:10px;">
+                            <div>
+                                <div style="font-weight:800;">${p.name}</div>
+                                <small style="color:var(--text-dim);">${p.part_type || 'Spare Part'}</small>
+                            </div>
+                            <div style="font-weight:800; color:${isLowStock ? 'var(--danger)' : 'var(--admin-accent)'};">
+                                ${p.stock_quantity} <small style="font-size:0.6rem;">QTY</small>
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding-top:8px; border-top:1px solid var(--border);">
+                            <div><small style="display:block; color:var(--text-dim);">BUY</small><b>Ksh ${p.cost_price}</b></div>
+                            <div><small style="display:block; color:var(--text-dim);">SELL</small><b>Ksh ${p.selling_price}</b></div>
+                            <div><small style="display:block; color:var(--text-dim);">PROFIT</small><b style="color:var(--success);">+Ksh ${profit}</b></div>
+                        </div>
+                    </div>
+                `;
             }).join('');
             
-            renderLedger();
-            
-        } catch (error) {
-            console.error("❌ Error loading data:", error);
-            document.getElementById('ledger-body').innerHTML = `
-                <tr>
-                    <td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">
-                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                        Error loading data: ${error.message}
-                    </td>
-                </tr>
-            `;
+            document.getElementById('loadStockBtn').style.display = stockItems.length > stockLimit ? 'block' : 'none';
+        } else {
+            stockList.innerHTML = '<div class="no-data-message"><i class="fas fa-box-open"></i><p>No spare parts found</p></div>';
+            document.getElementById('loadStockBtn').style.display = 'none';
         }
     }
 
-    // ==================== PRODUCT SEARCH HANDLER ====================
+    // ==================== EVENT LISTENERS ====================
 
-    document.getElementById('prod-search').addEventListener('input', (e) => {
-        const searchValue = e.target.value;
-        const opt = Array.from(document.querySelectorAll('#prod-list option')).find(
-            opt => opt.value === searchValue
-        );
-        
-        if (opt) {
-            document.getElementById('debt-amt').value = opt.dataset.price;
-            document.getElementById('live-stock').innerText = opt.dataset.stock;
-            document.getElementById('live-min').innerText = `Ksh ${parseFloat(opt.dataset.min).toLocaleString()}`;
-            document.getElementById('live-price').innerText = `Ksh ${parseFloat(opt.dataset.price).toLocaleString()}`;
-        }
+    document.getElementById('gasSearch').addEventListener('input', renderLists);
+    document.getElementById('invSearch').addEventListener('input', renderLists);
+    
+    document.getElementById('loadStockBtn').addEventListener('click', () => { 
+        stockLimit += 10; 
+        renderLists(); 
     });
-
-    // ==================== LEDGER FUNCTIONS ====================
-
-    function renderLedger(searchTerm = '') {
-        const tbody = document.getElementById('ledger-body');
-        
-        // Apply filters (status and search)
-        const filtered = allDebts.filter(d => {
-            const matchesFilter = currentFilter === 'All' || d.status === currentFilter;
-            const matchesSearch = d.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                                 (d.products?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
-            return matchesFilter && matchesSearch;
-        });
-
-        // Calculate summary for the currently loaded debts (already filtered by branch)
-        let outstanding = 0, recovered = 0, profit = 0;
-        allDebts.forEach(d => {
-            if(d.status === 'Unpaid') {
-                outstanding += d.amount_owed;
-                profit += (d.amount_owed - (d.products?.cost_price || 0));
-            } else { 
-                recovered += d.amount_owed; 
-            }
-        });
-
-        document.getElementById('total-debt').innerText = `Ksh ${outstanding.toLocaleString()}`;
-        document.getElementById('total-recovered').innerText = `Ksh ${recovered.toLocaleString()}`;
-        document.getElementById('total-profit').innerText = `Ksh ${profit.toLocaleString()}`;
-        document.getElementById('active-debtors').innerText = allDebts.filter(d => d.status === 'Unpaid').length;
-
-        if (filtered.length === 0) {
-            const branchName = selectedBranchId ? branches[selectedBranchId]?.name : 'All Branches';
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" style="text-align: center; padding: 40px;">
-                        <i class="fas fa-inbox" style="font-size: 2rem; color: var(--text-dim); margin-bottom: 10px; display: block;"></i>
-                        No debt records found for ${branchName}
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-
-        tbody.innerHTML = filtered.map(d => {
-            const branch = branches[d.branch_id] || { name: 'Unknown', code: '--' };
-            
-            return `
-            <tr>
-                <td data-label="Date"><small>${new Date(d.created_at).toLocaleDateString()}</small></td>
-                <td data-label="Customer">
-                    <b>${d.customer_name}</b>
-                    ${d.customer_phone ? `<br><small style="color:var(--text-dim);">${d.customer_phone}</small>` : ''}
-                </td>
-                <td data-label="Item">${d.products?.name || 'Manual Entry'}</td>
-                <td data-label="Amount" style="font-weight:800">Ksh ${d.amount_owed.toLocaleString()}</td>
-                <td data-label="Status"><span class="badge ${d.status === 'Unpaid' ? 'bg-unpaid' : 'bg-paid'}">${d.status}</span></td>
-                <td data-label="Branch"><span class="badge" style="background:#f1f5f9;">${branch.code}</span></td>
-                <td data-label="Action">
-                    ${d.status === 'Unpaid' ? 
-                        `<button onclick='openSettleModal("${d.id}", ${d.amount_owed}, "${d.customer_name}", "${d.products?.name}")' 
-                            style="background:var(--success); color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:700; width:100%;">
-                            <i class="fas fa-hand-holding-usd"></i> SETTLE
-                        </button>` 
-                        : 
-                        '<span style="color:var(--success);"><i class="fas fa-check-circle"></i> Fully Paid</span>'
-                    }
-                </td>
-            </tr>
-        `}).join('');
-    }
-
-    // ==================== SETTLEMENT MODAL ====================
-
-    window.openSettleModal = (id, amt, name, item) => {
-        if (!currentShift) {
-            alert("You must have an open shift to settle debts!");
-            return;
-        }
-        
-        selectedDebt = { id, amt, name, item };
-        document.getElementById('modal-info').innerHTML = `
-            <strong>Customer:</strong> ${name}<br>
-            <strong>Item:</strong> ${item || 'N/A'}<br>
-            <strong>Amount:</strong> Ksh ${amt.toLocaleString()}
-        `;
-        document.getElementById('settle-modal').style.display = 'flex';
-    };
-
-    window.closeModal = () => {
-        document.getElementById('settle-modal').style.display = 'none';
-        selectedDebt = null;
-    };
-
-    document.getElementById('confirm-settle-btn').onclick = async () => {
-        const method = document.getElementById('settle-method').value;
-        const btn = document.getElementById('confirm-settle-btn');
-        const originalText = btn.innerHTML;
-        
-        btn.innerHTML = '<span class="spinner"></span> PROCESSING...';
-        btn.disabled = true;
-
-        try {
-            const branchId = selectedBranchId || currentBranchId;
-            
-            // Update debt status
-            await supabase.from('debtors')
-                .update({ status: 'Paid' })
-                .eq('id', selectedDebt.id);
-
-            // Find and update related sale
-            const { data: relatedSale } = await supabase
-                .from('sales')
-                .select('id')
-                .eq('payment_method', 'Debt')
-                .eq('discount_reason', `Debt for ${selectedDebt.name} [UNPAID]`)
-                .maybeSingle();
-
-            if (relatedSale) {
-                await supabase.from('sales')
-                    .update({ 
-                        payment_method: method,
-                        discount_reason: `Debt settled - ${selectedDebt.name}` 
-                    })
-                    .eq('id', relatedSale.id);
-            }
-
-            // Log cash transaction
-            await supabase.from('cash_transactions').insert([{
-                shift_id: currentShift.id,
-                type: 'Money In',
-                category: method.includes('Cash') ? 'Cash' : method,
-                amount: selectedDebt.amt,
-                description: `Debt recovery: ${selectedDebt.name} - ${selectedDebt.item || 'Debt payment'}`,
-                branch_id: branchId,
-                user_id: currentUser.id
-            }]);
-
-            generateReceipt(selectedDebt, method);
-            alert("✅ Debt cleared successfully!");
-            closeModal();
-            
-            await loadData();
-            
-        } catch (err) {
-            console.error("Error settling debt:", err);
-            alert("Error: " + err.message);
-        } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-    };
-
-    function generateReceipt(debt, method) {
-        const area = document.getElementById('print-area');
-        const branchName = document.getElementById('currentBranchDisplay').textContent;
-        
-        area.innerHTML = `
-            <div style="text-align:center; font-family: 'Courier New', monospace; padding: 20px; border: 2px solid #000; max-width: 350px; margin: auto;">
-                <h2 style="margin:0; color: var(--primary);">JEPE AUTOSPARES</h2>
-                <h3 style="margin:5px 0;">${branchName}</h3>
-                <p style="font-size:0.8rem;">DEBT SETTLEMENT RECEIPT</p>
-                <hr>
-                <div style="text-align:left;">
-                    <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
-                    <p><strong>Receipt No:</strong> ${Date.now().toString().slice(-8)}</p>
-                    <p><strong>Customer:</strong> ${debt.name}</p>
-                    <p><strong>Item:</strong> ${debt.item || 'N/A'}</p>
-                    <p><strong>Amount Paid:</strong> Ksh ${debt.amt.toLocaleString()}</p>
-                    <p><strong>Payment Method:</strong> ${method}</p>
-                    <p><strong>Cashier:</strong> ${currentUser?.email || 'Admin'}</p>
-                </div>
-                <hr>
-                <p style="font-weight:800;">PAYMENT RECEIVED & VERIFIED</p>
-                <p style="font-size:0.7rem; margin-top:20px;">Thank you for your business!</p>
-            </div>
-        `;
-        window.print();
-        area.innerHTML = '';
-    }
-
-    // ==================== UI EVENT HANDLERS ====================
-
-    window.filterTable = (status, btn) => {
-        currentFilter = status;
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        btn.classList.add('active');
-        renderLedger(document.getElementById('ledger-search').value);
-    };
-
-    window.handleSearch = (val) => {
-        renderLedger(val);
-    };
+    
+    document.getElementById('month-picker').addEventListener('change', loadDashboardData);
 
     window.handleLogout = async () => {
         if(confirm("Are you sure you want to logout?")) {
@@ -1190,108 +1184,47 @@
         }
     };
 
-    // ==================== FORM SUBMISSION ====================
-
-    document.getElementById('debt-form').onsubmit = async (e) => {
-        e.preventDefault();
-        
-        if (!currentShift) {
-            alert("Please open a shift first!");
-            return;
-        }
-        
-        const searchVal = document.getElementById('prod-search').value;
-        const opt = Array.from(document.querySelectorAll('#prod-list option')).find(
-            opt => opt.value === searchVal
-        );
-        
-        if(!opt) {
-            alert("Please select a valid product from the list");
-            return;
-        }
-
-        const btn = document.getElementById('submit-btn');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="spinner"></span> PROCESSING...';
-        btn.disabled = true;
-
-        const customer = document.getElementById('cust-name').value;
-        const phone = document.getElementById('cust-phone').value;
-        const amount = parseFloat(document.getElementById('debt-amt').value);
-        const branchId = selectedBranchId || currentBranchId;
-
-        try {
-            // Insert debt
-            const { error: debtError } = await supabase.from('debtors').insert([{
-                customer_name: customer,
-                customer_phone: phone || null,
-                product_id: opt.dataset.id,
-                amount_owed: amount,
-                status: 'Unpaid',
-                branch_id: branchId
-            }]);
-
-            if (debtError) throw debtError;
-
-            // Insert sale record
-            const { error: saleError } = await supabase.from('sales').insert([{
-                product_id: opt.dataset.id,
-                item_name: searchVal,
-                quantity: 1,
-                unit_price: amount,
-                total_amount: amount,
-                payment_method: 'Debt',
-                cost_price: parseFloat(opt.dataset.cost),
-                shift_id: currentShift.id,
-                branch_id: branchId,
-                user_id: currentUser.id,
-                discount_reason: `Debt for ${customer} [UNPAID]`
-            }]);
-
-            if (saleError) throw saleError;
-
-            // Update inventory
-            const newStock = parseInt(opt.dataset.stock) - 1;
-            const { error: stockError } = await supabase.from('products')
-                .update({ stock_quantity: newStock })
-                .eq('id', opt.dataset.id)
-                .eq('branch_id', branchId);
-
-            if (stockError) throw stockError;
-
-            alert("✅ Debt Recorded Successfully!");
-            
-            e.target.reset();
-            document.getElementById('live-stock').innerText = '-';
-            document.getElementById('live-min').innerText = '-';
-            document.getElementById('live-price').innerText = '-';
-            
-            await loadData();
-            
-        } catch (err) {
-            console.error("Error recording debt:", err);
-            alert("Error: " + err.message);
-        } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-    };
-
     // ==================== INITIALIZATION ====================
-    
+
     async function init() {
-        console.log("🚀 Initializing Admin Debtors Page...");
-        
+        // Set greeting
+        const hour = new Date().getHours();
+        let greeting = "Good ";
+        if (hour < 12) greeting += "Morning";
+        else if (hour < 17) greeting += "Afternoon";
+        else greeting += "Evening";
+        document.getElementById('greeting-text').innerText = `${greeting}, Administrator`;
+
+        // Set date
+        const today = new Date();
+        document.getElementById('dateRange').innerText = today.toLocaleDateString('en-GB', { 
+            day: 'numeric', month: 'long', year: 'numeric' 
+        });
+
+        // Set month picker
+        document.getElementById('month-picker').value = today.toISOString().slice(0, 7);
+
+        // Load branches
         await loadBranches();
-        await loadUserProfile();
         
-        // Set default to ALL BRANCHES
-        document.getElementById('branchSelector').value = 'all';
-        selectedBranchId = null;
+        // Check for stored branch preference
+        const savedBranch = localStorage.getItem('admin_branch_preference');
+        if (savedBranch && (savedBranch === 'all' || savedBranch === 'MUTOMO' || savedBranch === 'KITUI')) {
+            document.getElementById('branchFilter').value = savedBranch;
+        }
         
-        await loadData();
+        // Initial data load
+        await Promise.all([
+            loadBranchComparison(),
+            loadDashboardData(),
+            loadProducts()
+        ]);
+        
+        // Apply initial branch filter to UI
+        await handleBranchChange();
     }
-    
+
+    // Start the app
     init();
 </script>
 </body>
