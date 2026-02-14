@@ -6,6 +6,7 @@
     <title>Gas Hub Management | JEPE COMPANY LIMITED</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { 
             --primary: #6366f1; 
@@ -46,25 +47,88 @@
             overflow-y: auto;
         }
 
-        .sidebar-header { padding: 25px; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
-        .sidebar h2 { color: var(--primary-dark); font-weight: 800; font-size: 1.1rem; margin: 0; text-transform: uppercase; }
-
-        .sidebar-nav { padding: 10px 15px; display: flex; flex-direction: column; gap: 4px; }
-        .nav-link {
-            display: flex; align-items: center; padding: 12px 15px;
-            color: var(--text-dim); text-decoration: none; font-weight: 600;
-            border-radius: 12px; transition: 0.2s; font-size: 0.85rem; gap: 10px;
+        .sidebar-header { 
+            padding: 25px; 
+            border-bottom: 1px solid var(--border); 
+            margin-bottom: 10px; 
         }
-        .nav-link:hover { background: #f8fafc; color: var(--primary); }
-        .nav-link.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2); }
+        
+        .sidebar-header h2 { 
+            color: var(--primary-dark); 
+            font-weight: 800; 
+            font-size: 1.1rem; 
+            margin: 0; 
+            text-transform: uppercase; 
+        }
 
-        .main-wrapper { flex: 1; margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)); min-height: 100vh; }
-        .container { padding: 30px; max-width: 1400px; margin: auto; }
+        .sidebar-header small {
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            display: block;
+            margin-top: 5px;
+        }
+
+        .sidebar-nav { 
+            padding: 10px 15px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 4px; 
+        }
+        
+        .nav-link {
+            display: flex; 
+            align-items: center; 
+            padding: 12px 15px;
+            color: var(--text-dim); 
+            text-decoration: none; 
+            font-weight: 600;
+            border-radius: 12px; 
+            transition: 0.2s; 
+            font-size: 0.85rem; 
+            gap: 10px;
+        }
+        
+        .nav-link i { width: 20px; text-align: center; }
+        
+        .nav-link:hover { 
+            background: #f8fafc; 
+            color: var(--primary); 
+        }
+        
+        .nav-link.active { 
+            background: var(--primary); 
+            color: white; 
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2); 
+        }
+
+        .main-wrapper { 
+            flex: 1; 
+            margin-left: var(--sidebar-width); 
+            width: calc(100% - var(--sidebar-width)); 
+            min-height: 100vh; 
+        }
+        
+        .container { 
+            padding: 30px; 
+            max-width: 1400px; 
+            margin: auto; 
+        }
 
         .mobile-toggle {
-            display: none; position: fixed; top: 15px; left: 15px; width: 45px; height: 45px;
-            background: var(--primary); color: white; border: none; border-radius: 10px;
-            z-index: 2500; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            display: none; 
+            position: fixed; 
+            top: 15px; 
+            left: 15px; 
+            width: 45px; 
+            height: 45px;
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            border-radius: 10px;
+            z-index: 2500; 
+            font-size: 1.2rem; 
+            cursor: pointer; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
         @media (max-width: 1024px) {
@@ -76,51 +140,218 @@
         }
 
         .card { 
-            background: white; padding: 24px; border-radius: 20px; 
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border: 1px solid var(--border); 
+            background: white; 
+            padding: 24px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); 
+            border: 1px solid var(--border); 
             margin-bottom: 24px;
         }
-        .card h3 { margin-top: 0; font-size: 1rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
         
-        .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
-        .gas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .card h3 { 
+            margin-top: 0; 
+            font-size: 1rem; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+        }
         
-        label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-dim); margin-bottom: 6px; }
+        .action-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
+            gap: 20px; 
+        }
+        
+        .gas-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+            gap: 20px; 
+        }
+        
+        label { 
+            display: block; 
+            font-size: 0.75rem; 
+            font-weight: 700; 
+            color: var(--text-dim); 
+            margin-bottom: 6px; 
+        }
+        
         input, select { 
-            padding: 12px; border-radius: 12px; border: 1px solid var(--border); 
-            width: 100%; margin-bottom: 15px; font-size: 0.9rem; font-family: inherit; outline: none; background: #fcfcfd;
+            padding: 12px; 
+            border-radius: 12px; 
+            border: 1px solid var(--border); 
+            width: 100%; 
+            margin-bottom: 15px; 
+            font-size: 0.9rem; 
+            font-family: inherit; 
+            outline: none; 
+            background: #fcfcfd;
         }
 
         .btn { 
-            padding: 14px; color: white; border: none; font-weight: 800; cursor: pointer; 
-            border-radius: 12px; width: 100%; font-size: 0.8rem; text-transform: uppercase; 
-            letter-spacing: 1px; transition: 0.2s; text-align: center; text-decoration: none; display: block;
+            padding: 14px; 
+            color: white; 
+            border: none; 
+            font-weight: 800; 
+            cursor: pointer; 
+            border-radius: 12px; 
+            width: 100%; 
+            font-size: 0.8rem; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            transition: 0.2s; 
+            text-align: center; 
+            text-decoration: none; 
+            display: block;
         }
         
         .btn-buy { 
-            background: #f1f5f9; color: var(--text); border: 1px dashed var(--border);
-            padding: 10px; font-size: 0.7rem; margin-top: 15px; border-radius: 10px;
-            font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center;
+            background: #f1f5f9; 
+            color: var(--text); 
+            border: 1px dashed var(--border);
+            padding: 10px; 
+            font-size: 0.7rem; 
+            margin-top: 15px; 
+            border-radius: 10px;
+            font-weight: 700; 
+            text-decoration: none; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
             gap: 5px;
         }
 
-        .price-badge { padding: 10px; background: #f8fafc; border-left: 4px solid var(--primary); font-size: 0.85rem; margin-bottom: 15px; border-radius: 0 8px 8px 0; }
+        .price-badge { 
+            padding: 10px; 
+            background: #f8fafc; 
+            border-left: 4px solid var(--primary); 
+            font-size: 0.85rem; 
+            margin-bottom: 15px; 
+            border-radius: 0 8px 8px 0; 
+        }
 
-        .stock-display { display: flex; gap: 10px; margin-top: 15px; }
-        .box { flex: 1; text-align: center; padding: 15px; border-radius: 15px; }
-        .full { background: #ecfdf5; color: #065f46; border: 1px solid #d1fae5; }
-        .empty { background: #fff1f2; color: #9f1239; border: 1px solid #ffe4e6; }
-        .qty { font-size: 1.5rem; font-weight: 800; display: block; }
-
-        .brand-tag { background: #eef2ff; color: #4338ca; padding: 4px 10px; border-radius: 8px; font-weight: 700; font-size: 0.7rem; }
-        .price-warning { color: var(--danger); font-size: 0.75rem; font-weight: 800; margin-top: -10px; margin-bottom: 10px; display: none; background: #fff1f2; padding: 5px; border-radius: 5px; text-align: center; }
+        .stock-display { 
+            display: flex; 
+            gap: 10px; 
+            margin-top: 15px; 
+        }
         
-        .exchange-box { background: #fdf2f2; padding: 12px; border-radius: 12px; border: 1px solid #fee2e2; margin-bottom: 15px; }
-        .sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); z-index: 1999; backdrop-filter: blur(2px); }
-        .sidebar-backdrop.show { display: block; }
+        .box { 
+            flex: 1; 
+            text-align: center; 
+            padding: 15px; 
+            border-radius: 15px; 
+        }
+        
+        .full { 
+            background: #ecfdf5; 
+            color: #065f46; 
+            border: 1px solid #d1fae5; 
+        }
+        
+        .empty { 
+            background: #fff1f2; 
+            color: #9f1239; 
+            border: 1px solid #ffe4e6; 
+        }
+        
+        .qty { 
+            font-size: 1.5rem; 
+            font-weight: 800; 
+            display: block; 
+        }
 
-        .split-input { display: none; background: #f0f9ff; border: 1px solid #bae6fd; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-left: 4px solid #0ea5e9; }
-        .split-calc-info { font-size: 0.75rem; color: #0369a1; font-weight: 700; margin-top: 5px; }
+        .brand-tag { 
+            background: #eef2ff; 
+            color: #4338ca; 
+            padding: 4px 10px; 
+            border-radius: 8px; 
+            font-weight: 700; 
+            font-size: 0.7rem; 
+            display: inline-block;
+        }
+        
+        .price-warning { 
+            color: var(--danger); 
+            font-size: 0.75rem; 
+            font-weight: 800; 
+            margin-top: -10px; 
+            margin-bottom: 10px; 
+            display: none; 
+            background: #fff1f2; 
+            padding: 5px; 
+            border-radius: 5px; 
+            text-align: center; 
+        }
+        
+        .exchange-box { 
+            background: #fdf2f2; 
+            padding: 12px; 
+            border-radius: 12px; 
+            border: 1px solid #fee2e2; 
+            margin-bottom: 15px; 
+        }
+        
+        .sidebar-backdrop { 
+            display: none; 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(15, 23, 42, 0.5); 
+            z-index: 1999; 
+            backdrop-filter: blur(2px); 
+        }
+        
+        .sidebar-backdrop.show { 
+            display: block; 
+        }
+
+        .split-input { 
+            display: none; 
+            background: #f0f9ff; 
+            border: 1px solid #bae6fd; 
+            padding: 15px; 
+            border-radius: 12px; 
+            margin-bottom: 15px; 
+            border-left: 4px solid #0ea5e9; 
+        }
+        
+        .split-calc-info { 
+            font-size: 0.75rem; 
+            color: #0369a1; 
+            font-weight: 700; 
+            margin-top: 5px; 
+        }
+
+        .branch-badge {
+            background: var(--primary);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 15px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        
+        .status-open {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-closed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
     </style>
 </head>
 <body>
@@ -129,32 +360,45 @@
 <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
 
 <aside class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>Jepe Logistics</h2></div>
+    <div class="sidebar-header">
+        <h2>JEPE LOGISTICS</h2>
+        <small id="sidebarBranchDisplay">Loading branch...</small>
+    </div>
     <nav class="sidebar-nav">
-        <a href="cashier.html" class="nav-link">📊 Dashboard</a>
-        <a href="cashiergashub.html" class="nav-link active">⛽ Gas Hub</a>
-        <a href="pos.html" class="nav-link">🛒 Shopping Terminal</a>
-        <a href="cashier_inventory.html" class="nav-link">➕ Add/Update Items</a>
-        <a href="moneyinout.html" class="nav-link">💸 Money In/Out</a>
-        <a href="sales_reports.html" class="nav-link">📈 Sales History</a>
-        <a href="low-stock-cashier.html" class="nav-link">⚠️ Low Stock</a>
-        <a href="debtors.html" class="nav-link">👥 Record Debtors</a>
-        <a href="shift history cashier.html" class="nav-link">⏳ Shift History</a>
-        <a href="gas_delivery.html" class="nav-link">🏍️ Delivery</a>
+        <a href="cashier.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        <a href="cashiergashub.html" class="nav-link active"><i class="fas fa-fire"></i> Gas Hub</a>
+        <a href="pos.html" class="nav-link"><i class="fas fa-shopping-cart"></i> Shopping Terminal</a>
+        <a href="cashier_inventory.html" class="nav-link"><i class="fas fa-boxes"></i> Add/Update Items</a>
+        <a href="moneyinout.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> Money In/Out</a>
+        <a href="sales_reports.html" class="nav-link"><i class="fas fa-chart-line"></i> Sales History</a>
+        <a href="low-stock-cashier.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> Low Stock</a>
+        <a href="debtors.html" class="nav-link"><i class="fas fa-users"></i> Record Debtors</a>
+        <a href="shift history cashier.html" class="nav-link"><i class="fas fa-history"></i> Shift History</a>
+        <a href="gas_delivery.html" class="nav-link"><i class="fas fa-truck"></i> Delivery</a>
         <hr style="width: 100%; border: 0; border-top: 1px solid var(--border); margin: 10px 0;">
-        <a href="#" onclick="logoutUser()" class="nav-link" style="color: var(--danger)">🚪 Logout</a>
+        <a href="#" onclick="logoutUser()" class="nav-link" style="color: var(--danger)">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
     </nav>
 </aside>
 
 <div class="main-wrapper">
     <div class="container">
-        <header style="margin-bottom: 30px;">
-            <h1 style="margin:0; font-weight: 800; font-size: 1.8rem;">Gas Operations</h1>
-            <p id="last-updated" style="color: var(--text-dim); font-size: 0.9rem;">Connecting...</p>
+        <header style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+            <div>
+                <h1 style="margin:0; font-weight: 800; font-size: 1.8rem;">Gas Operations</h1>
+                <p style="color: var(--text-dim); font-size: 0.9rem; margin-top: 5px;">
+                    <i class="fas fa-store"></i> <span id="branchDisplay">Loading branch...</span>
+                </p>
+            </div>
+            <div>
+                <span id="shiftStatus" class="status-badge status-closed">Shift: Closed</span>
+                <span id="last-updated" style="color: var(--text-dim); font-size: 0.8rem; margin-left: 10px;">Connecting...</span>
+            </div>
         </header>
 
         <div class="card" style="border-top: 4px solid var(--success);">
-            <h3 style="color: var(--success);">Register New Gas Brand</h3>
+            <h3 style="color: var(--success);"><i class="fas fa-plus-circle"></i> Register New Gas Brand</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
                 <div><label>Brand Name</label><input type="text" id="new-name" placeholder="e.g. K-Gas"></div>
                 <div><label>Weight Category</label><input type="text" id="new-weight" placeholder="e.g. 6kg"></div>
@@ -172,12 +416,12 @@
 
         <div class="action-grid">
             <div class="card" style="border-top: 4px solid var(--primary);">
-                <h3 style="color: var(--primary);">Refill Sale</h3>
+                <h3 style="color: var(--primary);"><i class="fas fa-exchange-alt"></i> Refill Sale</h3>
                 <label>Taking (Outgoing Full)</label>
                 <select class="gas-dropdown" id="sale-select" onchange="autoFillPrice('refill')"></select>
                 
                 <div class="exchange-box">
-                    <label style="color: var(--danger);">Brought (Incoming Empty)</label>
+                    <label style="color: var(--danger);"><i class="fas fa-arrow-down"></i> Brought (Incoming Empty)</label>
                     <select class="gas-dropdown" id="incoming-select">
                         <option value="same">-- Same as Outgoing Brand --</option>
                     </select>
@@ -188,14 +432,14 @@
                 <div id="refill-warn" class="price-warning">⚠️ BELOW MINIMUM PRICE</div>
 
                 <label>Quantity</label>
-                <input type="number" id="sale-qty" value="1" oninput="calculateTotal('refill')">
+                <input type="number" id="sale-qty" value="1" min="1" oninput="calculateTotal('refill')">
 
                 <label>Payment Method</label>
                 <select id="pMethod-refill" onchange="toggleSplitFields('refill')">
-                    <option value="Cash">Cash (Shop)</option>
-                    <option value="KCB Paybill">KCB Paybill</option>
-                    <option value="Split">Split: Cash + KCB Paybill</option>
-                    <option value="Debt">Debtor (Owed)</option>
+                    <option value="Cash">💵 Cash (Shop)</option>
+                    <option value="KCB Paybill">🏦 KCB Paybill</option>
+                    <option value="Split">🔄 Split: Cash + KCB Paybill</option>
+                    <option value="Debt">📝 Debtor (Owed)</option>
                 </select>
 
                 <div id="split-fields-refill" class="split-input">
@@ -209,7 +453,7 @@
             </div>
 
             <div class="card" style="border-top: 4px solid var(--warning);">
-                <h3 style="color: var(--warning);">Complete Sale (Gas + Shell)</h3>
+                <h3 style="color: var(--warning);"><i class="fas fa-shopping-cart"></i> Complete Sale (Gas + Shell)</h3>
                 <label>Select Gas</label>
                 <select class="gas-dropdown" id="complete-select" onchange="autoFillPrice('complete')"></select>
                 
@@ -218,14 +462,14 @@
                 <div id="complete-warn" class="price-warning">⚠️ BELOW MINIMUM PRICE</div>
 
                 <label>Quantity</label>
-                <input type="number" id="complete-qty" value="1" oninput="calculateTotal('complete')">
+                <input type="number" id="complete-qty" value="1" min="1" oninput="calculateTotal('complete')">
 
                 <label>Payment Method</label>
                 <select id="pMethod-complete" onchange="toggleSplitFields('complete')">
-                    <option value="Cash">Cash (Shop)</option>
-                    <option value="KCB Paybill">KCB Paybill</option>
-                    <option value="Split">Split: Cash + KCB Paybill</option>
-                    <option value="Debt">Debtor (Owed)</option>
+                    <option value="Cash">💵 Cash (Shop)</option>
+                    <option value="KCB Paybill">🏦 KCB Paybill</option>
+                    <option value="Split">🔄 Split: Cash + KCB Paybill</option>
+                    <option value="Debt">📝 Debtor (Owed)</option>
                 </select>
 
                 <div id="split-fields-complete" class="split-input">
@@ -239,19 +483,21 @@
             </div>
 
             <div class="card" style="border-top: 4px solid var(--text);">
-                <h3 style="color: var(--text);">Warehouse Refill</h3>
+                <h3 style="color: var(--text);"><i class="fas fa-warehouse"></i> Warehouse Refill</h3>
                 <label>Select Gas</label>
                 <select class="gas-dropdown" id="refill-select"></select>
                 <label>Qty moved Empty → Full</label>
-                <input type="number" id="action-qty" placeholder="Units">
+                <input type="number" id="action-qty" placeholder="Units" min="1">
                 <button id="btn-instant-refill" class="btn" style="background:var(--text)">Update Stock</button>
             </div>
         </div>
 
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 25px;">
-                <h3 style="margin:0;">Live Inventory</h3>
-                <button onclick="loadAll()" style="background:#f1f5f9; border:none; padding:8px 15px; border-radius:8px; color:var(--primary); font-weight:700; cursor:pointer;">Refresh</button>
+                <h3 style="margin:0;"><i class="fas fa-boxes"></i> Live Inventory</h3>
+                <button onclick="loadAll()" style="background:#f1f5f9; border:none; padding:8px 15px; border-radius:8px; color:var(--primary); font-weight:700; cursor:pointer;">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
             </div>
             <div class="gas-grid" id="gas-display"></div>
         </div>
@@ -263,6 +509,66 @@
 
     let gasItems = [];
     let activeShift = null;
+    let currentUser = null;
+    let currentBranchId = null;
+    let currentBranch = null;
+
+    // ==================== BRANCH AWARE FUNCTIONS ====================
+
+    async function loadUserProfile() {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return null;
+            }
+            
+            currentUser = user;
+            
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select(`
+                    *,
+                    branches (
+                        id,
+                        name,
+                        code,
+                        location
+                    )
+                `)
+                .eq('id', user.id)
+                .single();
+            
+            if (error) throw error;
+            
+            currentBranchId = profile.branch_id;
+            currentBranch = profile.branches;
+            
+            const session = {
+                user: user,
+                profile: profile,
+                branch: profile.branches,
+                role: profile.role
+            };
+            localStorage.setItem('pos_session', JSON.stringify(session));
+            
+            // Update UI with branch info
+            const branchDisplay = document.getElementById('branchDisplay');
+            const sidebarBranch = document.getElementById('sidebarBranchDisplay');
+            
+            if (branchDisplay && profile.branches) {
+                branchDisplay.innerHTML = `<i class="fas fa-store"></i> ${profile.branches.name}`;
+            }
+            if (sidebarBranch && profile.branches) {
+                sidebarBranch.textContent = profile.branches.name;
+            }
+            
+            return profile;
+        } catch (error) {
+            console.error("Error loading profile:", error);
+            return null;
+        }
+    }
 
     // --- SIDEBAR ---
     window.toggleSidebar = () => {
@@ -271,6 +577,7 @@
     };
 
     window.logoutUser = async () => { 
+        localStorage.removeItem('pos_session');
         await supabase.auth.signOut(); 
         location.href = 'index.html'; 
     };
@@ -294,10 +601,27 @@
     };
 
     async function init() {
-        const { data: shift } = await supabase.from('daily_shifts').select('*').eq('status', 'Open').maybeSingle();
+        const profile = await loadUserProfile();
+        if (!profile) return;
+        
+        // Check for open shift
+        const { data: shift } = await supabase
+            .from('daily_shifts')
+            .select('*')
+            .eq('status', 'open')
+            .eq('branch_id', currentBranchId)
+            .maybeSingle();
+            
         activeShift = shift;
-        if(!activeShift) {
-            document.getElementById('last-updated').innerHTML = "<b style='color:red'>SHIFT CLOSED. Open shift to record sales.</b>";
+        
+        const shiftStatus = document.getElementById('shiftStatus');
+        if(activeShift) {
+            shiftStatus.innerHTML = 'Shift: Open';
+            shiftStatus.className = 'status-badge status-open';
+        } else {
+            shiftStatus.innerHTML = 'Shift: Closed';
+            shiftStatus.className = 'status-badge status-closed';
+            document.getElementById('last-updated').innerHTML = "<b style='color:red'>⚠️ SHIFT CLOSED. Open shift to record sales.</b>";
         }
         
         loadAll();
@@ -305,21 +629,32 @@
     }
 
     async function loadSuppliers() {
-        const { data } = await supabase.from('suppliers').select('id, name').order('name');
+        const { data } = await supabase
+            .from('suppliers')
+            .select('id, name')
+            .eq('branch_id', currentBranchId)
+            .order('name');
+            
         if (data) {
             document.getElementById('new-supplier-id').innerHTML = 
-                `<option value="">No Supplier</option>` + 
+                `<option value="">-- No Supplier --</option>` + 
                 data.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
         }
     }
 
     async function loadAll() {
-        const { data, error } = await supabase.from('products').select('*').eq('category', 'Gas').order('name');
+        const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .eq('category', 'Gas')
+            .eq('branch_id', currentBranchId)
+            .order('name');
+            
         if (!error) {
             gasItems = data || [];
             renderInventory();
             updateDropdowns();
-            document.getElementById('last-updated').innerText = "Last Sync: " + new Date().toLocaleTimeString();
+            document.getElementById('last-updated').innerHTML = "Last Sync: " + new Date().toLocaleTimeString();
         }
     }
 
@@ -333,23 +668,24 @@
                     </div>
                     <div style="text-align:right">
                         <small style="color:var(--text-dim); font-weight:700;">REFILL</small>
-                        <div style="font-weight:800; color:var(--primary)">Ksh ${g.selling_price.toLocaleString()}</div>
+                        <div style="font-weight:800; color:var(--primary)">Ksh ${g.selling_price?.toLocaleString() || 0}</div>
+                        ${g.cylinder_price ? `<small style="color:var(--text-dim);">+ Cyl: Ksh ${g.cylinder_price}</small>` : ''}
                     </div>
                 </div>
                 <div class="stock-display">
-                    <div class="box full"><span class="qty">${g.stock_quantity}</span><small>Full</small></div>
+                    <div class="box full"><span class="qty">${g.stock_quantity || 0}</span><small>Full</small></div>
                     <div class="box empty"><span class="qty">${g.empty_quantity || 0}</span><small>Empty</small></div>
                 </div>
                 <a href="cashier_inventory.html?item=${encodeURIComponent(g.name)}&type=gas" class="btn-buy">
-                    🚚 Buy Complete Stock
+                    <i class="fas fa-truck"></i> Buy Complete Stock
                 </a>
             </div>
         `).join('');
     }
 
     function updateDropdowns() {
-        const opts = `<option value="" disabled selected>Choose Brand...</option>` + 
-            gasItems.map(g => `<option value="${g.id}">${g.name} (${g.weight_category})</option>`).join('');
+        const opts = `<option value="" disabled selected>-- Choose Brand --</option>` + 
+            gasItems.map(g => `<option value="${g.id}" data-price="${g.selling_price}" data-cyl="${g.cylinder_price || 0}">${g.name} (${g.weight_category})</option>`).join('');
         
         document.querySelectorAll('.gas-dropdown').forEach(el => {
             if(el.id === 'incoming-select') {
@@ -376,16 +712,23 @@
         const item = gasItems.find(g => g.id == id);
         if (!item) return;
 
-        const minAllowed = type === 'refill' ? (item.min_selling_price || item.selling_price) : ((item.min_selling_price || item.selling_price) + (item.cylinder_price || 0));
+        const minAllowed = type === 'refill' ? 
+            (item.min_selling_price || item.selling_price) : 
+            ((item.min_selling_price || item.selling_price) + (item.cylinder_price || 0));
         
         document.getElementById(type === 'refill' ? 'refill-warn' : 'complete-warn').style.display = (price > 0 && price < minAllowed) ? 'block' : 'none';
-        document.getElementById(type === 'refill' ? 'refill-preview' : 'complete-preview').innerHTML = `Stock: ${item.stock_quantity} | Total: <b>Ksh ${(price * qty).toLocaleString()}</b>`;
+        document.getElementById(type === 'refill' ? 'refill-preview' : 'complete-preview').innerHTML = `Stock: ${item.stock_quantity || 0} | Total: <b>Ksh ${(price * qty).toLocaleString()}</b>`;
         
         if(document.getElementById(`pMethod-${type}`).value === 'Split') updateSplitBalance(type);
     };
 
     // --- SALE PROCESSING ---
     async function processSale(btnId, type) {
+        if (!activeShift) {
+            alert("❌ You must have an open shift to process sales!");
+            return;
+        }
+        
         const outgoingId = document.getElementById(type === 'refill' ? 'sale-select' : 'complete-select').value;
         const qty = parseInt(document.getElementById(type === 'refill' ? 'sale-qty' : 'complete-qty').value);
         const price = parseFloat(document.getElementById(type === 'refill' ? 'sale-price' : 'complete-price').value);
@@ -395,24 +738,26 @@
         const btn = document.getElementById(btnId);
 
         if (!outgoingId || !qty || !price || qty <= 0) return alert("Please fill all details correctly.");
-        if (!activeShift) return alert("Shift is closed. You cannot sell.");
         if (outgoingItem.stock_quantity < qty) return alert("Insufficient full stock.");
 
-        let auditReason = null;
-        const minAllowed = type === 'refill' ? (outgoingItem.min_selling_price || outgoingItem.selling_price) : ((outgoingItem.min_selling_price || outgoingItem.selling_price) + (outgoingItem.cylinder_price || 0));
+        let discountReason = null;
+        const minAllowed = type === 'refill' ? 
+            (outgoingItem.min_selling_price || outgoingItem.selling_price) : 
+            ((outgoingItem.min_selling_price || outgoingItem.selling_price) + (outgoingItem.cylinder_price || 0));
+            
         if (price < minAllowed) {
-            auditReason = prompt(`Price is below minimum. Enter reason for discount:`);
-            if (!auditReason) return alert("Discount reason is mandatory.");
+            discountReason = prompt(`Price is below minimum (Ksh ${minAllowed}). Enter reason for discount:`);
+            if (!discountReason) return alert("Discount reason is mandatory.");
         }
 
         btn.disabled = true;
-        btn.innerText = "Processing...";
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> PROCESSING...';
 
         try {
             const total = price * qty;
             const salesToInsert = [];
             
-            // Fixed Item Name Logic: Appends weight so it appears in sales logs
+            // Handle exchange logic for refill
             let exchangeInfo = "";
             let incomingId = outgoingId;
             
@@ -428,15 +773,17 @@
             const baseSale = {
                 shift_id: activeShift.id,
                 product_id: outgoingItem.id,
-                item_name: `${outgoingItem.name} (${outgoingItem.weight_category}) (${type.toUpperCase()})${exchangeInfo}`,
+                item_name: `${outgoingItem.name} (${outgoingItem.weight_category}) ${type.toUpperCase()}${exchangeInfo}`,
                 quantity: qty,
                 unit_price: price,
                 total_amount: total,
                 amount: total,
                 cost_price: outgoingItem.cost_price || 0,
-                discount_reason: auditReason,
+                discount_reason: discountReason,
                 category: 'Gas',
-                weight_category: outgoingItem.weight_category
+                weight_category: outgoingItem.weight_category,
+                branch_id: currentBranchId,
+                user_id: currentUser.id
             };
 
             if (method === 'Split') {
@@ -446,8 +793,22 @@
                 if (cashPart <= 0 || cashPart >= total) throw new Error("Invalid split amounts.");
 
                 salesToInsert.push(
-                    { ...baseSale, quantity: qty, amount: cashPart, total_amount: cashPart, payment_method: 'Cash', item_name: baseSale.item_name + ' (Split-Cash)' },
-                    { ...baseSale, quantity: 0, amount: paybillPart, total_amount: paybillPart, payment_method: 'KCB Paybill', item_name: baseSale.item_name + ' (Split-Paybill)' }
+                    { 
+                        ...baseSale, 
+                        quantity: qty, 
+                        amount: cashPart, 
+                        total_amount: cashPart, 
+                        payment_method: 'Cash', 
+                        item_name: baseSale.item_name + ' (Split-Cash)' 
+                    },
+                    { 
+                        ...baseSale, 
+                        quantity: 0, 
+                        amount: paybillPart, 
+                        total_amount: paybillPart, 
+                        payment_method: 'KCB Paybill', 
+                        item_name: baseSale.item_name + ' (Split-Paybill)' 
+                    }
                 );
             } else {
                 salesToInsert.push({ ...baseSale, payment_method: method });
@@ -457,33 +818,56 @@
             if (saleErr) throw saleErr;
 
             // Update Outgoing Stock (Full -> -qty)
-            await supabase.from('products').update({ 
-                stock_quantity: outgoingItem.stock_quantity - qty 
-            }).eq('id', outgoingId);
+            await supabase.from('products')
+                .update({ stock_quantity: outgoingItem.stock_quantity - qty })
+                .eq('id', outgoingId)
+                .eq('branch_id', currentBranchId);
 
-            // Update Incoming Stock (Empty -> +qty)
+            // Update Incoming Stock (Empty -> +qty) for refills
             if (type === 'refill') {
-                const { data: incData } = await supabase.from('products').select('empty_quantity').eq('id', incomingId).single();
-                await supabase.from('products').update({ 
-                    empty_quantity: (incData.empty_quantity || 0) + qty 
-                }).eq('id', incomingId);
+                const { data: incData } = await supabase
+                    .from('products')
+                    .select('empty_quantity')
+                    .eq('id', incomingId)
+                    .eq('branch_id', currentBranchId)
+                    .single();
+                    
+                await supabase.from('products')
+                    .update({ empty_quantity: (incData?.empty_quantity || 0) + qty })
+                    .eq('id', incomingId)
+                    .eq('branch_id', currentBranchId);
             }
 
-            alert("Sale completed successfully!");
-            loadAll();
+            // Handle Debt recording if applicable
+            if (method === 'Debt') {
+                const customerName = prompt("Enter customer name for debt:");
+                if (customerName) {
+                    await supabase.from('debtors').insert([{
+                        customer_name: customerName,
+                        product_id: outgoingItem.id,
+                        amount_owed: total,
+                        status: 'Unpaid',
+                        branch_id: currentBranchId
+                    }]);
+                }
+            }
+
+            alert("✅ Sale completed successfully!");
+            await loadAll();
             
             // Reset fields
             document.getElementById(type === 'refill' ? 'sale-qty' : 'complete-qty').value = 1;
             if(document.getElementById(`split-cash-${type}`)) document.getElementById(`split-cash-${type}`).value = "";
             document.getElementById(`pMethod-${type}`).value = "Cash";
             if (type === 'refill') document.getElementById('incoming-select').value = "same";
-            toggleSplitFields(type);
+            document.getElementById(`split-fields-${type}`).style.display = 'none';
 
         } catch (err) { 
-            alert("Error: " + err.message); 
+            console.error("Sale error:", err);
+            alert("❌ Error: " + err.message); 
         } finally { 
             btn.disabled = false; 
-            btn.innerText = (type === 'refill') ? "Complete Refill" : "Complete Full Sale"; 
+            btn.innerHTML = (type === 'refill') ? "Complete Refill" : "Complete Full Sale"; 
         }
     }
 
@@ -492,6 +876,8 @@
 
     // --- INVENTORY ACTIONS ---
     document.getElementById('btn-add-inventory').onclick = async () => {
+        if (!currentBranchId) return alert("Branch information not loaded");
+        
         const payload = {
             name: document.getElementById('new-name').value,
             weight_category: document.getElementById('new-weight').value,
@@ -502,13 +888,25 @@
             cylinder_price: parseInt(document.getElementById('new-cyl-price').value) || 0,
             stock_quantity: parseInt(document.getElementById('new-qty').value) || 0,
             empty_quantity: 0,
-            category: 'Gas'
+            category: 'Gas',
+            branch_id: currentBranchId
         };
+        
         if (!payload.name) return alert("Brand Name is required");
+        
         const { error } = await supabase.from('products').insert([payload]);
         if (!error) { 
+            alert("✅ Gas brand registered successfully!");
             loadAll(); 
             document.getElementById('new-name').value = ""; 
+            document.getElementById('new-weight').value = ""; 
+            document.getElementById('new-cost').value = ""; 
+            document.getElementById('new-sell').value = ""; 
+            document.getElementById('new-min-sell').value = ""; 
+            document.getElementById('new-cyl-price').value = ""; 
+            document.getElementById('new-qty').value = "0"; 
+        } else {
+            alert("❌ Error: " + error.message);
         }
     };
 
@@ -516,14 +914,21 @@
         const id = document.getElementById('refill-select').value;
         const qty = parseInt(document.getElementById('action-qty').value);
         const item = gasItems.find(g => g.id == id);
-        if (!item || !qty || qty <= 0 || item.empty_quantity < qty) return alert("Invalid entry or insufficient empty stock.");
         
-        const { error } = await supabase.from('products').update({
-            stock_quantity: item.stock_quantity + qty,
-            empty_quantity: item.empty_quantity - qty
-        }).eq('id', id);
+        if (!item || !qty || qty <= 0) return alert("Please select a gas brand and enter valid quantity.");
+        if (!item.empty_quantity || item.empty_quantity < qty) return alert("Insufficient empty stock.");
+        
+        const { error } = await supabase
+            .from('products')
+            .update({
+                stock_quantity: item.stock_quantity + qty,
+                empty_quantity: item.empty_quantity - qty
+            })
+            .eq('id', id)
+            .eq('branch_id', currentBranchId);
         
         if (!error) { 
+            alert("✅ Stock updated successfully!");
             loadAll(); 
             document.getElementById('action-qty').value = ""; 
         }
