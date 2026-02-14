@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shift Audit | JEPE POS</title>
+    <title>Shift Audit | JEPE POS - Multi-Branch</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -56,6 +56,8 @@
             justify-content: space-between; 
             align-items: center;
         }
+        .sidebar-header i { color: var(--primary); margin-right: 10px; }
+        
         .close-menu { 
             display: none; 
             background: none; 
@@ -64,6 +66,34 @@
             font-size: 1.5rem; 
             cursor: pointer; 
         }
+        
+        /* Branch Info in Sidebar */
+        .branch-info {
+            padding: 15px;
+            margin: 10px 15px 20px;
+            background: rgba(79, 70, 229, 0.2);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .branch-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            color: #94a3b8;
+            letter-spacing: 0.5px;
+        }
+        
+        .branch-name {
+            font-weight: 800;
+            color: white;
+            font-size: 0.95rem;
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .branch-name i { color: var(--primary); }
         
         .nav-list { 
             padding: 15px; 
@@ -82,9 +112,11 @@
             transition: 0.2s; 
             font-size: 0.9rem; 
         }
-        .nav-item span { 
-            margin-right: 12px; 
+        .nav-item i { 
+            width: 24px; 
             font-size: 1.1rem; 
+            margin-right: 12px;
+            text-align: center;
         }
         .nav-item:hover { 
             background: rgba(255,255,255,0.05); 
@@ -153,6 +185,59 @@
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); 
         }
 
+        /* --- BRANCH SELECTOR --- */
+        .branch-selector-container {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        
+        .branch-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .branch-select {
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 2px solid var(--primary);
+            background: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text);
+            cursor: pointer;
+            min-width: 220px;
+            outline: none;
+        }
+        
+        .branch-badge {
+            background: var(--primary);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .date-range {
+            color: var(--dim);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
         /* --- MOBILE SLIDE INDICATOR --- */
         .slide-indicator { 
             background: #0f172a; 
@@ -217,7 +302,7 @@
         table { 
             width: 100%; 
             border-collapse: collapse; 
-            min-width: 1250px; 
+            min-width: 1350px; 
         }
         th { 
             background: #f8fafc; 
@@ -334,6 +419,17 @@
             color: var(--dim); 
             display: inline-block; 
             margin-top: 4px; 
+        }
+        
+        .branch-pill {
+            background: #f1f5f9;
+            color: var(--dim);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: inline-block;
+            margin-left: 5px;
         }
         
         /* --- MOBILE CARD STYLES --- */
@@ -639,30 +735,46 @@
 
 <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        JEPE ADMIN
+        <i class="fas fa-store"></i> JEPE ADMIN
         <button class="close-menu" onclick="toggleMenu()">×</button>
     </div>
+    
+    <!-- Branch Info Display -->
+    <div class="branch-info" id="sidebarBranchInfo">
+        <div class="branch-label">Your Assigned Branch</div>
+        <div class="branch-name" id="sidebarBranchName">
+            <i class="fas fa-store"></i>
+            <span>Loading...</span>
+        </div>
+    </div>
+    
     <div class="nav-list">
-        <a href="#" onclick="confirmSwitchToCashier(event)" class="nav-item switch-link"><span>🔄</span> SWITCH TO CASHIER</a>
-        <a href="admin.html" class="nav-item"><span>📊</span> Dashboard</a>
-        <a href="gas_hub.html" class="nav-item"><span>🔥</span> Gas Hub</a>
-        <a href="spares_hub.html" class="nav-item"><span>⚙️</span> Spare Parts Hub</a>
-        <a href="motorbike_hub.html" class="nav-item"><span>🏍️</span> Motorbike Hub</a>
+        <a href="#" onclick="confirmSwitchToCashier(event)" class="nav-item"><i class="fas fa-exchange-alt"></i> SWITCH TO CASHIER</a>
+        <a href="admin.html" class="nav-item"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        <a href="gas_hub.html" class="nav-item"><i class="fas fa-fire"></i> Gas Hub</a>
+        <a href="spares_hub.html" class="nav-item"><i class="fas fa-cogs"></i> Spare Parts Hub</a>
+        <a href="motorbike_hub.html" class="nav-item"><i class="fas fa-motorcycle"></i> Motorbike Hub</a>
 
-        <a href="shift-history.html" class="nav-item active"><span>📋</span> Daily Shifts</a>
-        <a href="money-history.html" class="nav-item"><span>💰</span> Money IN/OUT</a>
-        <a href="sales-history.html" class="nav-item"><span>📜</span> Sales History</a>
+        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
 
-        <a href="inventory.html" class="nav-item"><span>➕</span> Add Stock</a>
-        <a href="sales_editor.html" class="nav-item"><span>✏️</span> Edit Stock</a>
-        <a href="admin-debtors.html" class="nav-item"><span>👥</span> Debtors</a>
-        <a href="low_stock.html" class="nav-item"><span>⚠️</span> Low Stock</a>
-        <a href="audit_trail.html" class="nav-item"><span>🔍</span> Inventory Track</a>
+        <a href="shift-history.html" class="nav-item active"><i class="fas fa-history"></i> Daily Shifts</a>
+        <a href="money-history.html" class="nav-item"><i class="fas fa-money-bill-wave"></i> Money IN/OUT</a>
+        <a href="sales-history.html" class="nav-item"><i class="fas fa-chart-line"></i> Sales History</a>
 
-        <a href="reports.html" class="nav-item"><span>📄</span> Reports</a>
-        <a href="price_audits.html" class="nav-item"><span>📉</span> Underpriced</a>
-        <a href="suppliers.html" class="nav-item"><span>🤝</span> Suppliers</a>
-        <a href="admin.html" class="nav-item"><span>🏠</span> HOME</a>
+        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+
+        <a href="inventory.html" class="nav-item"><i class="fas fa-plus-circle"></i> Add Stock</a>
+        <a href="sales_editor.html" class="nav-item"><i class="fas fa-edit"></i> Edit Stock</a>
+        <a href="admin-debtors.html" class="nav-item"><i class="fas fa-users"></i> Debtors</a>
+        <a href="low_stock.html" class="nav-item"><i class="fas fa-exclamation-triangle"></i> Low Stock</a>
+        <a href="audit_trail.html" class="nav-item"><i class="fas fa-search"></i> Inventory Track</a>
+
+        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+
+        <a href="reports.html" class="nav-item"><i class="fas fa-file-alt"></i> Reports</a>
+        <a href="price_audits.html" class="nav-item"><i class="fas fa-tags"></i> Underpriced</a>
+        <a href="suppliers.html" class="nav-item"><i class="fas fa-handshake"></i> Suppliers</a>
+        <a href="admin.html" class="nav-item"><i class="fas fa-home"></i> HOME</a>
     </div>
 </nav>
 
@@ -670,6 +782,23 @@
     <div class="page-header">
         <h1 style="margin:0; font-size: 1.6rem;">DAILY SHIFT HISTORY</h1>
         <p style="margin:6px 0 0; color: var(--dim);">Comprehensive reconciliation of all physical and system balances.</p>
+    </div>
+
+    <!-- Branch Selector -->
+    <div class="branch-selector-container">
+        <div class="branch-filter">
+            <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
+            <select id="branchSelector" class="branch-select" onchange="handleBranchChange()">
+                <option value="all">🏢 ALL BRANCHES (Consolidated)</option>
+                <option value="MUT">🏪 MUTOMO BRANCH</option>
+                <option value="KIT">🏪 KITUI BRANCH</option>
+            </select>
+        </div>
+        <div class="branch-badge" id="currentBranchBadge">
+            <i class="fas fa-store"></i>
+            <span id="currentBranchDisplay">ALL BRANCHES</span>
+        </div>
+        <span class="date-range" id="dateRange"></span>
     </div>
 
     <div class="slide-indicator" id="scrollHint">
@@ -692,6 +821,7 @@
                         <th width="210">CLOSING FLOATS</th>
                         <th width="190">VARIANCE</th>
                         <th width="200">VARIANCE REASON</th>
+                        <th width="80">BRANCH</th>
                     </tr>
                 </thead>
                 <tbody id="audit-body-desktop"></tbody>
@@ -727,9 +857,117 @@
     
     let allShifts = [], allTransactions = [], allSales = [];
     let isMobile = window.innerWidth <= 768;
+    let currentUser = null;
+    let currentBranchId = null;
+    let currentBranch = null;
+    let selectedBranchId = null;
+    let branches = {};
+    let branchIdMap = {};
+
+    // ==================== BRANCH FUNCTIONS ====================
+
+    async function loadBranches() {
+        const { data } = await supabase.from('branches').select('*');
+        branches = {};
+        branchIdMap = {};
+        data?.forEach(b => {
+            branches[b.id] = b;
+            branchIdMap[b.code] = b.id;
+        });
+        console.log("✅ Branches loaded:", branches);
+        return branches;
+    }
+
+    function getBranchIdFromCode(code) {
+        return branchIdMap[code] || null;
+    }
+
+    async function loadUserProfile() {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return null;
+            }
+            
+            currentUser = user;
+            
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select(`
+                    *,
+                    branches (
+                        id,
+                        name,
+                        code,
+                        location
+                    )
+                `)
+                .eq('id', user.id)
+                .single();
+            
+            if (error) throw error;
+            
+            currentBranchId = profile.branch_id;
+            currentBranch = profile.branches;
+            
+            const session = {
+                user: user,
+                profile: profile,
+                branch: profile.branches,
+                role: profile.role
+            };
+            localStorage.setItem('pos_session', JSON.stringify(session));
+            
+            // Update sidebar with user's assigned branch
+            const sidebarBranchName = document.querySelector('#sidebarBranchName span');
+            if (profile.branches && sidebarBranchName) {
+                sidebarBranchName.textContent = profile.branches.name;
+            }
+            
+            return profile;
+        } catch (error) {
+            console.error("❌ Error loading profile:", error);
+            return null;
+        }
+    }
 
     window.toggleMenu = function() {
         document.getElementById('sidebar').classList.toggle('active');
+    };
+
+    window.confirmSwitchToCashier = (e) => {
+        e.preventDefault();
+        if(confirm("Switch to Cashier Mode?")) {
+            window.location.href = "cashier.html";
+        }
+    };
+
+    window.handleBranchChange = async function() {
+        const selector = document.getElementById('branchSelector');
+        const selectedCode = selector.value;
+        
+        const branchDisplay = document.getElementById('currentBranchDisplay');
+        const dateRange = document.getElementById('dateRange');
+        
+        console.log("========== BRANCH CHANGE ==========");
+        console.log("Selected code:", selectedCode);
+        
+        if (selectedCode === 'all') {
+            branchDisplay.textContent = 'ALL BRANCHES';
+            selectedBranchId = null;
+            dateRange.textContent = 'Showing all branches';
+        } else {
+            const branchId = getBranchIdFromCode(selectedCode);
+            if (branchId) {
+                selectedBranchId = branchId;
+                branchDisplay.textContent = branches[branchId].name;
+                dateRange.textContent = `Showing ${branches[branchId].name} only`;
+                console.log(`Selected branch: ${branches[branchId].name} (ID: ${branchId})`);
+            }
+        }
+        
+        await fetchData();
     };
 
     const scrollContainer = document.getElementById('scrollContainer');
@@ -747,15 +985,47 @@
         showLoading(true);
         
         try {
+            console.log("Fetching shifts for branch ID:", selectedBranchId || 'ALL');
+            
+            // Build shifts query
+            let shiftsQuery = supabase
+                .from('daily_shifts')
+                .select('*')
+                .order('start_time', { ascending: false });
+            
+            if (selectedBranchId) {
+                shiftsQuery = shiftsQuery.eq('branch_id', selectedBranchId);
+            }
+            
+            // Build transactions query
+            let transQuery = supabase
+                .from('cash_transactions')
+                .select('shift_id, amount, type');
+            
+            if (selectedBranchId) {
+                transQuery = transQuery.eq('branch_id', selectedBranchId);
+            }
+            
+            // Build sales query
+            let salesQuery = supabase
+                .from('sales')
+                .select('shift_id, total_amount, payment_method');
+            
+            if (selectedBranchId) {
+                salesQuery = salesQuery.eq('branch_id', selectedBranchId);
+            }
+
             const [shiftsRes, transRes, salesRes] = await Promise.all([
-                supabase.from('daily_shifts').select('*').order('start_time', { ascending: false }),
-                supabase.from('cash_transactions').select('shift_id, amount, type'),
-                supabase.from('sales').select('shift_id, total_amount, payment_method')
+                shiftsQuery,
+                transQuery,
+                salesQuery
             ]);
 
             allShifts = shiftsRes.data || [];
             allTransactions = transRes.data || [];
             allSales = salesRes.data || [];
+            
+            console.log(`Loaded ${allShifts.length} shifts`);
             
             render();
         } catch (error) {
@@ -795,6 +1065,7 @@
         let tableHtml = '';
 
         data.forEach(sh => {
+            const branch = branches[sh.branch_id] || { name: 'Unknown', code: '--' };
             const shiftLogs = allTransactions.filter(t => t.shift_id === sh.id);
             const shiftSales = allSales.filter(s => s.shift_id === sh.id);
 
@@ -819,12 +1090,11 @@
                 varianceDisplay = 'SHIFT ACTIVE';
                 varianceClass = 'active-shift';
             } else {
-                // If closed, check the amount for sign and color
                 if (varianceVal > 0) {
                     varianceDisplay = 'VAR: +' + varianceVal.toLocaleString();
                     varianceClass = 'var-positive';
                 } else if (varianceVal < 0) {
-                    varianceDisplay = 'VAR: ' + varianceVal.toLocaleString(); // toLocaleString keeps the - sign
+                    varianceDisplay = 'VAR: ' + varianceVal.toLocaleString();
                     varianceClass = 'var-negative';
                 } else {
                     varianceDisplay = 'VAR: 0';
@@ -879,10 +1149,11 @@
                         </div>
                     </td>
                     <td><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--dim); font-style: italic;">${sh.variance_note || 'No notes added.'}</div></td>
+                    <td><span class="branch-pill">${branch.code}</span></td>
                 </tr>`;
         });
 
-        tbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.</td></tr>';
+        tbody.innerHTML = tableHtml || '<tr><td colspan="8" style="text-align:center; padding:50px;">No records found.</td></tr>';
     }
 
     function renderMobile(data = allShifts) {
@@ -892,6 +1163,7 @@
         let mobileHtml = '';
 
         data.forEach(sh => {
+            const branch = branches[sh.branch_id] || { name: 'Unknown', code: '--' };
             const shiftLogs = allTransactions.filter(t => t.shift_id === sh.id);
             const shiftSales = allSales.filter(s => s.shift_id === sh.id);
 
@@ -936,6 +1208,7 @@
                             <small>
                                 ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
                                 ${endD ? ` - ${endD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}` : ''}
+                                <span class="branch-pill">${branch.code}</span>
                             </small>
                         </div>
                         <div class="shift-mobile-status ${varianceClass}">
@@ -1105,8 +1378,21 @@
     });
 
     // Initialize on load
-    document.addEventListener('DOMContentLoaded', function() {
-        fetchData();
+    document.addEventListener('DOMContentLoaded', async function() {
+        await loadBranches();
+        await loadUserProfile();
+        
+        // Set today's date
+        const today = new Date();
+        document.getElementById('dateRange').textContent = today.toLocaleDateString('en-GB', { 
+            day: 'numeric', month: 'long', year: 'numeric' 
+        });
+        
+        // Set default branch selector
+        document.getElementById('branchSelector').value = 'all';
+        selectedBranchId = null;
+        
+        await fetchData();
         
         // Check if we're on mobile initially
         isMobile = window.innerWidth <= 768;
