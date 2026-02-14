@@ -339,14 +339,14 @@
 </div>
 
 <main class="main-content">
-    <!-- Branch Selector -->
+    <!-- Branch Selector - USING CORRECT BRANCH CODES -->
     <div class="branch-selector-container">
         <div class="branch-filter">
             <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
             <select id="branchSelector" class="branch-select" onchange="handleBranchChange()">
                 <option value="all">🏢 ALL BRANCHES (Consolidated)</option>
-                <option value="MUTOMO">🏪 MUTOMO BRANCH</option>
-                <option value="KITUI">🏪 KITUI BRANCH</option>
+                <option value="MUT">🏪 MUTOMO BRANCH</option>
+                <option value="KIT">🏪 KITUI BRANCH</option>
             </select>
         </div>
         <div class="branch-badge" id="currentBranchBadge">
@@ -423,13 +423,10 @@
         branchIdMap = {};
         data?.forEach(b => {
             branches[b.id] = b;
-            branchIdMap[b.code] = b.id;
+            branchIdMap[b.code] = b.id; // This maps 'MUT' -> UUID, 'KIT' -> UUID
         });
         console.log("✅ Branches loaded:", branches);
-        
-        // Log the branch IDs for verification
-        console.log("MUTOMO Branch ID:", branchIdMap['MUTOMO']);
-        console.log("KITUI Branch ID:", branchIdMap['KITUI']);
+        console.log("✅ Branch ID Map:", branchIdMap); // Should show {MUT: 'uuid...', KIT: 'uuid...'}
         
         return branches;
     }
@@ -477,6 +474,7 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
+            // Update sidebar with user's assigned branch
             const sidebarBranchName = document.querySelector('#sidebarBranchName span');
             if (profile.branches && sidebarBranchName) {
                 sidebarBranchName.textContent = profile.branches.name;
@@ -526,7 +524,8 @@
                 dateRange.textContent = `Showing ${branches[branchId].name} only`;
                 console.log(`Selected branch: ${branches[branchId].name} (ID: ${branchId})`);
             } else {
-                console.error(`Could not find branch ID for code: ${selectedCode}`);
+                console.error(`❌ Could not find branch ID for code: ${selectedCode}`);
+                console.log("Available branch codes:", Object.keys(branchIdMap));
             }
         }
         
