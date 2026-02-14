@@ -1608,7 +1608,7 @@
         <button class="btn btn-danger" style="margin-top:20px; width:100%" id="confirm-close">FINALIZE & CLOSE</button>
     </div>
 </div>
-   <script type="module">
+  <script type="module">
     import { supabase } from './auth.js';
 
     let inventory = [];
@@ -2058,7 +2058,7 @@
             .from('daily_shifts')
             .select('*')
             .eq('branch_id', branchId)
-            .eq('status', 'open')
+            .eq('status', 'Open') // Note: Capital 'O' as per your schema default
             .maybeSingle();
         
         return data;
@@ -2086,7 +2086,7 @@
                     supabase.from('daily_shifts')
                         .select('*')
                         .eq('branch_id', branchId)
-                        .eq('status', 'open')
+                        .eq('status', 'Open') // Note: Capital 'O' to match schema
                         .maybeSingle()
                 ]);
 
@@ -2458,7 +2458,7 @@
             open_mpesa: mpesa,
             open_kcb: kcb,
             open_equity: equity,
-            status: 'open',
+            status: 'Open', // Note: Capital 'O' to match schema default
             start_time: new Date().toISOString()
         };
         
@@ -2545,7 +2545,7 @@
                 close_equity: clE, 
                 close_kcb_bank: clB, 
                 close_cash: clC,
-                status: 'closed',
+                status: 'Closed', // Note: Capital 'C' to match schema default
                 end_time: new Date().toISOString(), 
                 variance_note: note, 
                 system_expected_total: expected
@@ -2586,7 +2586,7 @@
             allTransactions = transactions || [];
             allSales = sales || [];
             
-            const lastClosed = allShifts.find(s => s.status === 'closed');
+            const lastClosed = allShifts.find(s => s.status === 'Closed'); // Note: Capital 'C'
             if (lastClosed) {
                 const clT = (lastClosed.close_cash||0) + (lastClosed.close_mpesa||0) + (lastClosed.close_kcb||0) + (lastClosed.close_equity||0) + (lastClosed.close_kcb_bank || 0);
                 if (Math.abs(clT - (lastClosed.system_expected_total || 0)) < 1) {
@@ -2634,7 +2634,7 @@
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
-            const isClosed = sh.status === 'closed';
+            const isClosed = sh.status === 'Closed'; // Note: Capital 'C' to match schema
             const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             
@@ -2739,7 +2739,7 @@
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
-            const isClosed = sh.status === 'closed';
+            const isClosed = sh.status === 'Closed'; // Note: Capital 'C' to match schema
             const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             const varianceVal = isClosed ? (closeTotal - expected) : 0;
