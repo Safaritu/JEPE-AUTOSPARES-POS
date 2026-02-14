@@ -6,6 +6,7 @@
     <title>Add Stock | JEPE ADMIN</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { 
             --admin-dark: #0f172a;
@@ -78,14 +79,54 @@
             .close-sidebar-btn { display: none; }
         }
 
-        .sidebar h2 { color: white; font-weight: 800; font-size: 1.2rem; margin-bottom: 25px; letter-spacing: 1px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; }
+        .sidebar h2 { 
+            color: white; 
+            font-weight: 800; 
+            font-size: 1.2rem; 
+            margin-bottom: 25px; 
+            letter-spacing: 1px; 
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
+            padding-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
         
+        .sidebar h2 i { color: var(--admin-accent); }
+
+        .branch-info {
+            background: rgba(79, 70, 229, 0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .branch-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            color: #94a3b8;
+        }
+        
+        .branch-name {
+            font-weight: 800;
+            color: white;
+            font-size: 0.9rem;
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .branch-name i { color: var(--admin-accent); }
+
         .nav-link {
             display: flex; align-items: center; padding: 12px 15px;
             color: #94a3b8; text-decoration: none; font-weight: 600;
             border-radius: 10px; margin-bottom: 5px; transition: 0.2s; font-size: 0.8rem;
             gap: 10px;
         }
+        .nav-link i { width: 20px; text-align: center; }
         .nav-link:hover { background: rgba(255,255,255,0.05); color: white; }
         .nav-link.active { background: var(--admin-accent); color: white; }
         .nav-link.switch-link { background: #0ea5e9; color: white; margin-bottom: 15px; font-weight: 800; }
@@ -100,36 +141,145 @@
 
         .container { padding: 15px; max-width: 1200px; margin: auto; }
 
-        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
-        @media (min-width: 768px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+        /* Branch Selector */
+        .branch-selector-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+        }
         
-        .stat-box { padding: 15px; border-radius: 16px; color: white; }
-        .stat-box small { font-size: 0.6rem; text-transform: uppercase; font-weight: 700; opacity: 0.8; display: block; }
-        .stat-box div { font-size: 1rem; font-weight: 800; margin-top: 4px; }
+        .branch-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .branch-select {
+            padding: 10px 15px;
+            border-radius: 30px;
+            border: 2px solid var(--admin-accent);
+            background: white;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--admin-dark);
+            cursor: pointer;
+            min-width: 200px;
+            outline: none;
+        }
+        
+        .branch-badge {
+            background: var(--admin-accent);
+            color: white;
+            padding: 6px 15px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .branch-badge i { font-size: 0.9rem; }
+
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 10px; 
+            margin-bottom: 20px; 
+        }
+        @media (min-width: 768px) { 
+            .stats-grid { grid-template-columns: repeat(4, 1fr); } 
+        }
+        
+        .stat-box { 
+            padding: 15px; 
+            border-radius: 16px; 
+            color: white; 
+        }
+        .stat-box small { 
+            font-size: 0.6rem; 
+            text-transform: uppercase; 
+            font-weight: 700; 
+            opacity: 0.8; 
+            display: block; 
+        }
+        .stat-box div { 
+            font-size: 1rem; 
+            font-weight: 800; 
+            margin-top: 4px; 
+        }
 
         .card { 
-            background: var(--white); padding: 20px; border-radius: 20px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #eef2f6; 
+            background: var(--white); 
+            padding: 20px; 
+            border-radius: 20px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
+            border: 1px solid #eef2f6; 
             margin-bottom: 20px; 
         }
 
-        .financial-summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 10px; }
-        @media (min-width: 768px) { .financial-summary { grid-template-columns: repeat(4, 1fr); } }
-        .summary-item { border-left: 3px solid #e2e8f0; padding-left: 10px; }
-        .summary-item label { font-size: 0.65rem; color: var(--text-dim); display: block; font-weight: 700; text-transform: uppercase; }
-        .summary-item span { font-size: 0.9rem; font-weight: 800; color: var(--admin-dark); }
+        .financial-summary { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 15px; 
+            margin-top: 10px; 
+        }
+        @media (min-width: 768px) { 
+            .financial-summary { grid-template-columns: repeat(4, 1fr); } 
+        }
+        .summary-item { 
+            border-left: 3px solid #e2e8f0; 
+            padding-left: 10px; 
+        }
+        .summary-item label { 
+            font-size: 0.65rem; 
+            color: var(--text-dim); 
+            display: block; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+        }
+        .summary-item span { 
+            font-size: 0.9rem; 
+            font-weight: 800; 
+            color: var(--admin-dark); 
+        }
 
-        .form-row { display: grid; grid-template-columns: repeat(1, 1fr); gap: 12px; margin-bottom: 12px; }
-        @media (min-width: 768px) { .form-row { grid-template-columns: repeat(3, 1fr); } }
+        .form-row { 
+            display: grid; 
+            grid-template-columns: repeat(1, 1fr); 
+            gap: 12px; 
+            margin-bottom: 12px; 
+        }
+        @media (min-width: 768px) { 
+            .form-row { grid-template-columns: repeat(3, 1fr); } 
+        }
         
         input, select { 
-            padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 10px; 
-            font-size: 0.85rem; width: 100%; font-family: inherit; outline: none;
+            padding: 12px 14px; 
+            border: 1px solid #cbd5e1; 
+            border-radius: 10px; 
+            font-size: 0.85rem; 
+            width: 100%; 
+            font-family: inherit; 
+            outline: none;
         }
         
         .btn-add { 
-            background: var(--admin-accent); color: white; border: none; padding: 12px; 
-            border-radius: 10px; font-weight: 800; cursor: pointer; font-size: 0.85rem;
+            background: var(--admin-accent); 
+            color: white; 
+            border: none; 
+            padding: 12px; 
+            border-radius: 10px; 
+            font-weight: 800; 
+            cursor: pointer; 
+            font-size: 0.85rem;
         }
 
         /* --- STOCK BOXES GRID --- */
@@ -154,8 +304,17 @@
             background: #fff1f2;
         }
 
-        .stock-title { font-weight: 800; font-size: 0.95rem; margin-bottom: 5px; color: var(--admin-dark); }
-        .stock-meta { display: flex; gap: 8px; margin-bottom: 12px; }
+        .stock-title { 
+            font-weight: 800; 
+            font-size: 0.95rem; 
+            margin-bottom: 5px; 
+            color: var(--admin-dark); 
+        }
+        .stock-meta { 
+            display: flex; 
+            gap: 8px; 
+            margin-bottom: 12px; 
+        }
         
         .stock-details-grid {
             display: grid;
@@ -167,24 +326,89 @@
             border-radius: 10px;
         }
 
-        .detail-cell label { font-size: 0.6rem; text-transform: uppercase; color: var(--text-dim); font-weight: 700; display: block; }
-        .detail-cell span { font-size: 0.85rem; font-weight: 700; }
-
-        .onetouch-flex { display: flex; gap: 5px; align-items: center; margin-top: 10px; border-top: 1px solid #f1f5f9; pt: 10px; }
-        .onetouch-input { width: 100% !important; text-align: center; padding: 8px !important; }
-        .btn-touch { background: var(--admin-dark); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.75rem; white-space: nowrap; }
-        
-        .badge { background: #e2e8f0; padding: 4px 8px; border-radius: 6px; font-size: 0.6rem; font-weight: 700; color: var(--text-dim); }
-        .low-badge { background: var(--danger); color: white; }
-
-        .load-more-btn {
-            width: 100%; padding: 15px; background: white; border: 2px dashed #cbd5e1;
-            border-radius: 12px; color: var(--text-dim); font-weight: 800; cursor: pointer;
-            margin-top: 15px; transition: 0.2s;
+        .detail-cell label { 
+            font-size: 0.6rem; 
+            text-transform: uppercase; 
+            color: var(--text-dim); 
+            font-weight: 700; 
+            display: block; 
+        }
+        .detail-cell span { 
+            font-size: 0.85rem; 
+            font-weight: 700; 
         }
 
-        .overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); display: none; z-index: 1500; }
+        .onetouch-flex { 
+            display: flex; 
+            gap: 5px; 
+            align-items: center; 
+            margin-top: 10px; 
+            border-top: 1px solid #f1f5f9; 
+            padding-top: 10px; 
+        }
+        .onetouch-input { 
+            width: 100% !important; 
+            text-align: center; 
+            padding: 8px !important; 
+        }
+        .btn-touch { 
+            background: var(--admin-dark); 
+            color: white; 
+            border: none; 
+            padding: 10px 15px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: 700; 
+            font-size: 0.75rem; 
+            white-space: nowrap; 
+        }
+        
+        .badge { 
+            background: #e2e8f0; 
+            padding: 4px 8px; 
+            border-radius: 6px; 
+            font-size: 0.6rem; 
+            font-weight: 700; 
+            color: var(--text-dim); 
+        }
+        .low-badge { 
+            background: var(--danger); 
+            color: white; 
+        }
+
+        .load-more-btn {
+            width: 100%; 
+            padding: 15px; 
+            background: white; 
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px; 
+            color: var(--text-dim); 
+            font-weight: 800; 
+            cursor: pointer;
+            margin-top: 15px; 
+            transition: 0.2s;
+        }
+
+        .overlay { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(15, 23, 42, 0.5); 
+            backdrop-filter: blur(4px); 
+            display: none; 
+            z-index: 1500; 
+        }
         .overlay.active { display: block; }
+        
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -193,34 +417,46 @@
 
 <div class="sidebar" id="sidebar">
     <button class="close-sidebar-btn" onclick="toggleSidebar()">✕</button>
-    <h2>JEPE ADMIN</h2>
+    <h2><i class="fas fa-store"></i> JEPE ADMIN</h2>
+    
+    <!-- Branch Info Display -->
+    <div class="branch-info" id="sidebarBranchInfo">
+        <div class="branch-label">Your Assigned Branch</div>
+        <div class="branch-name" id="sidebarBranchName">
+            <i class="fas fa-store"></i>
+            <span>Loading...</span>
+        </div>
+    </div>
+    
     <nav>
-        <a href="#" onclick="confirmSwitchToCashier(event)" class="nav-link" style="background: rgba(255,255,255,0.1); color: #fff; margin-bottom: 15px;">
-            <span>🔄</span> SWITCH TO CASHIER
+        <a href="#" onclick="confirmSwitchToCashier(event)" class="nav-link switch-link">
+            <i class="fas fa-exchange-alt"></i> SWITCH TO CASHIER
         </a>
 
-        <a href="admin.html" class="nav-link"><span>📊</span> Dashboard</a>
-        <a href="gas_hub.html" class="nav-link"><span>🔥</span> Gas Hub</a>
-        <a href="spares_hub.html" class="nav-link"><span>⚙️</span> Spare Parts Hub</a>
-        <a href="motorbike_hub.html" class="nav-link"><span>🏍️</span> Motorbike Hub</a>
+        <a href="admin.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        <a href="gas_hub.html" class="nav-link"><i class="fas fa-fire"></i> Gas Hub</a>
+        <a href="spares_hub.html" class="nav-link"><i class="fas fa-cogs"></i> Spare Parts Hub</a>
+        <a href="motorbike_hub.html" class="nav-link"><i class="fas fa-motorcycle"></i> Motorbike Hub</a>
 
-        <a href="shift-history.html" class="nav-link "><span>📋</span> Daily Shifts</a>
-        <a href="money-history.html" class="nav-link"><span>💰</span> Money IN/OUT</a>
-        <a href="sales-history.html" class="nav-link"><span>📜</span> Sales History</a>
+        <a href="shift-history.html" class="nav-link"><i class="fas fa-history"></i> Daily Shifts</a>
+        <a href="money-history.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> Money IN/OUT</a>
+        <a href="sales-history.html" class="nav-link"><i class="fas fa-chart-line"></i> Sales History</a>
 
-        <a href="inventory.html" class="nav-link active"><span>➕</span> Add Stock</a>
-        <a href="sales_editor.html" class="nav-link"><span>✏️</span> Edit Stock</a>
-        <a href="admin-debtors.html" class="nav-link"><span>👥</span> Debtors</a>
-        <a href="low_stock.html" class="nav-link"><span>⚠️</span> Low Stock</a>
-        <a href="audit_trail.html" class="nav-link"><span>🔍</span> Inventory Track</a>
+        <a href="inventory.html" class="nav-link active"><i class="fas fa-plus-circle"></i> Add Stock</a>
+        <a href="sales_editor.html" class="nav-link"><i class="fas fa-edit"></i> Edit Stock</a>
+        <a href="admin-debtors.html" class="nav-link"><i class="fas fa-users"></i> Debtors</a>
+        <a href="low_stock.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> Low Stock</a>
+        <a href="audit_trail.html" class="nav-link"><i class="fas fa-search"></i> Inventory Track</a>
 
-        <a href="reports.html" class="nav-link"><span>📄</span> Reports</a>
-        <a href="price_audits.html" class="nav-link"><span>📉</span> Underpriced</a>
-        <a href="suppliers.html" class="nav-link"><span>🤝</span> Suppliers</a>
-        <a href="admin.html" class="nav-link"><span>🏠</span> HOME</a>
+        <a href="reports.html" class="nav-link"><i class="fas fa-file-alt"></i> Reports</a>
+        <a href="price_audits.html" class="nav-link"><i class="fas fa-tags"></i> Underpriced</a>
+        <a href="suppliers.html" class="nav-link"><i class="fas fa-handshake"></i> Suppliers</a>
+        <a href="admin.html" class="nav-link"><i class="fas fa-home"></i> HOME</a>
     </nav>
     <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-        <a onclick="handleLogout()" class="nav-link" style="color: #fb7185; cursor:pointer;">🚪 Logout System</a>
+        <a onclick="handleLogout()" class="nav-link" style="color: #fb7185; cursor:pointer;">
+            <i class="fas fa-sign-out-alt"></i> Logout System
+        </a>
     </div>
 </div>
 
@@ -232,20 +468,48 @@
     </div>
 
     <div class="container">
+        <!-- Branch Selector for Admin -->
+        <div class="branch-selector-container">
+            <div class="branch-filter">
+                <i class="fas fa-store" style="color: var(--admin-accent);"></i>
+                <select id="branchSelector" class="branch-select" onchange="handleBranchChange()">
+                    <option value="all">🏢 ALL BRANCHES</option>
+                    <option value="MUTOMO">🏪 MUTOMO BRANCH</option>
+                    <option value="KITUI">🏪 KITUI BRANCH</option>
+                </select>
+            </div>
+            <div class="branch-badge" id="currentBranchBadge">
+                <i class="fas fa-store"></i>
+                <span id="currentBranchDisplay">ALL BRANCHES</span>
+            </div>
+        </div>
+
         <div class="stats-grid">
-            <div class="stat-box" style="background:var(--blue);"><small id="shift-label">Shift Sales</small><div id="total-rev">Ksh 0</div></div>
-            <div class="stat-box" style="background:var(--green);"><small id="profit-label">Shift Profit</small><div id="total-profit">Ksh 0</div></div>
-            <div class="stat-box" style="background:var(--admin-dark);"><small>Total Items</small><div id="total-items">0</div></div>
-            <div class="stat-box" style="background:var(--warning);"><small>Suppliers</small><div id="total-sups">0</div></div>
+            <div class="stat-box" style="background:var(--blue);">
+                <small id="shift-label">Shift Sales</small>
+                <div id="total-rev">Ksh 0</div>
+            </div>
+            <div class="stat-box" style="background:var(--green);">
+                <small id="profit-label">Shift Profit</small>
+                <div id="total-profit">Ksh 0</div>
+            </div>
+            <div class="stat-box" style="background:var(--admin-dark);">
+                <small>Total Items</small>
+                <div id="total-items">0</div>
+            </div>
+            <div class="stat-box" style="background:var(--warning);">
+                <small>Suppliers</small>
+                <div id="total-sups">0</div>
+            </div>
         </div>
 
          <div class="card" style="border-top: 4px solid var(--admin-accent);">
             <h3 style="margin: 0 0 15px 0; font-size: 0.85rem; color: var(--admin-accent); font-weight: 800;">
-                📈 STOCK VALUATION & ALL-TIME SALES
+                📈 STOCK VALUATION & ALL-TIME SALES <span id="valuationBranch"></span>
             </h3>
             <div class="financial-summary">
                 <div class="summary-item">
-                    <label>Inventory Cost (All)</label>
+                    <label>Inventory Cost</label>
                     <span id="global-cost">Ksh 0</span>
                 </div>
                 <div class="summary-item" style="border-left-color: var(--green);">
@@ -265,7 +529,7 @@
 
         <div class="card">
             <h3 style="margin: 0 0 15px 0; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
-                <span>📦</span> Register New Item
+                <span>📦</span> Register New Item <span id="newItemBranch"></span>
             </h3>
             <form id="admin-form">
                 <div class="form-row">
@@ -298,7 +562,7 @@
                 <div class="form-row">
                     <input type="number" id="min_p" placeholder="Min. Sell Price" required>
                     <input type="number" id="stock" placeholder="Initial Qty" required>
-                    <button type="submit" class="btn-add">ADD TO SYSTEM</button>
+                    <button type="submit" id="submit-btn" class="btn-add">ADD TO SYSTEM</button>
                 </div>
             </form>
         </div>
@@ -309,7 +573,12 @@
                 <input type="text" id="adminSearch" placeholder="Search items..." style="max-width:250px; background: white; border: 1px solid #e2e8f0;">
             </div>
             
-            <div id="inv-table-body" class="stock-grid"></div>
+            <div id="inv-table-body" class="stock-grid">
+                <div class="loading-spinner" style="text-align: center; padding: 40px; grid-column: 1/-1;">
+                    <div class="spinner"></div>
+                    <p>Loading inventory...</p>
+                </div>
+            </div>
             
             <button id="loadMoreBtn" class="load-more-btn">LOAD MORE ITEMS</button>
         </div>
@@ -317,9 +586,78 @@
 </div>
 
 <script type="module">
-    import { supabase } from './auth.js';
+    import { supabase, getCurrentUser, BRANCHES } from './auth.js';
+    
     let allProducts = [];
     let displayLimit = 15;
+    let currentUser = null;
+    let currentBranchId = null;
+    let currentBranch = null;
+    let selectedBranchId = null;
+    let branches = {};
+    let branchIdMap = {};
+
+    // ==================== BRANCH FUNCTIONS ====================
+
+    async function loadBranches() {
+        const { data } = await supabase.from('branches').select('*');
+        branches = {};
+        branchIdMap = {};
+        data?.forEach(b => {
+            branches[b.id] = b;
+            branchIdMap[b.code] = b.id;
+        });
+        return branches;
+    }
+
+    function getBranchIdFromCode(code) {
+        return branchIdMap[code] || null;
+    }
+
+    async function loadUserProfile() {
+        const userData = await getCurrentUser();
+        if (!userData?.user) {
+            window.location.href = 'index.html';
+            return null;
+        }
+        
+        currentUser = userData.user;
+        currentBranchId = userData.profile?.branch_id;
+        currentBranch = userData.profile?.branches;
+        
+        const sidebarBranchName = document.querySelector('#sidebarBranchName span');
+        if (currentBranch && sidebarBranchName) {
+            sidebarBranchName.textContent = currentBranch.name;
+        }
+        
+        return userData.profile;
+    }
+
+    window.handleBranchChange = async function() {
+        const selector = document.getElementById('branchSelector');
+        const selectedCode = selector.value;
+        
+        const branchDisplay = document.getElementById('currentBranchDisplay');
+        const valuationBranch = document.getElementById('valuationBranch');
+        const newItemBranch = document.getElementById('newItemBranch');
+        
+        if (selectedCode === 'all') {
+            branchDisplay.textContent = 'ALL BRANCHES';
+            if (valuationBranch) valuationBranch.textContent = '(All Branches)';
+            if (newItemBranch) newItemBranch.textContent = '(All Branches)';
+            selectedBranchId = null;
+        } else {
+            const branchId = getBranchIdFromCode(selectedCode);
+            if (branchId) {
+                selectedBranchId = branchId;
+                branchDisplay.textContent = branches[branchId].name;
+                if (valuationBranch) valuationBranch.textContent = `(${branches[branchId].name})`;
+                if (newItemBranch) newItemBranch.textContent = `(${branches[branchId].name})`;
+            }
+        }
+        
+        await loadData();
+    };
 
     window.toggleSidebar = () => {
         const sidebar = document.getElementById('sidebar');
@@ -343,13 +681,27 @@
         document.getElementById('gas-row').style.display = (document.getElementById('cat').value === 'Gas') ? 'grid' : 'none';
     };
 
-    async function load() {
+    async function loadData() {
         try {
-            // 1. Shift Stats
+            // Show loading state
+            document.getElementById('inv-table-body').innerHTML = `
+                <div style="text-align: center; padding: 40px; grid-column: 1/-1;">
+                    <div class="spinner"></div>
+                    <p>Loading inventory...</p>
+                </div>
+            `;
+
+            // 1. Shift Stats (based on selected branch)
+            let shiftQuery = supabase.from('daily_shifts').select('id').eq('status', 'open').limit(1);
+            if (selectedBranchId) {
+                shiftQuery = shiftQuery.eq('branch_id', selectedBranchId);
+            }
+            
+            const { data: openShift } = await shiftQuery.maybeSingle();
+            
             let shiftToDisplay = null;
             let labelPrefix = "Active Shift";
 
-            const { data: openShift } = await supabase.from('daily_shifts').select('id').eq('status', 'open').limit(1).maybeSingle();
             if (openShift) {
                 const { count } = await supabase.from('sales').select('id', { count: 'exact', head: true }).eq('shift_id', openShift.id);
                 if (count > 0) shiftToDisplay = openShift.id;
@@ -364,7 +716,12 @@
             }
 
             if (shiftToDisplay) {
-                const { data: shiftSales } = await supabase.from('sales').select('total_amount, unit_price, cost_price, quantity').eq('shift_id', shiftToDisplay);
+                let salesQuery = supabase.from('sales').select('total_amount, unit_price, cost_price, quantity').eq('shift_id', shiftToDisplay);
+                if (selectedBranchId) {
+                    salesQuery = salesQuery.eq('branch_id', selectedBranchId);
+                }
+                
+                const { data: shiftSales } = await salesQuery;
                 let rev = 0, prof = 0;
                 shiftSales?.forEach(s => {
                     rev += Number(s.total_amount || 0);
@@ -376,8 +733,13 @@
                 document.getElementById('total-profit').innerText = `Ksh ${prof.toLocaleString()}`;
             }
 
-            // 2. Global Sales History
-            const { data: allSales } = await supabase.from('sales').select('total_amount, unit_price, cost_price, quantity');
+            // 2. Global Sales History (filtered by branch)
+            let salesQuery = supabase.from('sales').select('total_amount, unit_price, cost_price, quantity');
+            if (selectedBranchId) {
+                salesQuery = salesQuery.eq('branch_id', selectedBranchId);
+            }
+            
+            const { data: allSales } = await salesQuery;
             let totalRev = 0, totalProf = 0;
             allSales?.forEach(s => {
                 totalRev += Number(s.total_amount || 0);
@@ -386,14 +748,28 @@
             document.getElementById('all-time-sales').innerText = `Ksh ${totalRev.toLocaleString()}`;
             document.getElementById('all-time-profit').innerText = `Ksh ${totalProf.toLocaleString()}`;
 
-            // 3. Suppliers
-            const { data: sups } = await supabase.from('suppliers').select('id, name').order('name');
+            // 3. Suppliers (filtered by branch)
+            let suppliersQuery = supabase.from('suppliers').select('id, name').order('name');
+            if (selectedBranchId) {
+                suppliersQuery = suppliersQuery.eq('branch_id', selectedBranchId);
+            }
+            
+            const { data: sups } = await suppliersQuery;
             document.getElementById('total-sups').innerText = sups?.length || 0;
-            document.getElementById('prod-supplier').innerHTML = '<option value="">-- Select Supplier --</option>' + 
-                (sups || []).map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            
+            let supplierOptions = '<option value="">-- Select Supplier --</option>';
+            if (sups?.length > 0) {
+                supplierOptions += sups.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            }
+            document.getElementById('prod-supplier').innerHTML = supplierOptions;
 
-            // 4. Products & Valuation
-            const { data: items } = await supabase.from('products').select('*, suppliers(name)').order('name');
+            // 4. Products & Valuation (filtered by branch)
+            let productsQuery = supabase.from('products').select('*, suppliers(name)').order('name');
+            if (selectedBranchId) {
+                productsQuery = productsQuery.eq('branch_id', selectedBranchId);
+            }
+            
+            const { data: items } = await productsQuery;
             allProducts = items || [];
             
             let globalCostVal = 0, expectedProfVal = 0;
@@ -410,7 +786,15 @@
             document.getElementById('expected-profit').innerText = `Ksh ${expectedProfVal.toLocaleString()}`;
             
             render();
-        } catch (e) { console.error("Load Error:", e); }
+        } catch (e) { 
+            console.error("Load Error:", e); 
+            document.getElementById('inv-table-body').innerHTML = `
+                <div style="text-align: center; padding: 40px; color: var(--danger); grid-column: 1/-1;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    Error loading data: ${e.message}
+                </div>
+            `;
+        }
     }
 
     function render() {
@@ -418,42 +802,56 @@
         const filtered = allProducts.filter(p => p.name.toLowerCase().includes(searchTerm));
         const visible = filtered.slice(0, displayLimit);
         
-        document.getElementById('inv-table-body').innerHTML = visible.map(p => `
-            <div class="stock-item-box ${p.stock_quantity < 5 ? 'low-stock-box' : ''}">
-                <div class="stock-meta">
-                    <span class="badge ${p.stock_quantity < 5 ? 'low-badge' : ''}">${p.stock_quantity} in stock</span>
-                    <span class="badge">${p.weight_category || p.part_type || p.category}</span>
+        if (visible.length === 0) {
+            document.getElementById('inv-table-body').innerHTML = `
+                <div style="text-align: center; padding: 40px; color: var(--text-dim); grid-column: 1/-1;">
+                    <i class="fas fa-box-open" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    No products found
                 </div>
-                <div class="stock-title">${p.name}</div>
-                <div style="font-size: 0.65rem; color: var(--text-dim); margin-bottom: 12px;">
-                    Supplier: <strong>${p.suppliers?.name || '---'}</strong>
-                </div>
+            `;
+        } else {
+            document.getElementById('inv-table-body').innerHTML = visible.map(p => {
+                const branch = branches[p.branch_id] || { code: '--' };
+                const profitPerUnit = (Number(p.selling_price) - Number(p.cost_price));
+                
+                return `
+                <div class="stock-item-box ${p.stock_quantity < 5 ? 'low-stock-box' : ''}">
+                    <div class="stock-meta">
+                        <span class="badge ${p.stock_quantity < 5 ? 'low-badge' : ''}">${p.stock_quantity} in stock</span>
+                        <span class="badge">${p.weight_category || p.part_type || p.category}</span>
+                        <span class="badge" style="background: #f1f5f9;">${branch.code}</span>
+                    </div>
+                    <div class="stock-title">${p.name}</div>
+                    <div style="font-size: 0.65rem; color: var(--text-dim); margin-bottom: 12px;">
+                        Supplier: <strong>${p.suppliers?.name || '---'}</strong>
+                    </div>
 
-                <div class="stock-details-grid">
-                    <div class="detail-cell">
-                        <label>Buying</label>
-                        <span>Ksh ${Number(p.cost_price || 0).toLocaleString()}</span>
+                    <div class="stock-details-grid">
+                        <div class="detail-cell">
+                            <label>Buying</label>
+                            <span>Ksh ${Number(p.cost_price || 0).toLocaleString()}</span>
+                        </div>
+                        <div class="detail-cell">
+                            <label>Selling</label>
+                            <span>Ksh ${Number(p.selling_price || 0).toLocaleString()}</span>
+                        </div>
+                        <div class="detail-cell">
+                            <label>Min. Sell</label>
+                            <span style="color:var(--danger)">Ksh ${Number(p.min_price || p.min_selling_price || 0).toLocaleString()}</span>
+                        </div>
+                        <div class="detail-cell">
+                            <label>Profit/Unit</label>
+                            <span style="color:var(--green)">Ksh ${profitPerUnit.toLocaleString()}</span>
+                        </div>
                     </div>
-                    <div class="detail-cell">
-                        <label>Selling</label>
-                        <span>Ksh ${Number(p.selling_price || 0).toLocaleString()}</span>
-                    </div>
-                    <div class="detail-cell">
-                        <label>Min. Sell</label>
-                        <span style="color:var(--danger)">Ksh ${Number(p.min_price || p.min_selling_price || 0).toLocaleString()}</span>
-                    </div>
-                    <div class="detail-cell">
-                        <label>Profit/Unit</label>
-                        <span style="color:var(--green)">Ksh ${(Number(p.selling_price) - Number(p.cost_price)).toLocaleString()}</span>
-                    </div>
-                </div>
 
-                <div class="onetouch-flex">
-                    <input type="number" id="add-${p.id}" class="onetouch-input" value="1" min="1">
-                    <button class="btn-touch" onclick="quickAdd('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${p.stock_quantity})">RESTOCK</button>
+                    <div class="onetouch-flex">
+                        <input type="number" id="add-${p.id}" class="onetouch-input" value="1" min="1">
+                        <button class="btn-touch" onclick="quickAdd('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${p.stock_quantity})">RESTOCK</button>
+                    </div>
                 </div>
-            </div>
-        `).join('');
+            `}).join('');
+        }
 
         document.getElementById('loadMoreBtn').style.display = (displayLimit >= filtered.length) ? 'none' : 'block';
     }
@@ -461,15 +859,43 @@
     window.quickAdd = async (id, name, current) => {
         const val = parseInt(document.getElementById(`add-${id}`).value);
         if (isNaN(val) || val < 1) return;
+        
         if (confirm(`Add ${val} items to ${name}?`)) {
-            const { error } = await supabase.from('products').update({ stock_quantity: current + val }).eq('id', id);
-            if(!error) load();
-            else alert("Error updating stock");
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.innerHTML = '<span class="spinner"></span>';
+            btn.disabled = true;
+            
+            try {
+                const { error } = await supabase
+                    .from('products')
+                    .update({ stock_quantity: current + val })
+                    .eq('id', id);
+                    
+                if(!error) {
+                    await loadData();
+                } else {
+                    alert("Error updating stock: " + error.message);
+                }
+            } catch (err) {
+                alert("Error: " + err.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
         }
     };
 
     document.getElementById('admin-form').onsubmit = async (e) => {
         e.preventDefault();
+        
+        const btn = document.getElementById('submit-btn');
+        const originalText = btn.innerText;
+        btn.innerHTML = '<span class="spinner"></span> ADDING...';
+        btn.disabled = true;
+
+        const branchId = selectedBranchId || currentBranchId;
+        
         const payload = {
             name: document.getElementById('name').value,
             category: document.getElementById('cat').value,
@@ -479,22 +905,56 @@
             cost_price: parseFloat(document.getElementById('cost').value),
             selling_price: parseFloat(document.getElementById('sell').value),
             min_price: parseFloat(document.getElementById('min_p').value),
-            stock_quantity: parseInt(document.getElementById('stock').value)
+            stock_quantity: parseInt(document.getElementById('stock').value),
+            branch_id: branchId
         };
-        const { error } = await supabase.from('products').insert([payload]);
-        if (error) alert(error.message);
-        else { 
+        
+        try {
+            const { error } = await supabase.from('products').insert([payload]);
+            if (error) throw error;
+            
             document.getElementById('admin-form').reset(); 
-            load(); 
-            alert("Item Added Successfully!");
+            await loadData(); 
+            alert("✅ Item Added Successfully!");
+            
+        } catch (err) {
+            alert("❌ Error: " + err.message);
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
         }
     };
 
-    document.getElementById('adminSearch').oninput = render;
-    document.getElementById('loadMoreBtn').onclick = () => { displayLimit += 20; render(); };
-    window.handleLogout = async () => { if(confirm("Logout?")) { await supabase.auth.signOut(); window.location.href = 'index.html'; } };
+    document.getElementById('adminSearch').addEventListener('input', render);
+    document.getElementById('loadMoreBtn').addEventListener('click', () => { 
+        displayLimit += 20; 
+        render(); 
+    });
     
-    load();
+    window.handleLogout = async () => { 
+        if(confirm("Logout?")) { 
+            localStorage.removeItem('pos_session');
+            await supabase.auth.signOut(); 
+            window.location.href = 'index.html'; 
+        } 
+    };
+    
+    async function init() {
+        await loadBranches();
+        await loadUserProfile();
+        
+        // Set default branch selector
+        const savedBranch = localStorage.getItem('admin_branch_preference');
+        if (savedBranch && (savedBranch === 'all' || savedBranch === 'MUTOMO' || savedBranch === 'KITUI')) {
+            document.getElementById('branchSelector').value = savedBranch;
+        } else {
+            document.getElementById('branchSelector').value = 'all';
+        }
+        
+        await handleBranchChange();
+    }
+    
+    init();
 </script>
 </body>
 </html>
