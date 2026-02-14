@@ -2432,26 +2432,116 @@
         }
     });
 
-    // Simple close function - just use the modal directly
+    // Show close modal with cancel button
     window.showCloseModal = function() {
         document.getElementById('close-modal').style.display = 'flex';
     };
 
-    // Modified close handler - use the modal directly without extra confirmation
-    document.getElementById('confirm-close').addEventListener('click', async function() {
+    // Function to show confirmation card with entered values
+    function showCloseConfirmation() {
         const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
         const clK = parseFloat(document.getElementById('c-kcb').value || 0);
         const clE = parseFloat(document.getElementById('c-equity').value || 0);
         const clC = parseFloat(document.getElementById('c-cash').value || 0);
         const clB = currentKcbSalesTotal;
         
+        // Hide the close modal
+        document.getElementById('close-modal').style.display = 'none';
+        
+        // Create confirmation card
+        const card = document.createElement('div');
+        card.className = 'overlay';
+        card.id = 'close-confirm-card';
+        card.style.display = 'flex';
+        card.innerHTML = `
+            <div class="modal" style="max-width: 500px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="color: var(--danger); margin: 0;">🔒 Confirm Closing Amounts</h3>
+                    <button onclick="closeConfirmationCard()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-dim);">✕</button>
+                </div>
+                
+                <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin: 15px 0;">
+                    <h4 style="margin: 0 0 15px 0; font-size: 0.9rem; color: var(--text);">Please verify the closing amounts:</h4>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div style="background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase;">Mpesa</small>
+                            <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">Ksh ${clM.toLocaleString()}</span>
+                        </div>
+                        <div style="background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase;">KCB Float</small>
+                            <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">Ksh ${clK.toLocaleString()}</span>
+                        </div>
+                        <div style="background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase;">Equity</small>
+                            <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">Ksh ${clE.toLocaleString()}</span>
+                        </div>
+                        <div style="background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase;">Cash</small>
+                            <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">Ksh ${clC.toLocaleString()}</span>
+                        </div>
+                        <div style="grid-column: span 2; background: #f0f9ff; padding: 15px; border-radius: 10px; border: 1px solid #bae6fd;">
+                            <small style="display: block; color: #0369a1; font-size: 0.7rem; text-transform: uppercase;">KCB Paybill</small>
+                            <span style="font-weight: 800; font-size: 1.3rem; color: var(--primary);">Ksh ${clB.toLocaleString()}</span>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 15px; padding: 12px; background: #fff7ed; border-radius: 8px; border-left: 4px solid var(--warning);">
+                        <small style="color: #9a3412; font-weight: 600;">
+                            <i class="fas fa-info-circle"></i> Please verify all amounts are correct before proceeding.
+                        </small>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-danger" style="flex: 1;" onclick="processFinalClose()">✅ CONFIRM & CLOSE</button>
+                    <button class="btn" style="flex: 1; background: #e2e8f0;" onclick="closeConfirmationCard()">✕ CANCEL</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(card);
+    }
+
+    // Function to close confirmation card
+    window.closeConfirmationCard = function() {
+        const card = document.getElementById('close-confirm-card');
+        if (card) card.remove();
+        document.getElementById('close-modal').style.display = 'flex';
+    };
+
+    // Modified close handler - shows confirmation first
+    document.getElementById('confirm-close').addEventListener('click', function() {
+        const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
+        const clK = parseFloat(document.getElementById('c-kcb').value || 0);
+        const clE = parseFloat(document.getElementById('c-equity').value || 0);
+        const clC = parseFloat(document.getElementById('c-cash').value || 0);
+        
         if (clM === 0 && clK === 0 && clE === 0 && clC === 0) {
             alert("❌ Please enter closing amounts for all floats before closing the shift.");
             return;
         }
         
-        this.disabled = true;
-        this.innerHTML = '<span class="spinner"></span> FINALIZING...';
+        // Show confirmation card with entered values
+        showCloseConfirmation();
+    });
+
+    // Process final close after confirmation
+    window.processFinalClose = async function() {
+        const card = document.getElementById('close-confirm-card');
+        if (!card) return;
+        
+        const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
+        const clK = parseFloat(document.getElementById('c-kcb').value || 0);
+        const clE = parseFloat(document.getElementById('c-equity').value || 0);
+        const clC = parseFloat(document.getElementById('c-cash').value || 0);
+        const clB = currentKcbSalesTotal;
+        
+        card.remove();
+        
+        const btn = document.getElementById('confirm-close');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> FINALIZING...';
         
         try {
             const { data: sales } = await supabase.from('sales')
@@ -2479,8 +2569,8 @@
                 const sign = variance > 0 ? "+" : "-";
                 note = prompt(`Variance: ${sign}${Math.abs(variance).toFixed(2)}. Please enter reason:`);
                 if (!note) {
-                    this.disabled = false;
-                    this.innerHTML = 'FINALIZE & CLOSE';
+                    btn.disabled = false;
+                    btn.innerHTML = 'FINALIZE & CLOSE';
                     return;
                 }
                 note = `${sign}${Math.abs(variance).toFixed(2)} - ${note}`;
@@ -2501,10 +2591,10 @@
             location.reload();
         } catch (error) {
             alert("Error closing shift: " + error.message);
-            this.disabled = false;
-            this.innerHTML = 'FINALIZE & CLOSE';
+            btn.disabled = false;
+            btn.innerHTML = 'FINALIZE & CLOSE';
         }
-    });
+    };
 
     async function loadHistory(searchQuery = "") {
         try {
