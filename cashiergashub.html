@@ -604,24 +604,50 @@
         const profile = await loadUserProfile();
         if (!profile) return;
         
-        // Check for open shift
-        const { data: shift } = await supabase
+        // Get current branch ID
+        const branchId = currentBranchId;
+        console.log("Current branch ID:", branchId);
+        
+        // IMPORTANT FIX: Check for open shift using the correct status 'Open' (capital O)
+        // This matches your database schema where default is 'Open' with capital O
+        const { data: shift, error } = await supabase
             .from('daily_shifts')
             .select('*')
-            .eq('status', 'open')
-            .eq('branch_id', currentBranchId)
+            .eq('branch_id', branchId)
+            .eq('status', 'Open') // Capital 'O' to match schema
+            .order('start_time', { ascending: false })
+            .limit(1)
             .maybeSingle();
             
+        if (error) {
+            console.error("Error checking shift:", error);
+        }
+        
         activeShift = shift;
+        console.log("Active shift found:", activeShift);
         
         const shiftStatus = document.getElementById('shiftStatus');
-        if(activeShift) {
-            shiftStatus.innerHTML = 'Shift: Open';
-            shiftStatus.className = 'status-badge status-open';
+        const lastUpdated = document.getElementById('last-updated');
+        
+        if (activeShift) {
+            if (shiftStatus) {
+                shiftStatus.innerHTML = 'Shift: Open';
+                shiftStatus.className = 'status-badge status-open';
+            }
+            if (lastUpdated) {
+                const startTime = new Date(activeShift.start_time).toLocaleTimeString();
+                lastUpdated.innerHTML = `✅ Shift Active - Started: ${startTime}`;
+            }
+            console.log("Shift is OPEN - sales can proceed");
         } else {
-            shiftStatus.innerHTML = 'Shift: Closed';
-            shiftStatus.className = 'status-badge status-closed';
-            document.getElementById('last-updated').innerHTML = "<b style='color:red'>⚠️ SHIFT CLOSED. Open shift to record sales.</b>";
+            if (shiftStatus) {
+                shiftStatus.innerHTML = 'Shift: Closed';
+                shiftStatus.className = 'status-badge status-closed';
+            }
+            if (lastUpdated) {
+                lastUpdated.innerHTML = "<b style='color:red'>⚠️ SHIFT CLOSED. Open shift in Cashier Dashboard to process sales.</b>";
+            }
+            console.log("No open shift found");
         }
         
         loadAll();
@@ -654,7 +680,11 @@
             gasItems = data || [];
             renderInventory();
             updateDropdowns();
-            document.getElementById('last-updated').innerHTML = "Last Sync: " + new Date().toLocaleTimeString();
+            
+            const lastUpdated = document.getElementById('last-updated');
+            if (lastUpdated && activeShift) {
+                lastUpdated.innerHTML = `✅ Shift Active - Last Sync: ${new Date().toLocaleTimeString()}`;
+            }
         }
     }
 
@@ -724,8 +754,22 @@
 
     // --- SALE PROCESSING ---
     async function processSale(btnId, type) {
+        // Check if shift is active
         if (!activeShift) {
-            alert("❌ You must have an open shift to process sales!");
+            alert("❌ No active shift found. Please open a shift in the Cashier Dashboard first!");
+            return;
+        }
+        
+        // Double-check that the shift is still open in the database
+        const { data: shiftCheck } = await supabase
+            .from('daily_shifts')
+            .select('status')
+            .eq('id', activeShift.id)
+            .single();
+            
+        if (!shiftCheck || shiftCheck.status !== 'Open') {
+            alert("❌ Your shift has been closed. Please refresh and start a new shift.");
+            activeShift = null;
             return;
         }
         
@@ -934,7 +978,10 @@
         }
     };
 
-    init();
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        init();
+    });
 </script>
 </body>
 </html>
