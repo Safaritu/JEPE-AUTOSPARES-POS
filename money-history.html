@@ -3,14 +3,21 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JEPE ADMIN | Cash Transactions</title>
+    <title>JEPE ADMIN | Cash Transactions - Multi-Branch</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { 
-            --primary: #4f46e5; --bg: #f8fafc; --card: #ffffff; 
-            --border: #e2e8f0; --text-main: #1e293b; --text-dim: #64748b;
-            --success: #10b981; --danger: #ef4444; --sidebar-width: 280px;
+            --primary: #4f46e5; 
+            --bg: #f8fafc; 
+            --card: #ffffff; 
+            --border: #e2e8f0; 
+            --text-main: #1e293b; 
+            --text-dim: #64748b;
+            --success: #10b981; 
+            --danger: #ef4444; 
+            --sidebar-width: 280px;
             --sidebar-bg: #0f172a; 
         }
 
@@ -21,24 +28,113 @@
         .sidebar {
             width: var(--sidebar-width); background: var(--sidebar-bg);
             display: flex; flex-direction: column; position: fixed; 
-            height: 100vh; z-index: 2000; transition: 0.3s ease;
+            height: 100vh; z-index: 2000; transition: transform 0.3s ease;
+            overflow-y: auto;
         }
-        .sidebar-header { padding: 30px 25px; font-weight: 800; color: #fff; font-size: 1.3rem; }
+        .sidebar-header { 
+            padding: 30px 25px; 
+            font-weight: 800; 
+            color: #fff; 
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .sidebar-header i { color: var(--primary); }
+        
+        .branch-info {
+            background: rgba(79, 70, 229, 0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px;
+        }
+        .branch-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            color: #94a3b8;
+        }
+        .branch-name {
+            font-weight: 800;
+            color: white;
+            font-size: 0.9rem;
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .branch-name i { color: var(--primary); }
+        
         .nav-list { list-style: none; padding: 0 15px; flex-grow: 1; overflow-y: auto; }
         .nav-item {
             display: flex; align-items: center; padding: 12px 18px; text-decoration: none;
-            color: #94a3b8; font-weight: 600; font-size: 0.85rem; border-radius: 12px; margin-bottom: 4px;
+            color: #94a3b8; font-weight: 600; font-size: 0.9rem; border-radius: 12px; margin-bottom: 4px;
             transition: 0.2s; gap: 12px;
         }
+        .nav-item i { width: 20px; text-align: center; }
         .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
         .nav-item.active { background: var(--primary); color: #fff; }
 
         /* --- CONTENT --- */
-        .main-content { margin-left: var(--sidebar-width); flex-grow: 1; padding: 40px; width: 100%; transition: 0.3s; }
+        .main-content { margin-left: var(--sidebar-width); flex-grow: 1; padding: 30px; width: 100%; transition: 0.3s; }
         .mobile-nav {
             display: none; background: var(--sidebar-bg); color: white; padding: 0 20px; 
             align-items: center; justify-content: space-between; position: fixed; 
             top: 0; width: 100%; height: 64px; z-index: 1000;
+        }
+
+        /* --- BRANCH SELECTOR --- */
+        .branch-selector-container {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        
+        .branch-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .branch-select {
+            padding: 12px 20px;
+            border-radius: 30px;
+            border: 2px solid var(--primary);
+            background: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            cursor: pointer;
+            min-width: 220px;
+            outline: none;
+        }
+        
+        .branch-badge {
+            background: var(--primary);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .date-range {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            font-weight: 500;
         }
 
         /* --- TOOLS & SUMMARY --- */
@@ -47,27 +143,124 @@
             padding: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px; margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.04);
         }
-        .search-bar { width: 100%; padding: 14px 20px; border-radius: 15px; border: 1px solid var(--border); font-family: inherit; font-size: 0.9rem; margin-bottom: 20px; outline: none; }
+        .summary-item small { 
+            display: block; 
+            font-size: 0.7rem; 
+            font-weight: 800; 
+            color: var(--text-dim); 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+        }
+        .summary-item span { 
+            font-size: 1.5rem; 
+            font-weight: 800; 
+            display: block; 
+            margin-top: 5px; 
+        }
+        
+        .search-bar { 
+            width: 100%; 
+            padding: 14px 20px; 
+            border-radius: 15px; 
+            border: 1px solid var(--border); 
+            font-family: inherit; 
+            font-size: 0.9rem; 
+            margin-bottom: 20px; 
+            outline: none; 
+        }
         .search-bar:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
 
         .card { background: var(--card); border-radius: 24px; border: 1px solid var(--border); overflow: hidden; }
         .table-responsive { width: 100%; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 800px; }
-        th { text-align: left; padding: 18px 20px; background: #f8fafc; font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border); }
-        td { padding: 18px 20px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        th { 
+            text-align: left; 
+            padding: 18px 20px; 
+            background: #f8fafc; 
+            font-size: 0.7rem; 
+            text-transform: uppercase; 
+            color: var(--text-dim); 
+            border-bottom: 1px solid var(--border); 
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+        td { 
+            padding: 18px 20px; 
+            border-bottom: 1px solid var(--border); 
+            font-size: 0.9rem; 
+            vertical-align: middle;
+        }
 
         /* --- PILLS --- */
-        .type-pill { padding: 4px 10px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; }
+        .type-pill { 
+            padding: 6px 12px; 
+            border-radius: 8px; 
+            font-size: 0.7rem; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            display: inline-block;
+        }
         .type-in { background: #dcfce7; color: #166534; }
         .type-out { background: #fee2e2; color: #991b1b; }
+        
+        .branch-pill {
+            background: #f1f5f9;
+            color: var(--text-dim);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: inline-block;
+        }
 
         .mobile-list { display: none; }
-        .transaction-card { padding: 20px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+        .transaction-card { 
+            padding: 20px; 
+            border-bottom: 1px solid var(--border); 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+            background: white;
+        }
+        .transaction-card:last-child { border-bottom: none; }
 
-        .btn-load { width: 100%; padding: 20px; background: #fff; border: none; color: var(--primary); font-weight: 800; cursor: pointer; transition: 0.2s; }
+        .btn-load { 
+            width: 100%; 
+            padding: 20px; 
+            background: #fff; 
+            border: none; 
+            color: var(--primary); 
+            font-weight: 800; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            border-top: 1px solid var(--border);
+        }
         .btn-load:hover { background: #f8fafc; }
 
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; z-index: 1500; }
+        .overlay { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(0,0,0,0.5); 
+            display: none; 
+            z-index: 1500; 
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-dim);
+        }
 
         @media (max-width: 1100px) {
             .sidebar { transform: translateX(-100%); }
@@ -75,11 +268,15 @@
             .overlay.active { display: block; }
             .main-content { margin-left: 0; padding: 90px 20px 40px; }
             .mobile-nav { display: flex; }
+            .branch-selector-container { flex-direction: column; align-items: flex-start; }
+            .branch-filter { width: 100%; }
+            .branch-select { width: 100%; }
         }
 
         @media (max-width: 768px) {
             .table-responsive { display: none; }
             .mobile-list { display: block; }
+            .summary-banner { grid-template-columns: 1fr; gap: 15px; }
         }
     </style>
 </head>
@@ -88,28 +285,50 @@
 <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
 <nav class="sidebar" id="sidebar">
-    <div class="sidebar-header">JEPE ADMIN</div>
+    <div class="sidebar-header">
+        <i class="fas fa-store"></i> JEPE ADMIN
+    </div>
+    
+    <!-- Branch Info Display -->
+    <div class="branch-info" id="sidebarBranchInfo">
+        <div class="branch-label">Your Assigned Branch</div>
+        <div class="branch-name" id="sidebarBranchName">
+            <i class="fas fa-store"></i>
+            <span>Loading...</span>
+        </div>
+    </div>
+    
     <div class="nav-list">
-        <a href="admin.html" class="nav-item"><span>📊</span> Dashboard</a>
-        <a href="gas_hub.html" class="nav-item"><span>🔥</span> Gas Hub</a>
-        <a href="spares_hub.html" class="nav-item"><span>⚙️</span> Spare Parts Hub</a>
-        <a href="motorbike_hub.html" class="nav-item"><span>🏍️</span> Motorbike Hub</a>
+        <a href="admin.html" class="nav-item"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        <a href="gas_hub.html" class="nav-item"><i class="fas fa-fire"></i> Gas Hub</a>
+        <a href="spares_hub.html" class="nav-item"><i class="fas fa-cogs"></i> Spare Parts Hub</a>
+        <a href="motorbike_hub.html" class="nav-item"><i class="fas fa-motorcycle"></i> Motorbike Hub</a>
 
-        <a href="shift-history.html" class="nav-item"><span>📋</span> Daily Shifts</a>
-        <a href="money-history.html" class="nav-item active"><span>💰</span> Money IN/OUT</a>
-        <a href="sales-history.html" class="nav-item"><span>📜</span> Sales History</a>
+        <div style="height:1px; background:rgba(255,255,255,0.1); margin:15px 0;"></div>
 
-        <a href="inventory.html" class="nav-item"><span>➕</span> Add Stock</a>
-        <a href="sales_editor.html" class="nav-item"><span>✏️</span> Edit Stock</a>
-        <a href="admin-debtors.html" class="nav-item"><span>👥</span> Debtors</a>
-        <a href="low_stock.html" class="nav-item"><span>⚠️</span> Low Stock</a>
-        <a href="audit_trail.html" class="nav-item"><span>🔍</span> Inventory Track</a>
+        <a href="shift-history.html" class="nav-item"><i class="fas fa-history"></i> Daily Shifts</a>
+        <a href="money-history.html" class="nav-item active"><i class="fas fa-money-bill-wave"></i> Money IN/OUT</a>
+        <a href="sales-history.html" class="nav-item"><i class="fas fa-chart-line"></i> Sales History</a>
 
-        <a href="reports.html" class="nav-item"><span>📄</span> Reports</a>
-        <a href="price_audits.html" class="nav-item"><span>📉</span> Underpriced</a>
-        <a href="suppliers.html" class="nav-item"><span>🤝</span> Suppliers</a>
-        <a href="admin.html" class="nav-item"><span>🏠</span> HOME</a>
-        <a href="index.html" class="nav-item" style="color: var(--danger); margin-top: 20px;">🚪 Logout</a>
+        <div style="height:1px; background:rgba(255,255,255,0.1); margin:15px 0;"></div>
+
+        <a href="inventory.html" class="nav-item"><i class="fas fa-plus-circle"></i> Add Stock</a>
+        <a href="sales_editor.html" class="nav-item"><i class="fas fa-edit"></i> Edit Stock</a>
+        <a href="admin-debtors.html" class="nav-item"><i class="fas fa-users"></i> Debtors</a>
+        <a href="low_stock.html" class="nav-item"><i class="fas fa-exclamation-triangle"></i> Low Stock</a>
+        <a href="audit_trail.html" class="nav-item"><i class="fas fa-search"></i> Inventory Track</a>
+
+        <div style="height:1px; background:rgba(255,255,255,0.1); margin:15px 0;"></div>
+
+        <a href="reports.html" class="nav-item"><i class="fas fa-file-alt"></i> Reports</a>
+        <a href="price_audits.html" class="nav-item"><i class="fas fa-tags"></i> Underpriced</a>
+        <a href="suppliers.html" class="nav-item"><i class="fas fa-handshake"></i> Suppliers</a>
+        
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <a href="index.html" class="nav-item" style="color: var(--danger);" onclick="handleLogout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
     </div>
 </nav>
 
@@ -120,22 +339,39 @@
 </div>
 
 <main class="main-content">
+    <!-- Branch Selector -->
+    <div class="branch-selector-container">
+        <div class="branch-filter">
+            <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
+            <select id="branchSelector" class="branch-select" onchange="handleBranchChange()">
+                <option value="all">🏢 ALL BRANCHES (Consolidated)</option>
+                <option value="MUTOMO">🏪 MUTOMO BRANCH</option>
+                <option value="KITUI">🏪 KITUI BRANCH</option>
+            </select>
+        </div>
+        <div class="branch-badge" id="currentBranchBadge">
+            <i class="fas fa-store"></i>
+            <span id="currentBranchDisplay">ALL BRANCHES</span>
+        </div>
+        <span class="date-range" id="dateRange"></span>
+    </div>
+
     <div class="summary-banner">
-        <div>
-            <small class="text-dim" style="font-weight:800; text-transform:uppercase; font-size:0.7rem;">Net Ledger Balance</small>
-            <span id="net-balance" style="font-size:1.8rem; font-weight:800; display:block;">Ksh 0</span>
+        <div class="summary-item">
+            <small><i class="fas fa-scale-balanced"></i> Net Ledger Balance</small>
+            <span id="net-balance">Ksh 0</span>
         </div>
-        <div>
-            <small class="text-dim" style="font-weight:800; text-transform:uppercase; font-size:0.7rem;">Total Cash In</small>
-            <span id="total-in" style="font-size:1.2rem; font-weight:700; color:var(--success); display:block;">Ksh 0</span>
+        <div class="summary-item">
+            <small><i class="fas fa-arrow-down" style="color:var(--success);"></i> Total Cash In</small>
+            <span id="total-in" style="color:var(--success);">Ksh 0</span>
         </div>
-        <div>
-            <small class="text-dim" style="font-weight:800; text-transform:uppercase; font-size:0.7rem;">Total Cash Out</small>
-            <span id="total-out" style="font-size:1.2rem; font-weight:700; color:var(--danger); display:block;">Ksh 0</span>
+        <div class="summary-item">
+            <small><i class="fas fa-arrow-up" style="color:var(--danger);"></i> Total Cash Out</small>
+            <span id="total-out" style="color:var(--danger);">Ksh 0</span>
         </div>
     </div>
 
-    <input type="text" id="txnSearch" class="search-bar" placeholder="Search by category or description (e.g. 'Rent' or 'Refund')...">
+    <input type="text" id="txnSearch" class="search-bar" placeholder="🔍 Search by category or description (e.g. 'Rent' or 'Refund')...">
 
     <div class="card">
         <div class="table-responsive">
@@ -147,41 +383,203 @@
                         <th>Category</th>
                         <th>Amount</th>
                         <th>Description</th>
+                        <th>Branch</th>
                     </tr>
                 </thead>
-                <tbody id="data-body-desktop"></tbody>
+                <tbody id="data-body-desktop">
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px;">
+                            <div class="spinner" style="margin: 0 auto;"></div>
+                            Loading transactions...
+                        </td>
+                    </tr>
+                </tbody>
             </table>
         </div>
-        <div id="data-body-mobile" class="mobile-list"></div>
+        <div id="data-body-mobile" class="mobile-list">
+            <div class="loading-spinner">Loading transactions...</div>
+        </div>
         <button id="loadMore" class="btn-load">LOAD MORE TRANSACTIONS</button>
     </div>
 </main>
 
 <script type="module">
     import { supabase } from './auth.js';
+    
     let limit = 20;
     let allTransactions = [];
+    let currentUser = null;
+    let currentBranchId = null;
+    let currentBranch = null;
+    let selectedBranchId = null;
+    let branches = {};
+    let branchIdMap = {};
+
+    // ==================== BRANCH FUNCTIONS ====================
+
+    async function loadBranches() {
+        const { data } = await supabase.from('branches').select('*');
+        branches = {};
+        branchIdMap = {};
+        data?.forEach(b => {
+            branches[b.id] = b;
+            branchIdMap[b.code] = b.id;
+        });
+        console.log("✅ Branches loaded:", branches);
+        return branches;
+    }
+
+    function getBranchIdFromCode(code) {
+        return branchIdMap[code] || null;
+    }
+
+    async function loadUserProfile() {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return null;
+            }
+            
+            currentUser = user;
+            
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select(`
+                    *,
+                    branches (
+                        id,
+                        name,
+                        code,
+                        location
+                    )
+                `)
+                .eq('id', user.id)
+                .single();
+            
+            if (error) throw error;
+            
+            currentBranchId = profile.branch_id;
+            currentBranch = profile.branches;
+            
+            const session = {
+                user: user,
+                profile: profile,
+                branch: profile.branches,
+                role: profile.role
+            };
+            localStorage.setItem('pos_session', JSON.stringify(session));
+            
+            // Update sidebar with user's assigned branch
+            const sidebarBranchName = document.querySelector('#sidebarBranchName span');
+            if (profile.branches && sidebarBranchName) {
+                sidebarBranchName.textContent = profile.branches.name;
+            }
+            
+            return profile;
+        } catch (error) {
+            console.error("❌ Error loading profile:", error);
+            return null;
+        }
+    }
 
     window.toggleSidebar = () => {
         document.getElementById('sidebar').classList.toggle('active');
         document.getElementById('overlay').classList.toggle('active');
     };
 
-    async function fetchData() {
-        // We fetch a larger pool to allow local filtering
-        const { data, error } = await supabase
-            .from('cash_transactions')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(limit);
-
-        if (error) {
-            console.error("Fetch error:", error);
-            return;
+    window.handleLogout = async () => {
+        if(confirm("Are you sure you want to logout?")) {
+            localStorage.removeItem('pos_session');
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
         }
+    };
 
-        allTransactions = data;
-        renderTransactions(allTransactions);
+    // Handle branch change
+    window.handleBranchChange = async function() {
+        const selector = document.getElementById('branchSelector');
+        const selectedCode = selector.value;
+        
+        const branchDisplay = document.getElementById('currentBranchDisplay');
+        const dateRange = document.getElementById('dateRange');
+        
+        if (selectedCode === 'all') {
+            branchDisplay.textContent = 'ALL BRANCHES';
+            selectedBranchId = null;
+            dateRange.textContent = 'Showing all branches';
+        } else {
+            const branchId = getBranchIdFromCode(selectedCode);
+            if (branchId) {
+                selectedBranchId = branchId;
+                branchDisplay.textContent = branches[branchId].name;
+                dateRange.textContent = `Showing ${branches[branchId].name} only`;
+            }
+        }
+        
+        await fetchData();
+    };
+
+    async function fetchData() {
+        // Show loading state
+        document.getElementById('data-body-desktop').innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 40px;">
+                    <div class="spinner" style="margin: 0 auto;"></div>
+                    Loading transactions...
+                </td>
+            </tr>
+        `;
+        
+        document.getElementById('data-body-mobile').innerHTML = `
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+                <p>Loading transactions...</p>
+            </div>
+        `;
+
+        try {
+            // Build query with branch filter
+            let query = supabase
+                .from('cash_transactions')
+                .select(`
+                    *,
+                    branches (
+                        name,
+                        code
+                    )
+                `)
+                .order('created_at', { ascending: false })
+                .limit(limit);
+
+            // Apply branch filter if a specific branch is selected
+            if (selectedBranchId) {
+                query = query.eq('branch_id', selectedBranchId);
+                console.log("🔍 Filtering by branch:", selectedBranchId);
+            }
+
+            const { data, error } = await query;
+
+            if (error) {
+                console.error("❌ Fetch error:", error);
+                throw error;
+            }
+
+            allTransactions = data || [];
+            console.log(`📊 Loaded ${allTransactions.length} transactions`);
+            
+            renderTransactions(allTransactions);
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            document.getElementById('data-body-desktop').innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 40px; color: var(--danger);">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        Error loading transactions: ${error.message}
+                    </td>
+                </tr>
+            `;
+        }
     }
 
     function renderTransactions(transactions) {
@@ -189,81 +587,124 @@
         let desktopHTML = '';
         let mobileHTML = '';
 
-        transactions.forEach(t => {
-            const isMoneyIn = t.type.toLowerCase().includes('in');
-            const amount = parseFloat(t.amount || 0);
-            
-            if (isMoneyIn) {
-                totalIn += amount;
-                net += amount;
-            } else {
-                totalOut += amount;
-                net -= amount;
-            }
-            
-            const dateObj = new Date(t.created_at);
-            const date = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-            const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-            const rowHTML = `
+        if (transactions.length === 0) {
+            const branchName = selectedBranchId ? branches[selectedBranchId]?.name : 'All Branches';
+            desktopHTML = `
                 <tr>
-                    <td><b>${date}</b><br><small style="color:var(--text-dim)">${time}</small></td>
-                    <td><span class="type-pill ${isMoneyIn ? 'type-in' : 'type-out'}">${t.type}</span></td>
-                    <td><b>${t.category || 'General'}</b></td>
-                    <td style="color:${isMoneyIn ? 'var(--success)' : 'var(--danger)'}; font-weight:800;">
-                        ${isMoneyIn ? '+' : '-'} Ksh ${amount.toLocaleString()}
+                    <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-dim);">
+                        <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        No transactions found for ${branchName}
                     </td>
-                    <td style="color:var(--text-dim); font-size:0.85rem; max-width: 250px;">${t.description || '-'}</td>
-                </tr>`;
+                </tr>
+            `;
+            mobileHTML = `
+                <div style="text-align: center; padding: 40px; color: var(--text-dim);">
+                    <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <p>No transactions found</p>
+                </div>
+            `;
+        } else {
+            transactions.forEach(t => {
+                const isMoneyIn = t.type === 'Money In' || t.type === 'In';
+                const amount = parseFloat(t.amount || 0);
+                const branch = t.branches || { name: 'Unknown', code: '--' };
+                
+                if (isMoneyIn) {
+                    totalIn += amount;
+                    net += amount;
+                } else {
+                    totalOut += amount;
+                    net -= amount;
+                }
+                
+                const dateObj = new Date(t.created_at);
+                const date = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            const mHTML = `
-                <div class="transaction-card">
-                    <div style="display:flex; justify-content:space-between;">
-                        <span class="type-pill ${isMoneyIn ? 'type-in' : 'type-out'}">${t.type}</span>
-                        <small style="color:var(--text-dim); font-weight:600;">${date} • ${time}</small>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-weight:700;">${t.category || 'General'}</span>
-                        <span style="font-weight:800; color:${isMoneyIn ? 'var(--success)' : 'var(--danger)'}">
+                desktopHTML += `
+                    <tr>
+                        <td>
+                            <b>${date}</b>
+                            <br><small style="color:var(--text-dim); font-size:0.7rem;">${time}</small>
+                        </td>
+                        <td><span class="type-pill ${isMoneyIn ? 'type-in' : 'type-out'}">${t.type}</span></td>
+                        <td><b>${t.category || 'General'}</b></td>
+                        <td style="color:${isMoneyIn ? 'var(--success)' : 'var(--danger)'}; font-weight:800;">
                             ${isMoneyIn ? '+' : '-'} Ksh ${amount.toLocaleString()}
-                        </span>
-                    </div>
-                    <div style="background:#f1f5f9; padding:10px; border-radius:10px; font-size:0.8rem; color:var(--text-dim);">
-                        ${t.description || 'No description'}
-                    </div>
-                </div>`;
+                        </td>
+                        <td style="color:var(--text-dim); max-width: 250px;">${t.description || '-'}</td>
+                        <td><span class="branch-pill">${branch.code}</span></td>
+                    </tr>`;
 
-            desktopHTML += rowHTML;
-            mobileHTML += mHTML;
-        });
+                mobileHTML += `
+                    <div class="transaction-card">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span class="type-pill ${isMoneyIn ? 'type-in' : 'type-out'}">${t.type}</span>
+                            <span class="branch-pill">${branch.code}</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <b>${t.category || 'General'}</b>
+                            <span style="font-weight:800; color:${isMoneyIn ? 'var(--success)' : 'var(--danger)'};">
+                                ${isMoneyIn ? '+' : '-'} Ksh ${amount.toLocaleString()}
+                            </span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:var(--text-dim);">
+                            <span>${date}</span>
+                            <span>${time}</span>
+                        </div>
+                        ${t.description ? `
+                            <div style="background:#f1f5f9; padding:10px; border-radius:8px; font-size:0.8rem; margin-top:5px;">
+                                ${t.description}
+                            </div>
+                        ` : ''}
+                    </div>`;
+            });
+        }
 
         document.getElementById('data-body-desktop').innerHTML = desktopHTML;
         document.getElementById('data-body-mobile').innerHTML = mobileHTML;
         
-        const netEl = document.getElementById('net-balance');
-        netEl.innerText = `Ksh ${net.toLocaleString()}`;
-        netEl.style.color = net >= 0 ? 'var(--success)' : 'var(--danger)';
-        
-        document.getElementById('total-in').innerText = `Ksh ${totalIn.toLocaleString()}`;
-        document.getElementById('total-out').innerText = `Ksh ${totalOut.toLocaleString()}`;
+        // Update summary
+        document.getElementById('net-balance').innerHTML = `Ksh ${net.toLocaleString()}`;
+        document.getElementById('net-balance').style.color = net >= 0 ? 'var(--success)' : 'var(--danger)';
+        document.getElementById('total-in').innerHTML = `Ksh ${totalIn.toLocaleString()}`;
+        document.getElementById('total-out').innerHTML = `Ksh ${totalOut.toLocaleString()}`;
     }
 
     // Search Logic
-    document.getElementById('txnSearch').oninput = (e) => {
+    document.getElementById('txnSearch').addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
         const filtered = allTransactions.filter(t => 
             (t.category && t.category.toLowerCase().includes(term)) || 
             (t.description && t.description.toLowerCase().includes(term))
         );
         renderTransactions(filtered);
-    };
+    });
 
-    document.getElementById('loadMore').onclick = () => { 
+    document.getElementById('loadMore').addEventListener('click', () => { 
         limit += 20; 
         fetchData(); 
-    };
+    });
 
-    fetchData();
+    // Initialize
+    async function init() {
+        await loadBranches();
+        await loadUserProfile();
+        
+        // Set today's date
+        const today = new Date();
+        document.getElementById('dateRange').textContent = today.toLocaleDateString('en-GB', { 
+            day: 'numeric', month: 'long', year: 'numeric' 
+        });
+        
+        // Set default branch selector
+        document.getElementById('branchSelector').value = 'all';
+        selectedBranchId = null;
+        
+        await fetchData();
+    }
+
+    init();
 </script>
 </body>
 </html>
