@@ -55,6 +55,9 @@
             color: #ffffff; 
             font-size: 1.3rem;
             border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
         .nav-list { 
@@ -133,6 +136,14 @@
             align-items: center;
         }
 
+        .mobile-header button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
         /* --- MAIN CONTENT --- */
         .main-content { 
             margin-left: var(--sidebar-width); 
@@ -162,6 +173,9 @@
             color: var(--text-dim);
             font-size: 0.85rem;
             margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
         
         .branch-selector-container {
@@ -262,7 +276,7 @@
         
         .card-title i { font-size: 1rem; }
         
-        input, select { 
+        input, select, textarea { 
             width: 100%; 
             padding: 14px 16px; 
             border: 1px solid var(--border); 
@@ -274,7 +288,7 @@
             font-family: inherit;
         }
         
-        input:focus, select:focus {
+        input:focus, select:focus, textarea:focus {
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
@@ -365,6 +379,7 @@
             padding: 15px; 
             border-bottom: 1px solid var(--border); 
             font-size: 0.9rem; 
+            vertical-align: middle;
         }
 
         .badge { 
@@ -468,6 +483,22 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+        
+        .big-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
         /* Print Styles */
         @media print {
             body * { visibility: hidden; }
@@ -485,6 +516,7 @@
             .grid { grid-template-columns: 1fr; }
             .branch-selector-container { width: 100%; }
             .branch-select { width: 100%; }
+            .report-summary { grid-template-columns: 1fr 1fr; }
             
             table, thead, tbody, th, td, tr { display: block; }
             thead { display: none; }
@@ -569,7 +601,7 @@
 </nav>
 
 <div class="mobile-header">
-    <button onclick="toggleMenu()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">
+    <button onclick="toggleMenu()">
         <i class="fas fa-bars"></i>
     </button>
     <div style="font-weight:800;">DEBTORS HUB</div>
@@ -580,7 +612,10 @@
     <div class="page-header">
         <div class="page-title">
             <h1>Debtors Management</h1>
-            <p><i class="fas fa-store"></i> Viewing: <span id="branchIndicator">All Branches</span></p>
+            <p>
+                <i class="fas fa-store"></i> 
+                Viewing: <span id="branchIndicator">All Branches</span>
+            </p>
         </div>
         <div class="branch-selector-container">
             <select id="branchSelector" class="branch-select" onchange="handleBranchChange()">
@@ -621,9 +656,9 @@
                 New Debt Entry
             </div>
             <form id="debt-form">
-                <input type="text" id="cust-name" placeholder="Customer Name *" required style="margin-bottom: 12px;">
-                <input type="tel" id="cust-phone" placeholder="Phone Number (Optional)" style="margin-bottom: 12px;">
-                <input type="text" id="prod-search" list="prod-list" placeholder="Search & Select Product..." required style="margin-bottom: 12px;">
+                <input type="text" id="cust-name" placeholder="Customer Name *" required>
+                <input type="tel" id="cust-phone" placeholder="Phone Number (Optional)">
+                <input type="text" id="prod-search" list="prod-list" placeholder="Search & Select Product..." required>
                 <datalist id="prod-list"></datalist>
                 
                 <div class="stock-info">
@@ -641,7 +676,7 @@
                     </div>
                 </div>
 
-                <input type="number" id="debt-amt" placeholder="Debt Amount (Ksh)" step="0.01" required style="margin-bottom: 20px;">
+                <input type="number" id="debt-amt" placeholder="Debt Amount (Ksh)" step="0.01" required>
                 
                 <button type="submit" id="submit-btn" class="btn-primary">
                     <i class="fas fa-save"></i> RECORD DEBT ENTRY
@@ -662,7 +697,7 @@
                 <button class="tab" onclick="filterTable('Paid', this)">Paid</button>
             </div>
             
-            <input type="text" id="ledger-search" placeholder="Search by customer or product..." oninput="handleSearch(this.value)" style="margin-bottom: 15px;">
+            <input type="text" id="ledger-search" placeholder="Search by customer or product..." oninput="handleSearch(this.value)">
             
             <div class="table-container">
                 <table id="debt-table">
@@ -677,7 +712,14 @@
                             <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody id="ledger-body"></tbody>
+                    <tbody id="ledger-body">
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 40px;">
+                                <div class="big-spinner"></div>
+                                Loading debt records...
+                            </td>
+                        </tr>
+                    </tbody>
                 </table>
             </div>
         </div>
@@ -729,6 +771,13 @@
     let branches = {};
     let branchIdMap = {};
 
+    // ==================== UTILITY FUNCTIONS ====================
+
+    window.toggleMenu = () => {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('active');
+    };
+
     // ==================== BRANCH FUNCTIONS ====================
 
     async function loadBranches() {
@@ -739,7 +788,7 @@
             branches[b.id] = b;
             branchIdMap[b.code] = b.id;
         });
-        console.log("Branches loaded:", branches);
+        console.log("✅ Branches loaded:", branches);
         return branches;
     }
 
@@ -756,6 +805,7 @@
             }
             
             currentUser = user;
+            console.log("👤 User ID:", user.id);
             
             const { data: profile, error } = await supabase
                 .from('profiles')
@@ -775,6 +825,7 @@
             
             currentBranchId = profile.branch_id;
             currentBranch = profile.branches;
+            console.log("🏢 User's assigned branch:", currentBranch?.name);
             
             const session = {
                 user: user,
@@ -791,14 +842,18 @@
             
             return profile;
         } catch (error) {
-            console.error("Error loading profile:", error);
+            console.error("❌ Error loading profile:", error);
             return null;
         }
     }
 
+    // ==================== BRANCH FILTER HANDLING ====================
+
     window.handleBranchChange = async function() {
         const selector = document.getElementById('branchSelector');
         const selectedCode = selector.value;
+        
+        console.log("🔄 Branch changed to:", selectedCode);
         
         const branchDisplay = document.getElementById('currentBranchDisplay');
         const branchIndicator = document.getElementById('branchIndicator');
@@ -807,100 +862,130 @@
             branchDisplay.textContent = 'ALL BRANCHES';
             branchIndicator.textContent = 'All Branches';
             selectedBranchId = null;
-            console.log("Selected: ALL BRANCHES");
+            console.log("📊 Selected: ALL BRANCHES");
         } else {
             const branchId = getBranchIdFromCode(selectedCode);
             if (branchId) {
                 selectedBranchId = branchId;
                 branchDisplay.textContent = branches[branchId].name;
                 branchIndicator.textContent = branches[branchId].name;
-                console.log(`Selected branch: ${branches[branchId].name} (ID: ${branchId})`);
+                console.log(`📌 Selected branch: ${branches[branchId].name} (ID: ${branchId})`);
             }
         }
         
         await loadData();
     };
 
+    // ==================== DATA LOADING ====================
+
     async function loadData() {
-        console.log("Loading data for branch ID:", selectedBranchId);
+        console.log("📥 Loading data for branch ID:", selectedBranchId || 'ALL');
         
         // Show loading state
         document.getElementById('ledger-body').innerHTML = `
             <tr>
                 <td colspan="7" style="text-align: center; padding: 40px;">
-                    <div class="spinner" style="margin: 0 auto 10px;"></div>
-                    Loading data...
+                    <div class="big-spinner"></div>
+                    Loading debt records...
                 </td>
             </tr>
         `;
         
-        // Build queries
-        let productsQuery = supabase.from('products').select('*');
-        let shiftsQuery = supabase.from('daily_shifts')
-            .select('*')
-            .eq('status', 'open')
-            .order('start_time', { ascending: false })
-            .limit(1);
-        
-        // IMPORTANT FIX: Always filter debts by branch_id if a branch is selected
-        let debtsQuery = supabase
-            .from('debtors')
-            .select(`
-                *,
-                products (*)
-            `)
-            .order('created_at', { ascending: false });
-        
-        // Apply branch filter if a specific branch is selected
-        if (selectedBranchId) {
-            productsQuery = productsQuery.eq('branch_id', selectedBranchId);
-            shiftsQuery = shiftsQuery.eq('branch_id', selectedBranchId);
-            debtsQuery = debtsQuery.eq('branch_id', selectedBranchId);
-            console.log("Filtering debts by branch_id:", selectedBranchId);
+        try {
+            // Load products
+            let productsQuery = supabase.from('products').select('*');
+            if (selectedBranchId) {
+                productsQuery = productsQuery.eq('branch_id', selectedBranchId);
+            }
+            
+            // Load shifts
+            let shiftsQuery = supabase.from('daily_shifts')
+                .select('*')
+                .eq('status', 'open')
+                .order('start_time', { ascending: false })
+                .limit(1);
+            if (selectedBranchId) {
+                shiftsQuery = shiftsQuery.eq('branch_id', selectedBranchId);
+            }
+            
+            // Load debts - THIS IS THE CRITICAL PART
+            let debtsQuery = supabase
+                .from('debtors')
+                .select(`
+                    *,
+                    products (*)
+                `)
+                .order('created_at', { ascending: false });
+            
+            // Apply branch filter if a specific branch is selected
+            if (selectedBranchId) {
+                debtsQuery = debtsQuery.eq('branch_id', selectedBranchId);
+                console.log("🔍 Filtering debts by branch_id:", selectedBranchId);
+            } else {
+                console.log("🔍 Showing ALL branches (no branch filter)");
+            }
+
+            const [prodRes, shiftRes, debtsRes] = await Promise.all([
+                productsQuery,
+                shiftsQuery.maybeSingle(),
+                debtsQuery
+            ]);
+
+            allProducts = prodRes.data || [];
+            currentShift = shiftRes.data;
+            allDebts = debtsRes.data || [];
+            
+            console.log(`📊 Loaded ${allDebts.length} debt records`);
+            
+            // Log branch distribution of loaded debts
+            if (allDebts.length > 0) {
+                const branchStats = {};
+                allDebts.forEach(d => {
+                    const bid = d.branch_id || 'null';
+                    branchStats[bid] = (branchStats[bid] || 0) + 1;
+                });
+                console.log("📈 Debt distribution by branch_id:", branchStats);
+            }
+
+            // Populate product datalist
+            const dList = document.getElementById('prod-list');
+            dList.innerHTML = allProducts.map(p => {
+                const displayName = `${p.name}${p.weight_category ? ` (${p.weight_category})` : ''}`;
+                return `<option value="${displayName}" 
+                    data-id="${p.id}" 
+                    data-price="${p.selling_price}" 
+                    data-stock="${p.stock_quantity}" 
+                    data-cost="${p.cost_price || 0}"
+                    data-min="${p.min_price || 0}">`;
+            }).join('');
+            
+            renderLedger();
+            
+        } catch (error) {
+            console.error("❌ Error loading data:", error);
+            document.getElementById('ledger-body').innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        Error loading data: ${error.message}
+                    </td>
+                </tr>
+            `;
         }
-
-        const [prodRes, shiftRes, debtsRes] = await Promise.all([
-            productsQuery,
-            shiftsQuery.maybeSingle(),
-            debtsQuery
-        ]);
-
-        allProducts = prodRes.data || [];
-        currentShift = shiftRes.data;
-        allDebts = debtsRes.data || [];
-        
-        console.log(`Loaded ${allDebts.length} debt records for selected branch`);
-        
-        // Log the branch distribution of loaded debts
-        const branchCounts = {};
-        allDebts.forEach(d => {
-            const id = d.branch_id || 'null';
-            branchCounts[id] = (branchCounts[id] || 0) + 1;
-        });
-        console.log("Debt distribution by branch:", branchCounts);
-
-        // Populate product datalist
-        const dList = document.getElementById('prod-list');
-        dList.innerHTML = allProducts.map(p => `
-            <option value="${p.name}" 
-                data-id="${p.id}" 
-                data-price="${p.selling_price}" 
-                data-stock="${p.stock_quantity}" 
-                data-cost="${p.cost_price || 0}"
-                data-min="${p.min_price || 0}">
-        `).join('');
-        
-        renderLedger();
     }
 
     // ==================== PRODUCT SEARCH HANDLER ====================
 
     document.getElementById('prod-search').addEventListener('input', (e) => {
-        const opt = document.querySelector(`#prod-list option[value="${e.target.value}"]`);
+        const searchValue = e.target.value;
+        const opt = Array.from(document.querySelectorAll('#prod-list option')).find(
+            opt => opt.value === searchValue
+        );
+        
         if (opt) {
             document.getElementById('debt-amt').value = opt.dataset.price;
             document.getElementById('live-stock').innerText = opt.dataset.stock;
-            document.getElementById('live-min').innerText = `${parseFloat(opt.dataset.min).toLocaleString()}`;
+            document.getElementById('live-min').innerText = `Ksh ${parseFloat(opt.dataset.min).toLocaleString()}`;
             document.getElementById('live-price').innerText = `Ksh ${parseFloat(opt.dataset.price).toLocaleString()}`;
         }
     });
@@ -910,7 +995,7 @@
     function renderLedger(searchTerm = '') {
         const tbody = document.getElementById('ledger-body');
         
-        // Apply filters - currentFilter (All/Unpaid/Paid) and search term
+        // Apply filters (status and search)
         const filtered = allDebts.filter(d => {
             const matchesFilter = currentFilter === 'All' || d.status === currentFilter;
             const matchesSearch = d.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -918,7 +1003,7 @@
             return matchesFilter && matchesSearch;
         });
 
-        // Calculate summary - ONLY from currently loaded debts (which are already filtered by branch)
+        // Calculate summary for the currently loaded debts (already filtered by branch)
         let outstanding = 0, recovered = 0, profit = 0;
         allDebts.forEach(d => {
             if(d.status === 'Unpaid') {
@@ -953,7 +1038,10 @@
             return `
             <tr>
                 <td data-label="Date"><small>${new Date(d.created_at).toLocaleDateString()}</small></td>
-                <td data-label="Customer"><b>${d.customer_name}</b><br><small style="color:var(--text-dim);">${d.customer_phone || 'No phone'}</small></td>
+                <td data-label="Customer">
+                    <b>${d.customer_name}</b>
+                    ${d.customer_phone ? `<br><small style="color:var(--text-dim);">${d.customer_phone}</small>` : ''}
+                </td>
                 <td data-label="Item">${d.products?.name || 'Manual Entry'}</td>
                 <td data-label="Amount" style="font-weight:800">Ksh ${d.amount_owed.toLocaleString()}</td>
                 <td data-label="Status"><span class="badge ${d.status === 'Unpaid' ? 'bg-unpaid' : 'bg-paid'}">${d.status}</span></td>
@@ -961,11 +1049,11 @@
                 <td data-label="Action">
                     ${d.status === 'Unpaid' ? 
                         `<button onclick='openSettleModal("${d.id}", ${d.amount_owed}, "${d.customer_name}", "${d.products?.name}")' 
-                            style="background:var(--success); color:white; border:none; padding:8px 15px; border-radius:10px; cursor:pointer; font-weight:700; width:100%;">
+                            style="background:var(--success); color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:700; width:100%;">
                             <i class="fas fa-hand-holding-usd"></i> SETTLE
                         </button>` 
                         : 
-                        '<span style="color:var(--success); font-weight:700;"><i class="fas fa-check-circle"></i> Fully Paid</span>'
+                        '<span style="color:var(--success);"><i class="fas fa-check-circle"></i> Fully Paid</span>'
                     }
                 </td>
             </tr>
@@ -1005,10 +1093,12 @@
         try {
             const branchId = selectedBranchId || currentBranchId;
             
+            // Update debt status
             await supabase.from('debtors')
                 .update({ status: 'Paid' })
                 .eq('id', selectedDebt.id);
 
+            // Find and update related sale
             const { data: relatedSale } = await supabase
                 .from('sales')
                 .select('id')
@@ -1025,6 +1115,7 @@
                     .eq('id', relatedSale.id);
             }
 
+            // Log cash transaction
             await supabase.from('cash_transactions').insert([{
                 shift_id: currentShift.id,
                 type: 'Money In',
@@ -1042,7 +1133,7 @@
             await loadData();
             
         } catch (err) {
-            console.error("Error:", err);
+            console.error("Error settling debt:", err);
             alert("Error: " + err.message);
         } finally {
             btn.innerHTML = originalText;
@@ -1080,11 +1171,6 @@
 
     // ==================== UI EVENT HANDLERS ====================
 
-    window.toggleMenu = () => {
-        document.getElementById('sidebar').classList.toggle('active');
-        document.getElementById('overlay').classList.toggle('active');
-    };
-
     window.filterTable = (status, btn) => {
         currentFilter = status;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -1092,7 +1178,9 @@
         renderLedger(document.getElementById('ledger-search').value);
     };
 
-    window.handleSearch = (val) => renderLedger(val);
+    window.handleSearch = (val) => {
+        renderLedger(val);
+    };
 
     window.handleLogout = async () => {
         if(confirm("Are you sure you want to logout?")) {
@@ -1101,6 +1189,8 @@
             window.location.href = 'index.html';
         }
     };
+
+    // ==================== FORM SUBMISSION ====================
 
     document.getElementById('debt-form').onsubmit = async (e) => {
         e.preventDefault();
@@ -1111,7 +1201,9 @@
         }
         
         const searchVal = document.getElementById('prod-search').value;
-        const opt = document.querySelector(`#prod-list option[value="${searchVal}"]`);
+        const opt = Array.from(document.querySelectorAll('#prod-list option')).find(
+            opt => opt.value === searchVal
+        );
         
         if(!opt) {
             alert("Please select a valid product from the list");
@@ -1129,6 +1221,7 @@
         const branchId = selectedBranchId || currentBranchId;
 
         try {
+            // Insert debt
             const { error: debtError } = await supabase.from('debtors').insert([{
                 customer_name: customer,
                 customer_phone: phone || null,
@@ -1140,6 +1233,7 @@
 
             if (debtError) throw debtError;
 
+            // Insert sale record
             const { error: saleError } = await supabase.from('sales').insert([{
                 product_id: opt.dataset.id,
                 item_name: searchVal,
@@ -1156,6 +1250,7 @@
 
             if (saleError) throw saleError;
 
+            // Update inventory
             const newStock = parseInt(opt.dataset.stock) - 1;
             const { error: stockError } = await supabase.from('products')
                 .update({ stock_quantity: newStock })
@@ -1174,7 +1269,7 @@
             await loadData();
             
         } catch (err) {
-            console.error("Error:", err);
+            console.error("Error recording debt:", err);
             alert("Error: " + err.message);
         } finally {
             btn.innerHTML = originalText;
@@ -1182,7 +1277,11 @@
         }
     };
 
+    // ==================== INITIALIZATION ====================
+    
     async function init() {
+        console.log("🚀 Initializing Admin Debtors Page...");
+        
         await loadBranches();
         await loadUserProfile();
         
