@@ -3,178 +3,781 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Audit Trail | JEPE Admin</title>
+    <title>Audit Trail | JEPE Admin - Multi-Branch</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { 
-            --admin-dark: #0f172a; --admin-accent: #6366f1; --bg: #f8fafc;
-            --white: #ffffff; --text: #1e293b; --text-dim: #64748b;
-            --border: #e2e8f0; --success: #10b981; --danger: #ef4444;
+            --admin-dark: #0f172a; 
+            --admin-accent: #4f46e5; 
+            --bg: #f8fafc;
+            --white: #ffffff; 
+            --text: #1e293b; 
+            --text-dim: #64748b;
+            --border: #e2e8f0; 
+            --success: #10b981; 
+            --danger: #ef4444;
             --sidebar-width: 260px;
+            --sidebar-collapsed: 70px;
+            --primary: #4f46e5;
         }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); margin: 0; display: flex; min-height: 100vh; color: var(--text); }
+        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg); 
+            margin: 0; 
+            display: flex; 
+            min-height: 100vh; 
+            color: var(--text);
+            overflow-x: hidden;
+        }
 
-        /* --- SIDEBAR (HIDDEN ON MOBILE) --- */
-        .sidebar {
-            position: fixed; left: 0; top: 0; width: var(--sidebar-width); height: 100vh;
-            background: var(--admin-dark); z-index: 3000; padding: 25px; color: white; 
-            overflow-y: auto; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        /* --- SIDEBAR - Collapsible --- */
+        .sidebar { 
+            width: var(--sidebar-collapsed); 
+            height: 100vh; 
+            background: var(--admin-dark); 
+            position: fixed; 
+            left: 0; 
+            top: 0; 
+            z-index: 3000; 
+            overflow-x: hidden; 
+            transition: width 0.3s ease;
+            padding: 20px 10px; 
+            display: flex;
+            flex-direction: column;
+            color: white;
         }
-        .sidebar h2 { font-size: 1.2rem; font-weight: 800; margin-bottom: 30px; color: var(--admin-accent); letter-spacing: 1px; }
-        .nav-link {
-            display: flex; align-items: center; padding: 12px 15px; color: #94a3b8;
-            text-decoration: none; font-weight: 600; border-radius: 12px; margin-bottom: 4px; font-size: 0.85rem; gap: 10px;
+        
+        .sidebar:hover, .sidebar.mobile-active { 
+            width: var(--sidebar-width); 
         }
-        .nav-link.active { background: var(--admin-accent); color: white; }
+        
+        .sidebar-header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            margin-bottom: 30px; 
+            padding: 0 10px; 
+            min-height: 40px;
+        }
+        
+        .sidebar h2 { 
+            font-size: 1.2rem; 
+            margin: 0; 
+            white-space: nowrap; 
+            opacity: 0; 
+            transition: opacity 0.2s; 
+            color: white;
+            font-weight: 800;
+        }
+        
+        .sidebar:hover h2, .sidebar.mobile-active h2 { 
+            opacity: 1; 
+        }
+        
+        .close-btn { 
+            display: none; 
+            background: none; 
+            border: none; 
+            color: white; 
+            font-size: 1.5rem; 
+            cursor: pointer; 
+        }
 
-        /* --- MOBILE HEADER --- */
-        .mobile-header {
-            display: none; position: fixed; top: 0; width: 100%; height: 60px;
-            background: var(--admin-dark); color: white; z-index: 2000;
-            padding: 0 20px; align-items: center; justify-content: space-between;
+        /* Branch Info in Sidebar */
+        .branch-info {
+            padding: 10px;
+            margin: 10px 0 20px;
+            background: rgba(79, 70, 229, 0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            white-space: nowrap;
         }
-        .menu-btn { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0; }
+        
+        .branch-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            color: #94a3b8;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .sidebar:hover .branch-label, .sidebar.mobile-active .branch-label {
+            opacity: 1;
+        }
+        
+        .branch-name {
+            font-weight: 800;
+            color: white;
+            font-size: 0.85rem;
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .branch-name i { 
+            color: var(--primary); 
+            min-width: 20px;
+        }
+        
+        .branch-name span {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .sidebar:hover .branch-name span, .sidebar.mobile-active .branch-name span {
+            opacity: 1;
+        }
+        
+        .nav-list { 
+            flex: 1;
+            list-style: none; 
+            padding: 0; 
+            margin: 0; 
+        }
+        
+        .nav-link { 
+            display: flex; 
+            align-items: center; 
+            padding: 12px; 
+            color: #94a3b8; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            margin-bottom: 5px; 
+            transition: 0.3s; 
+            white-space: nowrap;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .nav-link i { 
+            min-width: 30px; 
+            font-size: 1.2rem; 
+            text-align: center; 
+            margin-right: 15px;
+        }
+        
+        .nav-link span { 
+            opacity: 0; 
+            white-space: nowrap; 
+            transition: opacity 0.2s; 
+        }
+        
+        .sidebar:hover .nav-link span, 
+        .sidebar.mobile-active .nav-link span { 
+            opacity: 1; 
+        }
+        
+        .nav-link:hover, .nav-link.active { 
+            background: var(--primary); 
+            color: white; 
+        }
+
+        .nav-link.switch-link {
+            background: #0ea5e9;
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        /* --- MENU TRIGGER --- */
+        .menu-trigger {
+            display: none; 
+            position: fixed; 
+            top: 15px; 
+            left: 15px; 
+            z-index: 2500;
+            background: var(--admin-dark); 
+            color: white; 
+            border: none; 
+            padding: 10px 15px;
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 0.9rem; 
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
 
         /* --- MAIN CONTENT --- */
-        .main-content { margin-left: var(--sidebar-width); padding: 40px; width: 100%; transition: 0.3s; }
-        
-        .header-flex { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; gap: 20px; }
-        
-        .table-view { 
-            background: white; border-radius: 20px; border: 1px solid var(--border); 
-            overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        .main-content { 
+            margin-left: var(--sidebar-collapsed); 
+            padding: 30px; 
+            width: calc(100% - var(--sidebar-collapsed)); 
+            transition: margin-left 0.3s ease;
+            min-height: 100vh;
         }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
-        th { padding: 18px; background: #f8fafc; font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border); }
-        td { padding: 18px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        
+        @media (min-width: 1024px) {
+            .main-content { 
+                margin-left: var(--sidebar-collapsed); 
+            }
+        }
+
+        .mobile-header {
+            display: none; 
+            background: var(--admin-dark); 
+            color: white; 
+            padding: 0 20px;
+            align-items: center; 
+            justify-content: space-between;
+            position: fixed; 
+            top: 0; 
+            width: 100%; 
+            height: 64px; 
+            z-index: 2000;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar { 
+                transform: translateX(-100%); 
+                width: var(--sidebar-width);
+            }
+            .sidebar.mobile-active { 
+                transform: translateX(0); 
+            }
+            .main-content { 
+                margin-left: 0; 
+                width: 100%; 
+                padding: 20px; 
+                padding-top: 80px;
+            }
+            .menu-trigger { 
+                display: block; 
+            }
+            .mobile-header { 
+                display: flex; 
+            }
+            .close-btn { 
+                display: block; 
+            }
+        }
+
+        /* --- HEADER FLEX --- */
+        .header-flex { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-end; 
+            margin-bottom: 30px; 
+            gap: 20px; 
+            flex-wrap: wrap;
+        }
+        
+        /* --- BRANCH SELECTOR --- */
+        .branch-selector-container {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        
+        .branch-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .branch-select {
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 2px solid var(--primary);
+            background: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text);
+            cursor: pointer;
+            min-width: 220px;
+            outline: none;
+        }
+        
+        .branch-badge {
+            background: var(--primary);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- TABLE VIEW --- */
+        .table-view { 
+            background: white; 
+            border-radius: 20px; 
+            border: 1px solid var(--border); 
+            overflow: hidden; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            text-align: left; 
+            min-width: 900px;
+        }
+        
+        th { 
+            padding: 18px; 
+            background: #f8fafc; 
+            font-size: 0.7rem; 
+            text-transform: uppercase; 
+            color: var(--text-dim); 
+            border-bottom: 1px solid var(--border); 
+            font-weight: 800;
+        }
+        
+        td { 
+            padding: 18px; 
+            border-bottom: 1px solid var(--border); 
+            font-size: 0.9rem; 
+        }
 
         /* --- BADGES --- */
-        .badge { padding: 5px 10px; border-radius: 8px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; }
-        .badge-sale { background: #fee2e2; color: #b91c1c; }
-        .badge-restock { background: #dcfce7; color: #15803d; }
+        .badge { 
+            padding: 5px 10px; 
+            border-radius: 8px; 
+            font-size: 0.65rem; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+        }
+        .badge-sale { 
+            background: #fee2e2; 
+            color: #b91c1c; 
+        }
+        .badge-restock { 
+            background: #dcfce7; 
+            color: #15803d; 
+        }
+        .badge-edit {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
         
-        #live-indicator { display: flex; align-items: center; gap: 8px; background: #dcfce7; color: #15803d; padding: 8px 15px; border-radius: 30px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+        #live-indicator { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            background: #dcfce7; 
+            color: #15803d; 
+            padding: 8px 15px; 
+            border-radius: 30px; 
+            font-size: 0.75rem; 
+            font-weight: 700; 
+            white-space: nowrap; 
+        }
+
+        .branch-pill {
+            background: #f1f5f9;
+            color: var(--text-dim);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: inline-block;
+            margin-left: 5px;
+        }
         
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; z-index: 2500; backdrop-filter: blur(4px); }
+        /* --- OVERLAY --- */
+        .overlay { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(15, 23, 42, 0.5); 
+            backdrop-filter: blur(4px); 
+            display: none; 
+            z-index: 2500; 
+        }
+        .overlay.active { display: block; }
+
+        /* --- ANIMATIONS --- */
+        @keyframes pulse { 
+            0% { opacity: 1; } 
+            50% { opacity: 0.4; } 
+            100% { opacity: 1; } 
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         /* --- MOBILE RESPONSIVENESS --- */
         @media (max-width: 1024px) {
-            .sidebar { transform: translateX(-100%); }
-            .sidebar.active { transform: translateX(0); }
-            .main-content { margin-left: 0; padding: 80px 15px 40px; }
-            .mobile-header { display: flex; }
-            .overlay.active { display: block; }
-            .header-flex { flex-direction: column; align-items: flex-start; }
+            .header-flex { 
+                flex-direction: column; 
+                align-items: flex-start; 
+            }
 
             /* Table into Cards */
-            thead { display: none; }
-            tr { display: block; padding: 15px; border-bottom: 8px solid var(--bg); }
+            thead { 
+                display: none; 
+            }
+            tr { 
+                display: block; 
+                padding: 15px; 
+                border-bottom: 8px solid var(--bg); 
+            }
             td { 
-                display: flex; justify-content: space-between; align-items: center; 
-                padding: 10px 0; border: none; text-align: right;
+                display: flex; 
+                justify-content: space-between; 
+                align-items: center; 
+                padding: 10px 0; 
+                border: none; 
+                text-align: right;
             }
             td::before { 
-                content: attr(data-label); font-weight: 800; color: var(--text-dim); 
-                font-size: 0.7rem; text-transform: uppercase; text-align: left;
+                content: attr(data-label); 
+                font-weight: 800; 
+                color: var(--text-dim); 
+                font-size: 0.7rem; 
+                text-transform: uppercase; 
+                text-align: left;
             }
-            td:last-child { border-top: 1px solid var(--border); margin-top: 5px; padding-top: 15px; text-align: left; display: block; }
-            td:last-child::before { display: block; margin-bottom: 5px; }
+            td:last-child { 
+                border-top: 1px solid var(--border); 
+                margin-top: 5px; 
+                padding-top: 15px; 
+                text-align: left; 
+                display: block; 
+            }
+            td:last-child::before { 
+                display: block; 
+                margin-bottom: 5px; 
+            }
         }
 
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        .load-more-btn {
+            width: 100%;
+            padding: 16px;
+            background: white;
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            color: var(--primary);
+            font-weight: 800;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: 0.2s;
+        }
+        .load-more-btn:hover {
+            border-color: var(--primary);
+            background: #f8fafc;
+        }
     </style>
 </head>
 <body>
 
-    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+<button class="menu-trigger" onclick="toggleMenu()">☰ MENU</button>
 
-    <div class="mobile-header">
-        <button class="menu-btn" onclick="toggleMenu()">☰</button>
-        <div style="font-weight: 800; letter-spacing: 1px;">JEPE ADMIN</div>
-        <div style="width: 24px;"></div> </div>
-
-    <div class="sidebar" id="sidebar">
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
         <h2>JEPE ADMIN</h2>
-        <nav>
-          <a href="admin.html" class="nav-link ">📊 Dashboard view</a>
-        <a href="shift-history.html" class="nav-link">📋 Daily Shift Audit</a>
-        <a href="reports.html" class="nav-link">📄 Detailed Reports</a>
-        <a href="money-history.html" class="nav-link">📜 Money money IN/OUT history</a>
-        <a href="gas_hub.html" class="nav-link">🔥 Gas Hub</a>
-        <a href="inventory.html" class="nav-link">➕ Add Stock</a>
-         <a href="low_stock.html" class="nav-link" id="low-stock-nav">⚠️ Low Stock Alerts</a>
-         <a href="price_audits.html" class="nav-link">📉 item sold under price</a>
-        <a href="audit_trail.html" class="nav-link active">🔍 what cashier edited</a>
-        <a href="sales_editor.html" class="nav-link">✏️ Edit Stock/Sales</a>
-        <a href="sales-history.html" class="nav-link">📜 Sales History</a>
-         <a href="suppliers.html" class="nav-link">🤝 Suppliers</a>
-        <a href="admin-debtors.html" class="nav-link">👥 Debtors</a>
-       
-            <hr style="opacity: 0.1; margin: 20px 0;">
-            <a href="#" onclick="handleLogout()" class="nav-link" style="color: var(--danger);">🚪 Logout</a>
-        </nav>
+        <button class="close-btn" onclick="toggleMenu()">×</button>
     </div>
-
-    <div class="main-content">
-        <div class="header-flex">
-            <div>
-                <h1 style="margin:0; font-weight: 800; letter-spacing: -1px; font-size: 2rem;">Audit Trail</h1>
-                <p style="color: var(--text-dim); margin: 5px 0 0;">Recent inventory activity logs.</p>
-            </div>
-            <div id="live-indicator">
-                <span style="width:8px; height:8px; background:#22c55e; border-radius:50%; animation: pulse 1.5s infinite;"></span> LIVE SYNC ACTIVE
-            </div>
-        </div>
-
-        <div class="table-view">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date & Time</th>
-                        <th>Action</th>
-                        <th>Product</th>
-                        <th>Change</th>
-                        <th>User</th>
-                        <th>Details</th>
-                    </tr>
-                </thead>
-                <tbody id="desktop-tbody">
-                    <tr><td colspan="6" style="text-align:center; padding:50px;">Syncing logs...</td></tr>
-                </tbody>
-            </table>
+    
+    <!-- Branch Info Display -->
+    <div class="branch-info" id="sidebarBranchInfo">
+        <div class="branch-label">Your Assigned Branch</div>
+        <div class="branch-name" id="sidebarBranchName">
+            <i class="fas fa-store"></i>
+            <span>Loading...</span>
         </div>
     </div>
+    
+    <nav class="nav-list">
+        <a href="#" onclick="confirmSwitchToCashier(event)" class="nav-link switch-link">
+            <i class="fas fa-exchange-alt"></i> <span>SWITCH TO CASHIER</span>
+        </a>
 
-    <script type="module">
-        import { supabase } from './auth.js';
+        <a href="admin.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+        <a href="gas_hub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
+        <a href="spares_hub.html" class="nav-link"><i class="fas fa-cogs"></i> <span>Spare Parts Hub</span></a>
+        <a href="motorbike_hub.html" class="nav-link"><i class="fas fa-motorcycle"></i> <span>Motorbike Hub</span></a>
 
-        // Toggle Function for Mobile
-        window.toggleMenu = () => {
-            document.getElementById('sidebar').classList.toggle('active');
-            document.getElementById('overlay').classList.toggle('active');
+        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+
+        <a href="shift-history.html" class="nav-link"><i class="fas fa-history"></i> <span>Daily Shifts</span></a>
+        <a href="money-history.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
+        <a href="sales-history.html" class="nav-link"><i class="fas fa-chart-line"></i> <span>Sales History</span></a>
+
+        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+
+        <a href="inventory.html" class="nav-link"><i class="fas fa-plus-circle"></i> <span>Add Stock</span></a>
+        <a href="sales_editor.html" class="nav-link"><i class="fas fa-edit"></i> <span>Edit Stock</span></a>
+        <a href="admin-debtors.html" class="nav-link"><i class="fas fa-users"></i> <span>Debtors</span></a>
+        <a href="low_stock.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
+        <a href="audit_trail.html" class="nav-link active"><i class="fas fa-search"></i> <span>Inventory Track</span></a>
+
+        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+
+        <a href="reports.html" class="nav-link"><i class="fas fa-file-alt"></i> <span>Reports</span></a>
+        <a href="price_audits.html" class="nav-link"><i class="fas fa-tags"></i> <span>Underpriced</span></a>
+        <a href="suppliers.html" class="nav-link"><i class="fas fa-handshake"></i> <span>Suppliers</span></a>
+        <a href="admin.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
+        
+        <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <a onclick="handleLogout()" class="nav-link" style="color: #fb7185; cursor:pointer;">
+                <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+            </a>
+        </div>
+    </nav>
+</div>
+
+<div class="main-content">
+    <div class="mobile-header">
+        <button onclick="toggleMenu()" style="background:none; border:none; color:white; font-size:1.5rem;">☰</button>
+        <div style="font-weight:800;">AUDIT TRAIL</div>
+        <div style="width:24px;"></div>
+    </div>
+
+    <!-- Branch Selector -->
+    <div class="branch-selector-container">
+        <div class="branch-filter">
+            <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
+            <select id="branchSelector" class="branch-select" onchange="handleBranchChange()">
+                <option value="all">🏢 ALL BRANCHES (Consolidated)</option>
+            </select>
+        </div>
+        <div class="branch-badge" id="currentBranchBadge">
+            <i class="fas fa-store"></i>
+            <span id="currentBranchDisplay">ALL BRANCHES</span>
+        </div>
+    </div>
+
+    <div class="header-flex">
+        <div>
+            <h1 style="margin:0; font-weight: 800; letter-spacing: -1px; font-size: 2rem;">Audit Trail</h1>
+            <p style="color: var(--text-dim); margin: 5px 0 0;">Recent inventory activity logs across all branches.</p>
+        </div>
+        <div id="live-indicator">
+            <span style="width:8px; height:8px; background:#22c55e; border-radius:50%; animation: pulse 1.5s infinite;"></span> 
+            <i class="fas fa-sync-alt"></i> LIVE SYNC ACTIVE
+        </div>
+    </div>
+
+    <div class="table-view">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Action</th>
+                    <th>Product</th>
+                    <th>Change</th>
+                    <th>User</th>
+                    <th>Branch</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody id="desktop-tbody">
+                <tr>
+                    <td colspan="7" style="text-align:center; padding:50px;">
+                        <div class="spinner" style="margin: 0 auto;"></div>
+                        Syncing logs...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <button id="loadMoreBtn" class="load-more-btn">LOAD MORE LOGS</button>
+</div>
+
+<script type="module">
+    import { supabase } from './auth.js';
+
+    let currentUser = null;
+    let currentBranchId = null;
+    let currentBranch = null;
+    let selectedBranchId = null;
+    let branches = {};
+    let branchIdMap = {};
+    let logsLimit = 50;
+
+    // ==================== SIDEBAR FUNCTIONS ====================
+    window.toggleMenu = () => {
+        document.getElementById('sidebar').classList.toggle('mobile-active');
+        document.getElementById('overlay').classList.toggle('active');
+    };
+
+    window.confirmSwitchToCashier = (e) => {
+        e.preventDefault();
+        if(confirm("Switch to Cashier Mode?")) window.location.href = "cashier.html";
+    };
+
+    // ==================== BRANCH FUNCTIONS ====================
+    async function loadBranches() {
+        const { data } = await supabase.from('branches').select('*');
+        branches = {};
+        branchIdMap = {};
+        data?.forEach(b => {
+            branches[b.id] = b;
+            branchIdMap[b.code] = b.id;
+        });
+        
+        // Populate branch selector
+        const selector = document.getElementById('branchSelector');
+        let options = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>';
+        data?.forEach(b => {
+            options += `<option value="${b.code}">🏪 ${b.name}</option>`;
+        });
+        selector.innerHTML = options;
+        
+        return branches;
+    }
+
+    function getBranchIdFromCode(code) {
+        return branchIdMap[code] || null;
+    }
+
+    async function loadUserProfile() {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return null;
+            }
+            
+            currentUser = user;
+            
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select(`
+                    *,
+                    branches (
+                        id,
+                        name,
+                        code,
+                        location
+                    )
+                `)
+                .eq('id', user.id)
+                .single();
+            
+            if (error) throw error;
+            
+            currentBranchId = profile.branch_id;
+            currentBranch = profile.branches;
+            
+            const session = {
+                user: user,
+                profile: profile,
+                branch: profile.branches,
+                role: profile.role
+            };
+            localStorage.setItem('pos_session', JSON.stringify(session));
+            
+            // Update sidebar with user's assigned branch
+            const sidebarBranchName = document.querySelector('#sidebarBranchName span');
+            if (profile.branches && sidebarBranchName) {
+                sidebarBranchName.textContent = profile.branches.name;
+            }
+            
+            return profile;
+        } catch (error) {
+            console.error("Error loading profile:", error);
+            return null;
         }
+    }
 
-        async function fetchLogs() {
-            const { data: logs, error } = await supabase
+    window.handleBranchChange = async function() {
+        const selector = document.getElementById('branchSelector');
+        const selectedCode = selector.value;
+        
+        const branchDisplay = document.getElementById('currentBranchDisplay');
+        
+        if (selectedCode === 'all') {
+            branchDisplay.textContent = 'ALL BRANCHES';
+            selectedBranchId = null;
+        } else {
+            const branchId = getBranchIdFromCode(selectedCode);
+            if (branchId) {
+                selectedBranchId = branchId;
+                branchDisplay.textContent = branches[branchId].name;
+            }
+        }
+        
+        logsLimit = 50; // Reset limit
+        await fetchLogs();
+    };
+
+    // ==================== FETCH LOGS ====================
+    async function fetchLogs() {
+        try {
+            const tbody = document.getElementById('desktop-tbody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align:center; padding:50px;">
+                        <div class="spinner" style="margin: 0 auto;"></div>
+                        Syncing logs...
+                    </td>
+                </tr>
+            `;
+
+            // Build query with branch filter
+            let query = supabase
                 .from('inventory_logs')
                 .select('*')
                 .order('timestamp', { ascending: false })
-                .limit(50);
+                .limit(logsLimit);
 
-            if (error) return;
+            // Apply branch filter if a specific branch is selected
+            if (selectedBranchId) {
+                query = query.eq('branch_id', selectedBranchId);
+            } else if (currentBranchId && !selectedBranchId) {
+                // If no branch selected but user has a branch, filter by user's branch
+                query = query.eq('branch_id', currentBranchId);
+            }
 
-            const tbody = document.getElementById('desktop-tbody');
+            const { data: logs, error } = await query;
+
+            if (error) throw error;
+
             if (!logs || logs.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px;">No logs found.</td></tr>';
+                const branchName = selectedBranchId ? branches[selectedBranchId]?.name : 'your branch';
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align:center; padding:40px; color: var(--text-dim);">
+                            <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                            No logs found for ${branchName}
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('loadMoreBtn').style.display = 'none';
                 return;
             }
 
             tbody.innerHTML = logs.map(l => {
                 const date = new Date(l.timestamp);
-                const actionClass = l.action_type === 'SALE' ? 'badge-sale' : 'badge-restock';
+                let actionClass = 'badge-restock';
+                let actionIcon = 'fa-plus-circle';
+                
+                if (l.action_type === 'SALE' || l.action_type === 'SOLD') {
+                    actionClass = 'badge-sale';
+                    actionIcon = 'fa-shopping-cart';
+                } else if (l.action_type === 'EDIT' || l.action_type === 'UPDATE') {
+                    actionClass = 'badge-edit';
+                    actionIcon = 'fa-edit';
+                }
+                
                 const qtyChange = l.quantity || 0;
+                const branchCode = l.branch_id ? (branches[l.branch_id]?.code || '--') : '--';
                 
                 return `
                     <tr>
@@ -182,27 +785,97 @@
                             <div style="font-weight:700">${date.toLocaleDateString('en-GB')}</div>
                             <small style="color:var(--text-dim)">${date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</small>
                         </td>
-                        <td data-label="Action"><span class="badge ${actionClass}">${l.action_type || 'LOG'}</span></td>
+                        <td data-label="Action">
+                            <span class="badge ${actionClass}">
+                                <i class="fas ${actionIcon}"></i> ${l.action_type || 'LOG'}
+                            </span>
+                        </td>
                         <td data-label="Product"><b style="font-size:0.95rem">${l.product_name || 'System'}</b></td>
                         <td data-label="Change" style="color:${qtyChange > 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:800">
                             ${qtyChange > 0 ? '+' : ''}${qtyChange}
                         </td>
-                        <td data-label="User" style="font-size:0.85rem; color:var(--text-dim)">${l.performed_by || 'Admin'}</td>
-                        <td data-label="Full Details" style="font-size:0.8rem;">${l.details || '-'}</td>
+                        <td data-label="User" style="font-size:0.85rem; color:var(--text-dim)">
+                            <i class="fas fa-user"></i> ${l.performed_by || 'Admin'}
+                        </td>
+                        <td data-label="Branch">
+                            <span class="branch-pill">
+                                <i class="fas fa-store"></i> ${branchCode}
+                            </span>
+                        </td>
+                        <td data-label="Full Details" style="font-size:0.8rem;">
+                            <i class="fas fa-info-circle" style="color:var(--primary);"></i> ${l.details || '-'}
+                        </td>
                     </tr>`;
             }).join('');
+            
+            document.getElementById('loadMoreBtn').style.display = logs.length < logsLimit ? 'none' : 'block';
+            
+        } catch (error) {
+            console.error("Error fetching logs:", error);
+            document.getElementById('desktop-tbody').innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align:center; padding:40px; color: var(--danger);">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        Error loading logs: ${error.message}
+                    </td>
+                </tr>
+            `;
         }
+    }
 
+    document.getElementById('loadMoreBtn').addEventListener('click', () => {
+        logsLimit += 30;
         fetchLogs();
+    });
 
-        supabase.channel('logs-channel')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'inventory_logs' }, () => fetchLogs())
-            .subscribe();
+    // ==================== REAL-TIME SUBSCRIPTION ====================
+    function setupRealtimeSubscription() {
+        const channel = supabase.channel('logs-channel');
+        
+        // Subscribe to changes on inventory_logs table
+        channel.on(
+            'postgres_changes',
+            { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'inventory_logs' 
+            },
+            (payload) => {
+                // Check if the new log belongs to the selected branch
+                const logBranchId = payload.new.branch_id;
+                if (!selectedBranchId || selectedBranchId === logBranchId) {
+                    fetchLogs(); // Refresh logs
+                }
+            }
+        ).subscribe();
+    }
 
-        window.handleLogout = async () => {
+    // ==================== LOGOUT ====================
+    window.handleLogout = async () => {
+        if(confirm("Logout?")) {
+            localStorage.removeItem('pos_session');
             await supabase.auth.signOut();
             window.location.href = 'index.html';
-        };
-    </script>
+        }
+    };
+
+    // ==================== INITIALIZATION ====================
+    async function init() {
+        await loadBranches();
+        await loadUserProfile();
+        
+        // Set default branch selector to user's branch
+        if (currentBranch) {
+            document.getElementById('branchSelector').value = currentBranch.code;
+            selectedBranchId = currentBranch.id;
+            document.getElementById('currentBranchDisplay').textContent = currentBranch.name;
+        }
+        
+        await fetchLogs();
+        setupRealtimeSubscription();
+    }
+    
+    init();
+</script>
 </body>
 </html>
