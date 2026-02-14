@@ -20,10 +20,12 @@
             --dim: #64748b; 
             --border: #e2e8f0; 
             --sidebar-width: 260px;
+            --sidebar-collapsed: 70px; 
             --sidebar-bg: #0f172a; 
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
             background: var(--bg); 
@@ -34,31 +36,49 @@
             overflow-x: hidden;
         }
 
-        /* --- SIDEBAR --- */
+        /* --- SIDEBAR - Collapsible like Motorbike Hub --- */
         .sidebar { 
-            width: var(--sidebar-width); 
+            width: var(--sidebar-collapsed); 
+            height: 100vh; 
             background: var(--sidebar-bg); 
             position: fixed; 
             left: 0; 
             top: 0; 
-            height: 100vh; 
             z-index: 3000; 
-            overflow-y: auto; 
-            transition: transform 0.3s ease;
+            overflow-x: hidden; 
+            transition: width 0.3s ease;
+            padding: 20px 10px; 
+            display: flex;
+            flex-direction: column;
         }
-        .sidebar-header { 
-            padding: 25px; 
-            font-weight: 800; 
-            color: white; 
-            border-bottom: 1px solid rgba(255,255,255,0.1); 
-            font-size: 1.2rem; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-        }
-        .sidebar-header i { color: var(--primary); margin-right: 10px; }
         
-        .close-menu { 
+        .sidebar:hover, .sidebar.mobile-active { 
+            width: var(--sidebar-width); 
+        }
+        
+        .sidebar-header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            margin-bottom: 30px; 
+            padding: 0 10px; 
+            min-height: 40px;
+        }
+        
+        .sidebar h2 { 
+            font-size: 1.2rem; 
+            margin: 0; 
+            white-space: nowrap; 
+            opacity: 0; 
+            transition: opacity 0.2s; 
+            color: white;
+        }
+        
+        .sidebar:hover h2, .sidebar.mobile-active h2 { 
+            opacity: 1; 
+        }
+        
+        .close-btn { 
             display: none; 
             background: none; 
             border: none; 
@@ -69,60 +89,88 @@
         
         /* Branch Info in Sidebar */
         .branch-info {
-            padding: 15px;
-            margin: 10px 15px 20px;
+            padding: 10px;
+            margin: 10px 0 20px;
             background: rgba(79, 70, 229, 0.2);
-            border-radius: 12px;
+            border-radius: 8px;
             border: 1px solid rgba(255,255,255,0.1);
+            white-space: nowrap;
         }
         
         .branch-label {
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             text-transform: uppercase;
             color: #94a3b8;
-            letter-spacing: 0.5px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .sidebar:hover .branch-label, .sidebar.mobile-active .branch-label {
+            opacity: 1;
         }
         
         .branch-name {
             font-weight: 800;
             color: white;
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             margin-top: 3px;
             display: flex;
             align-items: center;
             gap: 6px;
         }
         
-        .branch-name i { color: var(--primary); }
+        .branch-name i { 
+            color: var(--primary); 
+            min-width: 20px;
+        }
+        
+        .branch-name span {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .sidebar:hover .branch-name span, .sidebar.mobile-active .branch-name span {
+            opacity: 1;
+        }
         
         .nav-list { 
-            padding: 15px; 
+            flex: 1;
             list-style: none; 
+            padding: 0; 
             margin: 0; 
         }
-        .nav-item { 
+        
+        .nav-link { 
             display: flex; 
             align-items: center; 
-            padding: 12px 15px; 
-            text-decoration: none; 
+            padding: 12px; 
             color: #94a3b8; 
-            font-weight: 600; 
-            border-radius: 10px; 
-            margin-bottom: 4px; 
-            transition: 0.2s; 
-            font-size: 0.9rem; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            margin-bottom: 5px; 
+            transition: 0.3s; 
+            white-space: nowrap;
         }
-        .nav-item i { 
-            width: 24px; 
-            font-size: 1.1rem; 
-            margin-right: 12px;
-            text-align: center;
+        
+        .nav-link i { 
+            min-width: 30px; 
+            font-size: 1.2rem; 
+            text-align: center; 
+            margin-right: 15px;
         }
-        .nav-item:hover { 
-            background: rgba(255,255,255,0.05); 
-            color: white; 
+        
+        .nav-link span { 
+            opacity: 0; 
+            white-space: nowrap; 
+            transition: opacity 0.2s; 
         }
-        .nav-item.active { 
+        
+        .sidebar:hover .nav-link span, 
+        .sidebar.mobile-active .nav-link span { 
+            opacity: 1; 
+        }
+        
+        .nav-link:hover, .nav-link.active { 
             background: var(--primary); 
             color: white; 
         }
@@ -150,17 +198,19 @@
             flex-grow: 1; 
             padding: 25px; 
             width: 100%; 
-            margin-left: var(--sidebar-width); 
+            margin-left: var(--sidebar-collapsed); 
             position: relative; 
             background: var(--bg);
             min-height: 100vh;
+            transition: margin-left 0.3s ease;
         }
         
         @media (max-width: 1024px) { 
             .sidebar { 
                 transform: translateX(-100%); 
+                width: var(--sidebar-width);
             }
-            .sidebar.active { 
+            .sidebar.mobile-active { 
                 transform: translateX(0); 
             }
             .main-content { 
@@ -171,8 +221,11 @@
             .menu-trigger { 
                 display: block; 
             }
-            .close-menu { 
+            .close-btn { 
                 display: block; 
+            }
+            .sidebar:hover { 
+                width: var(--sidebar-width); 
             }
         }
         
@@ -313,6 +366,7 @@
             color: var(--dim); 
             border-bottom: 1px solid var(--border); 
             text-align: left; 
+            font-weight: 800;
         }
         td { 
             padding: 20px 15px; 
@@ -617,32 +671,7 @@
             }
             
             .mobile-header {
-                display: flex;
-                align-items: center;
-                padding: 15px;
-                background: var(--sidebar-bg);
-                color: white;
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                z-index: 2000;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            }
-            
-            .mobile-header button {
-                background: none;
-                border: none;
-                color: white;
-                font-size: 1.5rem;
-                cursor: pointer;
-                padding: 5px;
-                margin-right: 10px;
-            }
-            
-            .mobile-header span {
-                font-weight: 700;
-                font-size: 1.1rem;
+                display: none;
             }
         }
         
@@ -721,7 +750,7 @@
         
         @media (max-width: 768px) {
             .refresh-btn {
-                bottom: 80px;
+                bottom: 20px;
                 right: 15px;
                 width: 45px;
                 height: 45px;
@@ -735,8 +764,8 @@
 
 <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <i class="fas fa-store"></i> JEPE ADMIN
-        <button class="close-menu" onclick="toggleMenu()">×</button>
+        <h2>JEPE ADMIN</h2>
+        <button class="close-btn" onclick="toggleMenu()">×</button>
     </div>
     
     <!-- Branch Info Display -->
@@ -748,34 +777,34 @@
         </div>
     </div>
     
-    <div class="nav-list">
-        <a href="#" onclick="confirmSwitchToCashier(event)" class="nav-item"><i class="fas fa-exchange-alt"></i> SWITCH TO CASHIER</a>
-        <a href="admin.html" class="nav-item"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-        <a href="gas_hub.html" class="nav-item"><i class="fas fa-fire"></i> Gas Hub</a>
-        <a href="spares_hub.html" class="nav-item"><i class="fas fa-cogs"></i> Spare Parts Hub</a>
-        <a href="motorbike_hub.html" class="nav-item"><i class="fas fa-motorcycle"></i> Motorbike Hub</a>
+    <nav class="nav-list">
+        <a href="#" onclick="confirmSwitchToCashier(event)" class="nav-link"><i class="fas fa-exchange-alt"></i> <span>SWITCH TO CASHIER</span></a>
+        <a href="admin.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+        <a href="gas_hub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
+        <a href="spares_hub.html" class="nav-link"><i class="fas fa-cogs"></i> <span>Spare Parts Hub</span></a>
+        <a href="motorbike_hub.html" class="nav-link"><i class="fas fa-motorcycle"></i> <span>Motorbike Hub</span></a>
 
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
 
-        <a href="shift-history.html" class="nav-item active"><i class="fas fa-history"></i> Daily Shifts</a>
-        <a href="money-history.html" class="nav-item"><i class="fas fa-money-bill-wave"></i> Money IN/OUT</a>
-        <a href="sales-history.html" class="nav-item"><i class="fas fa-chart-line"></i> Sales History</a>
+        <a href="shift-history.html" class="nav-link active"><i class="fas fa-history"></i> <span>Daily Shifts</span></a>
+        <a href="money-history.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
+        <a href="sales-history.html" class="nav-link"><i class="fas fa-chart-line"></i> <span>Sales History</span></a>
 
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
 
-        <a href="inventory.html" class="nav-item"><i class="fas fa-plus-circle"></i> Add Stock</a>
-        <a href="sales_editor.html" class="nav-item"><i class="fas fa-edit"></i> Edit Stock</a>
-        <a href="admin-debtors.html" class="nav-item"><i class="fas fa-users"></i> Debtors</a>
-        <a href="low_stock.html" class="nav-item"><i class="fas fa-exclamation-triangle"></i> Low Stock</a>
-        <a href="audit_trail.html" class="nav-item"><i class="fas fa-search"></i> Inventory Track</a>
+        <a href="inventory.html" class="nav-link"><i class="fas fa-plus-circle"></i> <span>Add Stock</span></a>
+        <a href="sales_editor.html" class="nav-link"><i class="fas fa-edit"></i> <span>Edit Stock</span></a>
+        <a href="admin-debtors.html" class="nav-link"><i class="fas fa-users"></i> <span>Debtors</span></a>
+        <a href="low_stock.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
+        <a href="audit_trail.html" class="nav-link"><i class="fas fa-search"></i> <span>Inventory Track</span></a>
 
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
 
-        <a href="reports.html" class="nav-item"><i class="fas fa-file-alt"></i> Reports</a>
-        <a href="price_audits.html" class="nav-item"><i class="fas fa-tags"></i> Underpriced</a>
-        <a href="suppliers.html" class="nav-item"><i class="fas fa-handshake"></i> Suppliers</a>
-        <a href="admin.html" class="nav-item"><i class="fas fa-home"></i> HOME</a>
-    </div>
+        <a href="reports.html" class="nav-link"><i class="fas fa-file-alt"></i> <span>Reports</span></a>
+        <a href="price_audits.html" class="nav-link"><i class="fas fa-tags"></i> <span>Underpriced</span></a>
+        <a href="suppliers.html" class="nav-link"><i class="fas fa-handshake"></i> <span>Suppliers</span></a>
+        <a href="admin.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
+    </nav>
 </nav>
 
 <main class="main-content">
@@ -864,6 +893,18 @@
     let branches = {};
     let branchIdMap = {};
 
+    // ==================== SIDEBAR FUNCTION ====================
+    window.toggleMenu = function() {
+        document.getElementById('sidebar').classList.toggle('mobile-active');
+    };
+
+    window.confirmSwitchToCashier = (e) => {
+        e.preventDefault();
+        if(confirm("Switch to Cashier Mode?")) {
+            window.location.href = "cashier.html";
+        }
+    };
+
     // ==================== BRANCH FUNCTIONS ====================
 
     async function loadBranches() {
@@ -931,17 +972,6 @@
             return null;
         }
     }
-
-    window.toggleMenu = function() {
-        document.getElementById('sidebar').classList.toggle('active');
-    };
-
-    window.confirmSwitchToCashier = (e) => {
-        e.preventDefault();
-        if(confirm("Switch to Cashier Mode?")) {
-            window.location.href = "cashier.html";
-        }
-    };
 
     window.handleBranchChange = async function() {
         const selector = document.getElementById('branchSelector');
@@ -1081,7 +1111,6 @@
             const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             
-            // LOGIC FOR VARIANCE DISPLAY
             let varianceVal = isClosed ? (closeTotal - expected) : 0;
             let varianceDisplay = '';
             let varianceClass = '';
