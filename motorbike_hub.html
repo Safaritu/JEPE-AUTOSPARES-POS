@@ -57,6 +57,17 @@
 
         .btn-load { display: block; width: 220px; margin: 25px auto; padding: 12px; background: white; border: 2px solid var(--admin-accent); color: var(--admin-accent); border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.3s; }
         .btn-load:hover { background: var(--admin-accent); color: white; }
+        
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         @media (max-width: 768px) {
             .menu-trigger { display: block; }
@@ -153,7 +164,14 @@
                         <th>Profit</th>
                     </tr>
                 </thead>
-                <tbody id="moto-table-body"></tbody>
+                <tbody id="moto-table-body">
+                    <tr>
+                        <td colspan="6" style="text-align:center; padding:40px;">
+                            <div class="spinner"></div>
+                            Loading data...
+                        </td>
+                    </tr>
+                </tbody>
             </table>
             <button id="loadMoreBtn" class="btn-load">Load More Models</button>
         </div>
@@ -169,10 +187,84 @@
 
         let displayLimit = 10;
         let allMotoData = [];
+        let currentUser = null;
+        let currentBranchId = null;
+
+        // ==================== BRANCH FUNCTIONS ====================
+
+        async function loadUserProfile() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    window.location.href = 'index.html';
+                    return null;
+                }
+                
+                currentUser = user;
+                
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('branch_id')
+                    .eq('id', user.id)
+                    .single();
+                
+                if (error) throw error;
+                
+                currentBranchId = profile.branch_id;
+                
+                const session = {
+                    user: user,
+                    profile: profile,
+                    role: profile.role
+                };
+                localStorage.setItem('pos_session', JSON.stringify(session));
+                
+                return profile;
+            } catch (error) {
+                console.error("Error loading profile:", error);
+                return null;
+            }
+        }
+
+        function getCurrentBranchId() {
+            const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
+            return session.profile?.branch_id || currentBranchId;
+        }
 
         async function init() {
-            const { data: products } = await supabase.from('products').select('*').eq('category', 'Motorbike');
-            const { data: sales } = await supabase.from('sales').select('*').eq('category', 'Motorbike');
+            const profile = await loadUserProfile();
+            if (!profile) return;
+            
+            const branchId = getCurrentBranchId();
+            
+            // Show loading state
+            document.getElementById('moto-table-body').innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align:center; padding:40px;">
+                        <div class="spinner"></div>
+                        Loading data...
+                    </td>
+                </tr>
+            `;
+
+            // Load motorbike products filtered by branch
+            const { data: products, error: prodError } = await supabase
+                .from('products')
+                .select('*')
+                .eq('category', 'Motorbike')
+                .eq('branch_id', branchId);
+                
+            if (prodError) console.error("Error loading products:", prodError);
+
+            // Load motorbike sales filtered by branch
+            const { data: sales, error: salesError } = await supabase
+                .from('sales')
+                .select('*')
+                .eq('category', 'Motorbike')
+                .eq('branch_id', branchId);
+                
+            if (salesError) console.error("Error loading sales:", salesError);
+
             if (products) render(products, sales || []);
         }
 
@@ -227,12 +319,31 @@
             document.getElementById('today-profit-val').innerText = `Ksh ${todayProf.toLocaleString()}`;
 
             allMotoData = Object.values(perfMap).sort((a, b) => b.rev - a.rev);
+            
+            // Destroy existing charts if they exist
+            if (window.motoStockChart) window.motoStockChart.destroy();
+            if (window.motoRevChart) window.motoRevChart.destroy();
+            
             displayTable();
             updateCharts(allMotoData);
         }
 
         function displayTable() {
             const tbody = document.getElementById('moto-table-body');
+            
+            if (allMotoData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px; color: #64748b;">
+                            <i class="fas fa-motorcycle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                            No motorbike products found
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('loadMoreBtn').style.display = 'none';
+                return;
+            }
+            
             tbody.innerHTML = allMotoData.slice(0, displayLimit).map(m => `
                 <tr>
                     <td><strong>${m.name}</strong></td>
@@ -249,7 +360,10 @@
         function updateCharts(data) {
             const chartData = data.slice(0, 5);
             const labels = chartData.map(d => d.name);
-            new Chart(document.getElementById('motoStockChart'), {
+            
+            // Stock vs Sold Chart
+            const stockCtx = document.getElementById('motoStockChart').getContext('2d');
+            window.motoStockChart = new Chart(stockCtx, {
                 type: 'bar',
                 data: {
                     labels,
@@ -257,9 +371,16 @@
                         { label: 'Stock', data: chartData.map(d => d.stock), backgroundColor: '#f59e0b' },
                         { label: 'Sold', data: chartData.map(d => d.sold), backgroundColor: '#10b981' }
                     ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
                 }
             });
-            new Chart(document.getElementById('motoRevChart'), {
+            
+            // Revenue Chart
+            const revCtx = document.getElementById('motoRevChart').getContext('2d');
+            window.motoRevChart = new Chart(revCtx, {
                 type: 'doughnut',
                 data: {
                     labels,
@@ -267,11 +388,19 @@
                         data: chartData.map(d => d.rev),
                         backgroundColor: ['#2563eb', '#6366f1', '#f59e0b', '#10b981', '#0f172a']
                     }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
                 }
             });
         }
 
-        document.getElementById('loadMoreBtn').onclick = () => { displayLimit += 10; displayTable(); };
+        document.getElementById('loadMoreBtn').onclick = () => { 
+            displayLimit += 10; 
+            displayTable(); 
+        };
+        
         init();
     </script>
 </body>
