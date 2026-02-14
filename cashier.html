@@ -100,21 +100,6 @@
         box-shadow: 0 0 8px rgba(79, 70, 229, 0.4) !important;
         border: 2px solid white !important;
     }
-        /* Branch badge */
-.branch-badge {
-    background: var(--primary);
-    color: white;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.7rem;
-    font-weight: 700;
-    margin-right: 10px;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    border: 2px solid white;
-    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
-}
     
     /* Start button with larger font */
     .start-btn-large {
@@ -1608,7 +1593,8 @@
         <button class="btn btn-danger" style="margin-top:20px; width:100%" id="confirm-close">FINALIZE & CLOSE</button>
     </div>
 </div>
-    <script type="module">
+
+<script type="module">
     import { supabase } from './auth.js';
 
     let inventory = [];
@@ -1624,89 +1610,6 @@
     let alertSoundPlayed = false;
     let audioContext = null;
     let refundingSale = null;
-    let currentUserProfile = null;
-    let currentBranchId = null;
-
-    // ============================================
-    // BRANCH-AWARE HELPER FUNCTIONS
-    // ============================================
-
-    // Get current user's branch ID from session
-    function getCurrentBranchId() {
-        const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
-        return session.branch?.id || currentBranchId;
-    }
-
-    // Check if user is admin (though this is cashier page, but for completeness)
-    function isAdmin() {
-        const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
-        return session.role === 'admin';
-    }
-
-    // Load user profile with branch info
-    async function loadUserProfile() {
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return null;
-            
-            currentUser = user;
-            
-            // Get profile with branch info
-            const { data: profile, error } = await supabase
-                .from('profiles')
-                .select(`
-                    *,
-                    branches (
-                        id,
-                        name,
-                        code,
-                        location
-                    )
-                `)
-                .eq('id', user.id)
-                .single();
-            
-            if (error) throw error;
-            
-            currentUserProfile = profile;
-            currentBranchId = profile.branch_id;
-            
-            // Store in session for other functions
-            const session = {
-                user: user,
-                profile: profile,
-                branch: profile.branches,
-                role: profile.role
-            };
-            localStorage.setItem('pos_session', JSON.stringify(session));
-            
-            // Update profile info in UI
-            const profileUserName = document.getElementById('profileUserName');
-            const profileUserEmail = document.getElementById('profileUserEmail');
-            const branchNameEl = document.getElementById('branch-name-display');
-            
-            if (profileUserName) profileUserName.textContent = profile.full_name || user.email?.split('@')[0] || 'Cashier';
-            if (profileUserEmail) profileUserEmail.textContent = user.email;
-            
-            // Add branch display to header if not exists
-            if (!branchNameEl && profile.branches) {
-                const headerRight = document.querySelector('.header-right');
-                if (headerRight) {
-                    const branchBadge = document.createElement('span');
-                    branchBadge.id = 'branch-name-display';
-                    branchBadge.className = 'branch-badge';
-                    branchBadge.style.cssText = 'background: var(--primary); color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; margin-right: 10px;';
-                    branchBadge.innerHTML = `<i class="fas fa-store"></i> ${profile.branches.name}`;
-                    headerRight.insertBefore(branchBadge, headerRight.firstChild);
-                }
-            }
-            
-            return profile;
-        } catch (error) {
-            console.error("Error loading profile:", error);
-            return null;
-        }
-    }
 
     // Gas redirect functions
     window.closeGasRedirect = function() {
@@ -1737,14 +1640,13 @@
         refundingSale = null;
     };
 
-    // Process refund function - FIXED VERSION WITH BRANCH_ID
+    // Process refund function - FIXED VERSION
     window.processRefund = async function() {
         if (!refundingSale || !currentShift) return;
         
         const refundMethod = document.getElementById('refund-method').value;
         const refundAmount = parseFloat(document.getElementById('refund-amount').value);
         const refundReason = document.getElementById('refund-reason').value || 'Item return';
-        const branchId = getCurrentBranchId();
         
         if (!refundAmount || refundAmount <= 0) {
             alert("Please enter a valid refund amount");
@@ -1772,7 +1674,7 @@
         submitBtn.innerHTML = '<span class="spinner"></span> PROCESSING...';
         
         try {
-            // 1. Create a NEGATIVE sale entry with branch_id
+            // 1. Create a NEGATIVE sale entry (this is the proper way)
             const { error: saleError } = await supabase.from('sales').insert([{
                 shift_id: currentShift.id,
                 product_id: refundingSale.product_id,
@@ -1791,8 +1693,7 @@
                 refunded: true,
                 refund_method: refundMethod,
                 refund_reason: refundReason,
-                refunded_at: new Date().toISOString(),
-                branch_id: branchId // Add branch_id
+                refunded_at: new Date().toISOString()
             }]);
             
             if (saleError) throw saleError;
@@ -1809,15 +1710,13 @@
             
             if (updateError) throw updateError;
             
-            // 3. Record money out transaction for the refund with branch_id
+            // 3. Record money out transaction for the refund
             const { error: transError } = await supabase.from('cash_transactions').insert([{
                 shift_id: currentShift.id,
                 type: 'Money Out',
                 category: refundMethod,
                 amount: refundAmount,
-                description: `Refund: ${refundingSale.item_name}${refundReason ? ' - ' + refundReason : ''}`,
-                branch_id: branchId, // Add branch_id
-                user_id: currentUser.id
+                description: `Refund: ${refundingSale.item_name}${refundReason ? ' - ' + refundReason : ''}`
             }]);
             
             if (transError) throw transError;
@@ -1870,28 +1769,41 @@
         }
     });
 
-    // Check for low floats
+    // Check for low floats - UPDATED: No alert sounds
     function checkLowFloats() {
         const floatItems = [
-            { id: 'float-cash-item', element: document.getElementById('float-cash'), value: parseFloat(document.getElementById('float-cash')?.innerText.replace(/,/g, '')) || 0 },
-            { id: 'float-mpesa-item', element: document.getElementById('float-mpesa'), value: parseFloat(document.getElementById('float-mpesa')?.innerText.replace(/,/g, '')) || 0 },
-            { id: 'float-kcb-item', element: document.getElementById('float-kcb'), value: parseFloat(document.getElementById('float-kcb')?.innerText.replace(/,/g, '')) || 0 },
-            { id: 'float-equity-item', element: document.getElementById('float-equity'), value: parseFloat(document.getElementById('float-equity')?.innerText.replace(/,/g, '')) || 0 }
+            { id: 'float-cash-item', element: document.getElementById('float-cash'), value: parseFloat(document.getElementById('float-cash').innerText.replace(/,/g, '')) || 0 },
+            { id: 'float-mpesa-item', element: document.getElementById('float-mpesa'), value: parseFloat(document.getElementById('float-mpesa').innerText.replace(/,/g, '')) || 0 },
+            { id: 'float-kcb-item', element: document.getElementById('float-kcb'), value: parseFloat(document.getElementById('float-kcb').innerText.replace(/,/g, '')) || 0 },
+            { id: 'float-equity-item', element: document.getElementById('float-equity'), value: parseFloat(document.getElementById('float-equity').innerText.replace(/,/g, '')) || 0 }
         ];
 
+        let lowFloatDetected = false;
+        
         floatItems.forEach(item => {
             const floatItemElement = document.getElementById(item.id);
             
             if (floatItemElement) {
+                // Remove all alert classes first
                 floatItemElement.classList.remove('low-float-warning', 'danger-alert');
                 
+                // Check for critical low float (below 2000)
                 if (item.value < 2000 && item.value > 0) {
                     floatItemElement.classList.add('danger-alert');
-                } else if (item.value < 7000 && item.value > 0) {
+                    lowFloatDetected = true;
+                } 
+                // Check for warning low float (below 7000)
+                else if (item.value < 7000 && item.value > 0) {
                     floatItemElement.classList.add('low-float-warning');
+                    lowFloatDetected = true;
                 }
             }
         });
+    }
+
+    // UPDATED: Remove time alert checks completely
+    function checkTimeAlerts() {
+        // Function intentionally left empty as requested
     }
 
     // Refresh data function
@@ -1915,12 +1827,7 @@
     // --- REALTIME: Sync Inventory Automatically ---
     const productSubscription = supabase
         .channel('inventory-sync')
-        .on('postgres_changes', { 
-            event: '*', 
-            schema: 'public', 
-            table: 'products',
-            filter: `branch_id=eq.${getCurrentBranchId()}` // Only listen to current branch
-        }, (payload) => {
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload) => {
             console.log("Database Change Detected. Syncing...");
             fetchInventory(); 
         })
@@ -1928,18 +1835,7 @@
 
     async function fetchInventory() {
         try {
-            const branchId = getCurrentBranchId();
-            if (!branchId) {
-                console.error("No branch ID found");
-                return;
-            }
-            
-            // Only fetch products for current branch
-            const { data } = await supabase
-                .from('products')
-                .select('*')
-                .eq('branch_id', branchId);
-                
+            const { data } = await supabase.from('products').select('*');
             if (data) {
                 inventory = data;
                 refreshProductDatalist();
@@ -1978,6 +1874,7 @@
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
             init();
+            checkTimeAlerts();
             checkLowFloats();
         }
     });
@@ -1994,7 +1891,6 @@
     };
 
     window.logoutUser = async () => { 
-        localStorage.removeItem('pos_session'); // Clear session
         await supabase.auth.signOut(); 
         location.href = 'index.html'; 
     };
@@ -2053,74 +1949,76 @@
     }
 
     async function init() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return window.location.href = 'index.html';
+        
+        currentUser = user;
+        
+        // Update profile info
+        const profileUserName = document.getElementById('profileUserName');
+        const profileUserEmail = document.getElementById('profileUserEmail');
+        
+        if (profileUserName && user.user_metadata?.full_name) {
+            profileUserName.textContent = user.user_metadata.full_name;
+        } else if (profileUserName && user.email) {
+            profileUserName.textContent = user.email.split('@')[0];
+        }
+        
+        if (profileUserEmail && user.email) {
+            profileUserEmail.textContent = user.email;
+        }
+
+        updateGreeting();
+        setInterval(updateGreeting, 60000); // Update every minute
+        
+        // UPDATED: Don't start time alert checks
+
         try {
-            // Load user profile first
-            const profile = await loadUserProfile();
-            if (!profile) {
-                window.location.href = 'index.html';
-                return;
+            const [prodRes, shiftRes] = await Promise.all([
+                supabase.from('products').select('*'),
+                supabase.from('daily_shifts').select('*').eq('status', 'Open').maybeSingle()
+            ]);
+
+            inventory = prodRes.data || [];
+            refreshProductDatalist();
+
+            const actionBtnContainer = document.getElementById('shift-action-container');
+            if (shiftRes.data) {
+                currentShift = shiftRes.data;
+                actionBtnContainer.innerHTML = `
+                    <button class="btn btn-danger special-action-btn" onclick="document.getElementById('close-modal').style.display='flex'">🔴 CLOSE DAY</button>
+                    <button class="btn" onclick="refreshData()" style="background: #e2e8f0; padding: 8px 12px; font-size: 0.8rem;">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                `;
+                
+                // Update float displays safely
+                const floatCash = document.getElementById('float-cash');
+                const floatMpesa = document.getElementById('float-mpesa');
+                const floatKcb = document.getElementById('float-kcb');
+                const floatEquity = document.getElementById('float-equity');
+                
+                if (floatCash) floatCash.innerText = (currentShift.open_cash || 0).toLocaleString();
+                if (floatMpesa) floatMpesa.innerText = (currentShift.open_mpesa || 0).toLocaleString();
+                if (floatKcb) floatKcb.innerText = (currentShift.open_kcb || 0).toLocaleString();
+                if (floatEquity) floatEquity.innerText = (currentShift.open_equity || 0).toLocaleString();
+                
+                await loadShiftData();
+                updateGreeting();
+                
+                // Check for low floats after data is loaded
+                setTimeout(checkLowFloats, 500);
+            } else {
+                actionBtnContainer.innerHTML = `
+                    <button class="btn btn-primary special-action-btn start-btn-large" onclick="document.getElementById('open-modal').style.display='flex'">🚀 START DAY</button>
+                    <button class="btn" onclick="refreshData()" style="background: #e2e8f0; padding: 8px 12px; font-size: 0.8rem;">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                `;
             }
-            
-            const branchId = getCurrentBranchId();
-            console.log("Current branch ID:", branchId);
-
-            updateGreeting();
-            setInterval(updateGreeting, 60000);
-
-            try {
-                // Fetch products only for this branch
-                const [prodRes, shiftRes] = await Promise.all([
-                    supabase.from('products').select('*').eq('branch_id', branchId),
-                    supabase.from('daily_shifts')
-                        .select('*')
-                        .eq('user_id', currentUser.id)
-                        .eq('branch_id', branchId)
-                        .eq('status', 'open')
-                        .maybeSingle()
-                ]);
-
-                inventory = prodRes.data || [];
-                refreshProductDatalist();
-
-                const actionBtnContainer = document.getElementById('shift-action-container');
-                if (shiftRes.data) {
-                    currentShift = shiftRes.data;
-                    actionBtnContainer.innerHTML = `
-                        <button class="btn btn-danger special-action-btn" onclick="document.getElementById('close-modal').style.display='flex'">🔴 CLOSE DAY</button>
-                        <button class="btn" onclick="refreshData()" style="background: #e2e8f0; padding: 8px 12px; font-size: 0.8rem;">
-                            <i class="fas fa-sync-alt"></i> Refresh
-                        </button>
-                    `;
-                    
-                    // Update float displays safely
-                    const floatCash = document.getElementById('float-cash');
-                    const floatMpesa = document.getElementById('float-mpesa');
-                    const floatKcb = document.getElementById('float-kcb');
-                    const floatEquity = document.getElementById('float-equity');
-                    
-                    if (floatCash) floatCash.innerText = (currentShift.open_cash || 0).toLocaleString();
-                    if (floatMpesa) floatMpesa.innerText = (currentShift.open_mpesa || 0).toLocaleString();
-                    if (floatKcb) floatKcb.innerText = (currentShift.open_kcb || 0).toLocaleString();
-                    if (floatEquity) floatEquity.innerText = (currentShift.open_equity || 0).toLocaleString();
-                    
-                    await loadShiftData();
-                    updateGreeting();
-                    
-                    setTimeout(checkLowFloats, 500);
-                } else {
-                    actionBtnContainer.innerHTML = `
-                        <button class="btn btn-primary special-action-btn start-btn-large" onclick="document.getElementById('open-modal').style.display='flex'">🚀 START DAY</button>
-                        <button class="btn" onclick="refreshData()" style="background: #e2e8f0; padding: 8px 12px; font-size: 0.8rem;">
-                            <i class="fas fa-sync-alt"></i> Refresh
-                        </button>
-                    `;
-                }
-                await loadHistory();
-            } catch (error) {
-                console.error("Error initializing:", error);
-            }
+            await loadHistory();
         } catch (error) {
-            console.error("Error in init:", error);
+            console.error("Error initializing:", error);
         }
     }
 
@@ -2178,8 +2076,6 @@
     document.getElementById('sale-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('submit-sale-btn');
-        const branchId = getCurrentBranchId();
-        
         if (!currentShift) {
             alert("Open shift first!");
             return;
@@ -2224,9 +2120,7 @@
             unit_price: price, 
             cost_price: selectedItem.cost_price || 0,
             part_type: selectedItem.part_type || 'N/A', 
-            discount_reason: selectedItem.tempReason || "",
-            user_id: currentUser.id,
-            branch_id: branchId // Add branch_id
+            discount_reason: selectedItem.tempReason || ""
         };
 
         if (method === 'Split') {
@@ -2263,8 +2157,7 @@
                         customer_name: dName, 
                         amount_owed: total, 
                         sale_id: sData[0].id,
-                        shift_id: currentShift.id,
-                        branch_id: branchId // Add branch_id
+                        shift_id: currentShift.id
                     }]);
                 }
             }
@@ -2304,19 +2197,9 @@
         try {
             if (!currentShift) return;
             
-            const branchId = getCurrentBranchId();
-            
             const [salesRes, transRes] = await Promise.all([
-                supabase.from('sales')
-                    .select('*')
-                    .eq('shift_id', currentShift.id)
-                    .eq('branch_id', branchId)
-                    .order('created_at', {ascending:false}),
-                supabase.from('cash_transactions')
-                    .select('*')
-                    .eq('shift_id', currentShift.id)
-                    .eq('branch_id', branchId)
-                    .order('created_at', {ascending:false})
+                supabase.from('sales').select('*').eq('shift_id', currentShift.id).order('created_at', {ascending:false}),
+                supabase.from('cash_transactions').select('*').eq('shift_id', currentShift.id).order('created_at', {ascending:false})
             ]);
 
             const sales = salesRes.data || [];
@@ -2354,7 +2237,7 @@
                         </td>
                         <td data-label="Action" class="action-column">
                             ${!s.refunded && s.quantity > 0 && s.total_amount > 0 ? `
-                                <button class="btn-refund" onclick='openRefundModal(${JSON.stringify(s).replace(/'/g, "\\'")})'>
+                                <button class="btn-refund" onclick="openRefundModal(${JSON.stringify(s).replace(/"/g, '&quot;')})">
                                     <i class="fas fa-undo-alt"></i> Refund
                                 </button>
                             ` : ''}
@@ -2410,7 +2293,6 @@
         const kcb = parseFloat(document.getElementById('o-kcb').value || 0);
         const equity = parseFloat(document.getElementById('o-equity').value || 0);
         const total = cash + mpesa + kcb + equity;
-        const branchId = getCurrentBranchId();
         
         const confirmed = confirm(
             `Are these the correct opening floats? Please confirm before starting your shift.\n\n` +
@@ -2422,26 +2304,23 @@
         );
         
         if (!confirmed) {
-            return;
+            return; // User cancelled, don't proceed
         }
         
         this.disabled = true;
         this.innerHTML = '<span class="spinner"></span> STARTING...';
         
         const openData = {
-            user_id: currentUser.id,
-            branch_id: branchId,
             open_cash: cash,
             open_mpesa: mpesa,
             open_kcb: kcb,
             open_equity: equity,
-            status: 'open', // Note: lowercase 'open' to match your DB
+            status: 'Open', 
             start_time: new Date().toISOString()
         };
         
         try {
-            const { error } = await supabase.from('daily_shifts').insert([openData]);
-            if (error) throw error;
+            await supabase.from('daily_shifts').insert([openData]);
             location.reload();
         } catch (error) {
             alert("Error starting shift: " + error.message);
@@ -2493,7 +2372,7 @@
                 close_equity: clE, 
                 close_kcb_bank: clB, 
                 close_cash: clC,
-                status: 'closed', // Note: lowercase 'closed' to match your DB
+                status: 'Closed', 
                 end_time: new Date().toISOString(), 
                 variance_note: note, 
                 system_expected_total: expected
@@ -2509,24 +2388,16 @@
 
     async function loadHistory(searchQuery = "") {
         try {
-            const branchId = getCurrentBranchId();
-            
             const { data: shifts } = await supabase
                 .from('daily_shifts')
                 .select('*')
-                .eq('branch_id', branchId)
                 .order('start_time', { ascending: false })
                 .limit(historyLimit);
 
-            const { data: transactions } = await supabase
-                .from('cash_transactions')
-                .select('shift_id, amount, type')
-                .eq('branch_id', branchId);
-                
-            const { data: sales } = await supabase
-                .from('sales')
+            const { data: transactions } = await supabase.from('cash_transactions').select('shift_id, amount, type');
+            // Filter out refunds and negative sales for history
+            const { data: sales } = await supabase.from('sales')
                 .select('shift_id, total_amount, payment_method')
-                .eq('branch_id', branchId)
                 .eq('refunded', false)
                 .gt('total_amount', 0);
 
@@ -2534,13 +2405,14 @@
             allTransactions = transactions || [];
             allSales = sales || [];
             
-            const lastClosed = allShifts.find(s => s.status === 'closed');
+            const lastClosed = allShifts.find(s => s.status === 'Closed');
             if (lastClosed) {
                 const clT = (lastClosed.close_cash||0) + (lastClosed.close_mpesa||0) + (lastClosed.close_kcb||0) + (lastClosed.close_equity||0) + (lastClosed.close_kcb_bank || 0);
                 if (Math.abs(clT - (lastClosed.system_expected_total || 0)) < 1) {
                     const banner = document.getElementById('congrats-banner');
                     if(banner) {
                         banner.style.display = 'block';
+                        // UPDATED: Hide after 5 seconds
                         setTimeout(() => {
                             banner.style.display = 'none';
                         }, 5000);
@@ -2582,10 +2454,11 @@
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
-            const isClosed = sh.status === 'closed';
+            const isClosed = sh.status === 'Closed';
             const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             
+            // LOGIC FOR VARIANCE DISPLAY - MATCHING SHIFT AUDIT PAGE
             let varianceVal = isClosed ? (closeTotal - expected) : 0;
             let varianceDisplay = '';
             let varianceClass = '';
@@ -2594,11 +2467,12 @@
                 varianceDisplay = 'SHIFT ACTIVE';
                 varianceClass = 'active-shift';
             } else {
+                // If closed, check the amount for sign and color
                 if (varianceVal > 0) {
                     varianceDisplay = 'VAR: +' + varianceVal.toLocaleString();
                     varianceClass = 'var-positive';
                 } else if (varianceVal < 0) {
-                    varianceDisplay = 'VAR: ' + varianceVal.toLocaleString();
+                    varianceDisplay = 'VAR: ' + varianceVal.toLocaleString(); // toLocaleString keeps the - sign
                     varianceClass = 'var-negative';
                 } else {
                     varianceDisplay = 'VAR: 0';
@@ -2665,6 +2539,7 @@
         
         if (!mobileContainer) return;
         
+        // Hide desktop table on mobile
         if (desktopContainer) desktopContainer.style.display = 'none';
         mobileContainer.style.display = 'block';
         
@@ -2687,7 +2562,7 @@
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
-            const isClosed = sh.status === 'closed';
+            const isClosed = sh.status === 'Closed';
             const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             const varianceVal = isClosed ? (closeTotal - expected) : 0;
@@ -2800,8 +2675,6 @@
     document.getElementById('record-expense-btn').addEventListener('click', async function() {
         const amt = parseFloat(document.getElementById('exp-amt').value);
         const desc = document.getElementById('exp-desc').value;
-        const branchId = getCurrentBranchId();
-        
         if (!amt || !desc || !currentShift) {
             alert("Please fill all fields and make sure a shift is active");
             return;
@@ -2816,17 +2689,21 @@
                 type: document.getElementById('exp-type').value,
                 category: document.getElementById('exp-method').value, 
                 amount: amt, 
-                description: desc,
-                branch_id: branchId, // Add branch_id
-                user_id: currentUser.id
+                description: desc
             }]);
 
             if(!error) {
+                // Clear form fields
                 document.getElementById('exp-amt').value = '';
                 document.getElementById('exp-desc').value = '';
+                
+                // Reload data
                 await loadShiftData();
+                
                 this.disabled = false;
                 this.innerHTML = 'RECORD MONEY';
+                
+                // Show success message
                 alert("Transaction recorded successfully!");
             } else {
                 throw error;
@@ -2856,8 +2733,11 @@
     // Initialize when page loads
     document.addEventListener('DOMContentLoaded', function() {
         init();
+        
+        // Check low floats every 30 seconds
         setInterval(checkLowFloats, 30000);
         
+        // Clean up on page unload
         window.addEventListener('beforeunload', function() {
             if (timeCheckInterval) {
                 clearInterval(timeCheckInterval);
@@ -2865,6 +2745,5 @@
         });
     });
 </script>
-
 </body>
 </html>
