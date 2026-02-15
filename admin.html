@@ -95,6 +95,7 @@
             border: none; 
             font-weight: 800; 
             padding: 20px; 
+            cursor: pointer;
         }
         .nav-header-title { 
             color: white; 
@@ -105,6 +106,101 @@
             letter-spacing: 1px; 
             border-bottom: 2px solid rgba(255,255,255,0.1); 
             padding-bottom: 10px; 
+        }
+
+        /* --- BRANCH SELECTION MODAL FOR CASHIER SWITCH --- */
+        .branch-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            z-index: 4000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .branch-modal.active {
+            display: flex;
+        }
+        .branch-modal-content {
+            background: white;
+            border-radius: 24px;
+            padding: 30px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+        }
+        .branch-modal-content h3 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: var(--admin-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .branch-modal-content h3 i {
+            color: var(--admin-accent);
+        }
+        .branch-option {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .branch-option:hover {
+            border-color: var(--admin-accent);
+            background: #eef2ff;
+        }
+        .branch-option input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 15px;
+            accent-color: var(--admin-accent);
+        }
+        .branch-option label {
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+        }
+        .branch-option .branch-code {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .modal-btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        .modal-btn.primary {
+            background: var(--admin-accent);
+            color: white;
+        }
+        .modal-btn.primary:hover {
+            background: #6366f1;
+        }
+        .modal-btn.secondary {
+            background: #f1f5f9;
+            color: var(--text-dim);
+        }
+        .modal-btn.secondary:hover {
+            background: #e2e8f0;
         }
 
         /* --- FLOATING ACTION BUTTON --- */
@@ -451,7 +547,7 @@
         /* --- FLOATS GRID - SHOWS ALL BRANCHES WITH FULL NAMES --- */
         .float-grid { 
             display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
             gap: 18px; 
             margin-top: 15px;
         }
@@ -471,7 +567,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 0.85rem; 
+            font-size: 0.9rem; 
             font-weight: 700; 
             color: var(--text); 
             margin-bottom: 15px; 
@@ -486,18 +582,22 @@
             font-size: 0.65rem;
             padding: 4px 10px;
             border-radius: 20px;
-            background: ${shift => shift.status === 'open' ? '#10b981' : '#64748b'};
+            background: ${shift => shift?.status === 'open' ? '#10b981' : '#64748b'};
             color: white;
             font-weight: 700;
         }
         .float-details {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(2, 1fr);
             gap: 12px;
         }
         .float-detail {
             display: flex;
             flex-direction: column;
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
         }
         .float-detail small {
             font-size: 0.6rem;
@@ -1004,20 +1104,67 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* --- MOBILE RESPONSIVE HEADER --- */
+        @media (max-width: 768px) {
+            header {
+                padding: 12px 15px;
+                flex-direction: row;
+                align-items: center;
+            }
+            .brand-info .shop-name {
+                font-size: 1rem;
+            }
+            .brand-info .brand-title {
+                font-size: 0.75rem;
+            }
+            .brand-info .greeting {
+                font-size: 1.2rem;
+                margin-top: 2px;
+            }
+            .header-right {
+                gap: 10px;
+            }
+            .shift-status {
+                padding: 5px 12px;
+            }
+            .shift-status span {
+                font-size: 0.7rem;
+            }
+            .profile-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1.1rem;
+            }
+        }
+
         @media (max-width: 1024px) {
-            .float-grid { grid-template-columns: repeat(2, 1fr); }
+            .float-grid { 
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            }
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
             .segment-grid { grid-template-columns: 1fr; }
             .dual-grid { grid-template-columns: 1fr; }
             .paybill-grid { grid-template-columns: 1fr; }
             .branch-selector-card { flex-direction: column; align-items: flex-start; }
             .stock-grid { grid-template-columns: 1fr; }
-            header { flex-direction: column; align-items: flex-start; gap: 15px; }
-            .header-right { width: 100%; justify-content: space-between; }
         }
     </style>
 </head>
 <body>
+
+<!-- Branch Selection Modal for Cashier Switch -->
+<div class="branch-modal" id="branchModal">
+    <div class="branch-modal-content">
+        <h3><i class="fas fa-store-alt"></i> Select Branch for Cashier</h3>
+        <div id="branchOptions">
+            <!-- Branch options will be populated dynamically -->
+        </div>
+        <div class="modal-actions">
+            <button class="modal-btn primary" onclick="confirmBranchSelection()">Switch to Cashier</button>
+            <button class="modal-btn secondary" onclick="closeBranchModal()">Cancel</button>
+        </div>
+    </div>
+</div>
 
 <div class="overlay" id="overlay" onclick="toggleNav()"></div>
 
@@ -1030,7 +1177,7 @@
     <button style="position:fixed; top:20px; right:20px; background:rgba(255,255,255,0.1); border:none; color:white; width:45px; height:45px; border-radius:50%; font-size:1.2rem; z-index: 3100; cursor:pointer;" onclick="toggleNav()">✕</button>
     <div class="nav-header-title">ADMIN HUB</div>
     <div class="nav-grid">
-        <a href="#" onclick="confirmSwitchToCashier(event)" class="nav-card switch-card"><span>🔄</span><small>SWITCH TO CASHIER MODE</small></a>
+        <a href="#" onclick="openBranchModal(event)" class="nav-card switch-card"><span>🔄</span><small>SWITCH TO CASHIER MODE</small></a>
         <a href="admin.html" class="nav-card" style="background: var(--admin-accent)"><span>📊</span><small>Dashboard</small></a>
         <a href="admin_expenses.html" class="nav-card" style="background: var(--danger)"><span>💸</span><small>Paybill Transactions</small></a>
         <a href="gas_hub.html" class="nav-card"><span>🔥</span><small>Gas Hub</small></a>
@@ -1242,12 +1389,19 @@
 
     // Check if user is authenticated - PREVENT UNAUTHORIZED ACCESS
     async function checkAuth() {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
+        try {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (error || !user) {
+                console.log("No authenticated user, redirecting to login");
+                window.location.href = 'index.html';
+                return false;
+            }
+            return user;
+        } catch (error) {
+            console.error("Auth check error:", error);
             window.location.href = 'index.html';
             return false;
         }
-        return user;
     }
 
     let allProducts = [];
@@ -1262,6 +1416,7 @@
     let branchIdMap = {};
     let profitChart = null;
     let invChart = null;
+    let selectedCashierBranch = null;
 
     // ==================== NAVIGATION FUNCTIONS ====================
     window.toggleNav = () => {
@@ -1275,11 +1430,47 @@
         document.getElementById('profileDropdown').classList.toggle('active');
     };
 
-    window.confirmSwitchToCashier = (e) => {
+    // Branch selection modal functions
+    window.openBranchModal = (e) => {
         e.preventDefault();
-        if(confirm("Are you sure you want to switch to Cashier Mode?")) {
-            window.location.href = "cashier.html";
+        const modal = document.getElementById('branchModal');
+        const optionsContainer = document.getElementById('branchOptions');
+        
+        // Populate branch options
+        let optionsHtml = '';
+        Object.values(branches).forEach(branch => {
+            optionsHtml += `
+                <div class="branch-option" onclick="selectBranch('${branch.id}')">
+                    <input type="radio" name="branch" value="${branch.id}" id="branch_${branch.id}">
+                    <label for="branch_${branch.id}">${branch.name}</label>
+                    <span class="branch-code">${branch.code}</span>
+                </div>
+            `;
+        });
+        
+        optionsContainer.innerHTML = optionsHtml;
+        modal.classList.add('active');
+    };
+
+    window.selectBranch = (branchId) => {
+        selectedCashierBranch = branchId;
+        // Check the radio button
+        const radio = document.querySelector(`input[value="${branchId}"]`);
+        if (radio) radio.checked = true;
+    };
+
+    window.confirmBranchSelection = () => {
+        if (!selectedCashierBranch) {
+            alert("Please select a branch");
+            return;
         }
+        // Redirect to cashier page with selected branch
+        window.location.href = `cashier.html?branch=${selectedCashierBranch}`;
+    };
+
+    window.closeBranchModal = () => {
+        document.getElementById('branchModal').classList.remove('active');
+        selectedCashierBranch = null;
     };
 
     // Close dropdown when clicking outside
@@ -1460,7 +1651,7 @@
                 `}).join('');
             } else {
                 floatsContainer.innerHTML = `
-                    <div class="float-item" style="grid-column: span 4; text-align: center; padding: 30px;">
+                    <div class="float-item" style="grid-column: 1/-1; text-align: center; padding: 30px;">
                         <span>No shift data available</span>
                     </div>
                 `;
@@ -1496,6 +1687,12 @@
                                 <span>Ksh ${(shift.open_equity || 0).toLocaleString()}</span>
                             </div>
                         </div>
+                    </div>
+                `;
+            } else {
+                floatsContainer.innerHTML = `
+                    <div class="float-item" style="grid-column: 1/-1; text-align: center; padding: 30px;">
+                        <span>No shift data available for this branch</span>
                     </div>
                 `;
             }
