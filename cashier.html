@@ -1608,7 +1608,7 @@
         <button class="btn btn-danger" style="margin-top:20px; width:100%" id="confirm-close">FINALIZE & CLOSE</button>
     </div>
 </div>
- <script type="module">
+<script type="module">
     import { supabase } from './auth.js';
 
     let inventory = [];
@@ -1628,10 +1628,28 @@
     let currentBranchId = null;
 
     // ============================================
+    // GET BRANCH ID FROM URL PARAMETER (FIX)
+    // ============================================
+    function getBranchIdFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const branchId = urlParams.get('branch');
+        console.log("Branch ID from URL:", branchId);
+        return branchId;
+    }
+
+    // ============================================
     // BRANCH-AWARE HELPER FUNCTIONS
     // ============================================
 
     function getCurrentBranchId() {
+        // First check if we have a branch from URL
+        const urlBranchId = getBranchIdFromUrl();
+        if (urlBranchId) {
+            console.log("Using branch ID from URL:", urlBranchId);
+            return urlBranchId;
+        }
+        
+        // Fallback to session or currentBranchId
         const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
         return session.branch?.id || currentBranchId;
     }
@@ -1665,7 +1683,18 @@
             if (error) throw error;
             
             currentUserProfile = profile;
-            currentBranchId = profile.branch_id;
+            
+            // Check if we have a branch from URL
+            const urlBranchId = getBranchIdFromUrl();
+            if (urlBranchId) {
+                // Use the branch from URL
+                currentBranchId = urlBranchId;
+                console.log("Using branch from URL for cashier:", currentBranchId);
+            } else {
+                // Use the user's assigned branch
+                currentBranchId = profile.branch_id;
+                console.log("Using user's assigned branch:", currentBranchId);
+            }
             
             const session = {
                 user: user,
@@ -1682,14 +1711,20 @@
             if (profileUserName) profileUserName.textContent = user.email?.split('@')[0] || 'Cashier';
             if (profileUserEmail) profileUserEmail.textContent = user.email;
             
-            if (!branchNameEl && profile.branches) {
+            // Get branch name for display
+            let branchName = profile.branches?.name;
+            if (urlBranchId && branches[urlBranchId]) {
+                branchName = branches[urlBranchId].name;
+            }
+            
+            if (!branchNameEl && branchName) {
                 const headerRight = document.querySelector('.header-right');
                 if (headerRight) {
                     const branchBadge = document.createElement('span');
                     branchBadge.id = 'branch-name-display';
                     branchBadge.className = 'branch-badge';
                     branchBadge.style.cssText = 'background: var(--primary); color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; margin-right: 10px;';
-                    branchBadge.innerHTML = `<i class="fas fa-store"></i> ${profile.branches.name}`;
+                    branchBadge.innerHTML = `<i class="fas fa-store"></i> ${branchName}`;
                     headerRight.insertBefore(branchBadge, headerRight.firstChild);
                 }
             }
@@ -1699,6 +1734,16 @@
             console.error("Error loading profile:", error);
             return null;
         }
+    }
+
+    // Load branches for name lookup
+    async function loadBranches() {
+        const { data } = await supabase.from('branches').select('*');
+        const branches = {};
+        data?.forEach(b => {
+            branches[b.id] = b;
+        });
+        return branches;
     }
 
     window.closeGasRedirect = function() {
@@ -1913,6 +1958,8 @@
                 return;
             }
             
+            console.log("Fetching inventory for branch:", branchId);
+            
             const { data } = await supabase
                 .from('products')
                 .select('*')
@@ -2041,6 +2088,9 @@
 
     async function init() {
         try {
+            // Load branches first for name lookup
+            const branchesData = await loadBranches();
+            
             const profile = await loadUserProfile();
             if (!profile) {
                 window.location.href = 'index.html';
@@ -2048,7 +2098,7 @@
             }
             
             const branchId = getCurrentBranchId();
-            console.log("Current branch ID:", branchId);
+            console.log("Current branch ID for cashier:", branchId);
 
             updateGreeting();
             setInterval(updateGreeting, 60000);
