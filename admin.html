@@ -582,6 +582,7 @@
             font-size: 0.65rem;
             padding: 4px 10px;
             border-radius: 20px;
+            background: ${shift => shift?.status === 'open' ? '#10b981' : '#64748b'};
             color: white;
             font-weight: 700;
         }
@@ -1463,7 +1464,7 @@
             alert("Please select a branch");
             return;
         }
-        // Redirect to cashier page with selected branch ID
+        // Redirect to cashier page with selected branch
         window.location.href = `cashier.html?branch=${selectedCashierBranch}`;
     };
 
@@ -1606,144 +1607,99 @@
         
         // Group to get latest shift per branch (for all branches view)
         const latestShifts = {};
-        
-        // Process ALL shifts to get latest for EACH branch
         shifts?.forEach(shift => {
-            const branchId = shift.branch_id;
-            // If we don't have this branch yet, or this shift is newer than the one we have
-            if (!latestShifts[branchId] || new Date(shift.start_time) > new Date(latestShifts[branchId].start_time)) {
-                latestShifts[branchId] = shift;
+            if (!latestShifts[shift.branch_id] || new Date(shift.start_time) > new Date(latestShifts[shift.branch_id].start_time)) {
+                latestShifts[shift.branch_id] = shift;
             }
         });
-
-        console.log("Latest shifts per branch:", latestShifts); // Debug log
 
         // ========== DISPLAY FLOATS - Show ALL branches when "All Branches" selected ==========
         const floatsContainer = document.getElementById('floats-container');
         
         if (selectedBranchId === null) {
             // Show floats for ALL branches using LATEST shifts
-            const branchIds = Object.keys(branches);
-            
-            if (branchIds.length > 0) {
-                let floatsHtml = '';
-                
-                // Create a card for EACH branch, even if no shift data exists
-                branchIds.forEach(branchId => {
-                    const branch = branches[branchId];
-                    const shift = latestShifts[branchId];
-                    
-                    floatsHtml += `
-                        <div class="float-item">
-                            <div class="branch-label">
-                                <span><i class="fas fa-store"></i> ${branch.name}</span>
-                                ${shift ? `
-                                    <span class="status-badge" style="background: ${shift.status === 'open' ? '#10b981' : '#64748b'}; color: white;">
-                                        ${shift.status === 'open' ? 'OPEN' : 'CLOSED'}
-                                    </span>
-                                ` : `
-                                    <span class="status-badge" style="background: #94a3b8; color: white;">
-                                        NO SHIFT
-                                    </span>
-                                `}
-                            </div>
-                            ${shift ? `
-                                <div class="float-details">
-                                    <div class="float-detail">
-                                        <small>M-PESA</small>
-                                        <span>Ksh ${(shift.open_mpesa || 0).toLocaleString()}</span>
-                                    </div>
-                                    <div class="float-detail">
-                                        <small>CASH</small>
-                                        <span>Ksh ${(shift.open_cash || 0).toLocaleString()}</span>
-                                    </div>
-                                    <div class="float-detail">
-                                        <small>KCB</small>
-                                        <span>Ksh ${(shift.open_kcb || 0).toLocaleString()}</span>
-                                    </div>
-                                    <div class="float-detail">
-                                        <small>EQUITY</small>
-                                        <span>Ksh ${(shift.open_equity || 0).toLocaleString()}</span>
-                                    </div>
-                                </div>
-                            ` : `
-                                <div class="float-details">
-                                    <div class="float-detail" style="grid-column: span 2; text-align: center; background: transparent; border: none;">
-                                        <span style="color: var(--text-dim);">No shift data available</span>
-                                    </div>
-                                </div>
-                            `}
+            if (Object.keys(latestShifts).length > 0) {
+                floatsContainer.innerHTML = Object.values(latestShifts).map(shift => {
+                    const branchName = branches[shift.branch_id]?.name || 'Unknown';
+                    return `
+                    <div class="float-item">
+                        <div class="branch-label">
+                            <span><i class="fas fa-store"></i> ${branchName}</span>
+                            <span class="status-badge" style="background: ${shift.status === 'open' ? '#10b981' : '#64748b'}; color: white;">
+                                ${shift.status === 'open' ? 'OPEN' : 'CLOSED'}
+                            </span>
                         </div>
-                    `;
-                });
-                
-                floatsContainer.innerHTML = floatsHtml;
+                        <div class="float-details">
+                            <div class="float-detail">
+                                <small>M-PESA</small>
+                                <span>Ksh ${(shift.open_mpesa || 0).toLocaleString()}</span>
+                            </div>
+                            <div class="float-detail">
+                                <small>CASH</small>
+                                <span>Ksh ${(shift.open_cash || 0).toLocaleString()}</span>
+                            </div>
+                            <div class="float-detail">
+                                <small>KCB</small>
+                                <span>Ksh ${(shift.open_kcb || 0).toLocaleString()}</span>
+                            </div>
+                            <div class="float-detail">
+                                <small>EQUITY</small>
+                                <span>Ksh ${(shift.open_equity || 0).toLocaleString()}</span>
+                            </div>
+                        </div>
+                    </div>
+                `}).join('');
             } else {
                 floatsContainer.innerHTML = `
                     <div class="float-item" style="grid-column: 1/-1; text-align: center; padding: 30px;">
-                        <span>No branches found</span>
+                        <span>No shift data available</span>
                     </div>
                 `;
             }
         } else {
             // Show single branch floats (latest shift)
-            const branch = branches[branchFilter];
-            const shift = latestShifts[branchFilter];
-            
-            if (branch) {
+            const shift = Object.values(latestShifts).find(s => s.branch_id === branchFilter);
+            if (shift) {
+                const branchName = branches[shift.branch_id]?.name || 'Unknown';
                 floatsContainer.innerHTML = `
                     <div class="float-item">
                         <div class="branch-label">
-                            <span><i class="fas fa-store"></i> ${branch.name}</span>
-                            ${shift ? `
-                                <span class="status-badge" style="background: ${shift.status === 'open' ? '#10b981' : '#64748b'}; color: white;">
-                                    ${shift.status === 'open' ? 'OPEN' : 'CLOSED'}
-                                </span>
-                            ` : `
-                                <span class="status-badge" style="background: #94a3b8; color: white;">
-                                    NO SHIFT
-                                </span>
-                            `}
+                            <span><i class="fas fa-store"></i> ${branchName}</span>
+                            <span class="status-badge" style="background: ${shift.status === 'open' ? '#10b981' : '#64748b'}; color: white;">
+                                ${shift.status === 'open' ? 'OPEN' : 'CLOSED'}
+                            </span>
                         </div>
-                        ${shift ? `
-                            <div class="float-details">
-                                <div class="float-detail">
-                                    <small>M-PESA</small>
-                                    <span>Ksh ${(shift.open_mpesa || 0).toLocaleString()}</span>
-                                </div>
-                                <div class="float-detail">
-                                    <small>CASH</small>
-                                    <span>Ksh ${(shift.open_cash || 0).toLocaleString()}</span>
-                                </div>
-                                <div class="float-detail">
-                                    <small>KCB</small>
-                                    <span>Ksh ${(shift.open_kcb || 0).toLocaleString()}</span>
-                                </div>
-                                <div class="float-detail">
-                                    <small>EQUITY</small>
-                                    <span>Ksh ${(shift.open_equity || 0).toLocaleString()}</span>
-                                </div>
+                        <div class="float-details">
+                            <div class="float-detail">
+                                <small>M-PESA</small>
+                                <span>Ksh ${(shift.open_mpesa || 0).toLocaleString()}</span>
                             </div>
-                        ` : `
-                            <div class="float-details">
-                                <div class="float-detail" style="grid-column: span 2; text-align: center; background: transparent; border: none;">
-                                    <span style="color: var(--text-dim);">No shift data available</span>
-                                </div>
+                            <div class="float-detail">
+                                <small>CASH</small>
+                                <span>Ksh ${(shift.open_cash || 0).toLocaleString()}</span>
                             </div>
-                        `}
+                            <div class="float-detail">
+                                <small>KCB</small>
+                                <span>Ksh ${(shift.open_kcb || 0).toLocaleString()}</span>
+                            </div>
+                            <div class="float-detail">
+                                <small>EQUITY</small>
+                                <span>Ksh ${(shift.open_equity || 0).toLocaleString()}</span>
+                            </div>
+                        </div>
                     </div>
                 `;
             } else {
                 floatsContainer.innerHTML = `
                     <div class="float-item" style="grid-column: 1/-1; text-align: center; padding: 30px;">
-                        <span>No branch data available</span>
+                        <span>No shift data available for this branch</span>
                     </div>
                 `;
             }
         }
 
         // Update shift status (check if any shift is open)
-        const anyOpen = Object.values(latestShifts).some(s => s?.status === 'open');
+        const anyOpen = Object.values(latestShifts).some(s => s.status === 'open');
         if (anyOpen) {
             document.getElementById('shift-status-text').innerText = 'SHIFT OPEN';
             document.getElementById('status-dot').className = 'status-dot open';
