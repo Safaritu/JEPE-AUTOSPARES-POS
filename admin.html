@@ -1635,6 +1635,10 @@
             console.log("Kitui latest shift:", latestShifts[kituiId]);
         }
 
+        // ========== FIX 1: CORRECT SHIFT STATUS DISPLAY ON FLOATS ==========
+        // Instead of just showing status from latest shift, we need to show the actual status
+        // of the shift being displayed
+        
         // ========== DISPLAY FLOATS - Show ALL branches when "All Branches" selected ==========
         const floatsContainer = document.getElementById('floats-container');
         
@@ -1655,8 +1659,8 @@
                             <div class="branch-label">
                                 <span><i class="fas fa-store"></i> ${branch.name}</span>
                                 ${shift ? `
-                                    <span class="status-badge" style="background: ${shift.status === 'open' ? '#10b981' : '#64748b'}; color: white;">
-                                        ${shift.status === 'open' ? 'OPEN' : 'CLOSED'}
+                                    <span class="status-badge" style="background: ${shift.status && shift.status.toLowerCase() === 'open' ? '#10b981' : '#64748b'}; color: white;">
+                                        ${shift.status && shift.status.toLowerCase() === 'open' ? 'OPEN' : 'CLOSED'}
                                     </span>
                                 ` : `
                                     <span class="status-badge" style="background: #94a3b8; color: white;">
@@ -1713,8 +1717,8 @@
                         <div class="branch-label">
                             <span><i class="fas fa-store"></i> ${branch.name}</span>
                             ${shift ? `
-                                <span class="status-badge" style="background: ${shift.status === 'open' ? '#10b981' : '#64748b'}; color: white;">
-                                    ${shift.status === 'open' ? 'OPEN' : 'CLOSED'}
+                                <span class="status-badge" style="background: ${shift.status && shift.status.toLowerCase() === 'open' ? '#10b981' : '#64748b'}; color: white;">
+                                    ${shift.status && shift.status.toLowerCase() === 'open' ? 'OPEN' : 'CLOSED'}
                                 </span>
                             ` : `
                                 <span class="status-badge" style="background: #94a3b8; color: white;">
@@ -1759,7 +1763,7 @@
             }
         }
 
-        // ========== FIX 1: CORRECT SHIFT STATUS DETECTION ==========
+        // ========== FIX 2: CORRECT SHIFT STATUS DETECTION FOR HEADER ==========
         // Check if ANY shift is open by looking at all shifts, not just latest per branch
         let anyOpen = false;
         if (shifts && shifts.length > 0) {
@@ -1777,7 +1781,7 @@
             document.getElementById('status-dot').className = 'status-dot';
         }
 
-        // ========== 2. CALCULATE PAYBILL PER BRANCH (all-time) ==========
+        // ========== 3. CALCULATE PAYBILL PER BRANCH (all-time) ==========
         const paybillContainer = document.getElementById('paybill-container');
         const branchIds = selectedBranchId ? [selectedBranchId] : Object.keys(branches);
         
@@ -1834,7 +1838,7 @@
         }
         paybillContainer.innerHTML = paybillHTML;
 
-        // ========== 3. LOAD TODAY'S MONEY FLOW STATS (FROM LATEST SHIFT) ==========
+        // ========== 4. LOAD TODAY'S MONEY FLOW STATS (FROM LATEST SHIFT) ==========
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const tomorrow = new Date(today);
@@ -1886,7 +1890,7 @@
         document.getElementById('t-in').innerText = `Ksh ${tIn.toLocaleString()}`;
         document.getElementById('t-exp').innerText = `Ksh ${tOut.toLocaleString()}`;
 
-        // ========== 4. LOAD ALL SALES AND PRODUCTS FOR CHARTS AND STATS ==========
+        // ========== 5. LOAD ALL SALES AND PRODUCTS FOR CHARTS AND STATS ==========
         let productsQuery = supabase.from('products').select('*');
         let salesQuery = supabase.from('sales').select('*, products(*)');
         
@@ -1906,7 +1910,7 @@
         allProducts = productsRes.data || [];
         allSales = salesRes.data || [];
 
-        // ========== 5. PROCESS SPARE PARTS DATA ==========
+        // ========== 6. PROCESS SPARE PARTS DATA ==========
         const spareProducts = allProducts.filter(p => p.category === 'Spare Part');
         const spareSales = allSales.filter(s => s.category === 'Spare Part');
 
@@ -1944,7 +1948,7 @@
             document.getElementById(`profit-${low}`).innerText = `Ksh ${stats[t].profit.toLocaleString()}`;
         });
 
-        // ========== 6. CALCULATE CATEGORY BREAKDOWN ==========
+        // ========== 7. CALCULATE CATEGORY BREAKDOWN ==========
         const categories = { 
             Gas: { profit: 0, revenue: 0 }, 
             Spare: { profit: 0, revenue: 0 }, 
@@ -1976,13 +1980,13 @@
             </tr>`;
         }).join('');
 
-        // ========== 7. UPDATE CHARTS ==========
+        // ========== 8. UPDATE CHARTS ==========
         updateCharts(categories, stats);
 
-        // ========== 8. RENDER SPARE PARTS LIST ==========
+        // ========== 9. RENDER SPARE PARTS LIST ==========
         renderSpareParts();
 
-        // ========== 9. LOAD RECENT TRANSACTIONS ==========
+        // ========== 10. LOAD RECENT TRANSACTIONS ==========
         let recentQuery = supabase
             .from('sales')
             .select(`
