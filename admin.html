@@ -133,6 +133,8 @@
             20% { transform: rotate(10deg); } 
             40% { transform: rotate(-10deg); } 
         }
+        
+        /* --- POINTING HAND --- */
         .guide-hand { 
             position: fixed; 
             bottom: 100px; 
@@ -142,63 +144,80 @@
             flex-direction: column; 
             align-items: center; 
             animation: bounce 1.5s infinite; 
+            pointer-events: none;
         }
         .guide-hand span { 
-            font-size: 1.5rem; 
+            font-size: 1.8rem; 
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
         }
         .guide-label { 
             background: var(--admin-dark); 
             color: white; 
-            padding: 3px 8px; 
-            border-radius: 6px; 
-            font-size: 0.5rem; 
+            padding: 4px 10px; 
+            border-radius: 20px; 
+            font-size: 0.6rem; 
             font-weight: 800; 
-            margin-bottom: 2px; 
-            border: 1px solid var(--admin-accent); 
+            margin-bottom: 4px; 
+            border: 1px solid var(--admin-accent);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            letter-spacing: 0.5px;
         }
         @keyframes bounce { 
             0%, 100% { transform: translateY(0); } 
-            50% { transform: translateY(-8px); } 
+            50% { transform: translateY(-12px); } 
         }
 
         /* --- HEADER --- */
         header { 
-            background: linear-gradient(135deg, var(--admin-dark), #1e293b);
-            padding: 15px 25px; 
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            padding: 12px 25px; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
             position: sticky; 
             top: 0; 
             z-index: 100; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
-        header .brand-info h1 { 
-            margin: 0; 
-            font-size: 0.9rem; 
-            font-weight: 500; 
-            color: rgba(255,255,255,0.7);
+        .brand-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .brand-info .brand-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #94a3b8;
             letter-spacing: 0.5px;
             text-transform: uppercase;
         }
-        header .brand-info h2 { 
-            margin: 3px 0 0; 
-            font-size: 1.3rem; 
-            font-weight: 800; 
-            color: white; 
-            line-height: 1.2;
+        .brand-info .greeting {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: white;
+            line-height: 1.3;
             text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
+        .brand-info .greeting i {
+            color: #fbbf24;
+            margin-right: 6px;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
         .shift-status {
             display: flex;
             align-items: center;
             gap: 10px;
             background: rgba(255,255,255,0.1);
-            padding: 6px 14px;
+            padding: 6px 16px;
             border-radius: 40px;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.15);
         }
         .shift-status span {
             font-size: 0.75rem;
@@ -215,31 +234,128 @@
         .status-dot.open { 
             background: var(--success); 
             animation: pulse 2s infinite;
-            box-shadow: 0 0 10px var(--success);
+            box-shadow: 0 0 12px var(--success);
         }
         .status-dot.closed { 
             background: var(--danger);
-            box-shadow: 0 0 10px var(--danger);
+            box-shadow: 0 0 12px var(--danger);
         }
 
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-            70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
             100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* --- PROFILE MENU --- */
+        .profile-menu {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .profile-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--admin-accent), #818cf8);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            border: 2px solid rgba(255,255,255,0.3);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+        }
+        .profile-icon:hover {
+            transform: scale(1.05);
+            border-color: white;
+        }
+
+        .profile-dropdown {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            width: 220px;
+            background: white;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+            display: none;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .profile-dropdown.active {
+            display: block;
+            animation: slideDown 0.2s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dropdown-header {
+            padding: 16px;
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border-bottom: 1px solid var(--border);
+        }
+        .dropdown-header .user-name {
+            font-weight: 800;
+            font-size: 0.9rem;
+            color: var(--admin-dark);
+        }
+        .dropdown-header .user-email {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        .dropdown-item {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text);
+            text-decoration: none;
+            transition: 0.2s;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.85rem;
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-item:hover {
+            background: #f8fafc;
+        }
+
+        .dropdown-item i {
+            width: 20px;
+            color: var(--admin-accent);
+            font-size: 1rem;
+        }
+
+        .dropdown-item.logout:hover i,
+        .dropdown-item.logout:hover {
+            color: var(--danger);
+            background: #fee2e2;
         }
 
         /* --- MAIN CONTAINER --- */
         .container { 
-            padding: 15px 20px; 
+            padding: 20px 25px; 
             max-width: 1400px; 
             margin: auto; 
-            padding-bottom: 90px; 
+            padding-bottom: 100px; 
         }
 
         /* --- BRANCH SELECTOR CARD --- */
         .branch-selector-card {
             background: white;
-            border-radius: 16px;
+            border-radius: 20px;
             border: 1px solid var(--border);
             padding: 15px 20px;
             margin-bottom: 20px;
@@ -248,7 +364,7 @@
             justify-content: space-between;
             flex-wrap: wrap;
             gap: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
         }
         
         .branch-filter {
@@ -259,101 +375,119 @@
         }
         
         .branch-filter i {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             color: var(--admin-accent);
             background: #eef2ff;
-            padding: 8px;
-            border-radius: 10px;
+            padding: 10px;
+            border-radius: 12px;
         }
         
         .branch-select {
-            padding: 8px 20px;
-            border-radius: 30px;
+            padding: 10px 22px;
+            border-radius: 40px;
             border: 2px solid var(--admin-accent);
             background: white;
             font-weight: 600;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             color: var(--text);
             cursor: pointer;
-            min-width: 220px;
+            min-width: 240px;
             outline: none;
         }
         
         .branch-badge {
             background: var(--admin-accent);
             color: white;
-            padding: 6px 16px;
-            border-radius: 30px;
-            font-size: 0.8rem;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-size: 0.85rem;
             font-weight: 700;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
         }
 
         /* --- SECTION TITLE --- */
         .section-title { 
-            font-size: 0.85rem; 
+            font-size: 0.9rem; 
             font-weight: 800; 
             color: var(--admin-dark); 
-            margin: 0 0 12px 0; 
+            margin: 0 0 15px 0; 
             display: flex; 
             align-items: center; 
             justify-content: space-between; 
+        }
+        .section-title i {
+            color: var(--admin-accent);
+            margin-right: 8px;
         }
         
         /* --- CARDS --- */
         .card { 
             background: white; 
-            padding: 18px; 
-            border-radius: 16px; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.02); 
+            padding: 20px; 
+            border-radius: 20px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
             border: 1px solid #eef2f6; 
             margin-bottom: 20px; 
             transition: transform 0.2s;
         }
         .card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 18px rgba(0,0,0,0.04);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.05);
         }
 
         /* --- FLOATS GRID --- */
         .float-grid { 
             display: grid; 
             grid-template-columns: repeat(4, 1fr); 
-            gap: 12px; 
-            margin-top: 12px;
+            gap: 15px; 
+            margin-top: 15px;
         }
         .float-item { 
             background: #f8fafc; 
-            padding: 12px; 
-            border-radius: 14px; 
+            padding: 15px; 
+            border-radius: 16px; 
             border: 1px solid #f1f5f9; 
             transition: all 0.2s;
         }
         .float-item:hover {
             background: white;
             border-color: var(--admin-accent);
-            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.08);
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.1);
         }
-        .float-item label { 
-            display: block; 
-            font-size: 0.6rem; 
+        .float-item .branch-label { 
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.65rem; 
             font-weight: 700; 
             color: var(--text-dim); 
             text-transform: uppercase; 
-            margin-bottom: 4px; 
+            margin-bottom: 8px; 
         }
-        .float-item span { 
-            font-size: 0.9rem; 
-            font-weight: 800; 
-            color: var(--admin-dark); 
-        }
-        .float-item i {
-            margin-right: 4px;
+        .float-item .branch-label i {
             color: var(--admin-accent);
-            font-size: 0.8rem;
+        }
+        .float-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .float-detail {
+            display: flex;
+            flex-direction: column;
+        }
+        .float-detail small {
+            font-size: 0.55rem;
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+        .float-detail span {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: var(--admin-dark);
         }
 
         /* --- PAYBILL CARDS GRID --- */
@@ -361,59 +495,67 @@
             display: grid; 
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
             gap: 15px; 
-            margin-top: 15px; 
+            margin-bottom: 20px; 
         }
         
         .paybill-card { 
             background: linear-gradient(135deg, #eff6ff, #ffffff);
             border: 2px solid #bfdbfe; 
-            border-radius: 14px; 
-            padding: 15px; 
+            border-radius: 16px; 
+            padding: 18px; 
             transition: all 0.2s;
         }
         .paybill-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.15);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.15);
         }
         .paybill-card-header {
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 10px;
+            justify-content: space-between;
+            margin-bottom: 12px;
             padding-bottom: 8px;
             border-bottom: 1px solid #dbeafe;
         }
+        .paybill-card-header .branch-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
         .paybill-card-header i {
-            font-size: 1rem;
+            font-size: 1.1rem;
             color: var(--blue);
         }
         .paybill-card-header .branch-code {
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             background: #e0e7ff;
             color: var(--admin-accent);
-            padding: 2px 8px;
+            padding: 4px 10px;
             border-radius: 20px;
             font-weight: 700;
         }
         .paybill-card label { 
-            font-size: 0.6rem; 
+            font-size: 0.65rem; 
             font-weight: 800; 
             color: var(--blue); 
             text-transform: uppercase; 
             display: block;
-            margin-bottom: 3px;
+            margin-bottom: 4px;
         }
         .paybill-card .paybill-main-val { 
-            font-size: 1.3rem; 
+            font-size: 1.4rem; 
             font-weight: 800; 
             color: var(--admin-dark); 
             line-height: 1.2;
         }
         .paybill-card .paybill-profit-val { 
-            font-size: 0.75rem; 
+            font-size: 0.8rem; 
             font-weight: 700; 
             color: var(--success); 
-            margin-top: 4px;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         /* --- STATS GRID --- */
@@ -424,25 +566,47 @@
             margin-bottom: 20px; 
         }
         .stat-box { 
-            padding: 16px; 
-            border-radius: 16px; 
+            padding: 18px; 
+            border-radius: 18px; 
             color: white; 
             transition: transform 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            transform: translate(20px, -20px);
         }
         .stat-box:hover {
-            transform: translateY(-2px);
+            transform: translateY(-3px);
         }
         .stat-box small { 
-            font-size: 0.6rem; 
+            font-size: 0.65rem; 
             font-weight: 700; 
             text-transform: uppercase; 
             opacity: 0.9; 
             display: block;
-            margin-bottom: 4px;
+            margin-bottom: 5px;
+            letter-spacing: 0.5px;
         }
         .stat-box div { 
-            font-size: 1.1rem; 
+            font-size: 1.2rem; 
             font-weight: 800; 
+            position: relative;
+        }
+        .stat-box i {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 2rem;
+            opacity: 0.2;
         }
         .rev-bg { background: linear-gradient(135deg, #3b82f6, #1e4ed8); }
         .prof-bg { background: linear-gradient(135deg, #10b981, #059669); }
@@ -459,35 +623,35 @@
         
         .segment-card { 
             background: white; 
-            border-radius: 16px; 
+            border-radius: 18px; 
             border: 1px solid var(--border); 
-            padding: 16px; 
+            padding: 18px; 
             transition: all 0.2s;
         }
         .segment-card:hover {
             border-color: var(--admin-accent);
-            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.08);
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.1);
         }
         
         .segment-header { 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            margin-bottom: 12px; 
+            margin-bottom: 15px; 
             border-bottom: 1px solid var(--border); 
-            padding-bottom: 8px; 
+            padding-bottom: 10px; 
         }
         
         .segment-header span:first-child { 
             font-weight: 800; 
-            font-size: 0.9rem;
+            font-size: 0.95rem;
         }
         
         .segment-row { 
             display: flex; 
             justify-content: space-between; 
-            margin-bottom: 6px; 
-            font-size: 0.8rem; 
+            margin-bottom: 8px; 
+            font-size: 0.85rem; 
         }
         
         .segment-row span:last-child { 
@@ -495,9 +659,9 @@
         }
 
         .badge { 
-            padding: 4px 8px; 
-            border-radius: 6px; 
-            font-size: 0.65rem; 
+            padding: 4px 10px; 
+            border-radius: 8px; 
+            font-size: 0.7rem; 
             font-weight: 800; 
         }
         .badge-original { background: #dcfce7; color: #166534; }
@@ -514,24 +678,24 @@
         
         .chart-box { 
             background: white; 
-            padding: 16px; 
-            border-radius: 16px; 
+            padding: 18px; 
+            border-radius: 18px; 
             border: 1px solid var(--border); 
-            height: 260px;
+            height: 280px;
             position: relative;
         }
         
         .chart-box h4 { 
-            margin: 0 0 12px 0; 
-            font-size: 0.85rem;
+            margin: 0 0 15px 0; 
+            font-size: 0.9rem;
             color: var(--text-dim);
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
         
         .chart-box canvas {
-            max-height: 190px;
+            max-height: 200px;
             width: 100% !important;
         }
 
@@ -539,7 +703,7 @@
         .stock-grid { 
             display: grid; 
             grid-template-columns: repeat(2, 1fr); 
-            gap: 12px; 
+            gap: 15px; 
         }
         @media (min-width: 768px) { 
             .stock-grid { grid-template-columns: repeat(3, 1fr); } 
@@ -548,13 +712,13 @@
         .stock-card { 
             background: white; 
             border: 1px solid var(--border); 
-            border-radius: 14px; 
-            padding: 12px; 
+            border-radius: 16px; 
+            padding: 15px; 
             transition: transform 0.2s; 
         }
         .stock-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.04);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
         }
         .stock-card.low-stock {
             border-left: 4px solid var(--danger);
@@ -564,40 +728,52 @@
             display: flex;
             justify-content: space-between;
             align-items: start;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
         .stock-name {
             font-weight: 800;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
         }
         .stock-type {
-            font-size: 0.6rem;
+            font-size: 0.65rem;
             color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 2px;
+        }
+        .stock-type i {
+            color: var(--admin-accent);
         }
         .stock-qty {
             font-weight: 800;
             color: var(--admin-accent);
-            font-size: 0.85rem;
+            font-size: 0.9rem;
+            background: #eef2ff;
+            padding: 4px 8px;
+            border-radius: 20px;
         }
         .stock-qty small {
-            font-size: 0.55rem;
+            font-size: 0.6rem;
             color: var(--text-dim);
+            font-weight: 600;
         }
 
         .stock-prices {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-            margin-top: 8px;
+            gap: 8px;
+            margin-top: 12px;
             border-top: 1px solid #f1f5f9;
-            padding-top: 8px;
-            font-size: 0.7rem;
+            padding-top: 12px;
+            font-size: 0.75rem;
         }
         .price-label {
             display: block;
-            font-size: 0.5rem;
+            font-size: 0.55rem;
             color: var(--text-dim);
             font-weight: 700;
+            text-transform: uppercase;
         }
         .price-value {
             font-weight: 700;
@@ -609,15 +785,15 @@
         /* --- LOAD MORE BUTTON --- */
         .load-more { 
             width: 100%; 
-            padding: 12px; 
+            padding: 14px; 
             background: white; 
             border: 2px dashed #cbd5e1; 
-            border-radius: 12px; 
+            border-radius: 14px; 
             color: var(--text-dim); 
             font-weight: 800; 
             cursor: pointer; 
-            margin-top: 15px; 
-            font-size: 0.8rem; 
+            margin-top: 20px; 
+            font-size: 0.85rem; 
             transition: all 0.2s;
         }
         .load-more:hover {
@@ -629,26 +805,26 @@
         /* --- SEARCH INPUTS --- */
         .search-input {
             width: 100%; 
-            padding: 10px 14px; 
-            border-radius: 12px; 
+            padding: 12px 16px; 
+            border-radius: 14px; 
             border: 1px solid #cbd5e1; 
-            margin-bottom: 12px; 
+            margin-bottom: 15px; 
             font-family: inherit; 
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             transition: all 0.2s;
         }
         .search-input:focus {
             outline: none;
             border-color: var(--admin-accent);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
         }
 
         /* --- RECENT TRANSACTIONS --- */
         .recent-section {
             background: white;
-            border-radius: 16px;
+            border-radius: 18px;
             border: 1px solid var(--border);
-            padding: 18px;
+            padding: 20px;
             margin-top: 20px;
         }
 
@@ -656,21 +832,24 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
         }
 
         .section-header h3 {
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             font-weight: 800;
             color: var(--admin-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .view-all {
             color: var(--admin-accent);
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             font-weight: 700;
             text-decoration: none;
-            padding: 6px 12px;
+            padding: 8px 16px;
             background: #eef2ff;
             border-radius: 30px;
             transition: all 0.2s;
@@ -683,16 +862,16 @@
         .transaction-list {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
         }
 
         .transaction-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px;
+            padding: 14px;
             background: #f8fafc;
-            border-radius: 14px;
+            border-radius: 16px;
             border: 1px solid #f1f5f9;
             transition: all 0.2s;
         }
@@ -704,50 +883,52 @@
         .transaction-info {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
 
         .transaction-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
             background: white;
             display: flex;
             align-items: center;
             justify-content: center;
             color: var(--admin-accent);
-            font-size: 1rem;
+            font-size: 1.1rem;
         }
 
         .transaction-details {
-            font-size: 0.8rem;
+            font-size: 0.85rem;
         }
 
         .transaction-details .item-name {
             font-weight: 700;
-            margin-bottom: 2px;
+            margin-bottom: 3px;
         }
 
         .transaction-details .meta {
-            font-size: 0.65rem;
+            font-size: 0.7rem;
             color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         .transaction-amount {
             font-weight: 800;
             color: var(--success);
-            font-size: 0.95rem;
+            font-size: 1rem;
         }
 
         .transaction-branch {
             display: inline-block;
             background: #e0e7ff;
             color: var(--admin-accent);
-            padding: 2px 6px;
+            padding: 3px 8px;
             border-radius: 20px;
-            font-size: 0.6rem;
+            font-size: 0.65rem;
             font-weight: 700;
-            margin-left: 6px;
         }
 
         .overlay { 
@@ -762,8 +943,8 @@
 
         .spinner {
             display: inline-block;
-            width: 14px;
-            height: 14px;
+            width: 16px;
+            height: 16px;
             border: 3px solid rgba(255,255,255,.3);
             border-radius: 50%;
             border-top-color: #fff;
@@ -780,7 +961,7 @@
             .branch-selector-card { flex-direction: column; align-items: flex-start; }
             .stock-grid { grid-template-columns: 1fr; }
             header { flex-direction: column; align-items: flex-start; gap: 12px; }
-            .shift-status { align-self: flex-start; }
+            .header-right { width: 100%; justify-content: space-between; }
         }
     </style>
 </head>
@@ -789,8 +970,8 @@
 <div class="overlay" id="overlay" onclick="toggleNav()"></div>
 
 <div class="guide-hand" id="onboardingHand">
-    <div class="guide-label">CLICK FOR MENU</div>
-    <span>👇</span>
+    <div class="guide-label">👆 CLICK FOR MENU</div>
+    <span>👉</span>
 </div>
 
 <div class="nav-overlay" id="navBanner">
@@ -823,12 +1004,32 @@
 
 <header>
     <div class="brand-info">
-        <h1>ADMIN DASHBOARD</h1>
-        <h2 id="greeting-text">GOOD DAY, ADMIN 👋</h2>
+        <div class="brand-title">ADMIN DASHBOARD</div>
+        <div class="greeting" id="greeting-text">
+            <i class="fas fa-sun"></i> Good Morning, Admin
+        </div>
     </div>
-    <div class="shift-status">
-        <span id="shift-status-text">--</span>
-        <div class="status-dot" id="status-dot"></div>
+    <div class="header-right">
+        <div class="shift-status">
+            <span id="shift-status-text">--</span>
+            <div class="status-dot" id="status-dot"></div>
+        </div>
+        <div class="profile-menu" onclick="toggleProfileMenu()">
+            <div class="profile-icon">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <div class="profile-dropdown" id="profileDropdown">
+                <div class="dropdown-header">
+                    <div class="user-name" id="profile-name">Admin User</div>
+                    <div class="user-email" id="profile-email">admin@jepe.com</div>
+                </div>
+                <a href="#" class="dropdown-item"><i class="fas fa-user-circle"></i> My Profile</a>
+                <a href="#" class="dropdown-item"><i class="fas fa-store"></i> Branch Settings</a>
+                <a href="#" class="dropdown-item"><i class="fas fa-bell"></i> Notifications</a>
+                <a href="#" class="dropdown-item"><i class="fas fa-shield-alt"></i> Security</a>
+                <a href="#" onclick="handleLogout()" class="dropdown-item logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </div>
     </div>
 </header>
 
@@ -850,9 +1051,9 @@
     <!-- Floats Card -->
     <div class="card">
         <div class="section-title">
-            <span><i class="fas fa-coins" style="color: var(--admin-accent); margin-right: 8px;"></i> TODAY'S OPENING FLOATS</span>
-            <div style="font-size: 0.75rem;">
-                <span id="shift-start" style="color: var(--success);"></span>
+            <span><i class="fas fa-coins"></i> TODAY'S OPENING FLOATS</span>
+            <div style="font-size: 0.8rem;" id="shift-start">
+                <i class="fas fa-play" style="color: var(--success);"></i> 
             </div>
         </div>
         <div class="float-grid" id="floats-container">
@@ -862,7 +1063,7 @@
 
     <!-- KCB Paybill Cards - Separate per branch -->
     <div class="section-title" style="margin-top: 5px;">
-        <span><i class="fas fa-credit-card" style="color: var(--blue); margin-right: 8px;"></i> KCB PAYBILL BALANCES</span>
+        <span><i class="fas fa-credit-card"></i> KCB PAYBILL BALANCES</span>
     </div>
     <div class="paybill-grid" id="paybill-container">
         <!-- Paybill cards will be populated per branch -->
@@ -870,10 +1071,26 @@
 
     <!-- Money Flow Stats -->
     <div class="stats-grid">
-        <div class="stat-box rev-bg"><small><i class="fas fa-chart-line"></i> Today's Sales</small><div id="t-rev">Ksh 0</div></div>
-        <div class="stat-box prof-bg"><small><i class="fas fa-chart-pie"></i> Today's Profit</small><div id="t-prof">Ksh 0</div></div>
-        <div class="stat-box in-bg"><small><i class="fas fa-arrow-down"></i> Money In</small><div id="t-in">Ksh 0</div></div>
-        <div class="stat-box exp-bg"><small><i class="fas fa-arrow-up"></i> Money Out</small><div id="t-exp">Ksh 0</div></div>
+        <div class="stat-box rev-bg">
+            <small><i class="fas fa-chart-line"></i> Today's Sales</small>
+            <div id="t-rev">Ksh 0</div>
+            <i class="fas fa-shopping-cart"></i>
+        </div>
+        <div class="stat-box prof-bg">
+            <small><i class="fas fa-chart-pie"></i> Today's Profit</small>
+            <div id="t-prof">Ksh 0</div>
+            <i class="fas fa-coins"></i>
+        </div>
+        <div class="stat-box in-bg">
+            <small><i class="fas fa-arrow-down"></i> Money In</small>
+            <div id="t-in">Ksh 0</div>
+            <i class="fas fa-download"></i>
+        </div>
+        <div class="stat-box exp-bg">
+            <small><i class="fas fa-arrow-up"></i> Money Out</small>
+            <div id="t-exp">Ksh 0</div>
+            <i class="fas fa-upload"></i>
+        </div>
     </div>
 
     <!-- Spare Parts Performance Cards -->
@@ -921,16 +1138,16 @@
 
     <!-- Spare Parts Stock -->
     <div class="section-title" style="margin-top: 5px;">
-        <span><i class="fas fa-cogs" style="color: var(--admin-accent); margin-right: 8px;"></i> SPARE PARTS STOCK</span>
+        <span><i class="fas fa-cogs"></i> SPARE PARTS STOCK</span>
     </div>
-    <input type="text" id="invSearch" class="search-input" placeholder="🔍 Search Spare Parts...">
+    <input type="text" id="invSearch" class="search-input" placeholder="🔍 Search by name or branch...">
     <div class="stock-grid" id="stock-list"></div>
     <button id="loadStockBtn" class="load-more">LOAD MORE SPARES</button>
 
     <!-- Recent Transactions -->
     <div class="recent-section">
         <div class="section-header">
-            <h3><i class="fas fa-clock" style="color: var(--admin-accent); margin-right: 8px;"></i> Recent Transactions</h3>
+            <h3><i class="fas fa-clock"></i> Recent Transactions</h3>
             <a href="sales-history.html" class="view-all">View All <i class="fas fa-arrow-right"></i></a>
         </div>
         <div class="transaction-list" id="recent-transactions">
@@ -964,12 +1181,23 @@
         sessionStorage.setItem('menuClicked', 'true');
     };
 
+    window.toggleProfileMenu = () => {
+        document.getElementById('profileDropdown').classList.toggle('active');
+    };
+
     window.confirmSwitchToCashier = (e) => {
         e.preventDefault();
         if(confirm("Are you sure you want to switch to Cashier Mode?")) {
             window.location.href = "cashier.html";
         }
     };
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.profile-menu')) {
+            document.getElementById('profileDropdown').classList.remove('active');
+        }
+    });
 
     // ==================== BRANCH FUNCTIONS ====================
     async function loadBranches() {
@@ -1033,6 +1261,10 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
+            // Update profile info
+            document.getElementById('profile-name').textContent = profile.full_name || 'Admin User';
+            document.getElementById('profile-email').textContent = user.email;
+            
             return profile;
         } catch (error) {
             console.error("Error loading profile:", error);
@@ -1064,133 +1296,151 @@
     async function loadDashboardData() {
         const branchFilter = selectedBranchId || currentBranchId;
         
-        // Set greeting to just "ADMIN"
-        document.getElementById('greeting-text').innerText = `GOOD DAY, ADMIN 👋`;
+        // Set greeting based on time of day
+        const hour = new Date().getHours();
+        let greeting = '';
+        let icon = '';
+        
+        if (hour < 12) {
+            greeting = 'Good Morning';
+            icon = 'fa-sun';
+        } else if (hour < 17) {
+            greeting = 'Good Afternoon';
+            icon = 'fa-cloud-sun';
+        } else {
+            greeting = 'Good Evening';
+            icon = 'fa-moon';
+        }
+        
+        document.getElementById('greeting-text').innerHTML = `<i class="fas ${icon}"></i> ${greeting}, Admin`;
 
-        // 1. LOAD SHIFT DATA - Show floats per branch
+        // 1. LOAD SHIFT DATA - Get LATEST shifts per branch (not just open)
         let shiftQuery = supabase
             .from('daily_shifts')
             .select('*')
-            .order('start_time', { ascending: false })
-            .limit(20); // Get more shifts to show per branch
+            .order('start_time', { ascending: false });
             
         if (branchFilter) {
-            shiftQuery = shiftQuery.eq('branch_id', branchFilter);
+            shiftQuery = shiftQuery.eq('branch_id', branchFilter).limit(1);
         }
         
         const { data: shifts } = await shiftQuery;
-        const openShift = shifts?.find(s => s.status === 'open');
-        const latestShift = shifts?.[0];
+        
+        // Group to get latest shift per branch
+        const latestShifts = {};
+        shifts?.forEach(shift => {
+            if (!latestShifts[shift.branch_id] || new Date(shift.start_time) > new Date(latestShifts[shift.branch_id].start_time)) {
+                latestShifts[shift.branch_id] = shift;
+            }
+        });
 
         // Display floats with branch indicators
         const floatsContainer = document.getElementById('floats-container');
         
         if (selectedBranchId === null) {
-            // Show floats for each branch when "All Branches" is selected
-            const branchShifts = {};
-            shifts?.forEach(shift => {
-                if (!branchShifts[shift.branch_id] && shift.status === 'open') {
-                    branchShifts[shift.branch_id] = shift;
-                }
-            });
-            
-            if (Object.keys(branchShifts).length > 0) {
-                floatsContainer.innerHTML = Object.values(branchShifts).map(shift => `
+            // Show floats for all branches using LATEST shifts
+            if (Object.keys(latestShifts).length > 0) {
+                floatsContainer.innerHTML = Object.values(latestShifts).map(shift => `
                     <div class="float-item">
-                        <label><i class="fas fa-store"></i> ${branches[shift.branch_id]?.code || '--'}</label>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 5px;">
-                            <div><i class="fas fa-mobile-alt"></i> ${shift.open_mpesa?.toLocaleString() || 0}</div>
-                            <div><i class="fas fa-money-bill-wave"></i> ${shift.open_cash?.toLocaleString() || 0}</div>
-                            <div><i class="fas fa-university"></i> ${shift.open_kcb?.toLocaleString() || 0}</div>
-                            <div><i class="fas fa-building"></i> ${shift.open_equity?.toLocaleString() || 0}</div>
+                        <div class="branch-label">
+                            <i class="fas fa-store"></i> ${branches[shift.branch_id]?.code || '--'}
+                            <span style="margin-left: auto; font-size: 0.55rem; color: ${shift.status === 'open' ? 'var(--success)' : 'var(--text-dim)'}">
+                                ${shift.status === 'open' ? '● OPEN' : '○ CLOSED'}
+                            </span>
+                        </div>
+                        <div class="float-details">
+                            <div class="float-detail">
+                                <small>M-PESA</small>
+                                <span>Ksh ${shift.open_mpesa?.toLocaleString() || 0}</span>
+                            </div>
+                            <div class="float-detail">
+                                <small>CASH</small>
+                                <span>Ksh ${shift.open_cash?.toLocaleString() || 0}</span>
+                            </div>
+                            <div class="float-detail">
+                                <small>KCB</small>
+                                <span>Ksh ${shift.open_kcb?.toLocaleString() || 0}</span>
+                            </div>
+                            <div class="float-detail">
+                                <small>EQUITY</small>
+                                <span>Ksh ${shift.open_equity?.toLocaleString() || 0}</span>
+                            </div>
                         </div>
                     </div>
                 `).join('');
             } else {
                 floatsContainer.innerHTML = `
-                    <div class="float-item"><label>M-Pesa</label><span>Ksh 0</span></div>
-                    <div class="float-item"><label>Cash</label><span>Ksh 0</span></div>
-                    <div class="float-item"><label>KCB</label><span>Ksh 0</span></div>
-                    <div class="float-item"><label>Equity</label><span>Ksh 0</span></div>
+                    <div class="float-item"><span>No shift data available</span></div>
                 `;
             }
         } else {
-            // Show single branch floats
-            const shift = openShift || latestShift;
+            // Show single branch floats (latest shift)
+            const shift = Object.values(latestShifts).find(s => s.branch_id === branchFilter);
             if (shift) {
                 floatsContainer.innerHTML = `
-                    <div class="float-item"><label><i class="fas fa-mobile-alt"></i> M-Pesa</label><span>Ksh ${shift.open_mpesa?.toLocaleString() || 0}</span></div>
-                    <div class="float-item"><label><i class="fas fa-money-bill-wave"></i> Cash</label><span>Ksh ${shift.open_cash?.toLocaleString() || 0}</span></div>
-                    <div class="float-item"><label><i class="fas fa-university"></i> KCB</label><span>Ksh ${shift.open_kcb?.toLocaleString() || 0}</span></div>
-                    <div class="float-item"><label><i class="fas fa-building"></i> Equity</label><span>Ksh ${shift.open_equity?.toLocaleString() || 0}</span></div>
+                    <div class="float-item">
+                        <div class="branch-label">
+                            <i class="fas fa-store"></i> ${branches[shift.branch_id]?.code || '--'}
+                            <span style="margin-left: auto; font-size: 0.55rem; color: ${shift.status === 'open' ? 'var(--success)' : 'var(--text-dim)'}">
+                                ${shift.status === 'open' ? '● OPEN' : '○ CLOSED'}
+                            </span>
+                        </div>
+                        <div class="float-details">
+                            <div class="float-detail">
+                                <small>M-PESA</small>
+                                <span>Ksh ${shift.open_mpesa?.toLocaleString() || 0}</span>
+                            </div>
+                            <div class="float-detail">
+                                <small>CASH</small>
+                                <span>Ksh ${shift.open_cash?.toLocaleString() || 0}</span>
+                            </div>
+                            <div class="float-detail">
+                                <small>KCB</small>
+                                <span>Ksh ${shift.open_kcb?.toLocaleString() || 0}</span>
+                            </div>
+                            <div class="float-detail">
+                                <small>EQUITY</small>
+                                <span>Ksh ${shift.open_equity?.toLocaleString() || 0}</span>
+                            </div>
+                        </div>
+                    </div>
                 `;
             }
         }
 
-        // Update shift status
-        if (openShift) {
+        // Update shift status (check if any shift is open)
+        const anyOpen = Object.values(latestShifts).some(s => s.status === 'open');
+        if (anyOpen) {
             document.getElementById('shift-status-text').innerText = 'SHIFT OPEN';
             document.getElementById('status-dot').className = 'status-dot open';
-            
-            const openTime = new Date(openShift.start_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-            document.getElementById('shift-start').innerHTML = `<i class="fas fa-play"></i> Opened: ${openTime}`;
-        } else if (latestShift) {
-            document.getElementById('shift-status-text').innerText = 'SHIFT CLOSED';
+        } else if (Object.keys(latestShifts).length > 0) {
+            document.getElementById('shift-status-text').innerText = 'ALL SHIFTS CLOSED';
             document.getElementById('status-dot').className = 'status-dot closed';
         } else {
             document.getElementById('shift-status-text').innerText = 'NO SHIFT';
             document.getElementById('status-dot').className = 'status-dot';
         }
 
-        // 2. CALCULATE PAYBILL PER BRANCH
+        // 2. CALCULATE PAYBILL PER BRANCH (all-time, not just current shift)
         const paybillContainer = document.getElementById('paybill-container');
+        const branchIds = selectedBranchId ? [selectedBranchId] : Object.keys(branches);
         
-        if (selectedBranchId === null) {
-            // Show paybill for all branches
-            const branchIds = Object.keys(branches);
-            let paybillHTML = '';
+        let paybillHTML = '';
+        
+        for (const branchId of branchIds) {
+            // Get all KCB Paybill sales for this branch
+            let paybillQuery = supabase
+                .from('sales')
+                .select('*')
+                .eq('payment_method', 'KCB Paybill')
+                .eq('branch_id', branchId);
             
-            for (const branchId of branchIds) {
-                let paybillQuery = supabase.from('sales').select('*').eq('payment_method', 'KCB Paybill').eq('branch_id', branchId);
-                let adminQuery = supabase.from('admin_expenses').select('*').eq('payment_source', 'KCB Paybill').eq('branch_id', branchId);
-                
-                const [paybillRes, adminRes] = await Promise.all([
-                    paybillQuery,
-                    adminQuery
-                ]);
-
-                let totalPaybillIncome = 0, pbProfit = 0;
-                paybillRes.data?.forEach(s => {
-                    totalPaybillIncome += parseFloat(s.total_amount || 0);
-                    pbProfit += (parseFloat(s.unit_price || 0) - parseFloat(s.cost_price || 0)) * parseInt(s.quantity || 0);
-                });
-
-                let manualFunding = 0, manualExpenses = 0;
-                adminRes.data?.forEach(r => {
-                    const val = parseFloat(r.amount || 0);
-                    if(r.type === 'funding') manualFunding += val;
-                    else manualExpenses += val;
-                });
-
-                const netPaybillBalance = (totalPaybillIncome + manualFunding) - manualExpenses;
-                
-                paybillHTML += `
-                    <div class="paybill-card">
-                        <div class="paybill-card-header">
-                            <i class="fas fa-credit-card"></i>
-                            <span class="branch-code"><i class="fas fa-store"></i> ${branches[branchId]?.code || '--'}</span>
-                        </div>
-                        <label>NET BALANCE</label>
-                        <div class="paybill-main-val">Ksh ${netPaybillBalance.toLocaleString()}</div>
-                        <div class="paybill-profit-val">Profit: Ksh ${pbProfit.toLocaleString()}</div>
-                    </div>
-                `;
-            }
-            paybillContainer.innerHTML = paybillHTML;
-        } else {
-            // Show single branch paybill
-            let paybillQuery = supabase.from('sales').select('*').eq('payment_method', 'KCB Paybill').eq('branch_id', branchFilter);
-            let adminQuery = supabase.from('admin_expenses').select('*').eq('payment_source', 'KCB Paybill').eq('branch_id', branchFilter);
+            // Get all admin expenses for this branch
+            let adminQuery = supabase
+                .from('admin_expenses')
+                .select('*')
+                .eq('payment_source', 'KCB Paybill')
+                .eq('branch_id', branchId);
             
             const [paybillRes, adminRes] = await Promise.all([
                 paybillQuery,
@@ -1212,35 +1462,90 @@
 
             const netPaybillBalance = (totalPaybillIncome + manualFunding) - manualExpenses;
             
-            paybillContainer.innerHTML = `
+            paybillHTML += `
                 <div class="paybill-card">
                     <div class="paybill-card-header">
-                        <i class="fas fa-credit-card"></i>
-                        <span class="branch-code"><i class="fas fa-store"></i> ${branches[branchFilter]?.code || '--'}</span>
+                        <div class="branch-info">
+                            <i class="fas fa-credit-card"></i>
+                            <span class="branch-code"><i class="fas fa-store"></i> ${branches[branchId]?.code || '--'}</span>
+                        </div>
                     </div>
                     <label>NET BALANCE</label>
                     <div class="paybill-main-val">Ksh ${netPaybillBalance.toLocaleString()}</div>
-                    <div class="paybill-profit-val">Profit: Ksh ${pbProfit.toLocaleString()}</div>
+                    <div class="paybill-profit-val">
+                        <i class="fas fa-chart-line"></i> Profit: Ksh ${pbProfit.toLocaleString()}
+                    </div>
                 </div>
             `;
         }
+        paybillContainer.innerHTML = paybillHTML;
 
-        // 3. LOAD SPARE PARTS DATA
-        let productsQuery = supabase.from('products').select('*').eq('category', 'Spare Part');
-        let salesQuery = supabase.from('sales').select('*').eq('category', 'Spare Part');
+        // 3. LOAD TODAY'S MONEY FLOW STATS
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        // Get today's sales
+        let salesQuery = supabase
+            .from('sales')
+            .select('*')
+            .gte('created_at', today.toISOString())
+            .lt('created_at', tomorrow.toISOString());
         
         if (branchFilter) {
-            productsQuery = productsQuery.eq('branch_id', branchFilter);
             salesQuery = salesQuery.eq('branch_id', branchFilter);
         }
         
-        const [productsRes, salesRes] = await Promise.all([
+        const { data: todaySales } = await salesQuery;
+        
+        let tRev = 0, tProf = 0;
+        todaySales?.forEach(s => {
+            tRev += parseFloat(s.total_amount || 0);
+            tProf += (parseFloat(s.unit_price || 0) - parseFloat(s.cost_price || 0)) * parseInt(s.quantity || 0);
+        });
+        
+        document.getElementById('t-rev').innerText = `Ksh ${tRev.toLocaleString()}`;
+        document.getElementById('t-prof').innerText = `Ksh ${tProf.toLocaleString()}`;
+
+        // Get today's cash transactions
+        let cashQuery = supabase
+            .from('cash_transactions')
+            .select('*')
+            .gte('created_at', today.toISOString())
+            .lt('created_at', tomorrow.toISOString());
+        
+        if (branchFilter) {
+            cashQuery = cashQuery.eq('branch_id', branchFilter);
+        }
+        
+        const { data: todayCash } = await cashQuery;
+        
+        let tIn = 0, tOut = 0;
+        todayCash?.forEach(t => {
+            if (t.type === 'Money In') tIn += parseFloat(t.amount || 0);
+            else if (t.type === 'Money Out') tOut += parseFloat(t.amount || 0);
+        });
+        
+        document.getElementById('t-in').innerText = `Ksh ${tIn.toLocaleString()}`;
+        document.getElementById('t-out').innerText = `Ksh ${tOut.toLocaleString()}`;
+
+        // 4. LOAD SPARE PARTS DATA (all-time)
+        let productsQuery = supabase.from('products').select('*').eq('category', 'Spare Part');
+        let salesAllQuery = supabase.from('sales').select('*').eq('category', 'Spare Part');
+        
+        if (branchFilter) {
+            productsQuery = productsQuery.eq('branch_id', branchFilter);
+            salesAllQuery = salesAllQuery.eq('branch_id', branchFilter);
+        }
+        
+        const [productsRes, salesAllRes] = await Promise.all([
             productsQuery,
-            salesQuery
+            salesAllQuery
         ]);
 
         const products = productsRes.data || [];
-        const sales = salesRes.data || [];
+        const salesAll = salesAllRes.data || [];
 
         // Process spare parts data
         const productTypeMap = {};
@@ -1258,7 +1563,7 @@
             stats[type].count++;
         });
 
-        sales.forEach(s => {
+        salesAll.forEach(s => {
             if (productTypeMap[s.product_id] || s.category === 'Spare Part') {
                 const type = productTypeMap[s.product_id] || 'General';
                 const amt = s.total_amount || 0;
@@ -1280,7 +1585,7 @@
         // Update charts
         updateCharts(stats);
 
-        // 4. LOAD ALL PRODUCTS FOR SPARES
+        // 5. LOAD ALL PRODUCTS FOR SPARES
         let allProductsQuery = supabase.from('products').select('*').order('name');
         if (branchFilter) {
             allProductsQuery = allProductsQuery.eq('branch_id', branchFilter);
@@ -1292,7 +1597,7 @@
         // Render spare parts list
         renderSpareParts();
 
-        // 5. LOAD RECENT TRANSACTIONS
+        // 6. LOAD RECENT TRANSACTIONS (last 10)
         let recentQuery = supabase
             .from('sales')
             .select(`
@@ -1418,9 +1723,11 @@
                     <div class="stock-header">
                         <div>
                             <div class="stock-name">${p.name}</div>
-                            <div class="stock-type">${p.part_type || 'Spare'} · <i class="fas fa-store"></i> ${branchCode}</div>
+                            <div class="stock-type">
+                                <i class="fas fa-store"></i> ${branchCode} · ${p.part_type || 'Spare'}
+                            </div>
                         </div>
-                        <div class="stock-qty">${p.stock_quantity} <small>QTY</small></div>
+                        <div class="stock-qty">${p.stock_quantity} <small>left</small></div>
                     </div>
                     <div class="stock-prices">
                         <div><span class="price-label">BUY</span><span class="price-value">Ksh ${p.cost_price}</span></div>
@@ -1462,6 +1769,11 @@
         }
         
         await loadDashboardData();
+        
+        // Hide hand if menu was clicked before
+        if (sessionStorage.getItem('menuClicked') === 'true') {
+            document.getElementById('onboardingHand').style.display = 'none';
+        }
     }
     
     init();
