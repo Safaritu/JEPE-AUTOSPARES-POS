@@ -1576,10 +1576,6 @@
 
     // ==================== DASHBOARD DATA LOADING ====================
     async function loadDashboardData() {
-        const branchFilter = selectedBranchId || currentBranchId;
-        
-        console.log("Loading dashboard data with branchFilter:", branchFilter);
-        
         // Set greeting based on time of day
         const hour = new Date().getHours();
         let greeting = '';
@@ -1598,34 +1594,31 @@
         
         document.getElementById('greeting-text').innerHTML = `<i class="fas ${icon}"></i> ${greeting}, Admin`;
 
-        // ========== 1. LOAD SHIFT DATA - Get ALL shifts for ALL branches ==========
-        // IMPORTANT: Remove the branch filter to get ALL shifts when "All Branches" is selected
+        // ========== 1. LOAD SHIFT DATA - Get ALL shifts when "All Branches" selected ==========
         let shiftQuery = supabase
             .from('daily_shifts')
             .select('*')
             .order('start_time', { ascending: false });
-        
-        // For single branch view, filter by branch
+
+        // IMPORTANT: Only filter by branch if a specific branch is selected
         if (selectedBranchId) {
+            // If a specific branch is selected, get ONLY that branch's shifts
             shiftQuery = shiftQuery.eq('branch_id', selectedBranchId);
+            console.log("Loading dashboard data for specific branch:", selectedBranchId);
+        } else {
+            console.log("Loading dashboard data for ALL branches");
         }
-        
+        // If selectedBranchId is null (All Branches), we DON'T filter by branch at all
+        // This ensures we get ALL shifts from ALL branches
+
         const { data: shifts } = await shiftQuery;
-        
         console.log("All shifts fetched:", shifts);
-        
-        // If we have a branchFilter but no selectedBranchId (meaning we're using user's branch),
-        // we need to filter the shifts
-        let shiftsToProcess = shifts;
-        if (branchFilter && !selectedBranchId) {
-            shiftsToProcess = shifts?.filter(s => s.branch_id === branchFilter);
-        }
-        
+
         // Group to get latest shift per branch
         const latestShifts = {};
-        
-        // Process shifts to get latest for EACH branch
-        shiftsToProcess?.forEach(shift => {
+
+        // Process ALL shifts to get latest for EACH branch
+        shifts?.forEach(shift => {
             const branchId = shift.branch_id;
             // If we don't have this branch yet, or this shift is newer than the one we have
             if (!latestShifts[branchId] || new Date(shift.start_time) > new Date(latestShifts[branchId].start_time)) {
