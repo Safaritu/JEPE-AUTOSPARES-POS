@@ -1759,12 +1759,17 @@
             }
         }
 
-        // Update shift status (check if any shift is open)
-        const anyOpen = Object.values(latestShifts).some(s => s?.status === 'open');
+        // ========== FIX 1: CORRECT SHIFT STATUS DETECTION ==========
+        // Check if ANY shift is open by looking at all shifts, not just latest per branch
+        let anyOpen = false;
+        if (shifts && shifts.length > 0) {
+            anyOpen = shifts.some(shift => shift?.status?.toLowerCase() === 'open');
+        }
+        
         if (anyOpen) {
             document.getElementById('shift-status-text').innerText = 'SHIFT OPEN';
             document.getElementById('status-dot').className = 'status-dot open';
-        } else if (Object.keys(latestShifts).length > 0) {
+        } else if (shifts && shifts.length > 0) {
             document.getElementById('shift-status-text').innerText = 'ALL SHIFTS CLOSED';
             document.getElementById('status-dot').className = 'status-dot closed';
         } else {
