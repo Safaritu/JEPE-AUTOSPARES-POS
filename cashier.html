@@ -1626,9 +1626,10 @@
     let refundingSale = null;
     let currentUserProfile = null;
     let currentBranchId = null;
+    let branches = {};
 
     // ============================================
-    // GET BRANCH ID FROM URL PARAMETER (FIX)
+    // GET BRANCH ID FROM URL PARAMETER
     // ============================================
     function getBranchIdFromUrl() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -1659,14 +1660,51 @@
         return session.role === 'admin';
     }
 
+    // Load branches for name lookup
+    async function loadBranches() {
+        const { data } = await supabase.from('branches').select('*');
+        branches = {};
+        data?.forEach(b => {
+            branches[b.id] = b;
+        });
+        return branches;
+    }
+
     async function loadUserProfile() {
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return null;
+            const { data: { user }, error } = await supabase.auth.getUser();
+            
+            // FIX: Don't redirect to login immediately - check if we have a session
+            if (error || !user) {
+                console.log("No authenticated user found, but checking for existing session");
+                
+                // Try to get session from localStorage
+                const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
+                if (session.user && session.profile) {
+                    console.log("Using session from localStorage");
+                    currentUser = session.user;
+                    currentUserProfile = session.profile;
+                    
+                    // Check if we have a branch from URL
+                    const urlBranchId = getBranchIdFromUrl();
+                    if (urlBranchId) {
+                        currentBranchId = urlBranchId;
+                    } else {
+                        currentBranchId = session.branch?.id || session.profile.branch_id;
+                    }
+                    
+                    return session.profile;
+                }
+                
+                // No session found, redirect to login
+                console.log("No session found, redirecting to login");
+                window.location.href = 'index.html';
+                return null;
+            }
             
             currentUser = user;
             
-            const { data: profile, error } = await supabase
+            const { data: profile, error: profileError } = await supabase
                 .from('profiles')
                 .select(`
                     *,
@@ -1680,7 +1718,7 @@
                 .eq('id', user.id)
                 .single();
             
-            if (error) throw error;
+            if (profileError) throw profileError;
             
             currentUserProfile = profile;
             
@@ -1704,46 +1742,29 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
-            const profileUserName = document.getElementById('profileUserName');
-            const profileUserEmail = document.getElementById('profileUserEmail');
-            const branchNameEl = document.getElementById('branch-name-display');
-            
-            if (profileUserName) profileUserName.textContent = user.email?.split('@')[0] || 'Cashier';
-            if (profileUserEmail) profileUserEmail.textContent = user.email;
-            
-            // Get branch name for display
-            let branchName = profile.branches?.name;
-            if (urlBranchId && branches[urlBranchId]) {
-                branchName = branches[urlBranchId].name;
-            }
-            
-            if (!branchNameEl && branchName) {
-                const headerRight = document.querySelector('.header-right');
-                if (headerRight) {
-                    const branchBadge = document.createElement('span');
-                    branchBadge.id = 'branch-name-display';
-                    branchBadge.className = 'branch-badge';
-                    branchBadge.style.cssText = 'background: var(--primary); color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; margin-right: 10px;';
-                    branchBadge.innerHTML = `<i class="fas fa-store"></i> ${branchName}`;
-                    headerRight.insertBefore(branchBadge, headerRight.firstChild);
-                }
-            }
-            
             return profile;
         } catch (error) {
             console.error("Error loading profile:", error);
+            
+            // Try to get session from localStorage as fallback
+            const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
+            if (session.user && session.profile) {
+                console.log("Using session from localStorage after error");
+                currentUser = session.user;
+                currentUserProfile = session.profile;
+                
+                const urlBranchId = getBranchIdFromUrl();
+                if (urlBranchId) {
+                    currentBranchId = urlBranchId;
+                } else {
+                    currentBranchId = session.branch?.id || session.profile.branch_id;
+                }
+                
+                return session.profile;
+            }
+            
             return null;
         }
-    }
-
-    // Load branches for name lookup
-    async function loadBranches() {
-        const { data } = await supabase.from('branches').select('*');
-        const branches = {};
-        data?.forEach(b => {
-            branches[b.id] = b;
-        });
-        return branches;
     }
 
     window.closeGasRedirect = function() {
@@ -2089,16 +2110,30 @@
     async function init() {
         try {
             // Load branches first for name lookup
-            const branchesData = await loadBranches();
+            await loadBranches();
             
             const profile = await loadUserProfile();
             if (!profile) {
-                window.location.href = 'index.html';
+                // Don't redirect - loadUserProfile already handles redirect
                 return;
             }
             
             const branchId = getCurrentBranchId();
             console.log("Current branch ID for cashier:", branchId);
+
+            // Update display with branch name
+            const branchNameEl = document.getElementById('branch-name-display');
+            if (!branchNameEl && branchId && branches[branchId]) {
+                const headerRight = document.querySelector('.header-right');
+                if (headerRight) {
+                    const branchBadge = document.createElement('span');
+                    branchBadge.id = 'branch-name-display';
+                    branchBadge.className = 'branch-badge';
+                    branchBadge.style.cssText = 'background: var(--primary); color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; margin-right: 10px;';
+                    branchBadge.innerHTML = `<i class="fas fa-store"></i> ${branches[branchId].name}`;
+                    headerRight.insertBefore(branchBadge, headerRight.firstChild);
+                }
+            }
 
             updateGreeting();
             setInterval(updateGreeting, 60000);
