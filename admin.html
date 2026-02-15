@@ -1464,6 +1464,7 @@
             return;
         }
         // Redirect to cashier page with selected branch ID
+        console.log("Switching to cashier with branch ID:", selectedCashierBranch);
         window.location.href = `cashier.html?branch=${selectedCashierBranch}`;
     };
 
@@ -1488,6 +1489,9 @@
             branches[b.id] = b;
             branchIdMap[b.code] = b.id;
         });
+        
+        console.log("Branches loaded:", branches);
+        console.log("Branch ID Map:", branchIdMap);
         
         // Populate branch selector
         const selector = document.getElementById('branchSelector');
@@ -1566,12 +1570,15 @@
             }
         }
         
+        console.log("Branch changed - selectedBranchId:", selectedBranchId);
         await loadDashboardData();
     };
 
     // ==================== DASHBOARD DATA LOADING ====================
     async function loadDashboardData() {
         const branchFilter = selectedBranchId || currentBranchId;
+        
+        console.log("Loading dashboard data with branchFilter:", branchFilter);
         
         // Set greeting based on time of day
         const hour = new Date().getHours();
@@ -1591,24 +1598,34 @@
         
         document.getElementById('greeting-text').innerHTML = `<i class="fas ${icon}"></i> ${greeting}, Admin`;
 
-        // ========== 1. LOAD SHIFT DATA - Get LATEST shifts per branch (open OR closed) ==========
+        // ========== 1. LOAD SHIFT DATA - Get ALL shifts for ALL branches ==========
+        // IMPORTANT: Remove the branch filter to get ALL shifts when "All Branches" is selected
         let shiftQuery = supabase
             .from('daily_shifts')
             .select('*')
             .order('start_time', { ascending: false });
-            
-        // For single branch view, get that branch's latest shift
-        if (branchFilter) {
-            shiftQuery = shiftQuery.eq('branch_id', branchFilter).limit(1);
+        
+        // For single branch view, filter by branch
+        if (selectedBranchId) {
+            shiftQuery = shiftQuery.eq('branch_id', selectedBranchId);
         }
         
         const { data: shifts } = await shiftQuery;
         
-        // Group to get latest shift per branch (for all branches view)
+        console.log("All shifts fetched:", shifts);
+        
+        // If we have a branchFilter but no selectedBranchId (meaning we're using user's branch),
+        // we need to filter the shifts
+        let shiftsToProcess = shifts;
+        if (branchFilter && !selectedBranchId) {
+            shiftsToProcess = shifts?.filter(s => s.branch_id === branchFilter);
+        }
+        
+        // Group to get latest shift per branch
         const latestShifts = {};
         
-        // Process ALL shifts to get latest for EACH branch
-        shifts?.forEach(shift => {
+        // Process shifts to get latest for EACH branch
+        shiftsToProcess?.forEach(shift => {
             const branchId = shift.branch_id;
             // If we don't have this branch yet, or this shift is newer than the one we have
             if (!latestShifts[branchId] || new Date(shift.start_time) > new Date(latestShifts[branchId].start_time)) {
@@ -1616,7 +1633,14 @@
             }
         });
 
-        console.log("Latest shifts per branch:", latestShifts); // Debug log
+        console.log("Latest shifts per branch:", latestShifts);
+
+        // Check specifically for Kitui branch
+        const kituiId = branchIdMap['KIT'];
+        if (kituiId) {
+            console.log("Kitui branch ID:", kituiId);
+            console.log("Kitui latest shift:", latestShifts[kituiId]);
+        }
 
         // ========== DISPLAY FLOATS - Show ALL branches when "All Branches" selected ==========
         const floatsContainer = document.getElementById('floats-container');
@@ -1628,7 +1652,7 @@
             if (branchIds.length > 0) {
                 let floatsHtml = '';
                 
-                // Create a card for EACH branch, even if no shift data exists
+                // Create a card for EACH branch
                 branchIds.forEach(branchId => {
                     const branch = branches[branchId];
                     const shift = latestShifts[branchId];
@@ -1686,9 +1710,9 @@
                 `;
             }
         } else {
-            // Show single branch floats (latest shift)
-            const branch = branches[branchFilter];
-            const shift = latestShifts[branchFilter];
+            // Show single branch floats
+            const branch = branches[selectedBranchId];
+            const shift = latestShifts[selectedBranchId];
             
             if (branch) {
                 floatsContainer.innerHTML = `
@@ -1868,9 +1892,12 @@
         let productsQuery = supabase.from('products').select('*');
         let salesQuery = supabase.from('sales').select('*, products(*)');
         
-        if (branchFilter) {
-            productsQuery = productsQuery.eq('branch_id', branchFilter);
-            salesQuery = salesQuery.eq('branch_id', branchFilter);
+        if (selectedBranchId) {
+            productsQuery = productsQuery.eq('branch_id', selectedBranchId);
+            salesQuery = salesQuery.eq('branch_id', selectedBranchId);
+        } else if (currentBranchId) {
+            productsQuery = productsQuery.eq('branch_id', currentBranchId);
+            salesQuery = salesQuery.eq('branch_id', currentBranchId);
         }
         
         const [productsRes, salesRes] = await Promise.all([
@@ -1967,8 +1994,10 @@
             .order('created_at', { ascending: false })
             .limit(10);
             
-        if (branchFilter) {
-            recentQuery = recentQuery.eq('branch_id', branchFilter);
+        if (selectedBranchId) {
+            recentQuery = recentQuery.eq('branch_id', selectedBranchId);
+        } else if (currentBranchId) {
+            recentQuery = recentQuery.eq('branch_id', currentBranchId);
         }
         
         const { data: recentSales } = await recentQuery;
