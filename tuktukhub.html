@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JEPE ADMIN | TUKTUK Hub - Multi-Branch</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { 
+            --admin-dark: #0f172a; 
+            --tuktuk-accent: #8b5cf6; /* Purple for TUKTUK */
+            --bg: #f8fafc;
+            --white: #ffffff; 
+            --text: #1e293b; 
+            --border: #e2e8f0; 
+            --sidebar-width: 260px;
+            --sidebar-collapsed: 70px; 
+            --green: #10b981; 
+            --blue: #2563eb;
+            --primary: #4f46e5;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg); 
+            margin: 0; 
+            display: flex; 
+            color: var(--text); 
+            min-height: 100vh; 
+        }
+        
+        /* Sidebar */
+        .sidebar { 
+            width: var(--sidebar-collapsed); 
+            height: 100vh; 
+            background: var(--admin-dark); 
+            color: white; 
+            padding: 20px 10px; 
+            position: fixed; 
+            transition: 0.3s; 
+            overflow-x: hidden; 
+            z-index: 2000; 
+        }
+        
+        .sidebar:hover, .sidebar.mobile-active { 
+            width: var(--sidebar-width); 
+        }
+        
+        .sidebar-header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            margin-bottom: 30px; 
+            padding: 0 10px; 
+        }
+        
+        .sidebar h2 { 
+            font-size: 1.2rem; 
+            margin: 0; 
+            white-space: nowrap; 
+            opacity: 0; 
+            transition: 0.3s; 
+        }
+        
+        .sidebar:hover h2, .sidebar.mobile-active h2 { 
+            opacity: 1; 
+        }
+        
+        .close-btn { 
+            display: none; 
+            background: none; 
+            border: none; 
+            color: white; 
+            font-size: 1.5rem; 
+            cursor: pointer; 
+        }
+
+        .nav-link { 
+            display: flex; 
+            align-items: center; 
+            padding: 12px; 
+            color: #94a3b8; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            margin-bottom: 5px; 
+            transition: 0.3s; 
+        }
+        
+        .nav-link i { 
+            min-width: 30px; 
+            font-size: 1.2rem; 
+            text-align: center; 
+        }
+        
+        .nav-link span { 
+            opacity: 0; 
+            white-space: nowrap; 
+            transition: 0.3s; 
+            margin-left: 15px; 
+        }
+        
+        .sidebar:hover .nav-link span, 
+        .sidebar.mobile-active .nav-link span { 
+            opacity: 1; 
+        }
+        
+        .nav-link:hover, .nav-link.active { 
+            background: var(--tuktuk-accent); 
+            color: white; 
+        }
+        
+        /* Branch Info in Sidebar */
+        .branch-info {
+            padding: 10px;
+            margin: 10px 0 20px;
+            background: rgba(139, 92, 246, 0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .branch-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            color: #94a3b8;
+        }
+        
+        .branch-name {
+            font-weight: 800;
+            color: white;
+            font-size: 0.85rem;
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .branch-name i { color: var(--tuktuk-accent); }
+        
+        /* Menu Trigger */
+        .menu-trigger { 
+            display: none; 
+            position: fixed; 
+            top: 15px; 
+            left: 15px; 
+            z-index: 1500; 
+            background: var(--admin-dark); 
+            color: white; 
+            border: none; 
+            padding: 10px 15px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+            font-weight: 700; 
+        }
+
+        .main-content { 
+            margin-left: var(--sidebar-collapsed); 
+            padding: 30px; 
+            width: calc(100% - var(--sidebar-collapsed)); 
+            transition: 0.3s; 
+            box-sizing: border-box; 
+        }
+        
+        /* Branch Selector */
+        .branch-selector-container {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        
+        .branch-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .branch-select {
+            padding: 12px 20px;
+            border-radius: 30px;
+            border: 2px solid var(--tuktuk-accent);
+            background: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text);
+            cursor: pointer;
+            min-width: 220px;
+            outline: none;
+        }
+        
+        .branch-badge {
+            background: var(--tuktuk-accent);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .date-range {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        /* Stats Cards */
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
+            gap: 20px; 
+            margin-bottom: 25px; 
+        }
+        
+        .stat-card { 
+            padding: 20px; 
+            border-radius: 15px; 
+            color: white; 
+        }
+        
+        .card-purple { background: #8b5cf6; } 
+        .card-green { background: #10b981; } 
+        .card-blue { background: #2563eb; } 
+        .card-dark { background: #1e293b; }
+        
+        /* Financial Segments */
+        .segment-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
+            gap: 20px; 
+            margin-bottom: 30px; 
+        }
+        
+        .segment-card { 
+            background: white; 
+            border-radius: 15px; 
+            border: 1px solid var(--border); 
+            padding: 20px; 
+        }
+        
+        .segment-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 15px; 
+            border-bottom: 1px solid var(--border); 
+            padding-bottom: 10px; 
+        }
+        
+        .segment-row { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 8px; 
+            font-size: 0.95rem; 
+        }
+        
+        .segment-row span:last-child { 
+            font-weight: 700; 
+        }
+
+        /* Model Type Filters */
+        .model-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            border-radius: 30px;
+            border: 1px solid var(--border);
+            background: white;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .filter-btn.active {
+            background: var(--tuktuk-accent);
+            color: white;
+            border-color: var(--tuktuk-accent);
+        }
+
+        .charts-container { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); 
+            gap: 20px; 
+            margin-bottom: 30px; 
+        }
+        
+        .chart-box { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 15px; 
+            border: 1px solid var(--border); 
+            height: 300px;
+            position: relative;
+        }
+        
+        .chart-box canvas {
+            max-height: 250px;
+            width: 100% !important;
+        }
+
+        .table-container { 
+            background: white; 
+            border-radius: 15px; 
+            padding: 20px; 
+            border: 1px solid var(--border); 
+            overflow-x: auto; 
+        }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            min-width: 800px; 
+        }
+        
+        th { 
+            text-align: left; 
+            color: #64748b; 
+            font-size: 0.75rem; 
+            text-transform: uppercase; 
+            padding: 12px; 
+            border-bottom: 1px solid var(--border); 
+            font-weight: 800;
+        }
+        
+        td { 
+            padding: 12px; 
+            border-bottom: 1px solid var(--border); 
+            font-size: 0.9rem; 
+        }
+        
+        .branch-pill {
+            background: #f1f5f9;
+            color: var(--text-dim);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: inline-block;
+        }
+        
+        .model-badge {
+            background: #ede9fe;
+            color: #6d28d9;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: inline-block;
+        }
+        
+        .type-badge {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .btn-load { 
+            display: block; 
+            width: 220px; 
+            margin: 25px auto; 
+            padding: 12px; 
+            background: white; 
+            border: 2px solid var(--tuktuk-accent); 
+            color: var(--tuktuk-accent); 
+            border-radius: 10px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: 0.3s; 
+        }
+        
+        .btn-load:hover { 
+            background: var(--tuktuk-accent); 
+            color: white; 
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-dim);
+        }
+
+        @media (max-width: 768px) {
+            .menu-trigger { display: block; }
+            .sidebar { transform: translateX(-100%); width: var(--sidebar-width); }
+            .sidebar.mobile-active { transform: translateX(0); }
+            .sidebar:hover { width: var(--sidebar-width); }
+            .close-btn { display: block; }
+            .main-content { margin-left: 0; width: 100%; padding: 80px 20px 20px; }
+            .charts-container { grid-template-columns: 1fr; }
+            .branch-selector-container { flex-direction: column; align-items: flex-start; }
+            .branch-filter { width: 100%; }
+            .branch-select { width: 100%; }
+            .chart-box { height: 250px; }
+        }
+    </style>
+</head>
+<body>
+    <button class="menu-trigger" onclick="toggleMenu()">☰ MENU</button>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>JEPE ADMIN</h2>
+            <button class="close-btn" onclick="toggleMenu()">×</button>
+        </div>
+        
+        <!-- Branch Info Display -->
+        <div class="branch-info" id="sidebarBranchInfo">
+            <div class="branch-label">Your Assigned Branch</div>
+            <div class="branch-name" id="sidebarBranchName">
+                <i class="fas fa-store"></i>
+                <span>Loading...</span>
+            </div>
+        </div>
+        
+        <nav>
+            <a href="admin.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            <a href="gas_hub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
+            <a href="spares_hub.html" class="nav-link"><i class="fas fa-cogs"></i> <span>Spare Parts Hub</span></a>
+            <a href="motorbike_hub.html" class="nav-link"><i class="fas fa-motorcycle"></i> <span>Motorbike Hub</span></a>
+            <a href="tuktuk_hub.html" class="nav-link active"><i class="fas fa-car-side"></i> <span>TUKTUK Hub</span></a>
+            <a href="shift-history.html" class="nav-link"><i class="fas fa-history"></i> <span>Daily Shifts</span></a>
+            <a href="money-history.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
+            <a href="sales-history.html" class="nav-link"><i class="fas fa-chart-line"></i> <span>Sales History</span></a>
+            <a href="inventory.html" class="nav-link"><i class="fas fa-plus-circle"></i> <span>Add Stock</span></a>
+            <a href="sales_editor.html" class="nav-link"><i class="fas fa-edit"></i> <span>Edit Stock</span></a>
+            <a href="admin-debtors.html" class="nav-link"><i class="fas fa-users"></i> <span>Debtors</span></a>
+            <a href="low_stock.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
+            <a href="audit_trail.html" class="nav-link"><i class="fas fa-search"></i> <span>Inventory Track</span></a>
+            <a href="reports.html" class="nav-link"><i class="fas fa-file-alt"></i> <span>Reports</span></a>
+            <a href="price_audits.html" class="nav-link"><i class="fas fa-tags"></i> <span>Underpriced</span></a>
+            <a href="suppliers.html" class="nav-link"><i class="fas fa-handshake"></i> <span>Suppliers</span></a>
+            <a href="admin.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <!-- Branch Selector -->
+        <div class="branch-selector-container">
+            <div class="branch-filter">
+                <i class="fas fa-store" style="color: var(--tuktuk-accent); font-size: 1.1rem;"></i>
+                <select id="branchSelector" class="branch-select" onchange="handleBranchChange()">
+                    <option value="all">🏢 ALL BRANCHES (Consolidated)</option>
+                </select>
+            </div>
+            <div class="branch-badge" id="currentBranchBadge">
+                <i class="fas fa-store"></i>
+                <span id="currentBranchDisplay">ALL BRANCHES</span>
+            </div>
+            <span class="date-range" id="dateRange"></span>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card card-purple">
+                <small>TUKTUKS IN STOCK</small>
+                <div id="total-units" style="font-size:1.4rem; font-weight:800;">0</div>
+            </div>
+            <div class="stat-card card-green">
+                <small>UNITS SOLD (TOTAL)</small>
+                <div id="units-sold" style="font-size:1.4rem; font-weight:800;">0</div>
+            </div>
+            <div class="stat-card card-blue">
+                <small>TOTAL REVENUE</small>
+                <div id="total-rev" style="font-size:1.4rem; font-weight:800;">Ksh 0</div>
+            </div>
+            <div class="stat-card card-dark">
+                <small>TOTAL PROFIT</small>
+                <div id="total-prof" style="font-size:1.4rem; font-weight:800;">Ksh 0</div>
+            </div>
+        </div>
+
+        <!-- Financial Segments -->
+        <div class="segment-grid">
+            <div class="segment-card">
+                <div class="segment-header">
+                    <span style="font-weight:800; color:var(--tuktuk-accent)">🚖 INVENTORY VALUATION</span>
+                    <span id="inventoryBranch" style="font-size:0.7rem; color:var(--text-dim);">(All Branches)</span>
+                </div>
+                <div class="segment-row"><span>Total Inventory Cost:</span> <span id="inv-cost">Ksh 0</span></div>
+                <div class="segment-row"><span>Projected Profit:</span> <span id="inv-proj-profit" style="color:var(--green)">Ksh 0</span></div>
+                <div class="segment-row"><span>Avg. Unit Cost:</span> <span id="avg-unit-cost">Ksh 0</span></div>
+                <div class="segment-row"><span>Passenger Tuktuks:</span> <span id="passenger-count">0</span></div>
+                <div class="segment-row"><span>Cargo Tuktuks:</span> <span id="cargo-count">0</span></div>
+            </div>
+            <div class="segment-card">
+                <div class="segment-header">
+                    <span style="font-weight:800; color:var(--blue)">📈 SALES PERFORMANCE</span>
+                    <span id="salesBranch" style="font-size:0.7rem; color:var(--text-dim);">(All Branches)</span>
+                </div>
+                <div class="segment-row"><span>All-Time Sales:</span> <span id="total-sales-val">Ksh 0</span></div>
+                <div class="segment-row"><span>Actual Profit:</span> <span id="total-profit-val" style="color:var(--green)">Ksh 0</span></div>
+                <div class="segment-row"><span>Today's Profit:</span> <span id="today-profit-val">Ksh 0</span></div>
+                <div class="segment-row"><span>Best Selling Model:</span> <span id="best-model">-</span></div>
+            </div>
+        </div>
+
+        <!-- Model Type Filters -->
+        <div class="model-filters">
+            <button class="filter-btn active" onclick="filterByType('all')">All Tuktuks</button>
+            <button class="filter-btn" onclick="filterByType('Passenger')">🚖 Passenger</button>
+            <button class="filter-btn" onclick="filterByType('Cargo')">📦 Cargo</button>
+            <button class="filter-btn" onclick="filterByType('Spare Part')">🔧 Spare Parts</button>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-container">
+            <div class="chart-box">
+                <h4 style="margin-top:0; margin-bottom:15px;">Stock vs Sold by Model</h4>
+                <canvas id="tuktukStockChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <h4 style="margin-top:0; margin-bottom:15px;">Revenue Distribution</h4>
+                <canvas id="tuktukRevChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Detailed Table -->
+        <div class="table-container">
+            <h3>🚖 TUKTUK Model Performance <span id="tableBranch" style="font-size:0.8rem; color:var(--text-dim);">(All Branches)</span></h3>
+            <table id="tuktuk-table">
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>In Stock</th>
+                        <th>Sold</th>
+                        <th>Revenue</th>
+                        <th>Profit</th>
+                        <th>Margin</th>
+                        <th>Branch</th>
+                    </tr>
+                </thead>
+                <tbody id="tuktuk-table-body">
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 40px;">
+                            <div class="spinner" style="margin: 0 auto;"></div>
+                            Loading data...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <button id="loadMoreBtn" class="btn-load">Load More Models</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { supabase } from './auth.js';
+        
+        // Mobile Sidebar Function
+        window.toggleMenu = function() {
+            document.getElementById('sidebar').classList.toggle('mobile-active');
+        };
+
+        let displayLimit = 10;
+        let allTuktukData = [];
+        let currentUser = null;
+        let currentBranchId = null;
+        let currentBranch = null;
+        let selectedBranchId = null;
+        let branches = {};
+        let branchIdMap = {};
+        let tuktukStockChart = null;
+        let tuktukRevChart = null;
+        let currentTypeFilter = 'all';
+
+        // Filter function
+        window.filterByType = function(type) {
+            currentTypeFilter = type;
+            
+            // Update active button states
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            displayTable();
+            updateCharts(getFilteredData());
+        };
+
+        // ==================== BRANCH FUNCTIONS ====================
+
+        async function loadBranches() {
+            const { data } = await supabase.from('branches').select('*');
+            branches = {};
+            branchIdMap = {};
+            data?.forEach(b => {
+                branches[b.id] = b;
+                branchIdMap[b.code] = b.id;
+            });
+            
+            // Populate branch selector
+            const selector = document.getElementById('branchSelector');
+            let options = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>';
+            data?.forEach(b => {
+                options += `<option value="${b.code}">🏪 ${b.name}</option>`;
+            });
+            selector.innerHTML = options;
+            
+            return branches;
+        }
+
+        function getBranchIdFromCode(code) {
+            return branchIdMap[code] || null;
+        }
+
+        async function loadUserProfile() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    window.location.href = 'index.html';
+                    return null;
+                }
+                
+                currentUser = user;
+                
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select(`
+                        *,
+                        branches (
+                            id,
+                            name,
+                            code,
+                            location
+                        )
+                    `)
+                    .eq('id', user.id)
+                    .single();
+                
+                if (error) throw error;
+                
+                currentBranchId = profile.branch_id;
+                currentBranch = profile.branches;
+                
+                const session = {
+                    user: user,
+                    profile: profile,
+                    branch: profile.branches,
+                    role: profile.role
+                };
+                localStorage.setItem('pos_session', JSON.stringify(session));
+                
+                // Update sidebar with user's assigned branch
+                const sidebarBranchName = document.querySelector('#sidebarBranchName span');
+                if (profile.branches && sidebarBranchName) {
+                    sidebarBranchName.textContent = profile.branches.name;
+                }
+                
+                return profile;
+            } catch (error) {
+                console.error("❌ Error loading profile:", error);
+                return null;
+            }
+        }
+
+        window.handleBranchChange = async function() {
+            const selector = document.getElementById('branchSelector');
+            const selectedCode = selector.value;
+            
+            const branchDisplay = document.getElementById('currentBranchDisplay');
+            const inventoryBranch = document.getElementById('inventoryBranch');
+            const salesBranch = document.getElementById('salesBranch');
+            const tableBranch = document.getElementById('tableBranch');
+            const dateRange = document.getElementById('dateRange');
+            
+            if (selectedCode === 'all') {
+                branchDisplay.textContent = 'ALL BRANCHES';
+                if (inventoryBranch) inventoryBranch.textContent = '(All Branches)';
+                if (salesBranch) salesBranch.textContent = '(All Branches)';
+                if (tableBranch) tableBranch.textContent = '(All Branches)';
+                selectedBranchId = null;
+                dateRange.textContent = 'Showing all branches';
+            } else {
+                const branchId = getBranchIdFromCode(selectedCode);
+                if (branchId) {
+                    selectedBranchId = branchId;
+                    branchDisplay.textContent = branches[branchId].name;
+                    if (inventoryBranch) inventoryBranch.textContent = `(${branches[branchId].name})`;
+                    if (salesBranch) salesBranch.textContent = `(${branches[branchId].name})`;
+                    if (tableBranch) tableBranch.textContent = `(${branches[branchId].name})`;
+                    dateRange.textContent = `Showing ${branches[branchId].name} only`;
+                }
+            }
+            
+            // Reset and reload data
+            displayLimit = 10;
+            await loadData();
+        };
+
+        function extractTuktukType(product) {
+            // Try to extract type from name or use a default
+            const name = product.name || '';
+            if (name.toLowerCase().includes('passenger') || name.toLowerCase().includes('p')) return 'Passenger';
+            if (name.toLowerCase().includes('cargo') || name.toLowerCase().includes('c')) return 'Cargo';
+            if (name.toLowerCase().includes('spare') || product.category === 'Spare Part') return 'Spare Part';
+            return 'Passenger'; // Default
+        }
+
+        async function loadData() {
+            // Show loading state
+            document.getElementById('tuktuk-table-body').innerHTML = `
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 40px;">
+                        <div class="spinner" style="margin: 0 auto;"></div>
+                        Loading data...
+                    </td>
+                </tr>
+            `;
+
+            try {
+                // Build product query - get TUKTUK products
+                let productsQuery = supabase
+                    .from('products')
+                    .select('*')
+                    .eq('category', 'Tuktuk');
+                
+                if (selectedBranchId) {
+                    productsQuery = productsQuery.eq('branch_id', selectedBranchId);
+                }
+                
+                // Build sales query for TUKTUK products
+                let salesQuery = supabase
+                    .from('sales')
+                    .select('*')
+                    .eq('category', 'Tuktuk');
+                
+                if (selectedBranchId) {
+                    salesQuery = salesQuery.eq('branch_id', selectedBranchId);
+                }
+
+                const [productsRes, salesRes] = await Promise.all([
+                    productsQuery,
+                    salesQuery
+                ]);
+
+                const products = productsRes.data || [];
+                const sales = salesRes.data || [];
+                
+                render(products, sales);
+            } catch (error) {
+                console.error("Error loading data:", error);
+                document.getElementById('tuktuk-table-body').innerHTML = `
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 40px; color: #ef4444;">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                            Error loading data: ${error.message}
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function render(products, sales) {
+            const today = new Date().toLocaleDateString();
+            let tRev = 0, tProf = 0, tSold = 0, tStock = 0, tInvCost = 0, tProjProfit = 0, todayProf = 0;
+            let passengerCount = 0, cargoCount = 0;
+            const perfMap = {};
+
+            products.forEach(p => {
+                const stock = p.stock_quantity || 0;
+                const cost = p.cost_price || 0;
+                const price = p.selling_price || 0;
+                tStock += stock;
+                tInvCost += (stock * cost);
+                tProjProfit += (stock * (price - cost));
+                
+                // Count by type
+                const type = extractTuktukType(p);
+                if (type === 'Passenger') passengerCount++;
+                if (type === 'Cargo') cargoCount++;
+                
+                perfMap[p.id] = {
+                    id: p.id,
+                    name: p.name,
+                    type: type,
+                    stock: stock,
+                    sold: 0,
+                    rev: 0,
+                    prof: 0,
+                    cost_price: cost,
+                    selling_price: price,
+                    branch_id: p.branch_id,
+                    branch_code: branches[p.branch_id]?.code || '--',
+                    status: stock > 0 ? 'In Stock' : 'Out of Stock'
+                };
+            });
+
+            sales.forEach(s => {
+                const amt = s.total_amount || 0;
+                const cost = (s.cost_price || 0) * (s.quantity || 1);
+                const profit = amt - cost;
+                tRev += amt;
+                tProf += profit;
+                tSold += (s.quantity || 0);
+                
+                const saleDate = new Date(s.created_at).toLocaleDateString();
+                if (saleDate === today) {
+                    todayProf += profit;
+                }
+                
+                if (perfMap[s.product_id]) {
+                    perfMap[s.product_id].sold += (s.quantity || 0);
+                    perfMap[s.product_id].rev += amt;
+                    perfMap[s.product_id].prof += profit;
+                }
+            });
+
+            // Update summary stats
+            document.getElementById('total-units').innerText = tStock;
+            document.getElementById('units-sold').innerText = tSold;
+            document.getElementById('total-rev').innerText = `Ksh ${tRev.toLocaleString()}`;
+            document.getElementById('total-prof').innerText = `Ksh ${tProf.toLocaleString()}`;
+            document.getElementById('inv-cost').innerText = `Ksh ${tInvCost.toLocaleString()}`;
+            document.getElementById('inv-proj-profit').innerText = `Ksh ${tProjProfit.toLocaleString()}`;
+            document.getElementById('avg-unit-cost').innerText = `Ksh ${(tStock > 0 ? (tInvCost/tStock) : 0).toLocaleString()}`;
+            document.getElementById('total-sales-val').innerText = `Ksh ${tRev.toLocaleString()}`;
+            document.getElementById('total-profit-val').innerText = `Ksh ${tProf.toLocaleString()}`;
+            document.getElementById('today-profit-val').innerText = `Ksh ${todayProf.toLocaleString()}`;
+            document.getElementById('passenger-count').innerText = passengerCount;
+            document.getElementById('cargo-count').innerText = cargoCount;
+
+            // Find best selling model
+            allTuktukData = Object.values(perfMap).sort((a, b) => b.rev - a.rev);
+            if (allTuktukData.length > 0) {
+                document.getElementById('best-model').innerText = allTuktukData[0].name;
+            }
+            
+            // Destroy existing charts if they exist
+            if (tuktukStockChart) {
+                tuktukStockChart.destroy();
+                tuktukStockChart = null;
+            }
+            if (tuktukRevChart) {
+                tuktukRevChart.destroy();
+                tuktukRevChart = null;
+            }
+            
+            displayTable();
+            
+            // Small delay to ensure canvas is ready
+            setTimeout(() => {
+                updateCharts(getFilteredData());
+            }, 100);
+        }
+
+        function getFilteredData() {
+            if (currentTypeFilter === 'all') {
+                return allTuktukData;
+            }
+            return allTuktukData.filter(item => item.type === currentTypeFilter);
+        }
+
+        function displayTable() {
+            const tbody = document.getElementById('tuktuk-table-body');
+            const filteredData = getFilteredData();
+            
+            if (filteredData.length === 0) {
+                const branchName = selectedBranchId ? branches[selectedBranchId]?.name : 'All Branches';
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-dim);">
+                            <i class="fas fa-car-side" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                            No TUKTUK products found for ${branchName}
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('loadMoreBtn').style.display = 'none';
+                return;
+            }
+            
+            tbody.innerHTML = filteredData.slice(0, displayLimit).map(m => {
+                const margin = m.selling_price - m.cost_price;
+                const marginPercent = m.selling_price > 0 ? ((margin / m.selling_price) * 100).toFixed(1) : 0;
+                
+                return `
+                <tr>
+                    <td><strong>${m.name}</strong></td>
+                    <td><span class="type-badge">${m.type}</span></td>
+                    <td><span style="color: ${m.stock > 0 ? '#10b981' : '#ef4444'}">• ${m.status}</span></td>
+                    <td>${m.stock}</td>
+                    <td>${m.sold}</td>
+                    <td>Ksh ${m.rev.toLocaleString()}</td>
+                    <td style="color:#10b981">Ksh ${m.prof.toLocaleString()}</td>
+                    <td>${marginPercent}%</td>
+                    <td><span class="branch-pill">${m.branch_code}</span></td>
+                </tr>
+            `}).join('');
+            
+            document.getElementById('loadMoreBtn').style.display = displayLimit >= filteredData.length ? 'none' : 'block';
+        }
+
+        function updateCharts(data) {
+            // Only show top 5 models in charts
+            const chartData = data.slice(0, 5);
+            
+            if (chartData.length === 0) {
+                // Clear charts if no data
+                const stockCtx = document.getElementById('tuktukStockChart').getContext('2d');
+                const revCtx = document.getElementById('tuktukRevChart').getContext('2d');
+                stockCtx.clearRect(0, 0, stockCtx.canvas.width, stockCtx.canvas.height);
+                revCtx.clearRect(0, 0, revCtx.canvas.width, revCtx.canvas.height);
+                return;
+            }
+            
+            const labels = chartData.map(d => d.name.length > 15 ? d.name.substring(0, 12) + '...' : d.name);
+            
+            // Stock vs Sold Chart
+            const stockCtx = document.getElementById('tuktukStockChart').getContext('2d');
+            tuktukStockChart = new Chart(stockCtx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        { 
+                            label: 'Stock', 
+                            data: chartData.map(d => d.stock), 
+                            backgroundColor: '#8b5cf6',
+                            barPercentage: 0.8,
+                            categoryPercentage: 0.9
+                        },
+                        { 
+                            label: 'Sold', 
+                            data: chartData.map(d => d.sold), 
+                            backgroundColor: '#10b981',
+                            barPercentage: 0.8,
+                            categoryPercentage: 0.9
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { font: { size: 11 } }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { font: { size: 10 } }
+                        },
+                        x: {
+                            ticks: { font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+            
+            // Revenue Chart
+            const revCtx = document.getElementById('tuktukRevChart').getContext('2d');
+            tuktukRevChart = new Chart(revCtx, {
+                type: 'doughnut',
+                data: {
+                    labels,
+                    datasets: [{
+                        data: chartData.map(d => d.rev),
+                        backgroundColor: ['#8b5cf6', '#a78bfa', '#c4b5fd', '#ddd6fe', '#ede9fe'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { font: { size: 10 } }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+        }
+
+        document.getElementById('loadMoreBtn').addEventListener('click', () => { 
+            displayLimit += 10; 
+            displayTable(); 
+        });
+
+        async function init() {
+            await loadBranches();
+            await loadUserProfile();
+            
+            // Set today's date
+            const today = new Date();
+            document.getElementById('dateRange').textContent = today.toLocaleDateString('en-GB', { 
+                day: 'numeric', month: 'long', year: 'numeric' 
+            });
+            
+            // Set default branch selector to user's branch
+            if (currentBranch) {
+                document.getElementById('branchSelector').value = currentBranch.code;
+                selectedBranchId = currentBranch.id;
+                document.getElementById('currentBranchDisplay').textContent = currentBranch.name;
+            }
+            
+            await loadData();
+        }
+
+        init();
+    </script>
+</body>
+</html>
