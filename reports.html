@@ -21,6 +21,9 @@
             --warning: #f59e0b;
             --info: #3b82f6;
             --tuktuk: #8b5cf6;
+            --gas: #10b981;
+            --spare: #4f46e5;
+            --moto: #f59e0b;
             --sidebar-width: 260px;
             --sidebar-collapsed: 70px;
             --border: #e2e8f0;
@@ -347,6 +350,62 @@
         }
         .text-profit { color: var(--success); }
 
+        /* --- CATEGORY METRICS GRID --- */
+        .category-metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .cat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            border-left: 4px solid;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        
+        .cat-card.tuktuk { border-color: var(--tuktuk); }
+        .cat-card.gas { border-color: var(--gas); }
+        .cat-card.moto { border-color: var(--moto); }
+        .cat-card.spare { border-color: var(--spare); }
+        
+        .cat-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .cat-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        
+        .cat-rev {
+            font-size: 1rem;
+            font-weight: 800;
+        }
+        
+        .cat-profit {
+            font-size: 0.8rem;
+            color: var(--success);
+            font-weight: 700;
+        }
+        
+        .cat-margin {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: #f1f5f9;
+        }
+
         /* --- CONTENT GRIDS --- */
         .triple-grid { 
             display: grid; 
@@ -459,6 +518,21 @@
             color: white;
         }
         
+        .badge.gas {
+            background: var(--gas);
+            color: white;
+        }
+        
+        .badge.moto {
+            background: var(--moto);
+            color: white;
+        }
+        
+        .badge.spare {
+            background: var(--spare);
+            color: white;
+        }
+        
         .badge.success {
             background: var(--success);
             color: white;
@@ -487,10 +561,10 @@
             border-radius: 3px;
             margin-right: 6px;
         }
-        .cat-gas { background: #10b981; }
-        .cat-spare { background: #4f46e5; }
-        .cat-moto { background: #f59e0b; }
-        .cat-tuktuk { background: #8b5cf6; }
+        .cat-gas { background: var(--gas); }
+        .cat-spare { background: var(--spare); }
+        .cat-moto { background: var(--moto); }
+        .cat-tuktuk { background: var(--tuktuk); }
         
         .trend-up { color: var(--success); }
         .trend-down { color: var(--danger); }
@@ -702,10 +776,58 @@
             </div>
         </div>
 
+        <!-- Category Summary Cards -->
+        <div class="category-metrics" id="categorySummaryCards">
+            <div class="cat-card tuktuk">
+                <div class="cat-title"><i class="fas fa-car-side"></i> TUKTUK</div>
+                <div class="cat-stats">
+                    <span class="cat-rev" id="tuktuk-rev">Ksh 0</span>
+                    <span class="cat-profit" id="tuktuk-profit">Ksh 0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                    <span class="cat-margin" id="tuktuk-margin">0% margin</span>
+                    <span class="cat-margin" id="tuktuk-units">0 units</span>
+                </div>
+            </div>
+            <div class="cat-card gas">
+                <div class="cat-title"><i class="fas fa-fire"></i> GAS</div>
+                <div class="cat-stats">
+                    <span class="cat-rev" id="gas-rev">Ksh 0</span>
+                    <span class="cat-profit" id="gas-profit">Ksh 0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                    <span class="cat-margin" id="gas-margin">0% margin</span>
+                    <span class="cat-margin" id="gas-units">0 cyl</span>
+                </div>
+            </div>
+            <div class="cat-card moto">
+                <div class="cat-title"><i class="fas fa-motorcycle"></i> MOTORBIKE</div>
+                <div class="cat-stats">
+                    <span class="cat-rev" id="moto-rev">Ksh 0</span>
+                    <span class="cat-profit" id="moto-profit">Ksh 0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                    <span class="cat-margin" id="moto-margin">0% margin</span>
+                    <span class="cat-margin" id="moto-units">0 units</span>
+                </div>
+            </div>
+            <div class="cat-card spare">
+                <div class="cat-title"><i class="fas fa-cogs"></i> SPARE PARTS</div>
+                <div class="cat-stats">
+                    <span class="cat-rev" id="spare-rev">Ksh 0</span>
+                    <span class="cat-profit" id="spare-profit">Ksh 0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                    <span class="cat-margin" id="spare-margin">0% margin</span>
+                    <span class="cat-margin" id="spare-units">0 pcs</span>
+                </div>
+            </div>
+        </div>
+
         <!-- Triple Grid with 3 Charts -->
         <div class="triple-grid">
             <div class="card">
-                <h3 class="section-title"><i class="fas fa-chart-pie"></i> Profit by Category</h3>
+                <h3 class="section-title"><i class="fas fa-chart-pie"></i> Profit Distribution</h3>
                 <div class="chart-container">
                     <canvas id="profitChart"></canvas>
                 </div>
@@ -726,7 +848,7 @@
             </div>
         </div>
 
-        <!-- Category Breakdown Table -->
+        <!-- Category Performance Table -->
         <div class="card">
             <h3 class="section-title"><i class="fas fa-table"></i> Category Performance Dashboard</h3>
             <div class="table-container">
@@ -740,12 +862,13 @@
                             <th>Profit</th>
                             <th>Margin</th>
                             <th>Contribution</th>
+                            <th>Avg. Price</th>
                             <th>Trend</th>
                         </tr>
                     </thead>
                     <tbody id="category-performance-body">
                         <tr>
-                            <td colspan="8" style="text-align: center; padding: 30px;">
+                            <td colspan="9" style="text-align: center; padding: 30px;">
                                 <div class="spinner" style="margin: 0 auto;"></div>
                                 Loading data...
                             </td>
@@ -755,50 +878,65 @@
             </div>
         </div>
 
-        <!-- Top and Bottom Performers -->
-        <div class="dual-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 25px;">
+        <!-- Top Performers by Category -->
+        <div class="triple-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 25px;">
             <div class="card">
-                <h3 class="section-title"><i class="fas fa-trophy" style="color: #f59e0b;"></i> Top 5 Best Sellers</h3>
-                <div class="table-container">
+                <h3 class="section-title" style="color: var(--tuktuk);">🚖 Top TUKTUK</h3>
+                <div class="table-container" style="max-height: 200px;">
                     <table>
-                        <thead>
-                            <tr>
-                                <th>Item</th>
-                                <th>Category</th>
-                                <th>Qty</th>
-                                <th>Revenue</th>
-                                <th>Profit</th>
-                            </tr>
-                        </thead>
-                        <tbody id="top-performers-body">
-                            <tr>
-                                <td colspan="5" style="text-align: center;">Loading...</td>
-                            </tr>
-                        </tbody>
+                        <thead><tr><th>Model</th><th>Qty</th><th>Profit</th></tr></thead>
+                        <tbody id="top-tuktuk-body"></tbody>
                     </table>
                 </div>
             </div>
-
             <div class="card">
-                <h3 class="section-title"><i class="fas fa-exclamation-triangle" style="color: var(--danger);"></i> Low Performers</h3>
-                <div class="table-container">
+                <h3 class="section-title" style="color: var(--gas);">🔥 Top Gas</h3>
+                <div class="table-container" style="max-height: 200px;">
                     <table>
-                        <thead>
-                            <tr>
-                                <th>Item</th>
-                                <th>Category</th>
-                                <th>Qty</th>
-                                <th>Revenue</th>
-                                <th>Stock</th>
-                            </tr>
-                        </thead>
-                        <tbody id="low-performers-body">
-                            <tr>
-                                <td colspan="5" style="text-align: center;">Loading...</td>
-                            </tr>
-                        </tbody>
+                        <thead><tr><th>Size</th><th>Qty</th><th>Profit</th></tr></thead>
+                        <tbody id="top-gas-body"></tbody>
                     </table>
                 </div>
+            </div>
+            <div class="card">
+                <h3 class="section-title" style="color: var(--moto);">🏍️ Top Motorbike</h3>
+                <div class="table-container" style="max-height: 200px;">
+                    <table>
+                        <thead><tr><th>Model</th><th>Qty</th><th>Profit</th></tr></thead>
+                        <tbody id="top-moto-body"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="section-title" style="color: var(--spare);">⚙️ Top Spares</h3>
+                <div class="table-container" style="max-height: 200px;">
+                    <table>
+                        <thead><tr><th>Part</th><th>Qty</th><th>Profit</th></tr></thead>
+                        <tbody id="top-spare-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Low Stock Alert by Category -->
+        <div class="card">
+            <h3 class="section-title"><i class="fas fa-exclamation-triangle" style="color: var(--danger);"></i> Low Stock Alert by Category</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Item</th>
+                            <th>Current Stock</th>
+                            <th>Min. Required</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="low-stock-body">
+                        <tr><td colspan="6" style="text-align: center;">No low stock items</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -859,6 +997,10 @@
                 <div class="stat-item">
                     <div class="stat-label">Motorbikes</div>
                     <div class="stat-value" id="total-moto">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Spare Parts</div>
+                    <div class="stat-value" id="total-spare">0</div>
                 </div>
             </div>
         </div>
@@ -1100,6 +1242,16 @@
         return colorMap[category] || '#64748b';
     }
 
+    function getCategoryIcon(category) {
+        const iconMap = {
+            'Gas': 'fa-fire',
+            'Spare Part': 'fa-cogs',
+            'Motorbike': 'fa-motorcycle',
+            'Tuktuk': 'fa-car-side'
+        };
+        return iconMap[category] || 'fa-box';
+    }
+
     // Store item summary globally for export
     let itemSummary = {};
 
@@ -1110,6 +1262,26 @@
         let tuktukCount = 0, motoCount = 0, gasCount = 0, spareCount = 0;
         let totalItems = 0, activeProducts = 0, outOfStock = 0;
         let categoryMargins = {};
+
+        // Category specific containers
+        const categories = { 
+            Gas: { profit: 0, revenue: 0, items: 0, units: 0, count: 0 }, 
+            Spare: { profit: 0, revenue: 0, items: 0, units: 0, count: 0 },
+            Motorbike: { profit: 0, revenue: 0, items: 0, units: 0, count: 0 },
+            Tuktuk: { profit: 0, revenue: 0, items: 0, units: 0, count: 0 },
+            Other: { profit: 0, revenue: 0, items: 0, units: 0, count: 0 } 
+        };
+        
+        // Track top items per category
+        const topItems = {
+            Tuktuk: [],
+            Gas: [],
+            Motorbike: [],
+            Spare: []
+        };
+        
+        itemSummary = {};
+        const lowStockItems = [];
 
         // Inventory Stats
         allProducts.forEach(p => {
@@ -1132,19 +1304,20 @@
             totalItems += p.stock_quantity;
             if(p.stock_quantity > 0) activeProducts++;
             if(p.stock_quantity === 0) outOfStock++;
+            
+            // Check for low stock (less than 5 items)
+            if(p.stock_quantity > 0 && p.stock_quantity < 5) {
+                lowStockItems.push({
+                    name: p.name,
+                    category: p.category,
+                    stock: p.stock_quantity,
+                    min_required: 5,
+                    branch: branches[p.branch_id]?.code || '--'
+                });
+            }
         });
 
-        // Category & Item Summary Containers
-        const categories = { 
-            Gas: { profit: 0, revenue: 0, items: 0, units: 0 }, 
-            Spare: { profit: 0, revenue: 0, items: 0, units: 0 },
-            Motorbike: { profit: 0, revenue: 0, items: 0, units: 0 },
-            Tuktuk: { profit: 0, revenue: 0, items: 0, units: 0 },
-            Other: { profit: 0, revenue: 0, items: 0, units: 0 } 
-        };
-        
-        itemSummary = {};
-
+        // Process sales data
         filteredSales.forEach(s => {
             const p = allProducts.find(prod => prod.id === s.product_id) || { 
                 cost_price: 0, 
@@ -1158,7 +1331,7 @@
             totalRev += s.total_amount;
             totalProf += itemProfit;
             
-            // Profit and Revenue Splitting Logic
+            // Payment method splits
             if (s.payment_method === 'Cash') {
                 cashRev += s.total_amount;
                 cashProf += itemProfit;
@@ -1167,7 +1340,7 @@
                 kcbProf += itemProfit;
             }
 
-            // Category Logic
+            // Category aggregation
             let catKey = 'Other';
             if (p.category === 'Gas') catKey = 'Gas';
             else if (p.category === 'Spare Part') catKey = 'Spare';
@@ -1177,7 +1350,7 @@
             categories[catKey].profit += itemProfit;
             categories[catKey].revenue += s.total_amount;
             categories[catKey].units += s.quantity;
-            categories[catKey].items++;
+            categories[catKey].count++;
 
             // Track margins by category
             if (!categoryMargins[catKey]) categoryMargins[catKey] = [];
@@ -1185,7 +1358,7 @@
                 categoryMargins[catKey].push(itemProfit / s.total_amount * 100);
             }
 
-            // Item Logic
+            // Item summary
             const itemKey = s.item_name;
             if (!itemSummary[itemKey]) {
                 itemSummary[itemKey] = { 
@@ -1202,11 +1375,47 @@
             itemSummary[itemKey].qty += s.quantity;
             itemSummary[itemKey].rev += s.total_amount;
             itemSummary[itemKey].prof += itemProfit;
+            
+            // Track top items per category
+            if (p.category && topItems[p.category]) {
+                topItems[p.category].push({
+                    name: s.item_name,
+                    qty: s.quantity,
+                    profit: itemProfit,
+                    rev: s.total_amount
+                });
+            }
         });
 
-        // Calculate average margin
+        // Calculate averages and margins
         const avgMargin = totalRev > 0 ? (totalProf / totalRev * 100) : 0;
         let bestMargin = 0, worstMargin = 100;
+        
+        // Category metrics calculation
+        const categoryMetrics = {};
+        Object.entries(categories).forEach(([name, val]) => {
+            if (val.revenue > 0) {
+                const margin = (val.profit / val.revenue * 100).toFixed(1);
+                categoryMetrics[name] = {
+                    revenue: val.revenue,
+                    profit: val.profit,
+                    margin: margin,
+                    units: val.units,
+                    items: val.count
+                };
+            }
+        });
+
+        // Update summary cards
+        document.getElementById('total-profit').innerText = `Ksh ${totalProf.toLocaleString()}`;
+        document.getElementById('profit-split').innerText = `Cash: ${cashProf.toLocaleString()} | KCB: ${kcbProf.toLocaleString()}`;
+        document.getElementById('total-revenue').innerText = `Ksh ${totalRev.toLocaleString()}`;
+        document.getElementById('revenue-split').innerText = `Cash: ${cashRev.toLocaleString()} | KCB: ${kcbRev.toLocaleString()}`;
+        document.getElementById('total-val').innerText = `Ksh ${invVal.toLocaleString()}`;
+        document.getElementById('stock-split').innerText = `Original: ${origQty} | Copy: ${copyQty}`;
+        document.getElementById('avg-margin').innerText = `${avgMargin.toFixed(1)}%`;
+        
+        // Calculate best/worst margins from category margins
         Object.values(categoryMargins).forEach(margins => {
             if (margins.length > 0) {
                 const avg = margins.reduce((a, b) => a + b, 0) / margins.length;
@@ -1214,19 +1423,28 @@
                 worstMargin = Math.min(worstMargin, avg);
             }
         });
-
-        // Update Top Cards
-        document.getElementById('total-profit').innerText = `Ksh ${totalProf.toLocaleString()}`;
-        document.getElementById('profit-split').innerText = `Cash: ${cashProf.toLocaleString()} | KCB: ${kcbProf.toLocaleString()}`;
-        
-        document.getElementById('total-revenue').innerText = `Ksh ${totalRev.toLocaleString()}`;
-        document.getElementById('revenue-split').innerText = `Cash: ${cashRev.toLocaleString()} | KCB: ${kcbRev.toLocaleString()}`;
-        
-        document.getElementById('total-val').innerText = `Ksh ${invVal.toLocaleString()}`;
-        document.getElementById('stock-split').innerText = `Original: ${origQty} | Copy: ${copyQty}`;
-        
-        document.getElementById('avg-margin').innerText = `${avgMargin.toFixed(1)}%`;
         document.getElementById('margin-details').innerHTML = `Best: ${bestMargin.toFixed(1)}% | Worst: ${worstMargin.toFixed(1)}%`;
+
+        // Update category summary cards
+        document.getElementById('tuktuk-rev').innerText = `Ksh ${(categoryMetrics.Tuktuk?.revenue || 0).toLocaleString()}`;
+        document.getElementById('tuktuk-profit').innerText = `Ksh ${(categoryMetrics.Tuktuk?.profit || 0).toLocaleString()}`;
+        document.getElementById('tuktuk-margin').innerText = `${categoryMetrics.Tuktuk?.margin || 0}% margin`;
+        document.getElementById('tuktuk-units').innerText = `${categoryMetrics.Tuktuk?.units || 0} units`;
+
+        document.getElementById('gas-rev').innerText = `Ksh ${(categoryMetrics.Gas?.revenue || 0).toLocaleString()}`;
+        document.getElementById('gas-profit').innerText = `Ksh ${(categoryMetrics.Gas?.profit || 0).toLocaleString()}`;
+        document.getElementById('gas-margin').innerText = `${categoryMetrics.Gas?.margin || 0}% margin`;
+        document.getElementById('gas-units').innerText = `${categoryMetrics.Gas?.units || 0} cyl`;
+
+        document.getElementById('moto-rev').innerText = `Ksh ${(categoryMetrics.Motorbike?.revenue || 0).toLocaleString()}`;
+        document.getElementById('moto-profit').innerText = `Ksh ${(categoryMetrics.Motorbike?.profit || 0).toLocaleString()}`;
+        document.getElementById('moto-margin').innerText = `${categoryMetrics.Motorbike?.margin || 0}% margin`;
+        document.getElementById('moto-units').innerText = `${categoryMetrics.Motorbike?.units || 0} units`;
+
+        document.getElementById('spare-rev').innerText = `Ksh ${(categoryMetrics.Spare?.revenue || 0).toLocaleString()}`;
+        document.getElementById('spare-profit').innerText = `Ksh ${(categoryMetrics.Spare?.profit || 0).toLocaleString()}`;
+        document.getElementById('spare-margin').innerText = `${categoryMetrics.Spare?.margin || 0}% margin`;
+        document.getElementById('spare-units').innerText = `${categoryMetrics.Spare?.units || 0} pcs`;
 
         // Update summary stats
         document.getElementById('total-items-count').innerText = totalItems;
@@ -1235,6 +1453,7 @@
         document.getElementById('total-gas').innerText = gasFull + gasEmpty;
         document.getElementById('total-tuktuk').innerText = tuktukCount;
         document.getElementById('total-moto').innerText = motoCount;
+        document.getElementById('total-spare').innerText = spareCount;
 
         // Render Category Performance Table
         document.getElementById('category-performance-body').innerHTML = Object.entries(categories)
@@ -1242,86 +1461,89 @@
             .map(([name, val]) => {
                 const margin = val.revenue > 0 ? ((val.profit / val.revenue) * 100).toFixed(1) : 0;
                 const contribution = totalRev > 0 ? ((val.revenue / totalRev) * 100).toFixed(1) : 0;
+                const avgPrice = val.units > 0 ? (val.revenue / val.units).toFixed(0) : 0;
                 const trend = margin > avgMargin ? '↑' : '↓';
                 const trendClass = margin > avgMargin ? 'trend-up' : 'trend-down';
+                const icon = getCategoryIcon(name === 'Spare' ? 'Spare Part' : name);
                 
                 return `<tr>
                     <td>
                         <span class="category-tag cat-${name.toLowerCase()}"></span>
-                        <b>${name === 'Tuktuk' ? '🚖 TUKTUK' : name}</b>
+                        <i class="fas ${icon}" style="margin-right: 5px;"></i>
+                        <b>${name === 'Tuktuk' ? 'TUKTUK' : name}</b>
                     </td>
-                    <td>${val.items}</td>
+                    <td>${val.count}</td>
                     <td>${val.units}</td>
                     <td>Ksh ${val.revenue.toLocaleString()}</td>
                     <td class="text-profit">Ksh ${val.profit.toLocaleString()}</td>
-                    <td><span class="badge ${name === 'Tuktuk' ? 'tuktuk' : ''}">${margin}%</span></td>
+                    <td><span class="badge ${name === 'Tuktuk' ? 'tuktuk' : name === 'Gas' ? 'gas' : name === 'Motorbike' ? 'moto' : 'spare'}">${margin}%</span></td>
                     <td>${contribution}%</td>
+                    <td>Ksh ${Number(avgPrice).toLocaleString()}</td>
                     <td class="${trendClass}">${trend}</td>
                 </tr>`;
             }).join('');
 
-        // Render Top Performers
-        const sortedItems = Object.entries(itemSummary).sort((a,b) => b[1].prof - a[1].prof);
-        const topFive = sortedItems.slice(0, 5);
-        document.getElementById('top-performers-body').innerHTML = topFive.map(([name, data]) => {
-            const categoryColor = getCategoryColor(data.category);
-            return `
-            <tr>
-                <td><b>${name}</b></td>
-                <td><span class="badge" style="background: ${categoryColor}; color: white;">${data.category_display}</span></td>
-                <td>${data.qty}</td>
-                <td>Ksh ${data.rev.toLocaleString()}</td>
-                <td class="text-profit">Ksh ${data.prof.toLocaleString()}</td>
-            </tr>
-        `}).join('');
+        // Render top items by category
+        const renderTopCategory = (category, elementId, limit = 3) => {
+            const items = topItems[category] || [];
+            const sorted = items.sort((a, b) => b.profit - a.profit).slice(0, limit);
+            const tbody = document.getElementById(elementId);
+            if (sorted.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No sales</td></tr>';
+            } else {
+                tbody.innerHTML = sorted.map(item => `
+                    <tr>
+                        <td>${item.name.length > 15 ? item.name.substring(0, 12) + '...' : item.name}</td>
+                        <td>${item.qty}</td>
+                        <td class="text-profit">Ksh ${item.profit.toLocaleString()}</td>
+                    </tr>
+                `).join('');
+            }
+        };
 
-        // Render Low Performers (items with low sales relative to stock)
-        const lowPerformers = allProducts
-            .filter(p => p.stock_quantity > 0)
-            .map(p => {
-                const sales = filteredSales.filter(s => s.product_id === p.id);
-                const qtySold = sales.reduce((sum, s) => sum + s.quantity, 0);
-                const rev = sales.reduce((sum, s) => sum + s.total_amount, 0);
-                return {
-                    name: p.name,
-                    category: p.category,
-                    qty: qtySold,
-                    rev: rev,
-                    stock: p.stock_quantity,
-                    ratio: p.stock_quantity > 0 ? qtySold / p.stock_quantity : 0
-                };
-            })
-            .filter(p => p.ratio < 0.5 && p.stock > 5) // Less than 50% turnover rate with >5 in stock
-            .sort((a, b) => a.ratio - b.ratio)
-            .slice(0, 5);
+        renderTopCategory('Tuktuk', 'top-tuktuk-body');
+        renderTopCategory('Gas', 'top-gas-body');
+        renderTopCategory('Motorbike', 'top-moto-body');
+        renderTopCategory('Spare', 'top-spare-body');
 
-        document.getElementById('low-performers-body').innerHTML = lowPerformers.map(p => {
-            const categoryColor = getCategoryColor(p.category);
-            return `
-            <tr>
-                <td><b>${p.name}</b></td>
-                <td><span class="badge" style="background: ${categoryColor}; color: white;">${getCategoryDisplay(p.category)}</span></td>
-                <td>${p.qty}</td>
-                <td>Ksh ${p.rev.toLocaleString()}</td>
-                <td><span class="badge warning">${p.stock} units</span></td>
-            </tr>
-        `}).join('');
+        // Render low stock items
+        if (lowStockItems.length === 0) {
+            document.getElementById('low-stock-body').innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--success);">✅ All items have adequate stock levels</td></tr>';
+        } else {
+            document.getElementById('low-stock-body').innerHTML = lowStockItems.map(item => {
+                const categoryClass = item.category === 'Tuktuk' ? 'tuktuk' : 
+                                    item.category === 'Gas' ? 'gas' : 
+                                    item.category === 'Motorbike' ? 'moto' : 'spare';
+                return `
+                <tr>
+                    <td><span class="badge ${categoryClass}">${item.category}</span></td>
+                    <td><b>${item.name}</b></td>
+                    <td><span class="badge warning">${item.stock}</span></td>
+                    <td>${item.min_required}</td>
+                    <td><span class="badge danger" style="background: var(--danger); color: white;">LOW STOCK</span></td>
+                    <td><span class="branch-pill">${item.branch}</span></td>
+                </tr>
+            `}).join('');
+        }
 
         // Render All Items Table
+        const sortedItems = Object.entries(itemSummary).sort((a,b) => b[1].prof - a[1].prof);
         document.getElementById('sales-mix-body').innerHTML = sortedItems.slice(0, displayLimit).map(([name, data]) => {
             const categoryColor = getCategoryColor(data.category);
             const margin = data.rev > 0 ? ((data.prof / data.rev) * 100).toFixed(1) : 0;
-            const categoryBadge = data.category === 'Tuktuk' ? 'badge tuktuk' : 'badge';
+            const categoryClass = data.category === 'Tuktuk' ? 'tuktuk' : 
+                                 data.category === 'Gas' ? 'gas' : 
+                                 data.category === 'Motorbike' ? 'moto' : 'spare';
             
             return `
             <tr>
                 <td><b>${name}</b></td>
-                <td><span class="${categoryBadge}" style="background: ${categoryColor}; color: white;">${data.category_display}</span></td>
+                <td><span class="badge ${categoryClass}">${data.category_display}</span></td>
                 <td>${data.part_type || 'N/A'}</td>
                 <td>${data.qty}</td>
                 <td>Ksh ${data.rev.toLocaleString()}</td>
                 <td class="text-profit">Ksh ${data.prof.toLocaleString()}</td>
-                <td><span class="badge ${data.category === 'Tuktuk' ? 'tuktuk' : ''}">${margin}%</span></td>
+                <td><span class="badge ${categoryClass}">${margin}%</span></td>
                 <td><span class="badge ${data.stock > 0 ? 'success' : 'warning'}">${data.stock}</span></td>
                 <td><span class="branch-pill">${data.branch}</span></td>
             </tr>
@@ -1350,13 +1572,13 @@
                 marginData.push(margin);
                 chartColors.push(getCategoryColor(
                     name === 'Spare' ? 'Spare Part' : 
-                    name === 'Moto' ? 'Motorbike' : 
+                    name === 'Motorbike' ? 'Motorbike' : 
                     name === 'Tuktuk' ? 'Tuktuk' : name
                 ));
             }
         });
 
-        // Profit Chart
+        // Profit Chart (Doughnut)
         const profitCtx = document.getElementById('profitChart').getContext('2d');
         profitChart = new Chart(profitCtx, {
             type: 'doughnut',
@@ -1365,14 +1587,28 @@
                 datasets: [{
                     data: profitData,
                     backgroundColor: chartColors,
-                    borderWidth: 0
+                    borderWidth: 0,
+                    hoverOffset: 15
                 }]
             },
             options: {
                 maintainAspectRatio: false,
-                cutout: '70%',
+                cutout: '65%',
                 plugins: { 
-                    legend: { position: 'bottom' }
+                    legend: { 
+                        position: 'bottom',
+                        labels: { font: { size: 11, weight: '600' } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${context.label}: Ksh ${value.toLocaleString()} (${percentage}%)`;
+                            }
+                        }
+                    }
                 }
             }
         });
@@ -1387,15 +1623,24 @@
                     label: 'Revenue',
                     data: revenueData,
                     backgroundColor: chartColors,
-                    borderRadius: 8
+                    borderRadius: 8,
+                    barPercentage: 0.7
                 }]
             },
             options: {
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `Ksh ${context.raw.toLocaleString()}`
+                        }
+                    }
+                },
                 scales: {
                     y: {
                         beginAtZero: true,
+                        grid: { color: '#f1f5f9' },
                         ticks: {
                             callback: value => 'Ksh ' + value.toLocaleString()
                         }
@@ -1404,7 +1649,7 @@
             }
         });
 
-        // Margin Chart
+        // Margin Chart (Line)
         const marginCtx = document.getElementById('marginChart').getContext('2d');
         marginChart = new Chart(marginCtx, {
             type: 'line',
@@ -1420,16 +1665,25 @@
                     pointBackgroundColor: chartColors,
                     pointBorderColor: 'white',
                     pointBorderWidth: 2,
-                    pointRadius: 6
+                    pointRadius: 6,
+                    pointHoverRadius: 8
                 }]
             },
             options: {
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.raw.toFixed(1)}% margin`
+                        }
+                    }
+                },
                 scales: {
                     y: {
                         beginAtZero: true,
                         max: 100,
+                        grid: { color: '#f1f5f9' },
                         ticks: {
                             callback: value => value + '%'
                         }
