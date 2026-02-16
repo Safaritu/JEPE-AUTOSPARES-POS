@@ -2,6 +2,7 @@
 const supabaseUrl = 'https://hoqenpnkmnsfyqsvfvab.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhvcWVucG5rbW5zZnlxc3ZmdmFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzk5MTUsImV4cCI6MjA4MjUxNTkxNX0.qKqv6NEyCU5ZMNj6Z34kpCiY7NoUzzBggiPSRJdTz0Y';
 
+// Create Supabase client
 export const supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
     auth: {
         persistSession: true,
@@ -12,9 +13,36 @@ export const supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
 
 // Branch constants - only MUTOMO and KITUI
 export const BRANCHES = {
-    MUTOMO: { id: '5326e4c6-6d0d-4500-83d9-f322c859b9fb', name: 'MUTOMO BRANCH', code: 'MUT' },
-    KITUI: { id: 'ea91a65e-7c6e-43fd-b71e-3f2cc4f714a9', name: 'KITUI BRANCH', code: 'KIT' }
+    MUTOMO: { 
+        id: '5326e4c6-6d0d-4500-83d9-f322c859b9fb', 
+        name: 'MUTOMO BRANCH', 
+        code: 'MUT' 
+    },
+    KITUI: { 
+        id: 'ea91a65e-7c6e-43fd-b71e-3f2cc4f714a9', 
+        name: 'KITUI BRANCH', 
+        code: 'KIT' 
+    }
 };
+
+// Get all branches as array
+export function getAllBranches() {
+    return Object.values(BRANCHES);
+}
+
+// Get branch by ID
+export function getBranchById(id) {
+    if (id === BRANCHES.MUTOMO.id) return BRANCHES.MUTOMO;
+    if (id === BRANCHES.KITUI.id) return BRANCHES.KITUI;
+    return null;
+}
+
+// Get branch by code
+export function getBranchByCode(code) {
+    if (code === 'MUT') return BRANCHES.MUTOMO;
+    if (code === 'KIT') return BRANCHES.KITUI;
+    return null;
+}
 
 // Helper function to get current user with profile and branch info
 export async function getCurrentUser() {
@@ -64,6 +92,43 @@ export async function getUserBranchId() {
 export async function getUserBranch() {
     const userData = await getCurrentUser();
     return userData?.profile?.branches;
+}
+
+// Helper function to create user profile after signup
+export async function createUserProfile(userId, email, role, branchId) {
+    try {
+        const { error } = await supabase
+            .from('profiles')
+            .insert([{
+                id: userId,
+                email: email,
+                role: role,
+                branch_id: branchId,
+                full_name: email.split('@')[0]
+            }]);
+        
+        if (error) throw error;
+        return { success: true };
+    } catch (error) {
+        console.error("Error creating profile:", error);
+        return { success: false, error };
+    }
+}
+
+// Helper function to update user profile
+export async function updateUserProfile(userId, updates) {
+    try {
+        const { error } = await supabase
+            .from('profiles')
+            .update(updates)
+            .eq('id', userId);
+        
+        if (error) throw error;
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating profile:", error);
+        return { success: false, error };
+    }
 }
 
 // Helper function to add branch filter to queries
@@ -118,6 +183,11 @@ export async function getBranchAwareQuery(table, options = {}) {
         });
     }
     
+    // Add limit
+    if (options.limit) {
+        query = query.limit(options.limit);
+    }
+    
     return query;
 }
 
@@ -150,9 +220,59 @@ export async function requireRole(role, redirectTo = 'index.html') {
     return { user, profile };
 }
 
+// Helper function to get session from localStorage
+export function getSession() {
+    const session = localStorage.getItem('pos_session');
+    return session ? JSON.parse(session) : null;
+}
+
+// Helper function to set session
+export function setSession(user, profile) {
+    const session = {
+        user: user,
+        profile: profile,
+        branch: profile?.branches,
+        role: profile?.role
+    };
+    localStorage.setItem('pos_session', JSON.stringify(session));
+    return session;
+}
+
+// Helper function to clear session
+export function clearSession() {
+    localStorage.removeItem('pos_session');
+}
+
 // Logout helper
 export async function logout() {
-    localStorage.removeItem('pos_session');
+    clearSession();
     await supabase.auth.signOut();
     window.location.href = 'index.html';
 }
+
+// Initialize auth state listener
+supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN' && session?.user) {
+        // Fetch and cache profile
+        supabase
+            .from('profiles')
+            .select(`
+                *,
+                branches (
+                    id,
+                    name,
+                    code,
+                    location
+                )
+            `)
+            .eq('id', session.user.id)
+            .single()
+            .then(({ data: profile }) => {
+                if (profile) {
+                    setSession(session.user, profile);
+                }
+            });
+    } else if (event === 'SIGNED_OUT') {
+        clearSession();
+    }
+});
