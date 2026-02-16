@@ -438,9 +438,9 @@
         }
         
         .cat-title {
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             text-transform: uppercase;
-            color: var(--text-dim);
+            color: var(--admin-dark);
             font-weight: 800;
             display: flex;
             align-items: center;
@@ -457,63 +457,46 @@
         .cat-card.moto .cat-title i { color: var(--moto); }
         .cat-card.spare .cat-title i { color: var(--spare); }
         
-        .cat-stats {
+        .metric-row {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
             margin-bottom: 8px;
+            padding: 4px 0;
+            border-bottom: 1px dashed #f1f5f9;
         }
         
-        .cat-rev {
-            font-size: 1.1rem;
-            font-weight: 800;
-        }
-        
-        .cat-profit {
-            font-size: 0.85rem;
-            color: var(--success);
-            font-weight: 700;
-            background: #f0fdf4;
-            padding: 4px 10px;
-            border-radius: 20px;
-        }
-        
-        .cat-margin {
-            font-size: 0.75rem;
-            padding: 4px 10px;
-            border-radius: 20px;
-            background: #f1f5f9;
+        .metric-label-small {
+            font-size: 0.7rem;
+            color: var(--text-dim);
             font-weight: 600;
         }
         
-        .cat-cost {
-            font-size: 0.7rem;
-            color: var(--text-dim);
-            margin-top: 4px;
-        }
-        
-        .cat-units {
-            font-size: 0.8rem;
+        .metric-value {
+            font-size: 0.95rem;
             font-weight: 700;
-            color: var(--text-dim);
         }
         
-        .cat-card.tuktuk .cat-margin { background: #ede9fe; color: #6d28d9; }
-        .cat-card.gas .cat-margin { background: #d1fae5; color: #065f46; }
-        .cat-card.moto .cat-margin { background: #fed7aa; color: #92400e; }
-        .cat-card.spare .cat-margin { background: #e0e7ff; color: #3730a3; }
-
-        .debug-console {
-            background: #1e1e2f;
-            color: #00ff00;
-            padding: 15px;
-            border-radius: 10px;
-            font-family: monospace;
-            font-size: 0.8rem;
-            margin-bottom: 20px;
-            max-height: 200px;
-            overflow-y: auto;
-            display: none; /* Hidden by default, can be shown for debugging */
+        .metric-value.profit {
+            color: var(--success);
+        }
+        
+        .metric-value.revenue {
+            color: var(--primary);
+        }
+        
+        .metric-value.cost {
+            color: var(--warning);
+        }
+        
+        .cat-footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+            font-size: 0.75rem;
+            color: var(--text-dim);
         }
 
         /* --- CONTENT GRIDS --- */
@@ -919,9 +902,6 @@
     </div>
 
     <div class="container">
-        <!-- Debug Console (Hidden by default, remove display:none to see) -->
-        <div class="debug-console" id="debugConsole"></div>
-
         <!-- Branch Selector -->
         <div class="branch-selector-container">
             <div class="branch-filter">
@@ -939,7 +919,7 @@
 
         <div class="filter-bar">
             <span class="metric-label">Timeframe:</span>
-            <select id="dateFilter" onchange="applyFilter()"> <!-- Auto-filter on change -->
+            <select id="dateFilter" onchange="applyFilter()">
                 <option value="all">Lifetime</option>
                 <option value="today">Today</option>
                 <option value="week">Past 7 Days</option>
@@ -950,7 +930,6 @@
                 <input type="date" id="startDate" class="date-input" onchange="applyFilter()">
                 <input type="date" id="endDate" class="date-input" onchange="applyFilter()">
             </div>
-            <!-- Removed APPLY button - auto-filter now -->
             <button onclick="exportToCSV()" class="export-btn" style="background: var(--success); margin-left: auto;">📊 EXPORT REPORT</button>
         </div>
 
@@ -979,52 +958,83 @@
 
         <!-- Category Summary Cards with clear labels -->
         <div class="category-metrics" id="categorySummaryCards">
+            <!-- TUKTUK Card -->
             <div class="cat-card tuktuk">
                 <div class="cat-title"><i class="fas fa-car-side"></i> TUKTUK</div>
-                <div class="cat-stats">
-                    <span class="cat-rev" id="tuktuk-rev">Ksh 0</span>
-                    <span class="cat-profit" id="tuktuk-profit">Ksh 0</span>
+                <div class="metric-row">
+                    <span class="metric-label-small">Revenue:</span>
+                    <span class="metric-value revenue" id="tuktuk-rev">Ksh 0</span>
                 </div>
-                <div class="cat-cost" id="tuktuk-cost">Cost: Ksh 0</div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                    <span class="cat-margin" id="tuktuk-margin">0% margin</span>
-                    <span class="cat-units" id="tuktuk-units">0 units</span>
+                <div class="metric-row">
+                    <span class="metric-label-small">Cost:</span>
+                    <span class="metric-value cost" id="tuktuk-cost">Ksh 0</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label-small">Profit:</span>
+                    <span class="metric-value profit" id="tuktuk-profit">Ksh 0</span>
+                </div>
+                <div class="cat-footer">
+                    <span id="tuktuk-units">0 units sold</span>
                 </div>
             </div>
+
+            <!-- GAS Card -->
             <div class="cat-card gas">
                 <div class="cat-title"><i class="fas fa-fire"></i> GAS</div>
-                <div class="cat-stats">
-                    <span class="cat-rev" id="gas-rev">Ksh 0</span>
-                    <span class="cat-profit" id="gas-profit">Ksh 0</span>
+                <div class="metric-row">
+                    <span class="metric-label-small">Revenue:</span>
+                    <span class="metric-value revenue" id="gas-rev">Ksh 0</span>
                 </div>
-                <div class="cat-cost" id="gas-cost">Cost: Ksh 0</div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                    <span class="cat-margin" id="gas-margin">0% margin</span>
-                    <span class="cat-units" id="gas-units">0 cyl</span>
+                <div class="metric-row">
+                    <span class="metric-label-small">Cost:</span>
+                    <span class="metric-value cost" id="gas-cost">Ksh 0</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label-small">Profit:</span>
+                    <span class="metric-value profit" id="gas-profit">Ksh 0</span>
+                </div>
+                <div class="cat-footer">
+                    <span id="gas-units">0 cylinders sold</span>
                 </div>
             </div>
+
+            <!-- MOTORBIKE Card -->
             <div class="cat-card moto">
                 <div class="cat-title"><i class="fas fa-motorcycle"></i> MOTORBIKE</div>
-                <div class="cat-stats">
-                    <span class="cat-rev" id="moto-rev">Ksh 0</span>
-                    <span class="cat-profit" id="moto-profit">Ksh 0</span>
+                <div class="metric-row">
+                    <span class="metric-label-small">Revenue:</span>
+                    <span class="metric-value revenue" id="moto-rev">Ksh 0</span>
                 </div>
-                <div class="cat-cost" id="moto-cost">Cost: Ksh 0</div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                    <span class="cat-margin" id="moto-margin">0% margin</span>
-                    <span class="cat-units" id="moto-units">0 units</span>
+                <div class="metric-row">
+                    <span class="metric-label-small">Cost:</span>
+                    <span class="metric-value cost" id="moto-cost">Ksh 0</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label-small">Profit:</span>
+                    <span class="metric-value profit" id="moto-profit">Ksh 0</span>
+                </div>
+                <div class="cat-footer">
+                    <span id="moto-units">0 units sold</span>
                 </div>
             </div>
+
+            <!-- SPARE PARTS Card -->
             <div class="cat-card spare">
                 <div class="cat-title"><i class="fas fa-cogs"></i> SPARE PARTS</div>
-                <div class="cat-stats">
-                    <span class="cat-rev" id="spare-rev">Ksh 0</span>
-                    <span class="cat-profit" id="spare-profit">Ksh 0</span>
+                <div class="metric-row">
+                    <span class="metric-label-small">Revenue:</span>
+                    <span class="metric-value revenue" id="spare-rev">Ksh 0</span>
                 </div>
-                <div class="cat-cost" id="spare-cost">Cost: Ksh 0</div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                    <span class="cat-margin" id="spare-margin">0% margin</span>
-                    <span class="cat-units" id="spare-units">0 pcs</span>
+                <div class="metric-row">
+                    <span class="metric-label-small">Cost:</span>
+                    <span class="metric-value cost" id="spare-cost">Ksh 0</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label-small">Profit:</span>
+                    <span class="metric-value profit" id="spare-profit">Ksh 0</span>
+                </div>
+                <div class="cat-footer">
+                    <span id="spare-units">0 parts sold</span>
                 </div>
             </div>
         </div>
@@ -1068,12 +1078,11 @@
                             <th>Profit</th>
                             <th>Margin</th>
                             <th>Contribution</th>
-                            <th>Trend</th>
                         </tr>
                     </thead>
                     <tbody id="category-performance-body">
                         <tr>
-                            <td colspan="9" style="text-align: center; padding: 30px;">
+                            <td colspan="8" style="text-align: center; padding: 30px;">
                                 <div class="spinner" style="margin: 0 auto;"></div>
                                 Loading data...
                             </td>
@@ -1226,18 +1235,6 @@
     let branches = {};
     let branchIdMap = {};
 
-    // Debug function
-    function debugLog(message, data = null) {
-        const debugConsole = document.getElementById('debugConsole');
-        const timestamp = new Date().toLocaleTimeString();
-        const logEntry = `[${timestamp}] ${message} ${data ? JSON.stringify(data, null, 2) : ''}`;
-        console.log(logEntry);
-        
-        // Uncomment to show debug console in UI
-        // debugConsole.innerHTML += '<div>' + logEntry + '</div>';
-        // debugConsole.scrollTop = debugConsole.scrollHeight;
-    }
-
     // ==================== SIDEBAR FUNCTION ====================
     window.toggleMenu = function() {
         document.getElementById('sidebar').classList.toggle('mobile-active');
@@ -1378,7 +1375,7 @@
 
     async function loadData() {
         try {
-            debugLog("Loading data...");
+            console.log("Loading data...");
             
             // Build products query
             let productsQuery = supabase.from('products').select('*');
@@ -1404,8 +1401,8 @@
             allProducts = productsRes.data || [];
             allSales = salesRes.data || [];
             
-            debugLog(`Products loaded: ${allProducts.length}`);
-            debugLog(`Sales loaded: ${allSales.length}`);
+            console.log(`Products loaded: ${allProducts.length}`);
+            console.log(`Sales loaded: ${allSales.length}`);
             
             // Log category distribution from sales
             const salesByCategory = {};
@@ -1413,11 +1410,11 @@
                 const cat = s.category || 'Uncategorized';
                 salesByCategory[cat] = (salesByCategory[cat] || 0) + 1;
             });
-            debugLog("Sales by category:", salesByCategory);
+            console.log("Sales by category:", salesByCategory);
             
             // Log unique category values to see exact strings
             const uniqueCategories = [...new Set(allSales.map(s => s.category))];
-            debugLog("Unique category values:", uniqueCategories);
+            console.log("Unique category values:", uniqueCategories);
             
             // Set default branch selector to user's branch if available
             if (currentBranch && document.getElementById('branchSelector').value === 'all') {
@@ -1429,7 +1426,6 @@
             applyFilter();
         } catch (error) {
             console.error("Error loading data:", error);
-            debugLog("Error loading data:", error.message);
         }
     }
 
@@ -1457,7 +1453,7 @@
             return true;
         });
         
-        debugLog(`Filtered sales: ${filteredSales.length}`);
+        console.log(`Filtered sales: ${filteredSales.length}`);
         
         // Show custom date range if selected
         document.getElementById('customDateRange').style.display = 
@@ -1603,7 +1599,7 @@
                 kcbProf += itemProfit;
             }
 
-            // Category aggregation - Use sale's category, handle case sensitivity
+            // Category aggregation - Normalize category
             let catKey = saleCategory;
             
             // Normalize category key - handle any case or spacing issues
@@ -1660,7 +1656,7 @@
             itemSummary[itemKey].prof += itemProfit;
         });
 
-        debugLog("Processed categories:", Array.from(processedCategories));
+        console.log("Processed categories:", Array.from(processedCategories));
 
         // Calculate averages and margins
         const avgMargin = totalRev > 0 ? (totalProf / totalRev * 100) : 0;
@@ -1669,7 +1665,7 @@
         // Category metrics calculation
         const categoryMetrics = {};
         Object.entries(categories).forEach(([name, val]) => {
-            if (val.revenue > 0 || val.cost > 0) {
+            if (val.revenue > 0 || val.cost > 0 || val.units > 0) {
                 const margin = val.revenue > 0 ? (val.profit / val.revenue * 100).toFixed(1) : 0;
                 categoryMetrics[name] = {
                     revenue: val.revenue,
@@ -1682,7 +1678,7 @@
             }
         });
 
-        debugLog("Category Metrics:", categoryMetrics);
+        console.log("Category Metrics:", categoryMetrics);
 
         // Update summary cards
         document.getElementById('total-profit').innerText = `Ksh ${totalProf.toLocaleString()}`;
@@ -1703,30 +1699,26 @@
         });
         document.getElementById('margin-details').innerHTML = `Best: ${bestMargin.toFixed(1)}% | Worst: ${worstMargin.toFixed(1)}%`;
 
-        // Update category summary cards with revenue, profit, cost, and units
+        // Update category summary cards with clear labels
         document.getElementById('tuktuk-rev').innerText = `Ksh ${(categoryMetrics.Tuktuk?.revenue || 0).toLocaleString()}`;
         document.getElementById('tuktuk-profit').innerText = `Ksh ${(categoryMetrics.Tuktuk?.profit || 0).toLocaleString()}`;
-        document.getElementById('tuktuk-cost').innerText = `Cost: Ksh ${(categoryMetrics.Tuktuk?.cost || 0).toLocaleString()}`;
-        document.getElementById('tuktuk-margin').innerText = `${categoryMetrics.Tuktuk?.margin || 0}% margin`;
-        document.getElementById('tuktuk-units').innerText = `${categoryMetrics.Tuktuk?.units || 0} units`;
+        document.getElementById('tuktuk-cost').innerText = `Ksh ${(categoryMetrics.Tuktuk?.cost || 0).toLocaleString()}`;
+        document.getElementById('tuktuk-units').innerText = `${categoryMetrics.Tuktuk?.units || 0} units sold`;
 
         document.getElementById('gas-rev').innerText = `Ksh ${(categoryMetrics.Gas?.revenue || 0).toLocaleString()}`;
         document.getElementById('gas-profit').innerText = `Ksh ${(categoryMetrics.Gas?.profit || 0).toLocaleString()}`;
-        document.getElementById('gas-cost').innerText = `Cost: Ksh ${(categoryMetrics.Gas?.cost || 0).toLocaleString()}`;
-        document.getElementById('gas-margin').innerText = `${categoryMetrics.Gas?.margin || 0}% margin`;
-        document.getElementById('gas-units').innerText = `${categoryMetrics.Gas?.units || 0} cyl`;
+        document.getElementById('gas-cost').innerText = `Ksh ${(categoryMetrics.Gas?.cost || 0).toLocaleString()}`;
+        document.getElementById('gas-units').innerText = `${categoryMetrics.Gas?.units || 0} cylinders sold`;
 
         document.getElementById('moto-rev').innerText = `Ksh ${(categoryMetrics.Motorbike?.revenue || 0).toLocaleString()}`;
         document.getElementById('moto-profit').innerText = `Ksh ${(categoryMetrics.Motorbike?.profit || 0).toLocaleString()}`;
-        document.getElementById('moto-cost').innerText = `Cost: Ksh ${(categoryMetrics.Motorbike?.cost || 0).toLocaleString()}`;
-        document.getElementById('moto-margin').innerText = `${categoryMetrics.Motorbike?.margin || 0}% margin`;
-        document.getElementById('moto-units').innerText = `${categoryMetrics.Motorbike?.units || 0} units`;
+        document.getElementById('moto-cost').innerText = `Ksh ${(categoryMetrics.Motorbike?.cost || 0).toLocaleString()}`;
+        document.getElementById('moto-units').innerText = `${categoryMetrics.Motorbike?.units || 0} units sold`;
 
         document.getElementById('spare-rev').innerText = `Ksh ${(categoryMetrics['Spare Part']?.revenue || 0).toLocaleString()}`;
         document.getElementById('spare-profit').innerText = `Ksh ${(categoryMetrics['Spare Part']?.profit || 0).toLocaleString()}`;
-        document.getElementById('spare-cost').innerText = `Cost: Ksh ${(categoryMetrics['Spare Part']?.cost || 0).toLocaleString()}`;
-        document.getElementById('spare-margin').innerText = `${categoryMetrics['Spare Part']?.margin || 0}% margin`;
-        document.getElementById('spare-units').innerText = `${categoryMetrics['Spare Part']?.units || 0} pcs`;
+        document.getElementById('spare-cost').innerText = `Ksh ${(categoryMetrics['Spare Part']?.cost || 0).toLocaleString()}`;
+        document.getElementById('spare-units').innerText = `${categoryMetrics['Spare Part']?.units || 0} parts sold`;
 
         // Update summary stats
         document.getElementById('total-items-count').innerText = totalItems;
@@ -1739,12 +1731,10 @@
 
         // Render Category Performance Table with Cost column
         document.getElementById('category-performance-body').innerHTML = Object.entries(categories)
-            .filter(([_, val]) => val.revenue > 0 || val.profit > 0 || val.cost > 0)
+            .filter(([_, val]) => val.revenue > 0 || val.profit > 0 || val.cost > 0 || val.units > 0)
             .map(([name, val]) => {
                 const margin = val.revenue > 0 ? ((val.profit / val.revenue) * 100).toFixed(1) : 0;
                 const contribution = totalRev > 0 ? ((val.revenue / totalRev) * 100).toFixed(1) : 0;
-                const trend = margin > avgMargin ? '↑' : '↓';
-                const trendClass = margin > avgMargin ? 'trend-up' : 'trend-down';
                 const icon = getCategoryIcon(name);
                 
                 // Fix category display name
@@ -1780,7 +1770,6 @@
                     <td class="text-profit">Ksh ${val.profit.toLocaleString()}</td>
                     <td><span class="${badgeClass}">${margin}%</span></td>
                     <td>${contribution}%</td>
-                    <td class="${trendClass}">${trend}</td>
                 </tr>`;
             }).join('');
 
@@ -2007,7 +1996,7 @@
     // Auto-filter on date changes
     document.getElementById('dateFilter').onchange = (e) => {
         document.getElementById('customDateRange').style.display = e.target.value === 'custom' ? 'flex' : 'none';
-        applyFilter(); // Auto-apply filter
+        applyFilter();
     };
     document.getElementById('startDate').onchange = applyFilter;
     document.getElementById('endDate').onchange = applyFilter;
