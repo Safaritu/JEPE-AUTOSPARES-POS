@@ -18,6 +18,8 @@
             --text-dim: #64748b;
             --success: #10b981;
             --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
             --tuktuk: #8b5cf6;
             --sidebar-width: 260px;
             --sidebar-collapsed: 70px;
@@ -219,7 +221,7 @@
         
         .container { 
             padding: 30px; 
-            max-width: 1400px; 
+            max-width: 1600px; 
             margin: auto; 
         }
 
@@ -346,15 +348,15 @@
         .text-profit { color: var(--success); }
 
         /* --- CONTENT GRIDS --- */
-        .dual-grid { 
+        .triple-grid { 
             display: grid; 
             grid-template-columns: 1fr; 
             gap: 20px; 
             margin-bottom: 25px; 
         }
         @media (min-width: 1024px) { 
-            .dual-grid { 
-                grid-template-columns: 1fr 1.5fr; 
+            .triple-grid { 
+                grid-template-columns: 1fr 1fr 1.2fr; 
             } 
         }
         
@@ -415,6 +417,8 @@
             width: 100%; 
             overflow-x: auto; 
             border-radius: 12px; 
+            max-height: 400px;
+            overflow-y: auto;
         }
         table { 
             width: 100%; 
@@ -430,6 +434,10 @@
             color: var(--text-dim); 
             border-bottom: 1px solid var(--border); 
             font-weight: 800;
+            position: sticky;
+            top: 0;
+            background: #f8fafc;
+            z-index: 10;
         }
         td { 
             padding: 14px 12px; 
@@ -448,6 +456,16 @@
         
         .badge.tuktuk {
             background: var(--tuktuk);
+            color: white;
+        }
+        
+        .badge.success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .badge.warning {
+            background: var(--warning);
             color: white;
         }
         
@@ -473,6 +491,55 @@
         .cat-spare { background: #4f46e5; }
         .cat-moto { background: #f59e0b; }
         .cat-tuktuk { background: #8b5cf6; }
+        
+        .trend-up { color: var(--success); }
+        .trend-down { color: var(--danger); }
+        
+        .summary-stats {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .stat-item {
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .stat-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            font-weight: 700;
+        }
+        
+        .stat-value {
+            font-size: 1rem;
+            font-weight: 800;
+            margin-top: 4px;
+        }
+        
+        .export-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+        
+        .export-btn:hover {
+            background: #6366f1;
+        }
         
         .overlay { 
             position: fixed; 
@@ -503,7 +570,7 @@
 
         @media print { 
             .sidebar, .mobile-header, .menu-trigger, .filter-bar, #loadMoreSales,
-            .branch-selector-container { 
+            .branch-selector-container, .export-btn { 
                 display: none !important; 
             } 
             .main-wrapper { 
@@ -573,7 +640,10 @@
     <div class="mobile-header">
         <button onclick="toggleMenu()" style="background:none; border:none; color:white; font-size:1.5rem;">☰</button>
         <div style="font-weight:800;">DETAILED REPORTS</div>
-        <button onclick="window.print()" style="background:none; border:none; color:white; font-size: 1.2rem;">🖨️</button>
+        <div>
+            <button onclick="exportToCSV()" class="export-btn" style="margin-right: 10px; background: var(--success);">📥 EXPORT</button>
+            <button onclick="window.print()" style="background:none; border:none; color:white; font-size: 1.2rem;">🖨️</button>
+        </div>
     </div>
 
     <div class="container">
@@ -605,6 +675,8 @@
                 <input type="date" id="startDate" class="date-input">
                 <input type="date" id="endDate" class="date-input">
             </div>
+            <button onclick="applyFilter()" class="export-btn" style="padding: 10px 20px;">APPLY</button>
+            <button onclick="exportToCSV()" class="export-btn" style="background: var(--success); margin-left: auto;">📊 EXPORT REPORT</button>
         </div>
 
         <div class="report-grid">
@@ -624,13 +696,14 @@
                 <span class="text-small" id="stock-split">Orig: 0 | Copy: 0</span>
             </div>
             <div class="metric-card">
-                <span class="metric-label"><i class="fas fa-fire"></i> Gas & TUKTUK</span>
-                <span class="metric-val" id="gas-count">0 Full</span>
-                <span class="text-small" id="gas-empty">0 Empty | <span id="tuktuk-count">0 TUKTUK</span></span>
+                <span class="metric-label"><i class="fas fa-chart-pie"></i> Avg. Margin</span>
+                <span class="metric-val" id="avg-margin">0%</span>
+                <span class="text-small" id="margin-details">Best: 0% | Worst: 0%</span>
             </div>
         </div>
 
-        <div class="dual-grid">
+        <!-- Triple Grid with 3 Charts -->
+        <div class="triple-grid">
             <div class="card">
                 <h3 class="section-title"><i class="fas fa-chart-pie"></i> Profit by Category</h3>
                 <div class="chart-container">
@@ -639,47 +712,40 @@
             </div>
 
             <div class="card">
-                <h3 class="section-title"><i class="fas fa-table"></i> Category Breakdown</h3>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Category</th>
-                                <th>Revenue</th>
-                                <th>Profit</th>
-                                <th>Margin</th>
-                            </tr>
-                        </thead>
-                        <tbody id="profit-breakdown-body">
-                            <tr>
-                                <td colspan="4" style="text-align: center; padding: 30px;">
-                                    <div class="spinner" style="margin: 0 auto;"></div>
-                                    Loading data...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <h3 class="section-title"><i class="fas fa-chart-bar"></i> Revenue by Category</h3>
+                <div class="chart-container">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="section-title"><i class="fas fa-percentage"></i> Margin Analysis</h3>
+                <div class="chart-container">
+                    <canvas id="marginChart"></canvas>
                 </div>
             </div>
         </div>
 
+        <!-- Category Breakdown Table -->
         <div class="card">
-            <h3 class="section-title"><i class="fas fa-trophy"></i> Top Performing Items</h3>
+            <h3 class="section-title"><i class="fas fa-table"></i> Category Performance Dashboard</h3>
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
-                            <th>Item Name</th>
                             <th>Category</th>
-                            <th>Qty</th>
+                            <th>Items</th>
+                            <th>Units Sold</th>
                             <th>Revenue</th>
-                            <th>Net Profit</th>
-                            <th>Branch</th>
+                            <th>Profit</th>
+                            <th>Margin</th>
+                            <th>Contribution</th>
+                            <th>Trend</th>
                         </tr>
                     </thead>
-                    <tbody id="sales-mix-body">
+                    <tbody id="category-performance-body">
                         <tr>
-                            <td colspan="6" style="text-align: center; padding: 30px;">
+                            <td colspan="8" style="text-align: center; padding: 30px;">
                                 <div class="spinner" style="margin: 0 auto;"></div>
                                 Loading data...
                             </td>
@@ -687,7 +753,114 @@
                     </tbody>
                 </table>
             </div>
-            <button id="loadMoreSales" style="width:100%; padding:15px; margin-top:15px; background:#f8fafc; border:1px solid var(--border); border-radius:14px; font-weight:800; cursor:pointer; color:var(--primary);">LOAD MORE DATA</button>
+        </div>
+
+        <!-- Top and Bottom Performers -->
+        <div class="dual-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 25px;">
+            <div class="card">
+                <h3 class="section-title"><i class="fas fa-trophy" style="color: #f59e0b;"></i> Top 5 Best Sellers</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Category</th>
+                                <th>Qty</th>
+                                <th>Revenue</th>
+                                <th>Profit</th>
+                            </tr>
+                        </thead>
+                        <tbody id="top-performers-body">
+                            <tr>
+                                <td colspan="5" style="text-align: center;">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="section-title"><i class="fas fa-exclamation-triangle" style="color: var(--danger);"></i> Low Performers</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Category</th>
+                                <th>Qty</th>
+                                <th>Revenue</th>
+                                <th>Stock</th>
+                            </tr>
+                        </thead>
+                        <tbody id="low-performers-body">
+                            <tr>
+                                <td colspan="5" style="text-align: center;">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Items Table -->
+        <div class="card">
+            <h3 class="section-title"><i class="fas fa-boxes"></i> All Items Performance</h3>
+            <div class="table-container" style="max-height: 500px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item Name</th>
+                            <th>Category</th>
+                            <th>Type</th>
+                            <th>Qty Sold</th>
+                            <th>Revenue</th>
+                            <th>Profit</th>
+                            <th>Margin</th>
+                            <th>Current Stock</th>
+                            <th>Branch</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sales-mix-body">
+                        <tr>
+                            <td colspan="9" style="text-align: center; padding: 30px;">
+                                <div class="spinner" style="margin: 0 auto;"></div>
+                                Loading data...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <button id="loadMoreSales" style="width:100%; padding:15px; margin-top:15px; background:#f8fafc; border:1px solid var(--border); border-radius:14px; font-weight:800; cursor:pointer; color:var(--primary);">LOAD MORE ITEMS</button>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="card">
+            <div class="summary-stats">
+                <div class="stat-item">
+                    <div class="stat-label">Total Items</div>
+                    <div class="stat-value" id="total-items-count">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Active Products</div>
+                    <div class="stat-value" id="active-products">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Out of Stock</div>
+                    <div class="stat-value" id="out-of-stock">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Gas Cylinders</div>
+                    <div class="stat-value" id="total-gas">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">TUKTUK Units</div>
+                    <div class="stat-value" id="total-tuktuk">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Motorbikes</div>
+                    <div class="stat-value" id="total-moto">0</div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -696,8 +869,8 @@
     import { supabase } from './auth.js';
 
     let allProducts = [], allSales = [], filteredSales = [];
-    let displayLimit = 10;
-    let chartInstance = null;
+    let displayLimit = 15;
+    let profitChart = null, revenueChart = null, marginChart = null;
     let currentUser = null;
     let currentBranchId = null;
     let currentBranch = null;
@@ -709,6 +882,39 @@
     window.toggleMenu = function() {
         document.getElementById('sidebar').classList.toggle('mobile-active');
         document.getElementById('overlay').classList.toggle('active');
+    };
+
+    // ==================== EXPORT FUNCTION ====================
+    window.exportToCSV = function() {
+        const rows = [];
+        
+        // Add headers
+        rows.push(['Item Name', 'Category', 'Type', 'Quantity Sold', 'Revenue', 'Profit', 'Margin %', 'Current Stock', 'Branch']);
+        
+        // Add data
+        Object.entries(itemSummary).forEach(([name, data]) => {
+            const margin = data.rev > 0 ? ((data.prof / data.rev) * 100).toFixed(1) : 0;
+            rows.push([
+                name.replace(/\s*\([^)]*\)/, ''),
+                data.category,
+                data.part_type || 'N/A',
+                data.qty,
+                data.rev,
+                data.prof,
+                margin,
+                data.stock || 0,
+                data.branch
+            ]);
+        });
+        
+        // Create CSV
+        let csvContent = rows.map(row => row.join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `jepe_report_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
     };
 
     // ==================== BRANCH FUNCTIONS ====================
@@ -729,7 +935,6 @@
         });
         selector.innerHTML = options;
         
-        console.log("✅ Branches loaded:", branches);
         return branches;
     }
 
@@ -794,9 +999,6 @@
         const branchDisplay = document.getElementById('currentBranchDisplay');
         const dateRange = document.getElementById('dateRange');
         
-        console.log("========== BRANCH CHANGE ==========");
-        console.log("Selected code:", selectedCode);
-        
         if (selectedCode === 'all') {
             branchDisplay.textContent = 'ALL BRANCHES';
             selectedBranchId = null;
@@ -807,7 +1009,6 @@
                 selectedBranchId = branchId;
                 branchDisplay.textContent = branches[branchId].name;
                 dateRange.textContent = `Showing ${branches[branchId].name} only`;
-                console.log(`Selected branch: ${branches[branchId].name} (ID: ${branchId})`);
             }
         }
         
@@ -816,8 +1017,6 @@
 
     async function loadData() {
         try {
-            console.log("Loading data for branch ID:", selectedBranchId || 'ALL');
-            
             // Build products query
             let productsQuery = supabase.from('products').select('*');
             if (selectedBranchId) {
@@ -842,8 +1041,6 @@
             allProducts = productsRes.data || [];
             allSales = salesRes.data || [];
             
-            console.log(`Loaded ${allProducts.length} products, ${allSales.length} sales`);
-            
             // Set default branch selector to user's branch if available
             if (currentBranch && document.getElementById('branchSelector').value === 'all') {
                 document.getElementById('branchSelector').value = currentBranch.code;
@@ -857,7 +1054,7 @@
         }
     }
 
-    function applyFilter() {
+    window.applyFilter = function() {
         const timeframe = document.getElementById('dateFilter').value;
         const now = new Date();
         
@@ -881,7 +1078,7 @@
             return true;
         });
         renderUI();
-    }
+    };
 
     function getCategoryDisplay(category) {
         const catMap = {
@@ -903,40 +1100,57 @@
         return colorMap[category] || '#64748b';
     }
 
+    // Store item summary globally for export
+    let itemSummary = {};
+
     function renderUI() {
         let totalRev = 0, totalProf = 0, cashRev = 0, kcbRev = 0;
         let cashProf = 0, kcbProf = 0;
-        let invVal = 0, origQty = 0, copyQty = 0, gasFull = 0, gasEmpty = 0, tuktukCount = 0;
+        let invVal = 0, origQty = 0, copyQty = 0, gasFull = 0, gasEmpty = 0;
+        let tuktukCount = 0, motoCount = 0, gasCount = 0, spareCount = 0;
+        let totalItems = 0, activeProducts = 0, outOfStock = 0;
+        let categoryMargins = {};
 
         // Inventory Stats
         allProducts.forEach(p => {
             invVal += (p.stock_quantity * p.cost_price);
             if(p.part_type === 'Original') origQty += p.stock_quantity;
             if(p.part_type === 'Copy') copyQty += p.stock_quantity;
+            
+            // Count by category
             if(p.category === 'Gas') { 
                 gasFull += p.stock_quantity; 
-                gasEmpty += (p.empty_quantity || 0); 
+                gasEmpty += (p.empty_quantity || 0);
+                gasCount++;
             }
             if(p.category === 'Tuktuk') {
                 tuktukCount += p.stock_quantity;
             }
+            if(p.category === 'Motorbike') motoCount += p.stock_quantity;
+            if(p.category === 'Spare Part') spareCount += p.stock_quantity;
+            
+            totalItems += p.stock_quantity;
+            if(p.stock_quantity > 0) activeProducts++;
+            if(p.stock_quantity === 0) outOfStock++;
         });
 
-        // Category & Item Summary Containers - Now including TUKTUK
+        // Category & Item Summary Containers
         const categories = { 
-            Gas: { profit: 0, revenue: 0 }, 
-            Spare: { profit: 0, revenue: 0 },
-            Motorbike: { profit: 0, revenue: 0 },
-            Tuktuk: { profit: 0, revenue: 0 },
-            Other: { profit: 0, revenue: 0 } 
+            Gas: { profit: 0, revenue: 0, items: 0, units: 0 }, 
+            Spare: { profit: 0, revenue: 0, items: 0, units: 0 },
+            Motorbike: { profit: 0, revenue: 0, items: 0, units: 0 },
+            Tuktuk: { profit: 0, revenue: 0, items: 0, units: 0 },
+            Other: { profit: 0, revenue: 0, items: 0, units: 0 } 
         };
-        const itemSummary = {};
+        
+        itemSummary = {};
 
         filteredSales.forEach(s => {
             const p = allProducts.find(prod => prod.id === s.product_id) || { 
                 cost_price: 0, 
                 category: 'Other',
-                part_type: 'N/A'
+                part_type: 'N/A',
+                stock_quantity: 0
             };
             const itemProfit = (s.unit_price - p.cost_price) * s.quantity;
             const branch = branches[p.branch_id] || { code: '--' };
@@ -953,7 +1167,7 @@
                 kcbProf += itemProfit;
             }
 
-            // Category Logic - Map to our categories
+            // Category Logic
             let catKey = 'Other';
             if (p.category === 'Gas') catKey = 'Gas';
             else if (p.category === 'Spare Part') catKey = 'Spare';
@@ -962,9 +1176,17 @@
             
             categories[catKey].profit += itemProfit;
             categories[catKey].revenue += s.total_amount;
+            categories[catKey].units += s.quantity;
+            categories[catKey].items++;
+
+            // Track margins by category
+            if (!categoryMargins[catKey]) categoryMargins[catKey] = [];
+            if (s.total_amount > 0) {
+                categoryMargins[catKey].push(itemProfit / s.total_amount * 100);
+            }
 
             // Item Logic
-            const itemKey = `${s.item_name} (${getCategoryDisplay(p.category)})`;
+            const itemKey = s.item_name;
             if (!itemSummary[itemKey]) {
                 itemSummary[itemKey] = { 
                     qty: 0, 
@@ -972,7 +1194,9 @@
                     prof: 0, 
                     branch: branch.code,
                     category: p.category,
-                    category_display: getCategoryDisplay(p.category)
+                    category_display: getCategoryDisplay(p.category),
+                    part_type: p.part_type,
+                    stock: p.stock_quantity || 0
                 };
             }
             itemSummary[itemKey].qty += s.quantity;
@@ -980,84 +1204,167 @@
             itemSummary[itemKey].prof += itemProfit;
         });
 
+        // Calculate average margin
+        const avgMargin = totalRev > 0 ? (totalProf / totalRev * 100) : 0;
+        let bestMargin = 0, worstMargin = 100;
+        Object.values(categoryMargins).forEach(margins => {
+            if (margins.length > 0) {
+                const avg = margins.reduce((a, b) => a + b, 0) / margins.length;
+                bestMargin = Math.max(bestMargin, avg);
+                worstMargin = Math.min(worstMargin, avg);
+            }
+        });
+
         // Update Top Cards
         document.getElementById('total-profit').innerText = `Ksh ${totalProf.toLocaleString()}`;
-        document.getElementById('profit-split').innerText = `Cash: ${cashProf.toLocaleString()} | KCB PAYBILL: ${kcbProf.toLocaleString()}`;
+        document.getElementById('profit-split').innerText = `Cash: ${cashProf.toLocaleString()} | KCB: ${kcbProf.toLocaleString()}`;
         
         document.getElementById('total-revenue').innerText = `Ksh ${totalRev.toLocaleString()}`;
-        document.getElementById('revenue-split').innerText = `Cash: ${cashRev.toLocaleString()} | KCB PAYBILL: ${kcbRev.toLocaleString()}`;
+        document.getElementById('revenue-split').innerText = `Cash: ${cashRev.toLocaleString()} | KCB: ${kcbRev.toLocaleString()}`;
         
         document.getElementById('total-val').innerText = `Ksh ${invVal.toLocaleString()}`;
         document.getElementById('stock-split').innerText = `Original: ${origQty} | Copy: ${copyQty}`;
-        document.getElementById('gas-count').innerText = `${gasFull} Full Cylinders`;
-        document.getElementById('gas-empty').innerHTML = `${gasEmpty} Empty | <span style="color: var(--tuktuk);">${tuktukCount} TUKTUK</span>`;
+        
+        document.getElementById('avg-margin').innerText = `${avgMargin.toFixed(1)}%`;
+        document.getElementById('margin-details').innerHTML = `Best: ${bestMargin.toFixed(1)}% | Worst: ${worstMargin.toFixed(1)}%`;
 
-        // Render Category Table - Now including all categories
-        document.getElementById('profit-breakdown-body').innerHTML = Object.entries(categories)
+        // Update summary stats
+        document.getElementById('total-items-count').innerText = totalItems;
+        document.getElementById('active-products').innerText = activeProducts;
+        document.getElementById('out-of-stock').innerText = outOfStock;
+        document.getElementById('total-gas').innerText = gasFull + gasEmpty;
+        document.getElementById('total-tuktuk').innerText = tuktukCount;
+        document.getElementById('total-moto').innerText = motoCount;
+
+        // Render Category Performance Table
+        document.getElementById('category-performance-body').innerHTML = Object.entries(categories)
             .filter(([_, val]) => val.revenue > 0 || val.profit > 0)
             .map(([name, val]) => {
                 const margin = val.revenue > 0 ? ((val.profit / val.revenue) * 100).toFixed(1) : 0;
-                const colorClass = name === 'Tuktuk' ? 'tuktuk' : '';
+                const contribution = totalRev > 0 ? ((val.revenue / totalRev) * 100).toFixed(1) : 0;
+                const trend = margin > avgMargin ? '↑' : '↓';
+                const trendClass = margin > avgMargin ? 'trend-up' : 'trend-down';
+                
                 return `<tr>
                     <td>
                         <span class="category-tag cat-${name.toLowerCase()}"></span>
                         <b>${name === 'Tuktuk' ? '🚖 TUKTUK' : name}</b>
                     </td>
+                    <td>${val.items}</td>
+                    <td>${val.units}</td>
                     <td>Ksh ${val.revenue.toLocaleString()}</td>
                     <td class="text-profit">Ksh ${val.profit.toLocaleString()}</td>
-                    <td><span class="badge ${colorClass}">${margin}%</span></td>
+                    <td><span class="badge ${name === 'Tuktuk' ? 'tuktuk' : ''}">${margin}%</span></td>
+                    <td>${contribution}%</td>
+                    <td class="${trendClass}">${trend}</td>
                 </tr>`;
             }).join('');
 
-        // Render Top Items Table - Now with category column
+        // Render Top Performers
         const sortedItems = Object.entries(itemSummary).sort((a,b) => b[1].prof - a[1].prof);
+        const topFive = sortedItems.slice(0, 5);
+        document.getElementById('top-performers-body').innerHTML = topFive.map(([name, data]) => {
+            const categoryColor = getCategoryColor(data.category);
+            return `
+            <tr>
+                <td><b>${name}</b></td>
+                <td><span class="badge" style="background: ${categoryColor}; color: white;">${data.category_display}</span></td>
+                <td>${data.qty}</td>
+                <td>Ksh ${data.rev.toLocaleString()}</td>
+                <td class="text-profit">Ksh ${data.prof.toLocaleString()}</td>
+            </tr>
+        `}).join('');
+
+        // Render Low Performers (items with low sales relative to stock)
+        const lowPerformers = allProducts
+            .filter(p => p.stock_quantity > 0)
+            .map(p => {
+                const sales = filteredSales.filter(s => s.product_id === p.id);
+                const qtySold = sales.reduce((sum, s) => sum + s.quantity, 0);
+                const rev = sales.reduce((sum, s) => sum + s.total_amount, 0);
+                return {
+                    name: p.name,
+                    category: p.category,
+                    qty: qtySold,
+                    rev: rev,
+                    stock: p.stock_quantity,
+                    ratio: p.stock_quantity > 0 ? qtySold / p.stock_quantity : 0
+                };
+            })
+            .filter(p => p.ratio < 0.5 && p.stock > 5) // Less than 50% turnover rate with >5 in stock
+            .sort((a, b) => a.ratio - b.ratio)
+            .slice(0, 5);
+
+        document.getElementById('low-performers-body').innerHTML = lowPerformers.map(p => {
+            const categoryColor = getCategoryColor(p.category);
+            return `
+            <tr>
+                <td><b>${p.name}</b></td>
+                <td><span class="badge" style="background: ${categoryColor}; color: white;">${getCategoryDisplay(p.category)}</span></td>
+                <td>${p.qty}</td>
+                <td>Ksh ${p.rev.toLocaleString()}</td>
+                <td><span class="badge warning">${p.stock} units</span></td>
+            </tr>
+        `}).join('');
+
+        // Render All Items Table
         document.getElementById('sales-mix-body').innerHTML = sortedItems.slice(0, displayLimit).map(([name, data]) => {
             const categoryColor = getCategoryColor(data.category);
+            const margin = data.rev > 0 ? ((data.prof / data.rev) * 100).toFixed(1) : 0;
             const categoryBadge = data.category === 'Tuktuk' ? 'badge tuktuk' : 'badge';
             
             return `
             <tr>
-                <td><b>${name.replace(/\s*\([^)]*\)/, '')}</b></td>
+                <td><b>${name}</b></td>
                 <td><span class="${categoryBadge}" style="background: ${categoryColor}; color: white;">${data.category_display}</span></td>
+                <td>${data.part_type || 'N/A'}</td>
                 <td>${data.qty}</td>
                 <td>Ksh ${data.rev.toLocaleString()}</td>
-                <td class="text-profit" style="font-weight:800;">Ksh ${data.prof.toLocaleString()}</td>
+                <td class="text-profit">Ksh ${data.prof.toLocaleString()}</td>
+                <td><span class="badge ${data.category === 'Tuktuk' ? 'tuktuk' : ''}">${margin}%</span></td>
+                <td><span class="badge ${data.stock > 0 ? 'success' : 'warning'}">${data.stock}</span></td>
                 <td><span class="branch-pill">${data.branch}</span></td>
             </tr>
         `}).join('');
         
         document.getElementById('loadMoreSales').style.display = displayLimit >= sortedItems.length ? 'none' : 'block';
 
-        // Render Chart - Now including TUKTUK
-        if (chartInstance) chartInstance.destroy();
-        const ctx = document.getElementById('profitChart').getContext('2d');
-        
-        // Filter out categories with zero profit
-        const chartData = {
-            labels: [],
-            profits: [],
-            colors: []
-        };
-        
+        // Destroy existing charts
+        if (profitChart) profitChart.destroy();
+        if (revenueChart) revenueChart.destroy();
+        if (marginChart) marginChart.destroy();
+
+        // Prepare chart data
+        const chartLabels = [];
+        const profitData = [];
+        const revenueData = [];
+        const marginData = [];
+        const chartColors = [];
+
         Object.entries(categories).forEach(([name, val]) => {
-            if (val.profit > 0) {
-                chartData.labels.push(name === 'Tuktuk' ? 'TUKTUK' : name);
-                chartData.profits.push(val.profit);
-                chartData.colors.push(getCategoryColor(
+            if (val.profit > 0 || val.revenue > 0) {
+                chartLabels.push(name === 'Tuktuk' ? 'TUKTUK' : name);
+                profitData.push(val.profit);
+                revenueData.push(val.revenue);
+                const margin = val.revenue > 0 ? (val.profit / val.revenue * 100) : 0;
+                marginData.push(margin);
+                chartColors.push(getCategoryColor(
                     name === 'Spare' ? 'Spare Part' : 
                     name === 'Moto' ? 'Motorbike' : 
                     name === 'Tuktuk' ? 'Tuktuk' : name
                 ));
             }
         });
-        
-        chartInstance = new Chart(ctx, {
+
+        // Profit Chart
+        const profitCtx = document.getElementById('profitChart').getContext('2d');
+        profitChart = new Chart(profitCtx, {
             type: 'doughnut',
             data: {
-                labels: chartData.labels,
+                labels: chartLabels,
                 datasets: [{
-                    data: chartData.profits,
-                    backgroundColor: chartData.colors,
+                    data: profitData,
+                    backgroundColor: chartColors,
                     borderWidth: 0
                 }]
             },
@@ -1065,13 +1372,68 @@
                 maintainAspectRatio: false,
                 cutout: '70%',
                 plugins: { 
-                    legend: { 
-                        position: 'bottom', 
-                        labels: { 
-                            padding: 20, 
-                            font: { family: 'Plus Jakarta Sans', weight: '700' } 
-                        } 
-                    } 
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
+        // Revenue Chart (Bar)
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        revenueChart = new Chart(revenueCtx, {
+            type: 'bar',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    label: 'Revenue',
+                    data: revenueData,
+                    backgroundColor: chartColors,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: value => 'Ksh ' + value.toLocaleString()
+                        }
+                    }
+                }
+            }
+        });
+
+        // Margin Chart
+        const marginCtx = document.getElementById('marginChart').getContext('2d');
+        marginChart = new Chart(marginCtx, {
+            type: 'line',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    label: 'Margin %',
+                    data: marginData,
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: chartColors,
+                    pointBorderColor: 'white',
+                    pointBorderWidth: 2,
+                    pointRadius: 6
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: value => value + '%'
+                        }
+                    }
                 }
             }
         });
@@ -1079,11 +1441,10 @@
 
     document.getElementById('dateFilter').onchange = (e) => {
         document.getElementById('customDateRange').style.display = e.target.value === 'custom' ? 'flex' : 'none';
-        applyFilter();
     };
     document.getElementById('startDate').onchange = applyFilter;
     document.getElementById('endDate').onchange = applyFilter;
-    document.getElementById('loadMoreSales').onclick = () => { displayLimit += 15; renderUI(); };
+    document.getElementById('loadMoreSales').onclick = () => { displayLimit += 20; renderUI(); };
 
     window.handleLogout = async () => { 
         localStorage.removeItem('pos_session');
