@@ -3,105 +3,322 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JEPE POS | Suppliers & Logistics</title>
+    <title>JEPE CASHIER | Suppliers & Logistics</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { 
+            --admin-dark: #0f172a;
             --primary: #4f46e5; 
             --bg: #f8fafc; 
             --card: #ffffff; 
             --border: #e2e8f0; 
-            --text: #1e293b; 
+            --text-main: #1e293b; 
             --text-dim: #64748b;
-            --danger: #ef4444; 
             --success: #10b981; 
+            --danger: #ef4444; 
             --warning: #f59e0b;
-            --sidebar-bg: #1e293b;
             --sidebar-width: 260px;
+            --sidebar-collapsed: 70px;
+            --header-height: 70px;
         }
-        
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
             background: var(--bg); 
-            color: var(--text); 
+            color: var(--text-main); 
             margin: 0; 
-            line-height: 1.5; 
-            display: flex;
+            display: flex; 
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        /* --- Sidebar Navigation --- */
-        .sidebar {
-            position: fixed;
-            left: -260px;
-            top: 0;
-            width: var(--sidebar-width);
-            height: 100vh;
-            background: var(--sidebar-bg);
-            transition: 0.3s ease;
-            z-index: 2000;
-            padding: 25px;
-            box-sizing: border-box;
+        /* --- SIDEBAR - Collapsible like admin --- */
+        .sidebar { 
+            width: var(--sidebar-collapsed); 
+            height: 100vh; 
+            background: var(--admin-dark); 
+            position: fixed; 
+            left: 0; 
+            top: 0; 
+            z-index: 3000; 
+            overflow-x: hidden; 
+            overflow-y: auto;
+            transition: width 0.3s ease;
+            padding: 20px 10px; 
             display: flex;
             flex-direction: column;
             color: white;
         }
-
-        @media (min-width: 1024px) {
-            .sidebar { left: 0; }
-            .main-wrapper { margin-left: var(--sidebar-width); }
-            .mobile-header { display: none !important; }
+        
+        .sidebar:hover, .sidebar.mobile-active { 
+            width: var(--sidebar-width); 
+        }
+        
+        .sidebar-header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            margin-bottom: 30px; 
+            padding: 0 10px; 
+            min-height: 40px;
+        }
+        
+        .sidebar h2 { 
+            font-size: 1.2rem; 
+            margin: 0; 
+            white-space: nowrap; 
+            opacity: 0; 
+            transition: opacity 0.2s; 
+            color: white;
+            font-weight: 800;
+        }
+        
+        .sidebar:hover h2, .sidebar.mobile-active h2 { 
+            opacity: 1; 
+        }
+        
+        .close-btn { 
+            display: none; 
+            background: none; 
+            border: none; 
+            color: white; 
+            font-size: 1.5rem; 
+            cursor: pointer; 
         }
 
-        .sidebar.active { left: 0; }
-
-        .overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            z-index: 1500;
+        /* Branch Info in Sidebar */
+        .branch-info {
+            padding: 10px;
+            margin: 10px 0 20px;
+            background: rgba(79, 70, 229, 0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            white-space: nowrap;
         }
-        .overlay.active { display: block; }
-
-        .nav-link {
+        
+        .branch-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            color: #94a3b8;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .sidebar:hover .branch-label, .sidebar.mobile-active .branch-label {
+            opacity: 1;
+        }
+        
+        .branch-name {
+            font-weight: 800;
+            color: white;
+            font-size: 0.85rem;
+            margin-top: 3px;
             display: flex;
             align-items: center;
-            padding: 12px 15px;
-            color: #cbd5e1;
-            text-decoration: none;
-            font-weight: 500;
-            border-radius: 10px;
-            margin-bottom: 6px;
-            transition: 0.2s;
+            gap: 6px;
         }
-        .nav-link:hover { background: rgba(255,255,255,0.1); color: white; }
-        .nav-link.active { background: var(--primary); color: white; font-weight: 700; }
+        
+        .branch-name i { 
+            color: var(--primary); 
+            min-width: 20px;
+        }
+        
+        .branch-name span {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .sidebar:hover .branch-name span, .sidebar.mobile-active .branch-name span {
+            opacity: 1;
+        }
+        
+        .nav-list { 
+            flex: 1;
+            list-style: none; 
+            padding: 0; 
+            margin: 0; 
+            overflow-y: auto;
+        }
+        
+        .nav-link { 
+            display: flex; 
+            align-items: center; 
+            padding: 12px; 
+            color: #94a3b8; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            margin-bottom: 5px; 
+            transition: 0.3s; 
+            white-space: nowrap;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .nav-link i { 
+            min-width: 30px; 
+            font-size: 1.2rem; 
+            text-align: center; 
+            margin-right: 15px;
+        }
+        
+        .nav-link span { 
+            opacity: 0; 
+            white-space: nowrap; 
+            transition: opacity 0.2s; 
+        }
+        
+        .sidebar:hover .nav-link span, 
+        .sidebar.mobile-active .nav-link span { 
+            opacity: 1; 
+        }
+        
+        .nav-link:hover, .nav-link.active { 
+            background: var(--primary); 
+            color: white; 
+        }
 
-        /* --- Content Layout --- */
-        .main-wrapper { width: 100%; min-height: 100vh; flex-grow: 1; }
+        /* --- MENU TRIGGER --- */
+        .menu-trigger {
+            display: none; 
+            position: fixed; 
+            top: 15px; 
+            left: 15px; 
+            z-index: 2500;
+            background: var(--admin-dark); 
+            color: white; 
+            border: none; 
+            padding: 12px 18px;
+            border-radius: 12px; 
+            cursor: pointer; 
+            font-size: 0.9rem; 
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        /* --- MAIN LAYOUT --- */
+        .main-wrapper { 
+            width: 100%; 
+            margin-left: var(--sidebar-collapsed); 
+            transition: margin-left 0.3s ease;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--bg) 0%, #ffffff 100%);
+        }
+        
+        @media (min-width: 1024px) {
+            .main-wrapper { 
+                margin-left: var(--sidebar-collapsed); 
+            }
+        }
 
         .mobile-header {
-            background: var(--primary);
-            color: white;
-            padding: 15px 20px;
-            display: flex;
+            display: none; 
+            background: var(--admin-dark); 
+            color: white; 
+            padding: 0 20px;
+            align-items: center; 
             justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
+            position: fixed; 
+            top: 0; 
+            width: 100%; 
+            height: 64px; 
+            z-index: 2000;
         }
 
         .container { 
-            width: 100%; 
-            max-width: 1200px; 
-            margin: auto; 
-            padding: 20px;
-            box-sizing: border-box;
+            padding: 30px; 
+            max-width: 1400px; 
+            margin: 0 auto; 
         }
 
-        /* --- Stats Cards --- */
+        @media (max-width: 1024px) {
+            .sidebar { 
+                transform: translateX(-100%); 
+                width: var(--sidebar-width);
+            }
+            .sidebar.mobile-active { 
+                transform: translateX(0); 
+            }
+            .main-wrapper { 
+                margin-left: 0; 
+                padding-top: 64px;
+            }
+            .menu-trigger { 
+                display: block; 
+            }
+            .mobile-header { 
+                display: flex; 
+            }
+            .close-btn { 
+                display: block; 
+            }
+            .container {
+                padding: 20px 15px;
+            }
+        }
+
+        /* --- PAGE HEADER --- */
+        .page-header {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px 25px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        .page-title {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .page-title h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--admin-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .page-title h1 i {
+            color: var(--primary);
+            background: #eef2ff;
+            padding: 8px;
+            border-radius: 12px;
+            font-size: 1.2rem;
+        }
+
+        .page-title p {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            margin-left: 45px;
+        }
+
+        .branch-badge {
+            background: var(--primary);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+        }
+
+        /* --- STATS CARDS --- */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -109,6 +326,172 @@
             margin-bottom: 25px;
         }
 
+        .stat-card { 
+            background: var(--card); 
+            border-radius: 16px; 
+            border: 1px solid var(--border); 
+            padding: 20px; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .stat-header i {
+            font-size: 1.5rem;
+            color: var(--primary);
+            background: #eef2ff;
+            padding: 8px;
+            border-radius: 12px;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            font-weight: 700;
+        }
+
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+        }
+
+        .stat-value.danger {
+            color: var(--danger);
+        }
+
+        .stat-value.success {
+            color: var(--success);
+        }
+
+        /* --- SECTION HEADER --- */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 30px 0 15px;
+        }
+
+        .section-title {
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title i {
+            background: #eef2ff;
+            padding: 6px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: #6366f1;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-success:hover {
+            background: #0d9488;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-outline {
+            background: white;
+            border: 1px solid var(--border);
+            padding: 12px 20px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: #f8fafc;
+        }
+
+        /* --- SEARCH --- */
+        .search-wrapper {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        .search-wrapper input {
+            width: 100%;
+            padding: 14px 20px 14px 45px;
+            border: 1px solid var(--border);
+            border-radius: 40px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .search-wrapper input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        /* --- CARD CONTAINER --- */
         .card { 
             background: var(--card); 
             border-radius: 16px; 
@@ -118,108 +501,431 @@
             margin-bottom: 25px;
         }
 
-        .section-title { 
-            font-size: 0.8rem; 
-            text-transform: uppercase; 
-            font-weight: 800; 
-            color: var(--primary); 
-            letter-spacing: 1px; 
-            margin: 25px 0 12px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
+        /* --- TABLE STYLES --- */
+        .table-container { 
+            width: 100%; 
+            overflow-x: auto; 
+            border-radius: 12px;
         }
-
-        /* --- Tables --- */
-        .table-container { width: 100%; overflow-x: auto; border-radius: 10px; }
-        table { width: 100%; min-width: 650px; border-collapse: collapse; }
-        th { text-align: left; padding: 14px; background: #f8fafc; font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border); }
-        td { padding: 14px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-
-        input, select { 
-            width: 100%; padding: 14px; border: 1px solid var(--border); 
-            border-radius: 12px; margin-bottom: 12px; font-family: inherit; font-size: 16px; outline: none;
-        }
-
-        .btn { padding: 12px 18px; border-radius: 10px; border: none; cursor: pointer; font-weight: 700; font-size: 0.85rem; transition: 0.2s; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-success { background: var(--success); color: white; }
-        .btn-outline { background: white; border: 1px solid var(--border); color: var(--text); width: 100%; }
-
-        .badge { padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; }
-        .bg-debt { background: #fee2e2; color: #991b1b; }
-        .bg-clear { background: #dcfce7; color: #166534; }
-
-        .modal { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.6); justify-content: center; align-items: center; 
-            z-index: 3000; padding: 15px; box-sizing: border-box; 
-        }
-        .modal-content { background: white; padding: 30px; border-radius: 20px; width: 100%; max-width: 450px; color: var(--text); }
         
-        #product-results div:hover { background-color: #f1f5f9; }
+        table { 
+            width: 100%; 
+            min-width: 800px; 
+            border-collapse: collapse; 
+        }
+        
+        th { 
+            text-align: left; 
+            padding: 16px; 
+            background: #f8fafc; 
+            font-size: 0.7rem; 
+            text-transform: uppercase; 
+            color: var(--text-dim); 
+            border-bottom: 1px solid var(--border); 
+            font-weight: 800;
+        }
+        
+        td { 
+            padding: 16px; 
+            border-bottom: 1px solid var(--border); 
+            font-size: 0.9rem; 
+            vertical-align: middle;
+        }
+
+        tr:hover td {
+            background: #fafaff;
+        }
+
+        /* --- BADGES --- */
+        .badge { 
+            padding: 6px 12px; 
+            border-radius: 30px; 
+            font-size: 0.7rem; 
+            font-weight: 800; 
+            display: inline-block;
+        }
+        
+        .badge-debt { 
+            background: #fee2e2; 
+            color: #b91c1c; 
+        }
+        .badge-clear { 
+            background: #dcfce7; 
+            color: #15803d; 
+        }
+        .badge-category {
+            background: #f1f5f9;
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+
+        /* --- ACTION BUTTONS GROUP --- */
+        .action-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .action-group .btn-primary,
+        .action-group .btn-success {
+            padding: 6px 12px;
+            font-size: 0.7rem;
+        }
+
+        /* --- MODAL STYLES --- */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(15, 23, 42, 0.6); 
+            backdrop-filter: blur(8px);
+            justify-content: center; 
+            align-items: center; 
+            z-index: 4000; 
+            padding: 20px;
+        }
+        
+        .modal-content { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 24px; 
+            width: 100%; 
+            max-width: 500px; 
+            max-height: 90vh; 
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--admin-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-header h3 i {
+            color: var(--primary);
+        }
+
+        .modal-close {
+            background: #f1f5f9;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .modal-content label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .modal-content input,
+        .modal-content select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .modal-content input:focus,
+        .modal-content select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .modal-content input[readonly] {
+            background: #f8fafc;
+        }
+
+        /* --- PRODUCT SEARCH RESULTS --- */
+        #product-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            z-index: 100;
+            max-height: 250px;
+            overflow-y: auto;
+            display: none;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+            margin-top: 5px;
+        }
+
+        #product-results div {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        #product-results div:hover {
+            background: #f1f5f9;
+        }
+
+        #product-results div:last-child {
+            border-bottom: none;
+        }
+
+        /* --- ITEM INFO BADGE --- */
+        #item-info-badge {
+            background: #eff6ff;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            border: 1px solid #dbeafe;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            font-size: 0.85rem;
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            font-weight: 700;
+        }
+
+        .info-value {
+            font-weight: 800;
+            color: var(--primary);
+            margin-top: 4px;
+        }
+
+        /* --- TOTAL DISPLAY --- */
+        .total-display {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            text-align: center;
+            border: 2px dashed var(--border);
+        }
+
+        .total-display small {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .total-display h3 {
+            margin: 0;
+            color: var(--danger);
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        /* --- PRICE INPUT GRID --- */
+        .price-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 15px 0;
+        }
+
+        .overlay { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(15, 23, 42, 0.6); 
+            backdrop-filter: blur(4px); 
+            display: none; 
+            z-index: 2500; 
+        }
+        .overlay.active { display: block; }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-dim);
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .action-group {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
 <body>
 
-<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+<button class="menu-trigger" onclick="toggleMenu()">☰ MENU</button>
 
 <div class="sidebar" id="sidebar">
-    <div style="margin-bottom: 30px;">
-        <h2 style="color:white; font-weight:800; margin:0;">JEPE POS</h2>
-        <small style="color: #94a3b8;">Logistics Manager</small>
+    <div class="sidebar-header">
+        <h2>JEPE CASHIER</h2>
+        <button class="close-btn" onclick="toggleMenu()">×</button>
     </div>
-        <a href="cashier.html" class="nav-link">📊 Dashboard</a>
-        <a href="cashiergashub.html" class="nav-link">⛽ Gas Hub</a>
-        <a href="low-stock-cashier.html" class="nav-link">⚠️ Low Stock</a>
-        <a href="debtors.html" class="nav-link">👥 Debtors</a>
-        <a href="supplierscashier.html" class="nav-link active">🤝 Suppliers</a>
-        <a href="gas_delivery.html" class="nav-link">🚚 Delivery Records</a>
-        <a href="cashier_inventory.html" class="nav-link">📦 Add Items</a>
-        <a href="sales_reports.html" class="nav-link">📜 Sales History</a>
-        <a href="shift history cashier.html" class="nav-link">🌞 Shift History</a>
-        <a href="moneyinout.html" class="nav-link">💸 Cash Flow</a>
-        <a href="pos.html" class="nav-link">🌠 View All Items</a>
     
-    <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-        <a href="index.html" class="nav-link" style="color:#f87171;">🚪 Logout System</a>
+    <!-- Branch Info Display -->
+    <div class="branch-info" id="sidebarBranchInfo">
+        <div class="branch-label">Your Assigned Branch</div>
+        <div class="branch-name" id="sidebarBranchName">
+            <i class="fas fa-store"></i>
+            <span>Loading...</span>
+        </div>
     </div>
+    
+    <nav class="nav-list">
+        <!-- Cashier Navigation -->
+        <a href="cashier.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+        <a href="cashiergashub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
+        <a href="moneyinout.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
+        <a href="shift history cashier.html" class="nav-link"><i class="fas fa-history"></i> <span>Shift History</span></a>
+        <a href="sales_reports.html" class="nav-link"><i class="fas fa-chart-line"></i> <span>Sales History</span></a>
+        <a href="cashier_inventory.html" class="nav-link"><i class="fas fa-plus-circle"></i> <span>Add Stock</span></a>
+        <a href="sales_editor.html" class="nav-link"><i class="fas fa-edit"></i> <span>Edit Stock</span></a>
+
+        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+
+        <a href="low-stock-cashier.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
+        <a href="debtors.html" class="nav-link"><i class="fas fa-users"></i> <span>Debtors</span></a>
+        <a href="supplierscashier.html" class="nav-link active"><i class="fas fa-handshake"></i> <span>Suppliers</span></a>
+        <a href="gas_delivery.html" class="nav-link"><i class="fas fa-truck"></i> <span>Delivery</span></a>
+
+        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+
+        <a href="cashier_report.html" class="nav-link"><i class="fas fa-file-alt"></i> <span>Today's Report</span></a>
+        <a href="pos.html" class="nav-link"><i class="fas fa-shopping-cart"></i> <span>Cart Shop</span></a>
+        <a href="cashierprofile.html" class="nav-link"><i class="fas fa-user"></i> <span>Settings</span></a>
+        <a href="cashier.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
+        
+        <!-- Logout Button -->
+        <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <button onclick="logoutUser()" style="width:100%; background:var(--danger); color:white; border:none; padding:12px; border-radius:10px; font-weight:700; cursor:pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <i class="fas fa-sign-out-alt"></i> <span>Logout System</span>
+            </button>
+        </div>
+    </nav>
 </div>
 
 <div class="main-wrapper">
     <div class="mobile-header">
-        <button onclick="toggleSidebar()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">☰</button>
-        <div style="font-weight:800; letter-spacing:1px;">SUPPLIERS</div>
-        <div style="width:30px;"></div>
+        <button onclick="toggleMenu()" style="background:none; border:none; color:white; font-size:1.5rem;">☰</button>
+        <div style="font-weight:800;">SUPPLIERS</div>
+        <div style="width:24px;"></div>
     </div>
 
     <div class="container">
-        <div class="stats-grid">
-            <div class="card" style="margin-bottom:0; text-align: center;">
-                <small style="color:var(--text-dim); font-weight:700;">TOTAL ACCOUNTS PAYABLE</small>
-                <h2 id="total-debt-display" style="color:var(--danger); margin:10px 0 0;">Ksh 0</h2>
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <h1>
+                    <i class="fas fa-handshake"></i>
+                    <span>Suppliers & Logistics</span>
+                </h1>
+                <p>Manage vendor accounts and stock deliveries</p>
             </div>
-            <div class="card" style="margin-bottom:0; text-align: center;">
-                <small style="color:var(--text-dim); font-weight:700;">ACTIVE VENDORS</small>
-                <h2 id="total-vendors-display" style="margin:10px 0 0;">0</h2>
+            <div class="branch-badge" id="branchDisplay">
+                <i class="fas fa-store"></i> <span id="branchName">Loading...</span>
             </div>
         </div>
 
-        <div class="section-title">
-            <span>Supplier Directory</span>
-            <button class="btn btn-success" onclick="openSupplierModal()">+ NEW SUPPLIER</button>
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <i class="fas fa-credit-card"></i>
+                    <span class="stat-label">Accounts Payable</span>
+                </div>
+                <div class="stat-value danger" id="total-debt-display">Ksh 0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <i class="fas fa-store-alt"></i>
+                    <span class="stat-label">Active Vendors</span>
+                </div>
+                <div class="stat-value success" id="total-vendors-display">0</div>
+            </div>
+        </div>
+
+        <!-- Supplier Directory -->
+        <div class="section-header">
+            <div class="section-title">
+                <i class="fas fa-address-book"></i>
+                Supplier Directory
+            </div>
+            <button class="btn-primary" onclick="openSupplierModal()">
+                <i class="fas fa-plus"></i> New Supplier
+            </button>
         </div>
         
         <div class="card">
-            <input type="text" id="searchSupplier" placeholder="🔍 Search name or phone..." onkeyup="filterSuppliers()">
+            <div class="search-wrapper">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchSupplier" placeholder="Search by name or phone...">
+            </div>
             <div class="table-container">
                 <table id="supplierTable">
                     <thead>
                         <tr>
                             <th>Supplier Details</th>
                             <th>Category</th>
-                            <th>Current Balance</th>
-                            <th>Quick Actions</th>
+                            <th>Balance</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -227,7 +933,14 @@
             </div>
         </div>
 
-        <div class="section-title">Stock-In History</div>
+        <!-- Stock-In History -->
+        <div class="section-header">
+            <div class="section-title">
+                <i class="fas fa-history"></i>
+                Stock-In History
+            </div>
+        </div>
+
         <div class="card">
             <div class="table-container">
                 <table id="orderTable">
@@ -236,117 +949,143 @@
                             <th>Date</th>
                             <th>Supplier</th>
                             <th>Items Received</th>
-                            <th>Amount (Ksh)</th>
+                            <th>Amount</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
             </div>
-            <button class="btn btn-outline" style="margin-top:15px;" onclick="loadMoreOrders()">Load More History</button>
+            <button class="btn-outline" style="margin-top:20px;" onclick="loadMoreOrders()">
+                <i class="fas fa-chevron-down"></i> Load More History
+            </button>
         </div>
     </div>
 </div>
 
+<!-- Payment Modal -->
 <div id="paymentModal" class="modal">
     <div class="modal-content">
-        <h3 style="margin-top:0;">Process Payment</h3>
+        <div class="modal-header">
+            <h3><i class="fas fa-money-bill-wave"></i> Process Payment</h3>
+            <button class="modal-close" onclick="closeModals()">×</button>
+        </div>
         <input type="hidden" id="pay-sup-id">
-        <label style="font-size:0.8rem; font-weight:bold;">Paying To</label>
-        <input type="text" id="pay-sup-name" readonly style="background:#f8fafc;">
-        <label style="font-size:0.8rem; font-weight:bold;">Source</label>
+        
+        <label>Paying To</label>
+        <input type="text" id="pay-sup-name" readonly>
+        
+        <label>Payment Method</label>
         <select id="pay-method">
             <option>Shop Cash</option>
             <option>Mpesa Business</option>
             <option>Equity/Bank</option>
         </select>
-        <label style="font-size:0.8rem; font-weight:bold;">Amount (Ksh)</label>
+        
+        <label>Amount (Ksh)</label>
         <input type="number" id="pay-amount" placeholder="0.00">
-        <button class="btn btn-primary" onclick="processPayment()" style="width:100%; margin-top:10px;">Confirm Payment</button>
-        <button class="btn btn-outline" style="border:none;" onclick="closeModals()">Cancel</button>
+        
+        <button class="btn-primary" onclick="processPayment()" style="width:100%; margin-top:15px;">
+            <i class="fas fa-check"></i> Confirm Payment
+        </button>
     </div>
 </div>
 
+<!-- Supplier Modal -->
 <div id="supplierModal" class="modal">
     <div class="modal-content">
-        <h3 style="margin-top:0;">New Supplier</h3>
-        <input type="text" id="sup-name" placeholder="Business Name">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-plus"></i> New Supplier</h3>
+            <button class="modal-close" onclick="closeModals()">×</button>
+        </div>
+        
+        <label>Business Name</label>
+        <input type="text" id="sup-name" placeholder="Enter business name">
+        
+        <label>Category</label>
         <select id="sup-category">
             <option>Spare Parts</option>
             <option>Gas Refills</option>
             <option>Motorbikes</option>
+            <option>TUKTUK</option>
             <option>General Hardware</option>
         </select>
-        <input type="text" id="sup-phone" placeholder="Phone Number">
-        <label style="font-size:0.8rem; font-weight:bold;">Opening Balance Owed</label>
-        <input type="number" id="sup-balance" value="0">
-        <button class="btn btn-success" onclick="saveSupplier()" style="width:100%; margin-top:10px;">Save Supplier</button>
-        <button class="btn btn-outline" style="border:none;" onclick="closeModals()">Cancel</button>
+        
+        <label>Phone Number</label>
+        <input type="text" id="sup-phone" placeholder="07XX XXX XXX">
+        
+        <label>Opening Balance Owed</label>
+        <input type="number" id="sup-balance" value="0" placeholder="0.00">
+        
+        <button class="btn-primary" onclick="saveSupplier()" style="width:100%; margin-top:15px;">
+            <i class="fas fa-save"></i> Save Supplier
+        </button>
     </div>
 </div>
 
+<!-- Order Modal -->
 <div id="orderModal" class="modal">
     <div class="modal-content">
-        <h3 style="margin-top:0;">Record Delivery</h3>
-        <input type="hidden" id="order-sup-id">
-        <input type="text" id="order-sup-name" readonly style="background:#f1f5f9; border:none; font-weight:700; color:var(--primary); margin-bottom:15px;">
+        <div class="modal-header">
+            <h3><i class="fas fa-truck-loading"></i> Record Delivery</h3>
+            <button class="modal-close" onclick="closeModals()">×</button>
+        </div>
         
-        <label style="font-size:0.75rem; font-weight:bold;">SEARCH PRODUCT (GAS OR PARTS)</label>
+        <input type="hidden" id="order-sup-id">
+        <input type="text" id="order-sup-name" readonly style="background:#f8fafc; font-weight:700; color:var(--primary); margin-bottom:15px;">
+        
+        <label>Search Product</label>
         <div style="position:relative;">
-            <input type="text" id="restock-search" placeholder="Type name or weight (e.g. 6kg)..." oninput="searchProducts(this.value)" autocomplete="off">
-            <div id="product-results" style="position:absolute; top:100%; left:0; right:0; background:white; border:1px solid var(--border); border-radius:8px; z-index:100; max-height:200px; overflow-y:auto; display:none; box-shadow:0 10px 15px rgba(0,0,0,0.1);"></div>
+            <input type="text" id="restock-search" placeholder="Type name or weight..." autocomplete="off">
+            <div id="product-results"></div>
         </div>
 
         <input type="hidden" id="selected-product-id">
         
-        <div id="item-info-badge" style="display:none; background:#eff6ff; padding:12px; border-radius:10px; margin-bottom:15px; border:1px solid #dbeafe;">
-            <div style="display:grid; grid-template-columns: 1fr 1fr; font-size:0.8rem; gap:10px;">
-                <span>Available: <b id="info-qty" style="color:var(--primary)">0</b></span>
-                <span>Current Cost: <b id="info-cost">0</b></span>
+        <div id="item-info-badge" style="display:none;">
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Available Stock</div>
+                    <div class="info-value" id="info-qty">0</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Current Cost</div>
+                    <div class="info-value" id="info-cost">Ksh 0</div>
+                </div>
             </div>
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+        <div class="price-grid">
             <div>
-                <label style="font-size:0.75rem; font-weight:bold;">QTY RECEIVED</label>
-                <input type="number" id="order-qty" placeholder="0" oninput="calcTotalCost()">
+                <label>Quantity</label>
+                <input type="number" id="order-qty" placeholder="0">
             </div>
             <div>
-                <label style="font-size:0.75rem; font-weight:bold;">BUY PRICE (EA)</label>
-                <input type="number" id="order-buy-price" placeholder="0.00" oninput="calcTotalCost()">
+                <label>Buy Price (Each)</label>
+                <input type="number" id="order-buy-price" placeholder="0.00">
             </div>
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+        <div class="price-grid">
             <div>
-                <label style="font-size:0.75rem; font-weight:bold;">SELL PRICE</label>
+                <label>Sell Price</label>
                 <input type="number" id="order-sell-price" placeholder="0.00">
             </div>
             <div>
-                <label style="font-size:0.75rem; font-weight:bold;">MIN PRICE</label>
+                <label>Min Price</label>
                 <input type="number" id="order-min-price" placeholder="0.00">
             </div>
         </div>
 
-        <div style="background:#f8fafc; padding:12px; border-radius:10px; margin:10px 0; text-align:center; border: 1px dashed var(--border);">
-            <small style="color:var(--text-dim); font-weight:bold;">TOTAL PAYABLE INCREASE</small>
-            <h3 id="order-total-display" style="margin:0; color:var(--danger);">Ksh 0</h3>
+        <div class="total-display">
+            <small>Total Payable Increase</small>
+            <h3 id="order-total-display">Ksh 0</h3>
         </div>
 
-        <button id="saveOrderBtn" class="btn btn-primary" onclick="saveOrder()" style="width:100%; padding:15px;">Finalize Restock</button>
-        <button class="btn btn-outline" style="border:none; margin-top:5px;" onclick="closeModals()">Cancel</button>
+        <button id="saveOrderBtn" class="btn-primary" onclick="saveOrder()" style="width:100%; padding:15px;">
+            <i class="fas fa-check-circle"></i> Finalize Restock
+        </button>
     </div>
 </div>
-
-<script>
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('active');
-        document.getElementById('overlay').classList.toggle('active');
-    }
-    function closeModals() {
-        document.querySelectorAll('.modal').forEach(m => m.style.display = "none");
-        document.getElementById('product-results').style.display = 'none';
-    }
-</script>
 
 <script type="module">
     import { supabase } from './auth.js';
@@ -355,27 +1094,136 @@
     let allOrders = [];
     let allProducts = [];
     let orderLimit = 10;
+    let currentUser = null;
+    let currentBranchId = null;
+    let currentBranch = null;
+
+    // ==================== SIDEBAR FUNCTIONS ====================
+    window.toggleMenu = () => {
+        document.getElementById('sidebar').classList.toggle('mobile-active');
+        document.getElementById('overlay').classList.toggle('active');
+    };
+
+    window.closeModals = () => {
+        document.querySelectorAll('.modal').forEach(m => m.style.display = "none");
+        document.getElementById('product-results').style.display = 'none';
+    };
+
+    // ==================== BRANCH FUNCTIONS ====================
+
+    function getCurrentBranchId() {
+        const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
+        return session.branch?.id || currentBranchId;
+    }
+
+    async function loadUserProfile() {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return null;
+            }
+            
+            currentUser = user;
+            
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select(`
+                    *,
+                    branches (
+                        id,
+                        name,
+                        code,
+                        location
+                    )
+                `)
+                .eq('id', user.id)
+                .maybeSingle();
+            
+            if (error) throw error;
+            if (!profile) {
+                console.error("No profile found");
+                return null;
+            }
+            
+            currentBranchId = profile.branch_id;
+            currentBranch = profile.branches;
+            
+            const session = {
+                user: user,
+                profile: profile,
+                branch: profile.branches,
+                role: profile.role
+            };
+            localStorage.setItem('pos_session', JSON.stringify(session));
+            
+            // Update sidebar with user's assigned branch
+            const sidebarBranchName = document.querySelector('#sidebarBranchName span');
+            if (profile.branches && sidebarBranchName) {
+                sidebarBranchName.textContent = profile.branches.name;
+            }
+            
+            // Update branch display
+            const branchNameSpan = document.getElementById('branchName');
+            if (branchNameSpan && profile.branches) {
+                branchNameSpan.textContent = profile.branches.name;
+            }
+            
+            return profile;
+        } catch (error) {
+            console.error("Error loading profile:", error);
+            return null;
+        }
+    }
+
+    window.logoutUser = async () => { 
+        localStorage.removeItem('pos_session');
+        await supabase.auth.signOut(); 
+        location.href = 'index.html'; 
+    };
+
+    // ==================== DATA FETCHING ====================
 
     async function init() {
+        const branchId = getCurrentBranchId();
+        if (!branchId) {
+            console.error("No branch ID found");
+            return;
+        }
+
         await fetchProducts();
         await fetchSuppliers();
         await fetchOrders();
     }
 
     async function fetchProducts() {
-        const { data } = await supabase.from('products').select('*');
+        const branchId = getCurrentBranchId();
+        const { data } = await supabase
+            .from('products')
+            .select('*')
+            .eq('branch_id', branchId);
         allProducts = data || [];
     }
 
     async function fetchSuppliers() {
-        const { data } = await supabase.from('suppliers').select('*').order('name');
+        const branchId = getCurrentBranchId();
+        const { data } = await supabase
+            .from('suppliers')
+            .select('*')
+            .eq('branch_id', branchId)
+            .order('name');
         allSuppliers = data || [];
         updateStats();
         filterSuppliers();
     }
 
     async function fetchOrders() {
-        const { data } = await supabase.from('supplier_orders').select('*, suppliers(name)').order('order_date', {ascending:false});
+        const branchId = getCurrentBranchId();
+        const { data } = await supabase
+            .from('supplier_orders')
+            .select('*, suppliers(name)')
+            .eq('branch_id', branchId)
+            .order('order_date', { ascending: false });
         allOrders = data || [];
         renderOrders();
     }
@@ -401,11 +1249,11 @@
 
         if (filtered.length > 0) {
             container.innerHTML = filtered.map(p => `
-                <div onclick="selectProduct('${p.id}')" style="padding:12px; border-bottom:1px solid #f1f5f9; cursor:pointer;">
+                <div onclick="selectProduct('${p.id}')">
                     <div style="font-weight:700; font-size:0.9rem;">${p.name} ${p.weight_category ? '<span style="color:var(--primary)">('+p.weight_category+')</span>' : ''}</div>
-                    <div style="font-size:0.75rem; color:#64748b; display:flex; justify-content:space-between;">
-                        <span>Type: ${p.part_type}</span>
-                        <span>Stock: ${p.stock_quantity || 0}</span>
+                    <div style="font-size:0.75rem; color:var(--text-dim); display:flex; justify-content:space-between; margin-top:4px;">
+                        <span><i class="fas fa-tag"></i> ${p.part_type || 'N/A'}</span>
+                        <span><i class="fas fa-box"></i> Stock: ${p.stock_quantity || 0}</span>
                     </div>
                 </div>
             `).join('');
@@ -446,13 +1294,24 @@
         const filtered = allSuppliers.filter(s => s.name.toLowerCase().includes(q));
         document.querySelector('#supplierTable tbody').innerHTML = filtered.map(s => `
             <tr>
-                <td><b>${s.name}</b><br><small style="color:var(--text-dim)">${s.phone || 'No phone'}</small></td>
-                <td><span class="badge" style="background:#f1f5f9; color:var(--text)">${s.category}</span></td>
-                <td><span class="badge ${s.balance_owed > 0 ? 'bg-debt' : 'bg-clear'}">Ksh ${s.balance_owed.toLocaleString()}</span></td>
                 <td>
-                    <div style="display:flex; gap:8px;">
-                        <button class="btn btn-primary" style="padding:6px 12px; font-size:0.75rem;" onclick="openOrderModal('${s.id}', '${s.name}')">+ Stock</button>
-                        <button class="btn btn-success" style="padding:6px 12px; font-size:0.75rem;" onclick="openPaymentModal('${s.id}', '${s.name}')">Pay</button>
+                    <div style="font-weight:700;">${s.name}</div>
+                    <small style="color:var(--text-dim)"><i class="fas fa-phone"></i> ${s.phone || 'No phone'}</small>
+                </td>
+                <td><span class="badge badge-category">${s.category}</span></td>
+                <td>
+                    <span class="badge ${s.balance_owed > 0 ? 'badge-debt' : 'badge-clear'}">
+                        Ksh ${(s.balance_owed || 0).toLocaleString()}
+                    </span>
+                </td>
+                <td>
+                    <div class="action-group">
+                        <button class="btn-primary" onclick="openOrderModal('${s.id}', '${s.name}')">
+                            <i class="fas fa-plus"></i> Stock
+                        </button>
+                        <button class="btn-success" onclick="openPaymentModal('${s.id}', '${s.name}')">
+                            <i class="fas fa-credit-card"></i> Pay
+                        </button>
                     </div>
                 </td>
             </tr>
@@ -464,13 +1323,16 @@
             <tr>
                 <td><small>${new Date(o.order_date).toLocaleDateString('en-GB')}</small></td>
                 <td><b>${o.suppliers?.name || 'Unknown'}</b></td>
-                <td><small>${o.items_brought}</small></td>
-                <td><b>${o.cost.toLocaleString()}</b></td>
+                <td>${o.items_brought}</td>
+                <td><b style="color:var(--primary);">Ksh ${(o.cost || 0).toLocaleString()}</b></td>
             </tr>
         `).join('');
     }
 
-    window.loadMoreOrders = () => { orderLimit += 10; renderOrders(); };
+    window.loadMoreOrders = () => { 
+        orderLimit += 10; 
+        renderOrders(); 
+    };
 
     window.openOrderModal = (id, name) => {
         document.getElementById('order-sup-id').value = id;
@@ -492,15 +1354,27 @@
     };
 
     window.saveSupplier = async () => {
+        const branchId = getCurrentBranchId();
+        if (!branchId) {
+            alert("Branch information not found");
+            return;
+        }
+
         const payload = {
             name: document.getElementById('sup-name').value,
             category: document.getElementById('sup-category').value,
             phone: document.getElementById('sup-phone').value,
-            balance_owed: parseFloat(document.getElementById('sup-balance').value) || 0
+            balance_owed: parseFloat(document.getElementById('sup-balance').value) || 0,
+            branch_id: branchId
         };
-        await supabase.from('suppliers').insert([payload]);
-        closeModals();
-        fetchSuppliers();
+        
+        const { error } = await supabase.from('suppliers').insert([payload]);
+        if (error) {
+            alert("Error: " + error.message);
+        } else {
+            closeModals();
+            await fetchSuppliers();
+        }
     };
 
     window.saveOrder = async () => {
@@ -512,11 +1386,12 @@
         const sellPrice = parseFloat(document.getElementById('order-sell-price').value) || 0;
         const minPrice = parseFloat(document.getElementById('order-min-price').value) || 0;
         const totalCost = qty * buyPrice;
+        const branchId = getCurrentBranchId();
 
         if(!pid || qty <= 0) return alert("Please select a product and enter quantity");
 
         saveBtn.disabled = true;
-        saveBtn.innerText = "Updating...";
+        saveBtn.innerHTML = '<span class="spinner"></span> Updating...';
 
         const targetProduct = allProducts.find(p => p.id === pid);
 
@@ -524,7 +1399,8 @@
         await supabase.from('supplier_orders').insert([{ 
             supplier_id: sid, 
             items_brought: `${qty}x ${document.getElementById('restock-search').value}`, 
-            cost: totalCost 
+            cost: totalCost,
+            branch_id: branchId
         }]);
 
         // 2. Update Product (Increment Stock)
@@ -533,41 +1409,56 @@
             cost_price: buyPrice,
             selling_price: sellPrice,
             min_selling_price: minPrice
-        }).eq('id', pid);
+        }).eq('id', pid).eq('branch_id', branchId);
 
         // 3. Update Supplier Balance
         const supplier = allSuppliers.find(x => x.id === sid);
         await supabase.from('suppliers').update({ 
             balance_owed: (supplier.balance_owed || 0) + totalCost 
-        }).eq('id', sid);
+        }).eq('id', sid).eq('branch_id', branchId);
 
         closeModals();
         saveBtn.disabled = false;
-        saveBtn.innerText = "Finalize Restock";
-        init(); // Refresh data
+        saveBtn.innerHTML = '<i class="fas fa-check-circle"></i> Finalize Restock';
+        await init(); // Refresh data
     };
 
     window.processPayment = async () => {
         const sid = document.getElementById('pay-sup-id').value;
         const amount = parseFloat(document.getElementById('pay-amount').value);
+        const branchId = getCurrentBranchId();
+        
         if(!amount) return;
 
         const sup = allSuppliers.find(x => x.id === sid);
         const newBal = (sup.balance_owed || 0) - amount;
         
-        await supabase.from('suppliers').update({ balance_owed: newBal }).eq('id', sid);
+        await supabase.from('suppliers').update({ balance_owed: newBal }).eq('id', sid).eq('branch_id', branchId);
         await supabase.from('supplier_payments').insert([{
             supplier_id: sid, 
             amount_paid: amount, 
             balance_after: newBal, 
-            payment_method: document.getElementById('pay-method').value
+            payment_method: document.getElementById('pay-method').value,
+            branch_id: branchId
         }]);
         
         closeModals();
-        init();
+        await init();
     };
 
-    init();
+    // Event listeners
+    document.getElementById('searchSupplier').addEventListener('input', filterSuppliers);
+    document.getElementById('restock-search').addEventListener('input', (e) => searchProducts(e.target.value));
+    document.getElementById('order-qty').addEventListener('input', calcTotalCost);
+    document.getElementById('order-buy-price').addEventListener('input', calcTotalCost);
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+        const profile = await loadUserProfile();
+        if (profile) {
+            await init();
+        }
+    });
 </script>
 </body>
 </html>
