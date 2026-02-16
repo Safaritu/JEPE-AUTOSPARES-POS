@@ -444,21 +444,9 @@
             background: #dcfce7;
             color: #166534;
         }
-        .payment-mpesa {
-            background: #fee2e2;
-            color: #991b1b;
-        }
         .payment-kcb {
             background: #e0e7ff;
             color: #4338ca;
-        }
-        .payment-bank {
-            background: #fef3c7;
-            color: #92400e;
-        }
-        .payment-debt {
-            background: #f1f5f9;
-            color: #475569;
         }
 
         .category-badge {
@@ -468,16 +456,6 @@
             border-radius: 4px;
             font-size: 0.65rem;
             font-weight: 600;
-        }
-
-        .refunded-badge {
-            background: #fee2e2;
-            color: #b91c1c;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.6rem;
-            font-weight: 700;
-            margin-left: 5px;
         }
 
         /* --- MOBILE CARD STYLES --- */
@@ -520,6 +498,7 @@
                 display: flex;
                 gap: 8px;
                 flex-wrap: wrap;
+                margin-bottom: 10px;
             }
             
             .sale-mobile-detail {
@@ -536,15 +515,6 @@
             
             .sale-mobile-value {
                 font-weight: 600;
-            }
-            
-            .sale-mobile-refund {
-                background: #fee2e2;
-                padding: 8px;
-                border-radius: 6px;
-                margin-top: 8px;
-                font-size: 0.75rem;
-                color: #b91c1c;
             }
         }
 
@@ -712,10 +682,6 @@
                 <div class="summary-value" id="kcbSales">Ksh 0</div>
             </div>
             <div class="summary-card">
-                <div class="summary-label">M-Pesa</div>
-                <div class="summary-value" id="mpesaSales">Ksh 0</div>
-            </div>
-            <div class="summary-card">
                 <div class="summary-label">Items Sold</div>
                 <div class="summary-value warning" id="totalItems">0</div>
             </div>
@@ -730,12 +696,9 @@
             <div class="filter-group">
                 <i class="fas fa-filter"></i>
                 <select id="paymentFilter" class="filter-select">
-                    <option value="all">All Payment Methods</option>
-                    <option value="Cash">Cash</option>
-                    <option value="Mpesa">M-Pesa</option>
-                    <option value="KCB Paybill">KCB Paybill</option>
-                    <option value="Bank">Bank</option>
-                    <option value="Debt">Debt</option>
+                    <option value="all">All Transactions</option>
+                    <option value="Cash">Cash Only</option>
+                    <option value="KCB Paybill">KCB Paybill Only</option>
                 </select>
             </div>
             <div class="filter-group">
@@ -747,7 +710,7 @@
             </button>
         </div>
 
-        <!-- Desktop Table View -->
+        <!-- Desktop Table View (Status column removed) -->
         <div class="table-outer">
             <div class="table-container">
                 <table>
@@ -761,12 +724,11 @@
                             <th>Total</th>
                             <th>Payment</th>
                             <th>Profit</th>
-                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody id="sales-body-desktop">
                         <tr>
-                            <td colspan="9" style="text-align: center; padding: 40px;">
+                            <td colspan="8" style="text-align: center; padding: 40px;">
                                 <div class="spinner" style="margin: 0 auto;"></div>
                                 Loading sales data...
                             </td>
@@ -925,7 +887,7 @@
             console.error("Error fetching sales:", error);
             document.getElementById('sales-body-desktop').innerHTML = `
                 <tr>
-                    <td colspan="9" style="text-align: center; padding: 40px; color: var(--danger);">
+                    <td colspan="8" style="text-align: center; padding: 40px; color: var(--danger);">
                         <i class="fas fa-exclamation-triangle"></i> Error loading sales data
                     </td>
                 </tr>
@@ -947,9 +909,11 @@
 
     function applyFilters() {
         filteredSales = allSales.filter(sale => {
-            // Payment method filter
-            if (paymentFilter !== 'all' && sale.payment_method !== paymentFilter) {
-                return false;
+            // Payment method filter (Cash or KCB Paybill only)
+            if (paymentFilter !== 'all') {
+                if (sale.payment_method !== paymentFilter) {
+                    return false;
+                }
             }
             
             // Date search
@@ -984,7 +948,6 @@
         let totalProfit = 0;
         let cashTotal = 0;
         let kcbTotal = 0;
-        let mpesaTotal = 0;
         let totalItems = 0;
 
         allSales.forEach(sale => {
@@ -995,16 +958,10 @@
             totalProfit += profit;
             totalItems += sale.quantity || 0;
 
-            switch(sale.payment_method) {
-                case 'Cash':
-                    cashTotal += amount;
-                    break;
-                case 'KCB Paybill':
-                    kcbTotal += amount;
-                    break;
-                case 'Mpesa':
-                    mpesaTotal += amount;
-                    break;
+            if (sale.payment_method === 'Cash') {
+                cashTotal += amount;
+            } else if (sale.payment_method === 'KCB Paybill') {
+                kcbTotal += amount;
             }
         });
 
@@ -1012,7 +969,6 @@
         document.getElementById('totalProfit').textContent = `Ksh ${totalProfit.toLocaleString()}`;
         document.getElementById('cashSales').textContent = `Ksh ${cashTotal.toLocaleString()}`;
         document.getElementById('kcbSales').textContent = `Ksh ${kcbTotal.toLocaleString()}`;
-        document.getElementById('mpesaSales').textContent = `Ksh ${mpesaTotal.toLocaleString()}`;
         document.getElementById('totalItems').textContent = totalItems.toLocaleString();
     }
 
@@ -1037,10 +993,7 @@
     function getPaymentBadgeClass(method) {
         switch(method) {
             case 'Cash': return 'payment-cash';
-            case 'Mpesa': return 'payment-mpesa';
             case 'KCB Paybill': return 'payment-kcb';
-            case 'Bank': return 'payment-bank';
-            case 'Debt': return 'payment-debt';
             default: return '';
         }
     }
@@ -1073,12 +1026,6 @@
                     <td style="font-weight:700;">Ksh ${Number(sale.total_amount || 0).toLocaleString()}</td>
                     <td><span class="payment-badge ${paymentClass}">${sale.payment_method || 'N/A'}</span></td>
                     <td style="color:var(--success); font-weight:600;">Ksh ${profit.toLocaleString()}</td>
-                    <td>
-                        ${sale.refunded ? 
-                            '<span class="refunded-badge">REFUNDED</span>' : 
-                            '<span style="color:var(--success);">✓</span>'
-                        }
-                    </td>
                 </tr>
             `;
         });
@@ -1126,7 +1073,7 @@
                     </div>
                     
                     <div class="sale-mobile-detail">
-                        <span class="sale-mobile-label">Total Amount</span>
+                        <span class="sale-mobile-label">Total</span>
                         <span class="sale-mobile-value" style="font-weight:800;">Ksh ${Number(sale.total_amount || 0).toLocaleString()}</span>
                     </div>
                     
@@ -1134,12 +1081,6 @@
                         <span class="sale-mobile-label">Profit</span>
                         <span class="sale-mobile-value" style="color:var(--success);">Ksh ${profit.toLocaleString()}</span>
                     </div>
-                    
-                    ${sale.refunded ? `
-                        <div class="sale-mobile-refund">
-                            <i class="fas fa-undo"></i> Refunded - ${sale.refund_reason || 'No reason provided'}
-                        </div>
-                    ` : ''}
                 </div>
             `;
         });
