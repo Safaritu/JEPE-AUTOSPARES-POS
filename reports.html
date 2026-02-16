@@ -461,16 +461,16 @@
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
         
         .cat-rev {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: 800;
         }
         
         .cat-profit {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: var(--success);
             font-weight: 700;
             background: #f0fdf4;
@@ -484,6 +484,12 @@
             border-radius: 20px;
             background: #f1f5f9;
             font-weight: 600;
+        }
+        
+        .cat-units {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-dim);
         }
         
         .cat-card.tuktuk .cat-margin { background: #ede9fe; color: #6d28d9; }
@@ -949,7 +955,7 @@
             </div>
         </div>
 
-        <!-- Category Summary Cards -->
+        <!-- Category Summary Cards with clear labels -->
         <div class="category-metrics" id="categorySummaryCards">
             <div class="cat-card tuktuk">
                 <div class="cat-title"><i class="fas fa-car-side"></i> TUKTUK</div>
@@ -957,9 +963,12 @@
                     <span class="cat-rev" id="tuktuk-rev">Ksh 0</span>
                     <span class="cat-profit" id="tuktuk-profit">Ksh 0</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
                     <span class="cat-margin" id="tuktuk-margin">0% margin</span>
-                    <span class="cat-margin" id="tuktuk-units">0 units</span>
+                    <span class="cat-units" id="tuktuk-units">0 units</span>
+                </div>
+                <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 4px;">
+                    <span>Revenue | Profit | Margin</span>
                 </div>
             </div>
             <div class="cat-card gas">
@@ -968,9 +977,12 @@
                     <span class="cat-rev" id="gas-rev">Ksh 0</span>
                     <span class="cat-profit" id="gas-profit">Ksh 0</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
                     <span class="cat-margin" id="gas-margin">0% margin</span>
-                    <span class="cat-margin" id="gas-units">0 cyl</span>
+                    <span class="cat-units" id="gas-units">0 cyl</span>
+                </div>
+                <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 4px;">
+                    <span>Revenue | Profit | Margin</span>
                 </div>
             </div>
             <div class="cat-card moto">
@@ -979,9 +991,12 @@
                     <span class="cat-rev" id="moto-rev">Ksh 0</span>
                     <span class="cat-profit" id="moto-profit">Ksh 0</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
                     <span class="cat-margin" id="moto-margin">0% margin</span>
-                    <span class="cat-margin" id="moto-units">0 units</span>
+                    <span class="cat-units" id="moto-units">0 units</span>
+                </div>
+                <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 4px;">
+                    <span>Revenue | Profit | Margin</span>
                 </div>
             </div>
             <div class="cat-card spare">
@@ -990,9 +1005,12 @@
                     <span class="cat-rev" id="spare-rev">Ksh 0</span>
                     <span class="cat-profit" id="spare-profit">Ksh 0</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
                     <span class="cat-margin" id="spare-margin">0% margin</span>
-                    <span class="cat-margin" id="spare-units">0 pcs</span>
+                    <span class="cat-units" id="spare-units">0 pcs</span>
+                </div>
+                <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 4px;">
+                    <span>Revenue | Profit | Margin</span>
                 </div>
             </div>
         </div>
@@ -1332,13 +1350,15 @@
 
     async function loadData() {
         try {
+            console.log("Loading data...");
+            
             // Build products query
             let productsQuery = supabase.from('products').select('*');
             if (selectedBranchId) {
                 productsQuery = productsQuery.eq('branch_id', selectedBranchId);
             }
             
-            // Build sales query - FIXED: Remove the inner join that might be causing issues
+            // Build sales query - FIXED: Load all sales without problematic join
             let salesQuery = supabase
                 .from('sales')
                 .select('*')
@@ -1358,8 +1378,14 @@
             
             console.log("Products loaded:", allProducts.length);
             console.log("Sales loaded:", allSales.length);
-            console.log("Motorbike products:", allProducts.filter(p => p.category === 'Motorbike').length);
-            console.log("Motorbike sales:", allSales.filter(s => s.category === 'Motorbike').length);
+            
+            // Log category distribution
+            const salesByCategory = {};
+            allSales.forEach(s => {
+                const cat = s.category || 'Uncategorized';
+                salesByCategory[cat] = (salesByCategory[cat] || 0) + 1;
+            });
+            console.log("Sales by category:", salesByCategory);
             
             // Set default branch selector to user's branch if available
             if (currentBranch && document.getElementById('branchSelector').value === 'all') {
@@ -1397,6 +1423,8 @@
             }
             return true;
         });
+        
+        console.log("Filtered sales:", filteredSales.length);
         renderUI();
     };
 
@@ -1441,20 +1469,20 @@
         let totalItems = 0, activeProducts = 0, outOfStock = 0;
         let categoryMargins = {};
 
-        // Category specific containers - FIXED: Match database categories
+        // Category specific containers - Using exact database category names
         const categories = { 
-            Gas: { profit: 0, revenue: 0, items: 0, units: 0, count: 0 }, 
+            'Gas': { profit: 0, revenue: 0, items: 0, units: 0, count: 0 }, 
             'Spare Part': { profit: 0, revenue: 0, items: 0, units: 0, count: 0 },
-            Motorbike: { profit: 0, revenue: 0, items: 0, units: 0, count: 0 },
-            Tuktuk: { profit: 0, revenue: 0, items: 0, units: 0, count: 0 },
-            Other: { profit: 0, revenue: 0, items: 0, units: 0, count: 0 } 
+            'Motorbike': { profit: 0, revenue: 0, items: 0, units: 0, count: 0 },
+            'Tuktuk': { profit: 0, revenue: 0, items: 0, units: 0, count: 0 },
+            'Other': { profit: 0, revenue: 0, items: 0, units: 0, count: 0 } 
         };
         
         // Track top items per category
         const topItems = {
-            Tuktuk: [],
-            Gas: [],
-            Motorbike: [],
+            'Tuktuk': [],
+            'Gas': [],
+            'Motorbike': [],
             'Spare Part': []
         };
         
@@ -1473,7 +1501,7 @@
             if(p.part_type === 'Original') origQty += p.stock_quantity;
             if(p.part_type === 'Copy') copyQty += p.stock_quantity;
             
-            // Count by category - FIXED: Use exact category names from database
+            // Count by category - Use exact category names
             if(p.category === 'Gas') { 
                 gasFull += p.stock_quantity; 
                 gasEmpty += (p.empty_quantity || 0);
@@ -1501,22 +1529,22 @@
             }
         });
 
-        // Process sales data - FIXED: Use category from sales record if available
+        // Process sales data - FIXED: Use category from sales record directly
         filteredSales.forEach(s => {
-            // First try to find product by ID
-            let p = productsMap[s.product_id];
+            // Use the category from the sales record directly
+            const saleCategory = s.category || 'Other';
             
-            // If product not found, create a placeholder with category from sales record
-            if (!p) {
-                p = { 
-                    cost_price: s.cost_price || 0, 
-                    category: s.category || 'Other', // Use category from sales record
-                    part_type: s.part_type || 'N/A',
-                    stock_quantity: 0
-                };
-            }
+            // Try to find product for cost price, but use sale's own cost_price if available
+            const p = productsMap[s.product_id] || { 
+                cost_price: s.cost_price || 0, 
+                part_type: s.part_type || 'N/A',
+                stock_quantity: 0
+            };
             
-            const itemProfit = (s.unit_price - p.cost_price) * s.quantity;
+            // Calculate profit using the best available cost price
+            const costPrice = s.cost_price || p.cost_price || 0;
+            const itemProfit = (s.unit_price - costPrice) * s.quantity;
+            
             const branch = branches[s.branch_id] || { code: '--' };
 
             totalRev += s.total_amount;
@@ -1531,34 +1559,31 @@
                 kcbProf += itemProfit;
             }
 
-            // Category aggregation - FIXED: Match database category names exactly
-            let catKey = 'Other';
-            if (p.category === 'Gas') catKey = 'Gas';
-            else if (p.category === 'Spare Part') catKey = 'Spare Part';
-            else if (p.category === 'Motorbike') catKey = 'Motorbike';
-            else if (p.category === 'Tuktuk') catKey = 'Tuktuk';
+            // Category aggregation - Use sale's category
+            let catKey = saleCategory;
+            if (!categories[catKey]) {
+                catKey = 'Other';
+            }
             
-            if (categories[catKey]) {
-                categories[catKey].profit += itemProfit;
-                categories[catKey].revenue += s.total_amount;
-                categories[catKey].units += s.quantity;
-                categories[catKey].count++;
+            categories[catKey].profit += itemProfit;
+            categories[catKey].revenue += s.total_amount;
+            categories[catKey].units += s.quantity;
+            categories[catKey].count++;
 
-                // Track margins by category
-                if (!categoryMargins[catKey]) categoryMargins[catKey] = [];
-                if (s.total_amount > 0) {
-                    categoryMargins[catKey].push(itemProfit / s.total_amount * 100);
-                }
+            // Track margins by category
+            if (!categoryMargins[catKey]) categoryMargins[catKey] = [];
+            if (s.total_amount > 0) {
+                categoryMargins[catKey].push((itemProfit / s.total_amount) * 100);
+            }
 
-                // Track top items per category
-                if (topItems[p.category]) {
-                    topItems[p.category].push({
-                        name: s.item_name,
-                        qty: s.quantity,
-                        profit: itemProfit,
-                        rev: s.total_amount
-                    });
-                }
+            // Track top items per category
+            if (topItems[saleCategory]) {
+                topItems[saleCategory].push({
+                    name: s.item_name,
+                    qty: s.quantity,
+                    profit: itemProfit,
+                    rev: s.total_amount
+                });
             }
 
             // Item summary
@@ -1569,9 +1594,9 @@
                     rev: 0, 
                     prof: 0, 
                     branch: branch.code,
-                    category: p.category,
-                    category_display: getCategoryDisplay(p.category),
-                    part_type: p.part_type,
+                    category: saleCategory,
+                    category_display: getCategoryDisplay(saleCategory),
+                    part_type: s.part_type || 'N/A',
                     stock: p.stock_quantity || 0
                 };
             }
@@ -1620,7 +1645,7 @@
         });
         document.getElementById('margin-details').innerHTML = `Best: ${bestMargin.toFixed(1)}% | Worst: ${worstMargin.toFixed(1)}%`;
 
-        // Update category summary cards - FIXED: Use correct category keys
+        // Update category summary cards with clear labels
         document.getElementById('tuktuk-rev').innerText = `Ksh ${(categoryMetrics.Tuktuk?.revenue || 0).toLocaleString()}`;
         document.getElementById('tuktuk-profit').innerText = `Ksh ${(categoryMetrics.Tuktuk?.profit || 0).toLocaleString()}`;
         document.getElementById('tuktuk-margin').innerText = `${categoryMetrics.Tuktuk?.margin || 0}% margin`;
@@ -1650,7 +1675,7 @@
         document.getElementById('total-moto').innerText = motoCount;
         document.getElementById('total-spare').innerText = spareCount;
 
-        // Render Category Performance Table - FIXED: Use correct category keys
+        // Render Category Performance Table
         document.getElementById('category-performance-body').innerHTML = Object.entries(categories)
             .filter(([_, val]) => val.revenue > 0 || val.profit > 0)
             .map(([name, val]) => {
@@ -1659,7 +1684,7 @@
                 const avgPrice = val.units > 0 ? (val.revenue / val.units).toFixed(0) : 0;
                 const trend = margin > avgMargin ? '↑' : '↓';
                 const trendClass = margin > avgMargin ? 'trend-up' : 'trend-down';
-                const icon = getCategoryIcon(name === 'Spare Part' ? 'Spare Part' : name);
+                const icon = getCategoryIcon(name);
                 
                 // Fix category display name
                 let displayName = name;
@@ -1774,7 +1799,7 @@
         if (revenueChart) revenueChart.destroy();
         if (marginChart) marginChart.destroy();
 
-        // Prepare chart data - Fix category names
+        // Prepare chart data
         const chartLabels = [];
         const profitData = [];
         const revenueData = [];
@@ -1795,16 +1820,13 @@
                 revenueData.push(val.revenue);
                 const margin = val.revenue > 0 ? (val.profit / val.revenue * 100) : 0;
                 marginData.push(margin);
-                chartColors.push(getCategoryColor(
-                    name === 'Spare Part' ? 'Spare Part' : 
-                    name === 'Motorbike' ? 'Motorbike' : 
-                    name === 'Tuktuk' ? 'Tuktuk' : name
-                ));
+                chartColors.push(getCategoryColor(name));
             }
         });
 
         // Profit Chart (Doughnut)
         const profitCtx = document.getElementById('profitChart').getContext('2d');
+        if (profitChart) profitChart.destroy();
         profitChart = new Chart(profitCtx, {
             type: 'doughnut',
             data: {
@@ -1840,6 +1862,7 @@
 
         // Revenue Chart (Bar)
         const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        if (revenueChart) revenueChart.destroy();
         revenueChart = new Chart(revenueCtx, {
             type: 'bar',
             data: {
@@ -1876,6 +1899,7 @@
 
         // Margin Chart (Line)
         const marginCtx = document.getElementById('marginChart').getContext('2d');
+        if (marginChart) marginChart.destroy();
         marginChart = new Chart(marginCtx, {
             type: 'line',
             data: {
