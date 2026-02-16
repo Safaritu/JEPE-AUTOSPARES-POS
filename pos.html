@@ -3,352 +3,1244 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Point of Sale | JEPE COMPANY</title>
+    <title>Point of Sale | JEPE CASHIER</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { 
+            --admin-dark: #0f172a;
             --primary: #4f46e5; 
-            --bg: #f1f5f9; 
+            --bg: #f8fafc; 
             --card: #ffffff; 
             --border: #e2e8f0; 
-            --text: #1e293b; 
-            --success: #10b981;
-            --sidebar-bg: #1e293b; 
+            --text-main: #1e293b; 
+            --text-dim: #64748b;
+            --success: #10b981; 
+            --danger: #ef4444; 
+            --warning: #f59e0b;
             --sidebar-width: 260px;
-            --header-height: 60px;
+            --sidebar-collapsed: 70px;
+            --header-height: 70px;
         }
 
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
 
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
             background: var(--bg); 
+            color: var(--text-main); 
             margin: 0; 
-            color: var(--text);
-            overflow-x: hidden;
-            display: flex;
-        }
-
-        /* --- MOBILE HEADER (Hidden on Laptop) --- */
-        .mobile-header {
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            height: var(--header-height);
-            background: white;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            z-index: 3000;
-        }
-
-        /* --- SIDEBAR --- */
-        .sidebar { 
-            position: fixed; 
-            left: -280px; 
-            top: 0; 
-            width: var(--sidebar-width); 
-            height: 100vh; 
-            background: var(--sidebar-bg); 
-            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-            z-index: 4000; 
-            padding: 25px; 
-            color: white; 
             display: flex; 
-            flex-direction: column; 
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- SIDEBAR - Collapsible like admin --- */
+        .sidebar { 
+            width: var(--sidebar-collapsed); 
+            height: 100vh; 
+            background: var(--admin-dark); 
+            position: fixed; 
+            left: 0; 
+            top: 0; 
+            z-index: 3000; 
+            overflow-x: hidden; 
+            overflow-y: auto;
+            transition: width 0.3s ease;
+            padding: 20px 10px; 
+            display: flex;
+            flex-direction: column;
+            color: white;
         }
         
-        .sidebar.active { left: 0; }
-
-        /* Laptop Adjustments */
-        @media (min-width: 1024px) {
-            .mobile-header { display: none; }
-            .sidebar { left: 0; z-index: 1000; }
-            .main-content { 
-                margin-left: var(--sidebar-width); 
-                padding-top: 0 !important;
-                width: calc(100% - var(--sidebar-width));
-            }
-            .menu-close { display: none; } /* Hide X on laptop */
-            .sidebar-overlay { display: none !important; }
+        .sidebar:hover, .sidebar.mobile-active { 
+            width: var(--sidebar-width); 
+        }
+        
+        .sidebar-header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            margin-bottom: 30px; 
+            padding: 0 10px; 
+            min-height: 40px;
+        }
+        
+        .sidebar h2 { 
+            font-size: 1.2rem; 
+            margin: 0; 
+            white-space: nowrap; 
+            opacity: 0; 
+            transition: opacity 0.2s; 
+            color: white;
+            font-weight: 800;
+        }
+        
+        .sidebar:hover h2, .sidebar.mobile-active h2 { 
+            opacity: 1; 
+        }
+        
+        .close-btn { 
+            display: none; 
+            background: none; 
+            border: none; 
+            color: white; 
+            font-size: 1.5rem; 
+            cursor: pointer; 
         }
 
-        .sidebar-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 3500;
-            display: none;
+        /* Branch Info in Sidebar */
+        .branch-info {
+            padding: 10px;
+            margin: 10px 0 20px;
+            background: rgba(79, 70, 229, 0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            white-space: nowrap;
         }
-        .sidebar-overlay.active { display: block; }
-
+        
+        .branch-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            color: #94a3b8;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .sidebar:hover .branch-label, .sidebar.mobile-active .branch-label {
+            opacity: 1;
+        }
+        
+        .branch-name {
+            font-weight: 800;
+            color: white;
+            font-size: 0.85rem;
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .branch-name i { 
+            color: var(--primary); 
+            min-width: 20px;
+        }
+        
+        .branch-name span {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .sidebar:hover .branch-name span, .sidebar.mobile-active .branch-name span {
+            opacity: 1;
+        }
+        
+        .nav-list { 
+            flex: 1;
+            list-style: none; 
+            padding: 0; 
+            margin: 0; 
+            overflow-y: auto;
+        }
+        
         .nav-link { 
+            display: flex; 
+            align-items: center; 
+            padding: 12px; 
+            color: #94a3b8; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            margin-bottom: 5px; 
+            transition: 0.3s; 
+            white-space: nowrap;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .nav-link i { 
+            min-width: 30px; 
+            font-size: 1.2rem; 
+            text-align: center; 
+            margin-right: 15px;
+        }
+        
+        .nav-link span { 
+            opacity: 0; 
+            white-space: nowrap; 
+            transition: opacity 0.2s; 
+        }
+        
+        .sidebar:hover .nav-link span, 
+        .sidebar.mobile-active .nav-link span { 
+            opacity: 1; 
+        }
+        
+        .nav-link:hover, .nav-link.active { 
+            background: var(--primary); 
+            color: white; 
+        }
+
+        /* --- MENU TRIGGER --- */
+        .menu-trigger {
+            display: none; 
+            position: fixed; 
+            top: 15px; 
+            left: 15px; 
+            z-index: 2500;
+            background: var(--admin-dark); 
+            color: white; 
+            border: none; 
+            padding: 12px 18px;
+            border-radius: 12px; 
+            cursor: pointer; 
+            font-size: 0.9rem; 
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        /* --- MAIN LAYOUT --- */
+        .main-wrapper { 
+            width: 100%; 
+            margin-left: var(--sidebar-collapsed); 
+            transition: margin-left 0.3s ease;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--bg) 0%, #ffffff 100%);
+        }
+        
+        @media (min-width: 1024px) {
+            .main-wrapper { 
+                margin-left: var(--sidebar-collapsed); 
+            }
+        }
+
+        .mobile-header {
+            display: none; 
+            background: var(--admin-dark); 
+            color: white; 
+            padding: 0 20px;
+            align-items: center; 
+            justify-content: space-between;
+            position: fixed; 
+            top: 0; 
+            width: 100%; 
+            height: 64px; 
+            z-index: 2000;
+        }
+
+        .container { 
+            padding: 30px; 
+            max-width: 1600px; 
+            margin: 0 auto; 
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar { 
+                transform: translateX(-100%); 
+                width: var(--sidebar-width);
+            }
+            .sidebar.mobile-active { 
+                transform: translateX(0); 
+            }
+            .main-wrapper { 
+                margin-left: 0; 
+                padding-top: 64px;
+            }
+            .menu-trigger { 
+                display: block; 
+            }
+            .mobile-header { 
+                display: flex; 
+            }
+            .close-btn { 
+                display: block; 
+            }
+            .container {
+                padding: 20px 15px;
+            }
+        }
+
+        /* --- PAGE HEADER --- */
+        .page-header {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px 25px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        .page-title {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .page-title h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--admin-dark);
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 12px 15px; 
-            color: #cbd5e1; 
-            text-decoration: none; 
-            font-weight: 600; 
-            border-radius: 10px; 
-            margin-bottom: 5px; 
-            font-size: 0.9rem; 
-        }
-        .nav-link:hover { background: rgba(255,255,255,0.05); color: white; }
-        .nav-link.active { background: var(--primary); color: white; }
-
-        /* --- MAIN CONTENT --- */
-        .main-content { 
-            width: 100%; 
-            min-height: 100vh;
-            padding-top: var(--header-height); 
-            display: flex;
-            flex-direction: column;
         }
 
+        .page-title h1 i {
+            color: var(--primary);
+            background: #eef2ff;
+            padding: 8px;
+            border-radius: 12px;
+            font-size: 1.2rem;
+        }
+
+        .page-title p {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            margin-left: 45px;
+        }
+
+        .branch-badge {
+            background: var(--primary);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+        }
+
+        /* --- POS CONTAINER --- */
         .pos-container { 
             display: grid; 
             grid-template-columns: 1fr; 
-            gap: 20px; 
-            padding: 20px;
-            flex: 1;
+            gap: 25px; 
         }
         
         @media (min-width: 1100px) { 
             .pos-container { 
-                grid-template-columns: 1fr 380px; 
-                height: 100vh;
-                overflow: hidden;
+                grid-template-columns: 1fr 400px; 
             } 
         }
 
-        /* --- PRODUCT GRID --- */
-        .search-section { 
+        /* --- PRODUCT SECTION --- */
+        .product-section { 
             background: white; 
-            border-radius: 16px; 
-            padding: 20px; 
-            display: flex; 
-            flex-direction: column; 
+            border-radius: 20px; 
+            padding: 25px; 
             border: 1px solid var(--border);
-            height: 100%;
-            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            height: fit-content;
         }
-        
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-header h3 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--admin-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-header h3 i {
+            color: var(--primary);
+            background: #eef2ff;
+            padding: 6px;
+            border-radius: 8px;
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 14px 20px 14px 45px;
+            border: 1px solid var(--border);
+            border-radius: 40px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
         .product-grid { 
             display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
             gap: 15px; 
+            max-height: 600px;
             overflow-y: auto;
-            padding-bottom: 20px;
+            padding-right: 5px;
         }
 
-        .prod-card { 
-            background: #fff; 
+        .product-card { 
+            background: white; 
             border: 1px solid var(--border); 
+            border-radius: 16px; 
             padding: 15px; 
-            border-radius: 12px; 
             cursor: pointer; 
-            transition: 0.2s;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
         }
-        .prod-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .prod-name { font-weight: 700; font-size: 0.9rem; margin-bottom: 5px; }
-        .prod-price { color: var(--primary); font-weight: 800; }
 
-        /* --- CART --- */
+        .product-card:hover { 
+            border-color: var(--primary); 
+            transform: translateY(-2px); 
+            box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.1);
+        }
+
+        .product-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary);
+            transform: scaleX(0);
+            transition: transform 0.2s;
+        }
+
+        .product-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .product-name { 
+            font-weight: 700; 
+            font-size: 0.9rem; 
+            margin-bottom: 5px;
+            color: var(--admin-dark);
+        }
+
+        .product-price { 
+            color: var(--primary); 
+            font-weight: 800; 
+            font-size: 1rem; 
+        }
+
+        .product-stock {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stock-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .stock-dot.high { background: var(--success); }
+        .stock-dot.medium { background: var(--warning); }
+        .stock-dot.low { background: var(--danger); }
+
+        /* --- CART SECTION --- */
         .cart-section { 
             background: white; 
-            border-radius: 16px; 
-            display: flex; 
-            flex-direction: column; 
-            border: 1px solid var(--border); 
-            padding: 20px;
-            height: 100%;
+            border-radius: 20px; 
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            height: fit-content;
+            position: sticky;
+            top: 30px;
         }
 
-        .cart-items { flex: 1; overflow-y: auto; margin: 15px 0; }
-        
-        .total-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: 600; }
-        .grand-total { font-size: 1.5rem; font-weight: 800; color: var(--primary); border-top: 2px dashed var(--border); padding-top: 15px; margin-top: 10px; }
+        .cart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .cart-header h3 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--admin-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cart-header h3 i {
+            color: var(--primary);
+            background: #eef2ff;
+            padding: 6px;
+            border-radius: 8px;
+        }
+
+        .cart-count {
+            background: var(--primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .cart-items { 
+            max-height: 400px; 
+            overflow-y: auto; 
+            margin-bottom: 20px;
+            padding-right: 5px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .cart-item-info {
+            flex: 2;
+        }
+
+        .cart-item-name {
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 2px;
+        }
+
+        .cart-item-price {
+            font-size: 0.75rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .cart-item-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8fafc;
+            padding: 4px;
+            border-radius: 30px;
+        }
+
+        .cart-item-qty-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: white;
+            border-radius: 50%;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            color: var(--admin-dark);
+        }
+
+        .cart-item-qty-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .cart-item-qty {
+            font-weight: 700;
+            font-size: 0.85rem;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .cart-item-subtotal {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--primary);
+            min-width: 70px;
+            text-align: right;
+        }
+
+        .cart-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-dim);
+        }
+
+        .cart-empty i {
+            font-size: 3rem;
+            color: #cbd5e1;
+            margin-bottom: 15px;
+        }
+
+        .cart-empty p {
+            font-size: 0.9rem;
+        }
+
+        .cart-summary {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .summary-row.total {
+            border-top: 2px dashed var(--border);
+            padding-top: 15px;
+            margin-top: 10px;
+            font-size: 1.1rem;
+            font-weight: 800;
+        }
+
+        .summary-row.total span:last-child {
+            color: var(--primary);
+        }
+
+        .payment-select {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 40px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            outline: none;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .payment-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
 
         .btn-checkout { 
             background: var(--success); 
-            color: white; border: none; width: 100%; padding: 18px; 
-            border-radius: 12px; font-weight: 800; cursor: pointer;
+            color: white; 
+            border: none; 
+            width: 100%; 
+            padding: 16px; 
+            border-radius: 40px; 
+            font-weight: 800; 
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
         }
 
-        .qty-control { display: flex; align-items: center; gap: 10px; background: #f1f5f9; padding: 5px; border-radius: 8px; }
-        .btn-qty { border: none; background: white; width: 25px; height: 25px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        
-        .menu-toggle { background: var(--primary); color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
+        .btn-checkout:hover:not(:disabled) {
+            background: #0d9488;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-checkout:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .overlay { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(15, 23, 42, 0.6); 
+            backdrop-filter: blur(4px); 
+            display: none; 
+            z-index: 2500; 
+        }
+        .overlay.active { display: block; }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-dim);
+        }
+
+        .success-message {
+            background: var(--success);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 40px;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 <body>
 
-<div class="mobile-header">
-    <button class="menu-toggle" onclick="toggleSidebar()">☰ Menu</button>
-    <div style="font-weight: 800; color: var(--primary);">JEPE POS</div>
-    <div id="mobile-cart-count" style="font-weight: 700;">0</div>
-</div>
-
-<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+<button class="menu-trigger" onclick="toggleMenu()">☰ MENU</button>
 
 <div class="sidebar" id="sidebar">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-        <div>
-            <h2 style="color: #f59e0b; margin: 0; font-size: 1.4rem;">JEPE CO.</h2>
-        </div>
-        <button onclick="toggleSidebar()" class="menu-close" style="background:none; border:none; color:white; font-size:2rem; cursor:pointer;">&times;</button>
+    <div class="sidebar-header">
+        <h2>JEPE CASHIER</h2>
+        <button class="close-btn" onclick="toggleMenu()">×</button>
     </div>
+    
+    <!-- Branch Info Display -->
+    <div class="branch-info" id="sidebarBranchInfo">
+        <div class="branch-label">Your Assigned Branch</div>
+        <div class="branch-name" id="sidebarBranchName">
+            <i class="fas fa-store"></i>
+            <span>Loading...</span>
+        </div>
+    </div>
+    
+    <nav class="nav-list">
+        <!-- Cashier Navigation -->
+        <a href="cashier.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+        <a href="cashiergashub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
+        <a href="moneyinout.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
+        <a href="shift history cashier.html" class="nav-link"><i class="fas fa-history"></i> <span>Shift History</span></a>
+        <a href="sales_reports.html" class="nav-link"><i class="fas fa-chart-line"></i> <span>Sales History</span></a>
+        <a href="cashier_inventory.html" class="nav-link"><i class="fas fa-plus-circle"></i> <span>Add Stock</span></a>
+        <a href="sales_editor.html" class="nav-link"><i class="fas fa-edit"></i> <span>Edit Stock</span></a>
 
-    <nav style="flex: 1; overflow-y: auto;">
-            <a href="cashier.html" class="nav-link">📊 Dashboard</a>
-        <a href="cashiergashub.html" class="nav-link">⛽ Gas Hub</a>
-        <a href="low-stock-cashier.html" class="nav-link">⚠️ Low Stock</a>
-        <a href="debtors.html" class="nav-link">👥 Debtors</a>
-        <a href="supplierscashier.html" class="nav-link">🤝 Suppliers</a>
-        <a href="gas_delivery.html" class="nav-link">🚚 Delivery Records</a>
-        <a href="cashier_inventory.html" class="nav-link">📦 Add Items</a>
-        <a href="sales_reports.html" class="nav-link">📜 Sales History</a>
-        <a href="shift history cashier.html" class="nav-link">🌞 Shift History</a>
-        <a href="moneyinout.html" class="nav-link">💸 Cash Flow</a>
-        <a href="pos.html" class="nav-link active">🌠 View All Items</a>
+        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+
+        <a href="low-stock-cashier.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
+        <a href="debtors.html" class="nav-link"><i class="fas fa-users"></i> <span>Debtors</span></a>
+        <a href="supplierscashier.html" class="nav-link"><i class="fas fa-handshake"></i> <span>Suppliers</span></a>
+        <a href="gas_delivery.html" class="nav-link"><i class="fas fa-truck"></i> <span>Delivery</span></a>
+
+        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+
+        <a href="cashier_report.html" class="nav-link"><i class="fas fa-file-alt"></i> <span>Today's Report</span></a>
+        <a href="pos.html" class="nav-link active"><i class="fas fa-shopping-cart"></i> <span>Cart Shop</span></a>
+        <a href="cashierprofile.html" class="nav-link"><i class="fas fa-user"></i> <span>Settings</span></a>
+        <a href="cashier.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
+        
+        <!-- Logout Button -->
+        <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <button onclick="logoutUser()" style="width:100%; background:var(--danger); color:white; border:none; padding:12px; border-radius:10px; font-weight:700; cursor:pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <i class="fas fa-sign-out-alt"></i> <span>Logout System</span>
+            </button>
+        </div>
     </nav>
 </div>
 
-<div class="main-content">
-    <div class="pos-container">
-        <div class="search-section">
-            <input type="text" id="search" class="search-bar" style="padding: 15px; border: 2px solid var(--border); border-radius: 12px; margin-bottom: 15px;" placeholder="🔍 Search product name...">
-            <div class="product-grid" id="product-grid">
-                </div>
+<div class="main-wrapper">
+    <div class="mobile-header">
+        <button onclick="toggleMenu()" style="background:none; border:none; color:white; font-size:1.5rem;">☰</button>
+        <div style="font-weight:800;">CART SHOP</div>
+        <div style="width:24px;"></div>
+    </div>
+
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <h1>
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Point of Sale</span>
+                </h1>
+                <p>Quick and easy checkout for customers</p>
+            </div>
+            <div class="branch-badge" id="branchDisplay">
+                <i class="fas fa-store"></i> <span id="branchName">Loading...</span>
+            </div>
         </div>
 
-        <div class="cart-section">
-            <h3 style="margin: 0;">Current Order</h3>
-            <div class="cart-items" id="cart-items">
-                <p style="text-align: center; color: #94a3b8; margin-top: 50px;">Cart is empty</p>
+        <!-- POS Container -->
+        <div class="pos-container">
+            <!-- Product Grid Section -->
+            <div class="product-section">
+                <div class="section-header">
+                    <h3>
+                        <i class="fas fa-box"></i>
+                        Available Products
+                    </h3>
+                </div>
+
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="search" placeholder="Search products by name...">
+                </div>
+
+                <div class="product-grid" id="product-grid">
+                    <!-- Products will be loaded here -->
+                </div>
             </div>
-            
-            <div class="totals">
-                <div class="total-row">
-                    <span>Items:</span>
-                    <span id="item-count">0</span>
+
+            <!-- Cart Section -->
+            <div class="cart-section">
+                <div class="cart-header">
+                    <h3>
+                        <i class="fas fa-shopping-basket"></i>
+                        Current Order
+                    </h3>
+                    <span class="cart-count" id="cart-count">0</span>
                 </div>
-                <div class="total-row grand-total">
-                    <span>Total:</span>
-                    <span id="grand-total">Ksh 0</span>
+
+                <div class="cart-items" id="cart-items">
+                    <!-- Cart items will be loaded here -->
                 </div>
-                
-                <select id="pay-method" style="width: 100%; padding: 12px; border-radius: 10px; margin: 15px 0; border: 1px solid var(--border); font-weight: 600;">
-                    <option value="Cash">Cash</option>
-                    <option value="M-Pesa">kcb paybill</option>
-                    <option value="Credit">Credit/Debt</option>
+
+                <div class="cart-summary">
+                    <div class="summary-row">
+                        <span>Subtotal</span>
+                        <span id="subtotal">Ksh 0</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Items</span>
+                        <span id="item-count">0</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total</span>
+                        <span id="grand-total">Ksh 0</span>
+                    </div>
+                </div>
+
+                <select id="pay-method" class="payment-select">
+                    <option value="Cash">💰 Cash</option>
+                    <option value="KCB Paybill">🏦 KCB Paybill</option>
+                    <option value="Debt">📝 Credit/Debt</option>
                 </select>
 
-                <button class="btn-checkout" id="checkout-btn" onclick="processCheckout()" disabled>PROCESS SALE</button>
+                <button class="btn-checkout" id="checkout-btn" onclick="processCheckout()" disabled>
+                    <i class="fas fa-check-circle"></i> PROCESS SALE
+                </button>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Success Message Container -->
+<div id="successMessage" style="display: none;"></div>
 
 <script type="module">
     import { supabase } from './auth.js';
 
     let allProducts = [];
     let cart = [];
+    let currentUser = null;
+    let currentBranchId = null;
+    let currentBranch = null;
+    let currentShift = null;
 
-    // --- Sidebar Toggle ---
-    window.toggleSidebar = () => {
-        document.getElementById('sidebar').classList.toggle('active');
+    // ==================== SIDEBAR FUNCTIONS ====================
+    window.toggleMenu = () => {
+        document.getElementById('sidebar').classList.toggle('mobile-active');
         document.getElementById('overlay').classList.toggle('active');
     };
 
-    // --- Load Products ---
+    // ==================== BRANCH FUNCTIONS ====================
+
+    function getCurrentBranchId() {
+        const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
+        return session.branch?.id || currentBranchId;
+    }
+
+    async function loadUserProfile() {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return null;
+            }
+            
+            currentUser = user;
+            
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select(`
+                    *,
+                    branches (
+                        id,
+                        name,
+                        code,
+                        location
+                    )
+                `)
+                .eq('id', user.id)
+                .maybeSingle();
+            
+            if (error) throw error;
+            if (!profile) {
+                console.error("No profile found");
+                return null;
+            }
+            
+            currentBranchId = profile.branch_id;
+            currentBranch = profile.branches;
+            
+            const session = {
+                user: user,
+                profile: profile,
+                branch: profile.branches,
+                role: profile.role
+            };
+            localStorage.setItem('pos_session', JSON.stringify(session));
+            
+            // Update sidebar with user's assigned branch
+            const sidebarBranchName = document.querySelector('#sidebarBranchName span');
+            if (profile.branches && sidebarBranchName) {
+                sidebarBranchName.textContent = profile.branches.name;
+            }
+            
+            // Update branch display
+            const branchNameSpan = document.getElementById('branchName');
+            if (branchNameSpan && profile.branches) {
+                branchNameSpan.textContent = profile.branches.name;
+            }
+            
+            return profile;
+        } catch (error) {
+            console.error("Error loading profile:", error);
+            return null;
+        }
+    }
+
+    window.logoutUser = async () => { 
+        localStorage.removeItem('pos_session');
+        await supabase.auth.signOut(); 
+        location.href = 'index.html'; 
+    };
+
+    // ==================== SHIFT FUNCTIONS ====================
+
+    async function getCurrentShift() {
+        try {
+            const branchId = getCurrentBranchId();
+            const { data } = await supabase
+                .from('daily_shifts')
+                .select('*')
+                .eq('branch_id', branchId)
+                .eq('status', 'open')
+                .order('start_time', { ascending: false })
+                .limit(1)
+                .single();
+            
+            currentShift = data;
+        } catch (error) {
+            console.error("Error getting current shift:", error);
+        }
+    }
+
+    // ==================== PRODUCT FUNCTIONS ====================
+
     async function loadProducts() {
-        const { data } = await supabase.from('products').select('*').gt('stock_quantity', 0).order('name');
-        allProducts = data || [];
-        renderGrid(allProducts);
+        try {
+            const branchId = getCurrentBranchId();
+            const { data } = await supabase
+                .from('products')
+                .select('*')
+                .eq('branch_id', branchId)
+                .gt('stock_quantity', 0)
+                .order('name');
+            
+            allProducts = data || [];
+            renderGrid(allProducts);
+        } catch (error) {
+            console.error("Error loading products:", error);
+        }
+    }
+
+    function getStockLevel(stock) {
+        if (stock >= 10) return { class: 'high', text: 'High' };
+        if (stock >= 5) return { class: 'medium', text: 'Medium' };
+        return { class: 'low', text: 'Low' };
     }
 
     function renderGrid(products) {
         const grid = document.getElementById('product-grid');
-        grid.innerHTML = products.map(p => `
-            <div class="prod-card" onclick="addToCart('${p.id}')">
-                <div class="prod-name">${p.name}</div>
-                <div class="prod-price">Ksh ${p.selling_price.toLocaleString()}</div>
-                <div style="font-size: 0.7rem; color: #64748b;">Stock: ${p.stock_quantity}</div>
-            </div>
-        `).join('');
+        
+        if (products.length === 0) {
+            grid.innerHTML = `
+                <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-dim);">
+                    <i class="fas fa-box-open" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <p>No products available</p>
+                </div>
+            `;
+            return;
+        }
+
+        grid.innerHTML = products.map(p => {
+            const stockLevel = getStockLevel(p.stock_quantity);
+            return `
+                <div class="product-card" onclick="addToCart('${p.id}')">
+                    <div class="product-name">${p.name}</div>
+                    <div class="product-price">Ksh ${p.selling_price.toLocaleString()}</div>
+                    <div class="product-stock">
+                        <span class="stock-dot ${stockLevel.class}"></span>
+                        Stock: ${p.stock_quantity}
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
+
+    // ==================== CART FUNCTIONS ====================
 
     window.addToCart = (id) => {
         const product = allProducts.find(p => p.id === id);
         const existing = cart.find(item => item.id === id);
+        
         if (existing) {
-            if (existing.qty < product.stock_quantity) existing.qty++;
+            if (existing.qty < product.stock_quantity) {
+                existing.qty++;
+            } else {
+                alert("Cannot add more than available stock!");
+                return;
+            }
         } else {
             cart.push({ ...product, qty: 1 });
         }
         renderCart();
     };
 
+    window.updateQty = (id, change) => {
+        const item = cart.find(i => i.id === id);
+        const product = allProducts.find(p => p.id === id);
+        
+        item.qty += change;
+        
+        if (item.qty <= 0) {
+            cart = cart.filter(i => i.id !== id);
+        } else if (item.qty > product.stock_quantity) {
+            item.qty = product.stock_quantity;
+            alert("Cannot exceed available stock!");
+        }
+        
+        renderCart();
+    };
+
+    window.removeItem = (id) => {
+        cart = cart.filter(i => i.id !== id);
+        renderCart();
+    };
+
     function renderCart() {
         const cartDiv = document.getElementById('cart-items');
-        let total = 0;
+        const cartCount = document.getElementById('cart-count');
+        const itemCount = document.getElementById('item-count');
+        const subtotalEl = document.getElementById('subtotal');
+        const grandTotalEl = document.getElementById('grand-total');
+        const checkoutBtn = document.getElementById('checkout-btn');
         
-        if(cart.length === 0) {
-            cartDiv.innerHTML = `<p style="text-align: center; color: #94a3b8; margin-top: 50px;">Cart is empty</p>`;
+        let subtotal = 0;
+        let totalItems = 0;
+        
+        if (cart.length === 0) {
+            cartDiv.innerHTML = `
+                <div class="cart-empty">
+                    <i class="fas fa-shopping-basket"></i>
+                    <p>Your cart is empty</p>
+                    <p style="font-size: 0.7rem;">Click on products to add them to cart</p>
+                </div>
+            `;
         } else {
             cartDiv.innerHTML = cart.map(item => {
-                total += (item.selling_price * item.qty);
+                const itemTotal = item.selling_price * item.qty;
+                subtotal += itemTotal;
+                totalItems += item.qty;
+                
                 return `
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #eee;">
-                        <div>
-                            <div style="font-weight:700; font-size:0.8rem;">${item.name}</div>
-                            <div style="font-size:0.7rem; color:var(--primary)">Ksh ${item.selling_price}</div>
+                    <div class="cart-item">
+                        <div class="cart-item-info">
+                            <div class="cart-item-name">${item.name}</div>
+                            <div class="cart-item-price">Ksh ${item.selling_price.toLocaleString()}</div>
                         </div>
-                        <div class="qty-control">
-                            <button class="btn-qty" onclick="updateQty('${item.id}', -1)">-</button>
-                            <span style="font-weight:800; font-size:0.8rem;">${item.qty}</span>
-                            <button class="btn-qty" onclick="updateQty('${item.id}', 1)">+</button>
+                        <div class="cart-item-controls">
+                            <button class="cart-item-qty-btn" onclick="updateQty('${item.id}', -1)">−</button>
+                            <span class="cart-item-qty">${item.qty}</span>
+                            <button class="cart-item-qty-btn" onclick="updateQty('${item.id}', 1)">+</button>
                         </div>
+                        <div class="cart-item-subtotal">Ksh ${itemTotal.toLocaleString()}</div>
                     </div>
                 `;
             }).join('');
         }
-
-        document.getElementById('grand-total').innerText = `Ksh ${total.toLocaleString()}`;
-        document.getElementById('item-count').innerText = cart.length;
-        document.getElementById('mobile-cart-count').innerText = cart.length;
-        document.getElementById('checkout-btn').disabled = cart.length === 0;
+        
+        cartCount.textContent = cart.length;
+        itemCount.textContent = totalItems;
+        subtotalEl.textContent = `Ksh ${subtotal.toLocaleString()}`;
+        grandTotalEl.textContent = `Ksh ${subtotal.toLocaleString()}`;
+        checkoutBtn.disabled = cart.length === 0;
     }
 
-    window.updateQty = (id, change) => {
-        const item = cart.find(i => i.id === id);
-        item.qty += change;
-        if (item.qty <= 0) cart = cart.filter(i => i.id !== id);
-        renderCart();
-    };
+    // ==================== CHECKOUT FUNCTIONS ====================
+
+    function showSuccessMessage(message) {
+        const container = document.getElementById('successMessage');
+        container.innerHTML = `
+            <div class="success-message">
+                <i class="fas fa-check-circle"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        container.style.display = 'block';
+
+        setTimeout(() => {
+            container.style.display = 'none';
+        }, 3000);
+    }
 
     window.processCheckout = async () => {
         const method = document.getElementById('pay-method').value;
         const total = cart.reduce((sum, item) => sum + (item.selling_price * item.qty), 0);
+        
         if (!confirm(`Confirm sale of Ksh ${total.toLocaleString()}?`)) return;
 
-        // Add your Supabase sale insertion logic here
-        alert("Sale Processed Locally!");
-        cart = [];
-        renderCart();
+        const checkoutBtn = document.getElementById('checkout-btn');
+        const originalText = checkoutBtn.innerHTML;
+        checkoutBtn.innerHTML = '<span class="spinner"></span> PROCESSING...';
+        checkoutBtn.disabled = true;
+
+        try {
+            const branchId = getCurrentBranchId();
+            
+            // Get current shift
+            await getCurrentShift();
+            
+            if (!currentShift) {
+                alert("No active shift found. Please start a shift first.");
+                return;
+            }
+
+            // Create sales records
+            const salesRecords = cart.map(item => ({
+                product_id: item.id,
+                item_name: item.name,
+                part_type: item.part_type,
+                quantity: item.qty,
+                unit_price: item.selling_price,
+                total_amount: item.selling_price * item.qty,
+                payment_method: method,
+                cost_price: item.cost_price,
+                shift_id: currentShift.id,
+                category: item.category,
+                branch_id: branchId,
+                user_id: currentUser?.id
+            }));
+
+            // Insert all sales
+            const { error: salesError } = await supabase
+                .from('sales')
+                .insert(salesRecords);
+
+            if (salesError) throw salesError;
+
+            // Update stock for each product
+            for (const item of cart) {
+                const { error: stockError } = await supabase
+                    .from('products')
+                    .update({ stock_quantity: item.stock_quantity - item.qty })
+                    .eq('id', item.id)
+                    .eq('branch_id', branchId);
+
+                if (stockError) throw stockError;
+            }
+
+            // Show success message
+            showSuccessMessage(`✅ Sale completed! Total: Ksh ${total.toLocaleString()}`);
+
+            // Clear cart and refresh
+            cart = [];
+            renderCart();
+            await loadProducts();
+
+        } catch (error) {
+            console.error("Error processing checkout:", error);
+            alert("Error processing sale: " + error.message);
+        } finally {
+            checkoutBtn.innerHTML = originalText;
+            checkoutBtn.disabled = cart.length === 0;
+        }
     };
 
-    document.getElementById('search').oninput = (e) => {
-        const t = e.target.value.toLowerCase();
-        renderGrid(allProducts.filter(p => p.name.toLowerCase().includes(t)));
-    };
+    // ==================== SEARCH FUNCTION ====================
 
-    loadProducts();
+    document.getElementById('search').addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        const filtered = allProducts.filter(p => 
+            p.name.toLowerCase().includes(term)
+        );
+        renderGrid(filtered);
+    });
+
+    // ==================== INITIALIZATION ====================
+
+    async function init() {
+        const profile = await loadUserProfile();
+        if (profile) {
+            await getCurrentShift();
+            await loadProducts();
+            renderCart();
+        }
+    }
+
+    init();
 </script>
 </body>
 </html>
