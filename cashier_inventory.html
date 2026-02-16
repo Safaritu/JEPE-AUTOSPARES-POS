@@ -3,28 +3,30 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Inventory Management | JEPE COMPANY LIMITED</title>
+    <title>Add Stock | JEPE CASHIER - Multi-Branch</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { 
-            --primary: #4f46e5; 
-            --bg: #f8fafc; 
-            --card: #ffffff; 
-            --border: #e2e8f0; 
-            --text: #1e293b; 
+            --admin-dark: #0f172a;
+            --admin-accent: #4f46e5;
+            --bg: #f8fafc;
+            --white: #ffffff;
+            --text: #1e293b;
             --text-dim: #64748b;
+            --green: #10b981; 
+            --blue: #2563eb; 
             --danger: #ef4444; 
-            --success: #10b981; 
             --warning: #f59e0b;
+            --sidebar-width: 260px;
+            --sidebar-collapsed: 70px;
+            --border: #e2e8f0;
+            --primary: #4f46e5;
             --tuktuk: #8b5cf6;
-            --sidebar-bg: #0f172a;
-            --sidebar-width: 280px;
-            --header-height: 70px;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
 
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
@@ -32,92 +34,267 @@
             margin: 0; 
             color: var(--text);
             display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        /* --- SIDEBAR (Admin Style) --- */
-        .sidebar {
-            position: fixed; left: -280px; top: 0; width: var(--sidebar-width);
-            height: 100vh; background: var(--sidebar-bg); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 4000; padding: 25px; display: flex; flex-direction: column; color: white;
-        }
-
-        @media (min-width: 1025px) {
-            .sidebar { left: 0; }
-            .main-wrapper { margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)); }
-            .mobile-header, .fab-menu, .guide-hand { display: none !important; }
-            .container { padding-top: 30px; }
-        }
-
-        .sidebar.active { left: 0; }
-        
-        .sidebar-header {
-            margin-bottom: 30px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            padding-bottom: 20px;
+        /* --- SIDEBAR - Collapsible like admin --- */
+        .sidebar { 
+            width: var(--sidebar-collapsed); 
+            height: 100vh; 
+            background: var(--admin-dark); 
+            position: fixed; 
+            left: 0; 
+            top: 0; 
+            z-index: 3000; 
+            overflow-x: hidden; 
+            transition: width 0.3s ease;
+            padding: 20px 10px; 
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            color: white;
+        }
+        
+        .sidebar:hover, .sidebar.mobile-active { 
+            width: var(--sidebar-width); 
+        }
+        
+        .sidebar-header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            margin-bottom: 30px; 
+            padding: 0 10px; 
+            min-height: 40px;
+        }
+        
+        .sidebar h2 { 
+            font-size: 1.2rem; 
+            margin: 0; 
+            white-space: nowrap; 
+            opacity: 0; 
+            transition: opacity 0.2s; 
+            color: white;
+        }
+        
+        .sidebar:hover h2, .sidebar.mobile-active h2 { 
+            opacity: 1; 
+        }
+        
+        .close-btn { 
+            display: none; 
+            background: none; 
+            border: none; 
+            color: white; 
+            font-size: 1.5rem; 
+            cursor: pointer; 
         }
 
-        .sidebar h2 { color: #fff; font-weight: 800; font-size: 1.1rem; margin: 0; }
-        
+        /* Branch Info in Sidebar */
         .branch-info {
+            padding: 10px;
+            margin: 10px 0 20px;
             background: rgba(79, 70, 229, 0.2);
             border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 20px;
             border: 1px solid rgba(255,255,255,0.1);
+            white-space: nowrap;
         }
         
         .branch-label {
             font-size: 0.6rem;
             text-transform: uppercase;
             color: #94a3b8;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .sidebar:hover .branch-label, .sidebar.mobile-active .branch-label {
+            opacity: 1;
         }
         
         .branch-name {
             font-weight: 800;
             color: white;
             font-size: 0.85rem;
-            margin-top: 5px;
+            margin-top: 3px;
             display: flex;
             align-items: center;
             gap: 6px;
         }
         
-        .branch-name i { color: var(--primary); }
-        
-        .nav-list { flex-grow: 1; overflow-y: auto; margin: 0 -10px; padding: 0 10px; }
-        
-        .nav-link {
-            display: flex; align-items: center; padding: 12px 15px; color: #94a3b8;
-            text-decoration: none; font-weight: 600; border-radius: 10px;
-            margin-bottom: 4px; transition: 0.2s; font-size: 0.85rem; gap: 12px;
+        .branch-name i { 
+            color: var(--primary); 
+            min-width: 20px;
         }
-        .nav-link i { width: 20px; font-size: 1.1rem; }
-        .nav-link:hover { background: rgba(255,255,255,0.05); color: white; }
-        .nav-link.active { background: var(--primary); color: white; }
-
-        .overlay {
-            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); 
-            backdrop-filter: blur(4px); display: none; z-index: 3000;
+        
+        .branch-name span {
+            opacity: 0;
+            transition: opacity 0.2s;
         }
-        .overlay.active { display: block; }
+        
+        .sidebar:hover .branch-name span, .sidebar.mobile-active .branch-name span {
+            opacity: 1;
+        }
+        
+        .nav-list { 
+            flex: 1;
+            list-style: none; 
+            padding: 0; 
+            margin: 0; 
+            overflow-y: auto;
+        }
+        
+        .nav-link { 
+            display: flex; 
+            align-items: center; 
+            padding: 12px; 
+            color: #94a3b8; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            margin-bottom: 5px; 
+            transition: 0.3s; 
+            white-space: nowrap;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .nav-link i { 
+            min-width: 30px; 
+            font-size: 1.2rem; 
+            text-align: center; 
+            margin-right: 15px;
+        }
+        
+        .nav-link span { 
+            opacity: 0; 
+            white-space: nowrap; 
+            transition: opacity 0.2s; 
+        }
+        
+        .sidebar:hover .nav-link span, 
+        .sidebar.mobile-active .nav-link span { 
+            opacity: 1; 
+        }
+        
+        .nav-link:hover, .nav-link.active { 
+            background: var(--primary); 
+            color: white; 
+        }
 
-        /* --- LAYOUT --- */
-        .main-wrapper { width: 100%; min-height: 100vh; }
+        /* --- MENU TRIGGER --- */
+        .menu-trigger {
+            display: none; 
+            position: fixed; 
+            top: 15px; 
+            left: 15px; 
+            z-index: 2500;
+            background: var(--admin-dark); 
+            color: white; 
+            border: none; 
+            padding: 12px 18px;
+            border-radius: 12px; 
+            cursor: pointer; 
+            font-size: 0.9rem; 
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        /* --- MAIN LAYOUT --- */
+        .main-wrapper { 
+            width: 100%; 
+            margin-left: var(--sidebar-collapsed); 
+            transition: margin-left 0.3s ease;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--bg) 0%, #ffffff 100%);
+        }
+        
+        @media (min-width: 1024px) {
+            .main-wrapper { 
+                margin-left: var(--sidebar-collapsed); 
+            }
+        }
+
         .mobile-header {
-            background: var(--sidebar-bg); color: white; padding: 0 20px;
-            display: flex; justify-content: space-between; align-items: center;
-            position: sticky; top: 0; z-index: 2000; height: var(--header-height);
+            display: none; 
+            background: var(--admin-dark); 
+            color: white; 
+            padding: 0 20px;
+            align-items: center; 
+            justify-content: space-between;
+            position: fixed; 
+            top: 0; 
+            width: 100%; 
+            height: 64px; 
+            z-index: 2000;
         }
 
-        .container { padding: 20px; max-width: 1400px; margin: auto; }
+        .container { 
+            padding: 40px 30px; 
+            max-width: 1400px; 
+            margin: auto; 
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar { 
+                transform: translateX(-100%); 
+                width: var(--sidebar-width);
+            }
+            .sidebar.mobile-active { 
+                transform: translateX(0); 
+            }
+            .main-wrapper { 
+                margin-left: 0; 
+                padding-top: 64px;
+            }
+            .menu-trigger { 
+                display: block; 
+            }
+            .mobile-header { 
+                display: flex; 
+            }
+            .close-btn { 
+                display: block; 
+            }
+            .container {
+                padding: 20px 15px;
+            }
+        }
+
+        /* --- BRANCH INFO & STATS (Simplified for cashier) --- */
+        .branch-header {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        
+        .branch-badge {
+            background: var(--primary);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(79,70,229,0.3);
+        }
 
         .card { 
-            background: white; padding: 20px; border-radius: 16px; 
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid var(--border); 
-            margin-bottom: 20px;
+            background: var(--white); 
+            padding: 25px; 
+            border-radius: 20px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
+            border: 1px solid #eef2f6; 
+            margin-bottom: 25px; 
         }
 
         .card-header {
@@ -129,7 +306,15 @@
             gap: 15px;
         }
 
-        h3 { margin: 0; font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        h3 { 
+            margin: 0; 
+            font-size: 1rem; 
+            font-weight: 800; 
+            color: var(--admin-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
         .action-buttons {
             display: flex;
@@ -146,108 +331,249 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            transition: 0.2s;
+            transition: all 0.2s;
             border: none;
             text-decoration: none;
         }
 
         .btn-supplier {
-            background: var(--success);
+            background: var(--green);
             color: white;
         }
         .btn-supplier:hover {
             background: #0d9488;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
         }
 
-        .btn-edit {
+        .btn-edit-items {
             background: var(--primary);
             color: white;
         }
-        .btn-edit:hover {
+        .btn-edit-items:hover {
             background: #6366f1;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
         }
 
         .form-row { 
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
-            gap: 15px; margin-bottom: 15px; 
+            display: grid; 
+            grid-template-columns: repeat(1, 1fr); 
+            gap: 15px; 
+            margin-bottom: 15px; 
         }
-
-        label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-dim); margin-bottom: 5px; }
-
+        @media (min-width: 768px) { 
+            .form-row { grid-template-columns: repeat(3, 1fr); } 
+        }
+        
         input, select { 
-            padding: 12px; border: 1px solid var(--border); border-radius: 10px; 
-            width: 100%; font-size: 16px; background: #fff; color: var(--text);
-            font-family: inherit; transition: 0.2s;
+            padding: 14px 16px; 
+            border: 1px solid #cbd5e1; 
+            border-radius: 12px; 
+            font-size: 0.9rem; 
+            width: 100%; 
+            font-family: inherit; 
+            outline: none;
+            transition: border-color 0.2s;
         }
-        input:focus { border-color: var(--primary); outline: none; }
-
+        
+        input:focus, select:focus {
+            border-color: var(--primary);
+        }
+        
         .btn-add { 
-            background: var(--primary); color: white; border: none; 
-            padding: 15px; border-radius: 10px; font-weight: 800; 
-            cursor: pointer; width: 100%; text-transform: uppercase;
-            letter-spacing: 1px; font-size: 0.85rem;
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            padding: 14px; 
+            border-radius: 12px; 
+            font-weight: 800; 
+            cursor: pointer; 
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+        .btn-add:hover {
+            background: #6366f1;
         }
 
         /* --- SEARCH & TABLE --- */
-        .search-box { position: sticky; top: var(--header-height); background: var(--bg); padding: 10px 0; z-index: 100; }
-        @media (min-width: 1025px) { .search-box { top: 0; } }
-        .search-box input { border-radius: 30px; padding-left: 20px; border: 2px solid var(--border); }
+        .search-box { 
+            margin-bottom: 20px; 
+        }
+        .search-box input { 
+            border-radius: 30px; 
+            padding: 14px 20px; 
+            border: 2px solid var(--border); 
+            width: 100%;
+        }
 
-        .table-wrap { width: 100%; overflow-x: auto; background: white; border-radius: 12px; border: 1px solid var(--border); }
-        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
-        th { text-align: left; padding: 15px; background: #f8fafc; color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase; }
-        td { padding: 15px; border-top: 1px solid var(--border); vertical-align: middle; }
+        .table-wrap { 
+            width: 100%; 
+            overflow-x: auto; 
+            background: white; 
+            border-radius: 16px; 
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+        }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            min-width: 1000px; 
+        }
+        
+        th { 
+            text-align: left; 
+            padding: 15px; 
+            background: #f8fafc; 
+            color: var(--text-dim); 
+            font-size: 0.7rem; 
+            text-transform: uppercase; 
+            font-weight: 800;
+            border-bottom: 2px solid var(--border);
+        }
+        
+        td { 
+            padding: 15px; 
+            border-bottom: 1px solid var(--border); 
+            vertical-align: middle; 
+        }
 
         @media (max-width: 1024px) {
-            .table-wrap { border: none; background: transparent; }
-            table, thead, tbody, th, td, tr { display: block; }
-            thead { display: none; }
-            tr { background: white; padding: 15px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 15px; position: relative; }
-            td { display: flex; justify-content: space-between; border: none; padding: 8px 0; font-size: 0.9rem; align-items: center;}
-            td:before { content: attr(data-label); font-weight: 700; color: var(--text-dim); }
-            td:first-child { border-bottom: 2px solid var(--primary); margin-bottom: 10px; padding-bottom: 10px; font-weight: 800; display: block; }
-            td:first-child:before { display: none; }
+            .table-wrap { 
+                border: none; 
+                background: transparent; 
+            }
+            table, thead, tbody, th, td, tr { 
+                display: block; 
+            }
+            thead { 
+                display: none; 
+            }
+            tr { 
+                background: white; 
+                padding: 15px; 
+                border-radius: 16px; 
+                border: 1px solid var(--border); 
+                margin-bottom: 15px; 
+            }
+            td { 
+                display: flex; 
+                justify-content: space-between; 
+                border: none; 
+                padding: 8px 0; 
+                font-size: 0.9rem; 
+                align-items: center;
+            }
+            td:before { 
+                content: attr(data-label); 
+                font-weight: 700; 
+                color: var(--text-dim); 
+            }
         }
 
         .badge { 
-            background: #e0e7ff; color: var(--primary); padding: 3px 8px; 
-            border-radius: 6px; font-size: 0.7rem; font-weight: 700; margin-right: 5px; 
+            padding: 4px 8px; 
+            border-radius: 6px; 
+            font-size: 0.65rem; 
+            font-weight: 700; 
+            text-transform: uppercase; 
             display: inline-block;
+            margin-right: 4px;
         }
-        .badge-gas { background: #fee2e2; color: #b91c1c; }
-        .badge-spare { background: #dcfce7; color: #15803d; }
-        .badge-bike { background: #e0e7ff; color: #4338ca; }
-        .badge-tuktuk { background: #ede9fe; color: #6d28d9; }
-        
-        .sup-badge { background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
-        
-        .low-stock { background: #fffcf0 !important; border-left: 5px solid var(--warning) !important; }
-        .low-stock-text { color: var(--danger); font-weight: 800; }
-        
-        .onetouch-flex { display: flex; gap: 8px; }
-        .onetouch-input { width: 70px !important; text-align: center; padding: 8px; }
-        .btn-touch { background: var(--success); color: white; border: none; padding: 8px 15px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.8rem; }
+        .badge-gas { 
+            background: #fee2e2; 
+            color: #b91c1c; 
+        }
+        .badge-spare { 
+            background: #dcfce7; 
+            color: #15803d; 
+        }
+        .badge-bike { 
+            background: #e0e7ff; 
+            color: #4338ca; 
+        }
+        .badge-tuktuk { 
+            background: #ede9fe; 
+            color: #6d28d9; 
+        }
 
-        /* --- NAVIGATION UI --- */
-        .fab-menu { position: fixed; bottom: 30px; left: 25px; width: 65px; height: 65px; background: #4f46e5; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.6rem; box-shadow: 0 10px 30px rgba(79, 70, 229, 0.4); border: 4px solid white; cursor: pointer; z-index: 4500; }
-        .guide-hand { position: fixed; bottom: 105px; left: 32px; z-index: 4600; display: flex; flex-direction: column; align-items: center; animation: bounce 1.5s infinite; }
-        .guide-label { background: #0f172a; color: white; padding: 3px 8px; border-radius: 6px; font-size: 0.55rem; font-weight: 800; margin-bottom: 2px; border: 1px solid #4f46e5; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        .sup-badge { 
+            background: #fef3c7; 
+            color: #92400e; 
+            padding: 4px 8px; 
+            border-radius: 6px; 
+            font-size: 0.75rem; 
+            font-weight: 600; 
+        }
+        
+        .low-stock { 
+            background: #fffcf0 !important; 
+        }
+        .low-stock-text { 
+            color: var(--danger); 
+            font-weight: 800; 
+        }
+        
+        .onetouch-flex { 
+            display: flex; 
+            gap: 8px; 
+        }
+        .onetouch-input { 
+            width: 70px !important; 
+            text-align: center; 
+            padding: 8px; 
+        }
+        .btn-touch { 
+            background: var(--success); 
+            color: white; 
+            border: none; 
+            padding: 8px 15px; 
+            border-radius: 8px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            font-size: 0.8rem; 
+        }
+
+        .overlay { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(15,23,42,0.5); 
+            backdrop-filter: blur(4px); 
+            display: none; 
+            z-index: 2500; 
+        }
+        .overlay.active { display: block; }
+        
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-dim);
+        }
     </style>
 </head>
 <body>
 
-<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+<button class="menu-trigger" onclick="toggleMenu()">☰ MENU</button>
 
-<nav class="sidebar" id="sidebar">
+<div class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <div>
-            <h2>JEPE LOGISTICS</h2>
-            <p style="color: #94a3b8; font-size: 0.7rem; margin-top: 5px;">Warehouse System</p>
-        </div>
-        <button onclick="toggleSidebar()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;" class="mobile-only">&times;</button>
+        <h2>JEPE CASHIER</h2>
+        <button class="close-btn" onclick="toggleMenu()">×</button>
     </div>
-
+    
     <!-- Branch Info Display -->
     <div class="branch-info" id="sidebarBranchInfo">
         <div class="branch-label">Your Assigned Branch</div>
@@ -257,16 +583,16 @@
         </div>
     </div>
     
-    <div class="nav-list">
+    <nav class="nav-list">
         <a href="cashier.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
         <a href="cashiergashub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
-        <a href="cashier_inventory.html" class="nav-link active"><i class="fas fa-plus-circle"></i> <span>Add/Update Items</span></a>
-        <a href="pos.html" class="nav-link"><i class="fas fa-shopping-cart"></i> <span>View All Items</span></a>
+        <a href="cashier_inventory.html" class="nav-link active"><i class="fas fa-plus-circle"></i> <span>Add Stock</span></a>
+        <a href="pos.html" class="nav-link"><i class="fas fa-shopping-cart"></i> <span>Cart Shop</span></a>
         <a href="sale edit cashier.html" class="nav-link"><i class="fas fa-edit"></i> <span>Edit Sales</span></a>
 
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
 
-        <a href="moneyinout.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Cash Flow</span></a>
+        <a href="moneyinout.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
         <a href="shift history cashier.html" class="nav-link"><i class="fas fa-history"></i> <span>Shift History</span></a>
         <a href="sales_reports.html" class="nav-link"><i class="fas fa-chart-line"></i> <span>Sales History</span></a>
 
@@ -275,97 +601,102 @@
         <a href="low-stock-cashier.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
         <a href="debtors.html" class="nav-link"><i class="fas fa-users"></i> <span>Debtors</span></a>
         <a href="supplierscashier.html" class="nav-link"><i class="fas fa-handshake"></i> <span>Suppliers</span></a>
-        <a href="gas_delivery.html" class="nav-link"><i class="fas fa-truck"></i> <span>Delivery Records</span></a>
-    </div>
-    <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.05);">
-        <button onclick="logoutUser()" style="width:100%; background:var(--danger); color:white; border:none; padding:12px; border-radius:10px; font-weight:700; cursor:pointer;">🚪 Logout System</button>
-    </div>
-</nav>
+        <a href="gas_delivery.html" class="nav-link"><i class="fas fa-truck"></i> <span>Delivery</span></a>
+
+        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+
+        <a href="cashier_report.html" class="nav-link"><i class="fas fa-file-alt"></i> <span>Today's Report</span></a>
+        <a href="cashierprofile.html" class="nav-link"><i class="fas fa-user"></i> <span>Settings</span></a>
+        <a href="cashier.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
+        
+        <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <button onclick="logoutUser()" style="width:100%; background:var(--danger); color:white; border:none; padding:12px; border-radius:10px; font-weight:700; cursor:pointer; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-sign-out-alt"></i> <span>Logout System</span>
+            </button>
+        </div>
+    </nav>
+</div>
 
 <div class="main-wrapper">
     <div class="mobile-header">
-        <button onclick="toggleSidebar()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">☰</button>
-        <div style="font-weight:800; letter-spacing:1px;">INVENTORY</div>
+        <button onclick="toggleMenu()" style="background:none; border:none; color:white; font-size:1.5rem;">☰</button>
+        <div style="font-weight:800;">ADD STOCK</div>
         <div style="width:24px;"></div>
     </div>
 
-    <div class="guide-hand" id="onboardingHand">
-        <div class="guide-label">MENU</div>
-        <span>👇</span>
-    </div>
-    <button class="fab-menu" onclick="toggleSidebar()">☰</button>
-
     <div class="container">
+        <!-- Branch Header (Simplified) -->
+        <div class="branch-header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
+                <span style="font-weight: 600;">Your Branch:</span>
+            </div>
+            <div class="branch-badge" id="currentBranchBadge">
+                <i class="fas fa-store"></i>
+                <span id="currentBranchDisplay">Loading...</span>
+            </div>
+        </div>
+
         <div class="card" style="border-top: 4px solid var(--primary);">
             <div class="card-header">
                 <h3><i class="fas fa-box" style="color: var(--primary);"></i> Register New Product</h3>
                 <div class="action-buttons">
-                    <button class="action-btn btn-supplier" onclick="window.location.href='supplierscashier.html'">
+                    <button type="button" class="action-btn btn-supplier" onclick="window.location.href='supplierscashier.html'">
                         <i class="fas fa-truck"></i> Add Supplier
                     </button>
-                    <button class="action-btn btn-edit" onclick="window.location.href='sale edit cashier.html'">
+                    <button type="button" class="action-btn btn-edit-items" onclick="window.location.href='sale edit cashier.html'">
                         <i class="fas fa-edit"></i> Edit Sales
                     </button>
                 </div>
             </div>
             <form id="cashier-form">
                 <div class="form-row">
-                    <div style="grid-column: span 2;"><label>Item Name</label><input type="text" id="name" placeholder="e.g. 15W40 Engine Oil" required></div>
-                    <div>
-                        <label>Category</label>
-                        <select id="cat" onchange="toggleCategoryFields()">
-                            <option value="Spare Part">Spare Part</option>
-                            <option value="Motorbike">Motorbike</option>
-                            <option value="Gas">Gas</option>
-                            <option value="Tuktuk">🚖 TUKTUK</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>Part Type</label>
-                        <select id="type">
-                            <option value="Original">Original</option>
-                            <option value="Copy">Copy</option>
-                            <option value="N/A">N/A</option>
-                        </select>
-                    </div>
+                    <input type="text" id="name" placeholder="Item Name" required>
+                    <select id="cat" onchange="toggleCategoryFields()">
+                        <option value="Spare Part">SPARE PART</option>
+                        <option value="Motorbike">MOTORBIKE</option>
+                        <option value="Gas">GAS</option>
+                        <option value="Tuktuk">🚖 TUKTUK</option>
+                    </select>
+                    <select id="prod-supplier">
+                        <option value="">-- Select Supplier --</option>
+                    </select>
                 </div>
-                
-                <div class="form-row" id="gas-fields" style="display:none;">
-                    <div style="grid-column: span 2;">
-                        <label>Weight Category</label>
-                        <select id="weight_cat">
-                            <option value="6kg">6 KG Cylinder</option>
-                            <option value="13kg">13 KG Cylinder</option>
-                            <option value="50kg">50 KG Cylinder</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- TUKTUK specific fields -->
-                <div class="form-row" id="tuktuk-fields" style="display:none;">
-                    <div style="grid-column: span 2;">
-                        <label>TUKTUK Type</label>
-                        <select id="tuktuk_type">
-                            <option value="Passenger">Passenger Tuktuk</option>
-                            <option value="Cargo">Cargo Tuktuk</option>
-                            <option value="Spare Part">Tuktuk Spare Part</option>
-                        </select>
-                    </div>
-                </div>
-
                 <div class="form-row">
-                    <div><label>Supplier</label><select id="prod-supplier"></select></div>
-                    <div><label>Cost Price</label><input type="number" id="cost" placeholder="Buying" required></div>
-                    <div><label>Selling Price</label><input type="number" id="sell" placeholder="Selling" required></div>
-                    <div><label>Min. Selling Price</label><input type="number" id="min_selling_price" placeholder="Minimum Price" required></div>
-                    <div><label>Initial Qty</label><input type="number" id="stock" placeholder="In Stock" required></div>
+                    <select id="type">
+                        <option value="Original">Original</option>
+                        <option value="Copy">Copy</option>
+                        <option value="N/A">Part Type (N/A)</option>
+                    </select>
+                    <input type="number" id="cost" placeholder="Buy Price (Cost)" required>
+                    <input type="number" id="sell" placeholder="Sell Price" required>
                 </div>
-                <button type="submit" class="btn-add">Add Product to Database</button>
+                <div class="form-row" id="gas-row" style="display:none;">
+                    <select id="weight_cat">
+                        <option value="6kg">6 KG</option>
+                        <option value="13kg">13 KG</option>
+                        <option value="50kg">50 KG</option>
+                    </select>
+                </div>
+                <!-- TUKTUK specific fields -->
+                <div class="form-row" id="tuktuk-row" style="display:none;">
+                    <select id="tuktuk_type">
+                        <option value="Passenger">Passenger Tuktuk</option>
+                        <option value="Cargo">Cargo Tuktuk</option>
+                        <option value="Spare Part">Tuktuk Spare Part</option>
+                    </select>
+                    <input type="text" id="tuktuk_model" placeholder="Model (e.g., Bajaj, TVS)">
+                </div>
+                <div class="form-row">
+                    <input type="number" id="min_price" placeholder="Min. Sell Price" required>
+                    <input type="number" id="stock" placeholder="Initial Qty" required>
+                    <button type="submit" id="submit-btn" class="btn-add">ADD TO SYSTEM</button>
+                </div>
             </form>
         </div>
 
         <div class="search-box">
-            <input type="text" id="search" placeholder="🔍 Search items by name or supplier...">
+            <input type="text" id="search" placeholder="🔍 Search items by name, category or supplier...">
         </div>
 
         <div class="table-wrap">
@@ -382,7 +713,14 @@
                         <th>Quick Restock</th>
                     </tr>
                 </thead>
-                <tbody id="inv-body"></tbody>
+                <tbody id="inv-body">
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px;">
+                            <div class="spinner" style="margin: 0 auto;"></div>
+                            Loading products...
+                        </td>
+                    </tr>
+                </tbody>
             </table>
         </div>
     </div>
@@ -397,19 +735,13 @@
     let currentBranch = null;
     let currentUserProfile = null;
 
-    // ============================================
-    // SIDEBAR FUNCTIONS
-    // ============================================
-    window.toggleSidebar = () => {
-        document.getElementById('sidebar').classList.toggle('active');
+    // ==================== SIDEBAR FUNCTIONS ====================
+    window.toggleMenu = () => {
+        document.getElementById('sidebar').classList.toggle('mobile-active');
         document.getElementById('overlay').classList.toggle('active');
-        const hand = document.getElementById('onboardingHand');
-        if(hand) hand.style.display = 'none';
     };
 
-    // ============================================
-    // BRANCH-AWARE HELPER FUNCTIONS
-    // ============================================
+    // ==================== BRANCH FUNCTIONS ====================
 
     // Get current user's branch ID from session
     function getCurrentBranchId() {
@@ -464,6 +796,12 @@
                 sidebarBranchName.textContent = profile.branches.name;
             }
             
+            // Update branch display
+            const branchDisplay = document.getElementById('currentBranchDisplay');
+            if (branchDisplay && profile.branches) {
+                branchDisplay.textContent = profile.branches.name;
+            }
+            
             return profile;
         } catch (error) {
             console.error("Error loading profile:", error);
@@ -479,35 +817,12 @@
 
     window.toggleCategoryFields = () => {
         const category = document.getElementById('cat').value;
-        const typeSelect = document.getElementById('type');
+        document.getElementById('gas-row').style.display = (category === 'Gas') ? 'grid' : 'none';
+        document.getElementById('tuktuk-row').style.display = (category === 'Tuktuk') ? 'grid' : 'none';
         
-        // Hide all conditional fields first
-        document.getElementById('gas-fields').style.display = 'none';
-        document.getElementById('tuktuk-fields').style.display = 'none';
-        
-        if (category === 'Gas') {
-            document.getElementById('gas-fields').style.display = 'grid';
-            // Reset type select for gas
-            typeSelect.innerHTML = `
-                <option value="Original">Original</option>
-                <option value="Copy">Copy</option>
-                <option value="N/A">N/A</option>
-            `;
-        } else if (category === 'Tuktuk') {
-            document.getElementById('tuktuk-fields').style.display = 'grid';
-            // Update type select for tuktuk
-            typeSelect.innerHTML = `
-                <option value="Passenger">Passenger</option>
-                <option value="Cargo">Cargo</option>
-                <option value="Spare Part">Spare Part</option>
-            `;
-        } else {
-            // Reset type select for other categories
-            typeSelect.innerHTML = `
-                <option value="Original">Original</option>
-                <option value="Copy">Copy</option>
-                <option value="N/A">N/A</option>
-            `;
+        // For TUKTUK, set part type
+        if (category === 'Tuktuk') {
+            document.getElementById('type').value = 'N/A';
         }
     };
 
@@ -531,7 +846,7 @@
         }
     }
 
-    async function load() {
+    async function loadData() {
         const branchId = getCurrentBranchId();
         if (!branchId) {
             console.error("No branch ID found");
@@ -653,7 +968,7 @@
         
         const btn = event.target;
         const originalText = btn.innerText;
-        btn.innerText = "...";
+        btn.innerHTML = '<span class="spinner"></span>';
         btn.disabled = true;
 
         const { error } = await supabase
@@ -663,7 +978,7 @@
             .eq('branch_id', getCurrentBranchId());
 
         if(!error) {
-            await load(); 
+            await loadData(); 
         } else {
             alert("Update failed: " + error.message);
             btn.innerText = originalText;
@@ -673,7 +988,7 @@
 
     document.getElementById('cashier-form').onsubmit = async (e) => {
         e.preventDefault();
-        const btn = e.target.querySelector('button');
+        const btn = document.getElementById('submit-btn');
         const branchId = getCurrentBranchId();
         const category = document.getElementById('cat').value;
         
@@ -682,7 +997,7 @@
             return;
         }
         
-        btn.innerText = "Processing...";
+        btn.innerHTML = '<span class="spinner"></span> ADDING...';
         btn.disabled = true;
 
         const payload = {
@@ -694,26 +1009,27 @@
             stock_quantity: parseInt(document.getElementById('stock').value) || 0,
             cost_price: parseFloat(document.getElementById('cost').value) || 0,
             selling_price: parseFloat(document.getElementById('sell').value) || 0,
-            min_selling_price: parseFloat(document.getElementById('min_selling_price').value) || 0,
+            min_selling_price: parseFloat(document.getElementById('min_price').value) || 0,
             empty_quantity: 0,
             branch_id: branchId
         };
 
-        // Add TUKTUK type if category is Tuktuk
+        // Add TUKTUK specific fields if category is Tuktuk
         if (category === 'Tuktuk') {
             payload.tuktuk_type = document.getElementById('tuktuk_type').value;
+            payload.name = `${document.getElementById('tuktuk_model').value} ${document.getElementById('tuktuk_type').value} - ${document.getElementById('name').value}`;
         }
 
         const { error } = await supabase.from('products').insert([payload]);
         
-        btn.innerText = "Add Product to Database";
+        btn.innerHTML = 'ADD TO SYSTEM';
         btn.disabled = false;
 
         if (!error) { 
             alert("✅ Product Registered Successfully!"); 
-            await load(); 
-            e.target.reset(); 
-            toggleCategoryFields(); 
+            document.getElementById('cashier-form').reset(); 
+            await loadData(); 
+            toggleCategoryFields();
         } else {
             alert("❌ Error: " + error.message);
         }
@@ -732,7 +1048,7 @@
     document.addEventListener('DOMContentLoaded', async function() {
         const profile = await loadUserProfile();
         if (profile) {
-            await load();
+            await loadData();
         }
     });
 </script>
