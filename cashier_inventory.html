@@ -9,25 +9,22 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { 
-            --admin-dark: #0f172a;
-            --admin-accent: #4f46e5;
-            --bg: #f8fafc;
-            --white: #ffffff;
-            --text: #1e293b;
+            --primary: #4f46e5; 
+            --bg: #f8fafc; 
+            --card: #ffffff; 
+            --border: #e2e8f0; 
+            --text: #1e293b; 
             --text-dim: #64748b;
-            --success: #10b981; 
-            --blue: #2563eb; 
             --danger: #ef4444; 
+            --success: #10b981; 
             --warning: #f59e0b;
             --tuktuk: #8b5cf6;
-            --sidebar-width: 260px;
-            --sidebar-collapsed: 70px;
-            --border: #e2e8f0;
-            --primary: #4f46e5;
+            --sidebar-bg: #0f172a;
+            --sidebar-width: 280px;
             --header-height: 70px;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
@@ -35,261 +32,108 @@
             margin: 0; 
             color: var(--text);
             display: flex;
-            min-height: 100vh;
-            overflow-x: hidden;
         }
 
-        /* --- SIDEBAR - Collapsible like admin --- */
-        .sidebar { 
-            width: var(--sidebar-collapsed); 
-            height: 100vh; 
-            background: var(--admin-dark); 
-            position: fixed; 
-            left: 0; 
-            top: 0; 
-            z-index: 3000; 
-            overflow-x: hidden; 
-            transition: width 0.3s ease;
-            padding: 20px 10px; 
+        /* --- SIDEBAR (Admin Style) --- */
+        .sidebar {
+            position: fixed; left: -280px; top: 0; width: var(--sidebar-width);
+            height: 100vh; background: var(--sidebar-bg); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 4000; padding: 25px; display: flex; flex-direction: column; color: white;
+        }
+
+        @media (min-width: 1025px) {
+            .sidebar { left: 0; }
+            .main-wrapper { margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)); }
+            .mobile-header, .fab-menu, .guide-hand { display: none !important; }
+            .container { padding-top: 30px; }
+        }
+
+        .sidebar.active { left: 0; }
+        
+        .sidebar-header {
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 20px;
             display: flex;
-            flex-direction: column;
-            color: white;
-        }
-        
-        .sidebar:hover, .sidebar.mobile-active { 
-            width: var(--sidebar-width); 
-        }
-        
-        .sidebar-header { 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            margin-bottom: 30px; 
-            padding: 0 10px; 
-            min-height: 40px;
-        }
-        
-        .sidebar h2 { 
-            font-size: 1.2rem; 
-            margin: 0; 
-            white-space: nowrap; 
-            opacity: 0; 
-            transition: opacity 0.2s; 
-            color: white;
-            font-weight: 800;
-        }
-        
-        .sidebar:hover h2, .sidebar.mobile-active h2 { 
-            opacity: 1; 
-        }
-        
-        .close-btn { 
-            display: none; 
-            background: none; 
-            border: none; 
-            color: white; 
-            font-size: 1.5rem; 
-            cursor: pointer; 
+            justify-content: space-between;
+            align-items: center;
         }
 
-        /* Branch Info in Sidebar */
+        .sidebar h2 { color: #fff; font-weight: 800; font-size: 1.1rem; margin: 0; }
+        
         .branch-info {
-            padding: 10px;
-            margin: 10px 0 20px;
             background: rgba(79, 70, 229, 0.2);
             border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
             border: 1px solid rgba(255,255,255,0.1);
-            white-space: nowrap;
         }
         
         .branch-label {
             font-size: 0.6rem;
             text-transform: uppercase;
             color: #94a3b8;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        
-        .sidebar:hover .branch-label, .sidebar.mobile-active .branch-label {
-            opacity: 1;
         }
         
         .branch-name {
             font-weight: 800;
             color: white;
             font-size: 0.85rem;
-            margin-top: 3px;
+            margin-top: 5px;
             display: flex;
             align-items: center;
             gap: 6px;
         }
         
-        .branch-name i { 
-            color: var(--primary); 
-            min-width: 20px;
-        }
+        .branch-name i { color: var(--primary); }
         
-        .branch-name span {
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
+        .nav-list { flex-grow: 1; overflow-y: auto; margin: 0 -10px; padding: 0 10px; }
         
-        .sidebar:hover .branch-name span, .sidebar.mobile-active .branch-name span {
-            opacity: 1;
+        .nav-link {
+            display: flex; align-items: center; padding: 12px 15px; color: #94a3b8;
+            text-decoration: none; font-weight: 600; border-radius: 10px;
+            margin-bottom: 4px; transition: 0.2s; font-size: 0.85rem; gap: 12px;
         }
-        
-        .nav-list { 
-            flex: 1;
-            list-style: none; 
-            padding: 0; 
-            margin: 0; 
-            overflow-y: auto;
-        }
-        
-        .nav-link { 
-            display: flex; 
-            align-items: center; 
-            padding: 12px; 
-            color: #94a3b8; 
-            text-decoration: none; 
-            border-radius: 8px; 
-            margin-bottom: 5px; 
-            transition: 0.3s; 
-            white-space: nowrap;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        
-        .nav-link i { 
-            min-width: 30px; 
-            font-size: 1.2rem; 
-            text-align: center; 
-            margin-right: 15px;
-        }
-        
-        .nav-link span { 
-            opacity: 0; 
-            white-space: nowrap; 
-            transition: opacity 0.2s; 
-        }
-        
-        .sidebar:hover .nav-link span, 
-        .sidebar.mobile-active .nav-link span { 
-            opacity: 1; 
-        }
-        
-        .nav-link:hover, .nav-link.active { 
-            background: var(--primary); 
-            color: white; 
-        }
+        .nav-link i { width: 20px; font-size: 1.1rem; }
+        .nav-link:hover { background: rgba(255,255,255,0.05); color: white; }
+        .nav-link.active { background: var(--primary); color: white; }
 
-        /* --- MENU TRIGGER --- */
-        .menu-trigger {
-            display: none; 
-            position: fixed; 
-            top: 15px; 
-            left: 15px; 
-            z-index: 2500;
-            background: var(--admin-dark); 
-            color: white; 
-            border: none; 
-            padding: 12px 18px;
-            border-radius: 12px; 
-            cursor: pointer; 
-            font-size: 0.9rem; 
-            font-weight: 700;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        .overlay {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); 
+            backdrop-filter: blur(4px); display: none; z-index: 3000;
         }
+        .overlay.active { display: block; }
 
-        /* --- MAIN LAYOUT --- */
-        .main-wrapper { 
-            width: 100%; 
-            margin-left: var(--sidebar-collapsed); 
-            transition: margin-left 0.3s ease;
-            min-height: 100vh;
-            background: linear-gradient(135deg, var(--bg) 0%, #ffffff 100%);
-        }
-        
-        @media (min-width: 1025px) {
-            .main-wrapper { 
-                margin-left: var(--sidebar-collapsed); 
-            }
-        }
-
+        /* --- LAYOUT --- */
+        .main-wrapper { width: 100%; min-height: 100vh; }
         .mobile-header {
-            display: none; 
-            background: linear-gradient(135deg, var(--admin-dark) 0%, #1a1f36 100%);
-            color: white; 
-            padding: 0 20px;
-            align-items: center; 
-            justify-content: space-between;
-            position: fixed; 
-            top: 0; 
-            width: 100%; 
-            height: 64px; 
-            z-index: 2000;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            background: var(--sidebar-bg); color: white; padding: 0 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 2000; height: var(--header-height);
         }
 
-        .container { 
-            padding: 30px; 
-            max-width: 1400px; 
-            margin: auto; 
-        }
+        .container { padding: 20px; max-width: 1400px; margin: auto; }
 
-        @media (max-width: 1024px) {
-            .sidebar { 
-                transform: translateX(-100%); 
-                width: var(--sidebar-width);
-            }
-            .sidebar.mobile-active { 
-                transform: translateX(0); 
-            }
-            .main-wrapper { 
-                margin-left: 0; 
-                padding-top: 64px;
-            }
-            .menu-trigger { 
-                display: block; 
-            }
-            .mobile-header { 
-                display: flex; 
-            }
-            .close-btn { 
-                display: block; 
-            }
-            .sidebar:hover { 
-                width: var(--sidebar-width); 
-            }
-            .container {
-                padding: 20px 15px;
-            }
-        }
-
-        /* --- CARD STYLES --- */
         .card { 
-            background: white; 
-            padding: 25px; 
-            border-radius: 20px; 
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); 
-            border: 1px solid var(--border); 
-            margin-bottom: 25px; 
+            background: white; padding: 20px; border-radius: 16px; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid var(--border); 
+            margin-bottom: 20px;
         }
 
-        h3 { 
-            margin: 0 0 20px 0; 
-            font-size: 1rem; 
-            font-weight: 800; 
-            color: var(--admin-dark);
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        .card-header {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 20px; 
+            flex-wrap: wrap; 
+            gap: 15px;
         }
+
+        h3 { margin: 0; font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
 
         .action-buttons {
             display: flex;
             gap: 10px;
-            margin-bottom: 20px;
             flex-wrap: wrap;
         }
 
@@ -302,7 +146,7 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            transition: all 0.2s;
+            transition: 0.2s;
             border: none;
             text-decoration: none;
         }
@@ -313,248 +157,97 @@
         }
         .btn-supplier:hover {
             background: #0d9488;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
         }
 
-        .btn-edit-items {
+        .btn-edit {
             background: var(--primary);
             color: white;
         }
-        .btn-edit-items:hover {
+        .btn-edit:hover {
             background: #6366f1;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
         }
 
         .form-row { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
-            gap: 15px; 
-            margin-bottom: 15px; 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
+            gap: 15px; margin-bottom: 15px; 
         }
 
-        label { 
-            display: block; 
-            font-size: 0.75rem; 
-            font-weight: 700; 
-            color: var(--text-dim); 
-            margin-bottom: 5px; 
-            text-transform: uppercase;
-        }
+        label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-dim); margin-bottom: 5px; }
 
         input, select { 
-            padding: 12px; 
-            border: 1px solid var(--border); 
-            border-radius: 10px; 
-            width: 100%; 
-            font-size: 16px; 
-            background: #fff; 
-            color: var(--text);
-            font-family: inherit; 
-            transition: 0.2s;
+            padding: 12px; border: 1px solid var(--border); border-radius: 10px; 
+            width: 100%; font-size: 16px; background: #fff; color: var(--text);
+            font-family: inherit; transition: 0.2s;
         }
-        input:focus, select:focus { 
-            border-color: var(--primary); 
-            outline: none; 
-        }
+        input:focus { border-color: var(--primary); outline: none; }
 
         .btn-add { 
-            background: var(--primary); 
-            color: white; 
-            border: none; 
-            padding: 15px; 
-            border-radius: 10px; 
-            font-weight: 800; 
-            cursor: pointer; 
-            width: 100%; 
-            text-transform: uppercase;
-            letter-spacing: 1px; 
-            font-size: 0.85rem;
-            transition: background 0.2s;
-        }
-        .btn-add:hover {
-            background: #6366f1;
+            background: var(--primary); color: white; border: none; 
+            padding: 15px; border-radius: 10px; font-weight: 800; 
+            cursor: pointer; width: 100%; text-transform: uppercase;
+            letter-spacing: 1px; font-size: 0.85rem;
         }
 
         /* --- SEARCH & TABLE --- */
-        .search-box { 
-            position: sticky; 
-            top: 0; 
-            background: var(--bg); 
-            padding: 10px 0; 
-            z-index: 100; 
-        }
-        .search-box input { 
-            border-radius: 30px; 
-            padding-left: 20px; 
-            border: 2px solid var(--border); 
-        }
+        .search-box { position: sticky; top: var(--header-height); background: var(--bg); padding: 10px 0; z-index: 100; }
+        @media (min-width: 1025px) { .search-box { top: 0; } }
+        .search-box input { border-radius: 30px; padding-left: 20px; border: 2px solid var(--border); }
 
-        .table-wrap { 
-            width: 100%; 
-            overflow-x: auto; 
-            background: white; 
-            border-radius: 16px; 
-            border: 1px solid var(--border);
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
-        }
-        
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            min-width: 1000px; 
-        }
-        
-        th { 
-            text-align: left; 
-            padding: 15px; 
-            background: #f8fafc; 
-            color: var(--text-dim); 
-            font-size: 0.7rem; 
-            text-transform: uppercase; 
-            font-weight: 800;
-            border-bottom: 2px solid var(--border);
-        }
-        
-        td { 
-            padding: 15px; 
-            border-bottom: 1px solid var(--border); 
-            vertical-align: middle; 
-        }
+        .table-wrap { width: 100%; overflow-x: auto; background: white; border-radius: 12px; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        th { text-align: left; padding: 15px; background: #f8fafc; color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase; }
+        td { padding: 15px; border-top: 1px solid var(--border); vertical-align: middle; }
 
         @media (max-width: 1024px) {
-            .table-wrap { 
-                border: none; 
-                background: transparent; 
-            }
-            table, thead, tbody, th, td, tr { 
-                display: block; 
-            }
-            thead { 
-                display: none; 
-            }
-            tr { 
-                background: white; 
-                padding: 15px; 
-                border-radius: 16px; 
-                border: 1px solid var(--border); 
-                margin-bottom: 15px; 
-                position: relative; 
-            }
-            td { 
-                display: flex; 
-                justify-content: space-between; 
-                border: none; 
-                padding: 8px 0; 
-                font-size: 0.9rem; 
-                align-items: center;
-            }
-            td:before { 
-                content: attr(data-label); 
-                font-weight: 700; 
-                color: var(--text-dim); 
-                margin-right: 10px;
-            }
+            .table-wrap { border: none; background: transparent; }
+            table, thead, tbody, th, td, tr { display: block; }
+            thead { display: none; }
+            tr { background: white; padding: 15px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 15px; position: relative; }
+            td { display: flex; justify-content: space-between; border: none; padding: 8px 0; font-size: 0.9rem; align-items: center;}
+            td:before { content: attr(data-label); font-weight: 700; color: var(--text-dim); }
+            td:first-child { border-bottom: 2px solid var(--primary); margin-bottom: 10px; padding-bottom: 10px; font-weight: 800; display: block; }
+            td:first-child:before { display: none; }
         }
 
-        /* --- BADGES --- */
         .badge { 
-            padding: 4px 8px; 
-            border-radius: 6px; 
-            font-size: 0.65rem; 
-            font-weight: 700; 
-            text-transform: uppercase; 
+            background: #e0e7ff; color: var(--primary); padding: 3px 8px; 
+            border-radius: 6px; font-size: 0.7rem; font-weight: 700; margin-right: 5px; 
             display: inline-block;
-            margin-right: 4px;
         }
-        .badge-gas { 
-            background: #fee2e2; 
-            color: #b91c1c; 
-        }
-        .badge-spare { 
-            background: #dcfce7; 
-            color: #15803d; 
-        }
-        .badge-bike { 
-            background: #e0e7ff; 
-            color: #4338ca; 
-        }
-        .badge-tuktuk { 
-            background: #ede9fe; 
-            color: #6d28d9; 
-        }
-
-        .sup-badge { 
-            background: #fef3c7; 
-            color: #92400e; 
-            padding: 4px 8px; 
-            border-radius: 6px; 
-            font-size: 0.75rem; 
-            font-weight: 600; 
-        }
+        .badge-gas { background: #fee2e2; color: #b91c1c; }
+        .badge-spare { background: #dcfce7; color: #15803d; }
+        .badge-bike { background: #e0e7ff; color: #4338ca; }
+        .badge-tuktuk { background: #ede9fe; color: #6d28d9; }
         
-        .low-stock { 
-            background: #fffcf0 !important; 
-        }
-        .low-stock-text { 
-            color: var(--danger); 
-            font-weight: 800; 
-        }
+        .sup-badge { background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
         
-        .onetouch-flex { 
-            display: flex; 
-            gap: 8px; 
-        }
-        .onetouch-input { 
-            width: 70px !important; 
-            text-align: center; 
-            padding: 8px; 
-        }
-        .btn-touch { 
-            background: var(--success); 
-            color: white; 
-            border: none; 
-            padding: 8px 15px; 
-            border-radius: 8px; 
-            font-weight: 700; 
-            cursor: pointer; 
-            font-size: 0.8rem; 
-        }
+        .low-stock { background: #fffcf0 !important; border-left: 5px solid var(--warning) !important; }
+        .low-stock-text { color: var(--danger); font-weight: 800; }
+        
+        .onetouch-flex { display: flex; gap: 8px; }
+        .onetouch-input { width: 70px !important; text-align: center; padding: 8px; }
+        .btn-touch { background: var(--success); color: white; border: none; padding: 8px 15px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.8rem; }
 
-        .overlay { 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(15,23,42,0.5); 
-            backdrop-filter: blur(4px); 
-            display: none; 
-            z-index: 2500; 
-        }
-        .overlay.active { display: block; }
-
-        .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 3px solid rgba(255,255,255,.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        /* --- NAVIGATION UI --- */
+        .fab-menu { position: fixed; bottom: 30px; left: 25px; width: 65px; height: 65px; background: #4f46e5; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.6rem; box-shadow: 0 10px 30px rgba(79, 70, 229, 0.4); border: 4px solid white; cursor: pointer; z-index: 4500; }
+        .guide-hand { position: fixed; bottom: 105px; left: 32px; z-index: 4600; display: flex; flex-direction: column; align-items: center; animation: bounce 1.5s infinite; }
+        .guide-label { background: #0f172a; color: white; padding: 3px 8px; border-radius: 6px; font-size: 0.55rem; font-weight: 800; margin-bottom: 2px; border: 1px solid #4f46e5; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
     </style>
 </head>
 <body>
 
-<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
-<button class="menu-trigger" onclick="toggleMenu()">☰ MENU</button>
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
-<div class="sidebar" id="sidebar">
+<nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <h2>JEPE LOGISTICS</h2>
-        <button class="close-btn" onclick="toggleMenu()">×</button>
+        <div>
+            <h2>JEPE LOGISTICS</h2>
+            <p style="color: #94a3b8; font-size: 0.7rem; margin-top: 5px;">Warehouse System</p>
+        </div>
+        <button onclick="toggleSidebar()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;" class="mobile-only">&times;</button>
     </div>
-    
+
     <!-- Branch Info Display -->
     <div class="branch-info" id="sidebarBranchInfo">
         <div class="branch-label">Your Assigned Branch</div>
@@ -564,7 +257,7 @@
         </div>
     </div>
     
-    <nav class="nav-list">
+    <div class="nav-list">
         <a href="cashier.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
         <a href="cashiergashub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
         <a href="cashier_inventory.html" class="nav-link active"><i class="fas fa-plus-circle"></i> <span>Add/Update Items</span></a>
@@ -582,50 +275,42 @@
         <a href="low-stock-cashier.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
         <a href="debtors.html" class="nav-link"><i class="fas fa-users"></i> <span>Debtors</span></a>
         <a href="supplierscashier.html" class="nav-link"><i class="fas fa-handshake"></i> <span>Suppliers</span></a>
-        <a href="gas_delivery.html" class="nav-link"><i class="fas fa-truck"></i> <span>Delivery</span></a>
-
-        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
-
-        <a href="cashierprofile.html" class="nav-link"><i class="fas fa-user"></i> <span>My Profile</span></a>
-        <a href="cashier_report.html" class="nav-link"><i class="fas fa-file-alt"></i> <span>Today's Report</span></a>
-        <a href="cashier.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
-        
-        <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <button onclick="logoutUser()" style="width:100%; background:var(--danger); color:white; border:none; padding:12px; border-radius:10px; font-weight:700; cursor:pointer; display: flex; align-items: center; gap: 10px;">
-                <i class="fas fa-sign-out-alt"></i> <span>Logout System</span>
-            </button>
-        </div>
-    </nav>
-</div>
+        <a href="gas_delivery.html" class="nav-link"><i class="fas fa-truck"></i> <span>Delivery Records</span></a>
+    </div>
+    <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.05);">
+        <button onclick="logoutUser()" style="width:100%; background:var(--danger); color:white; border:none; padding:12px; border-radius:10px; font-weight:700; cursor:pointer;">🚪 Logout System</button>
+    </div>
+</nav>
 
 <div class="main-wrapper">
     <div class="mobile-header">
-        <button onclick="toggleMenu()" style="background:none; border:none; color:white; font-size:1.5rem;">☰</button>
-        <div style="font-weight:800;">INVENTORY MANAGEMENT</div>
+        <button onclick="toggleSidebar()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">☰</button>
+        <div style="font-weight:800; letter-spacing:1px;">INVENTORY</div>
         <div style="width:24px;"></div>
     </div>
 
+    <div class="guide-hand" id="onboardingHand">
+        <div class="guide-label">MENU</div>
+        <span>👇</span>
+    </div>
+    <button class="fab-menu" onclick="toggleSidebar()">☰</button>
+
     <div class="container">
         <div class="card" style="border-top: 4px solid var(--primary);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
-                <h3>
-                    <i class="fas fa-box" style="color: var(--primary);"></i> Register New Product
-                </h3>
+            <div class="card-header">
+                <h3><i class="fas fa-box" style="color: var(--primary);"></i> Register New Product</h3>
                 <div class="action-buttons">
-                    <button type="button" class="action-btn btn-supplier" onclick="window.location.href='supplierscashier.html'">
+                    <button class="action-btn btn-supplier" onclick="window.location.href='supplierscashier.html'">
                         <i class="fas fa-truck"></i> Add Supplier
                     </button>
-                    <button type="button" class="action-btn btn-edit-items" onclick="window.location.href='sale edit cashier.html'">
+                    <button class="action-btn btn-edit" onclick="window.location.href='sale edit cashier.html'">
                         <i class="fas fa-edit"></i> Edit Sales
                     </button>
                 </div>
             </div>
             <form id="cashier-form">
                 <div class="form-row">
-                    <div style="grid-column: span 2;">
-                        <label>Item Name</label>
-                        <input type="text" id="name" placeholder="e.g. 15W40 Engine Oil" required>
-                    </div>
+                    <div style="grid-column: span 2;"><label>Item Name</label><input type="text" id="name" placeholder="e.g. 15W40 Engine Oil" required></div>
                     <div>
                         <label>Category</label>
                         <select id="cat" onchange="toggleCategoryFields()">
@@ -656,7 +341,7 @@
                     </div>
                 </div>
 
-                <!-- TUKTUK specific fields (initially hidden) -->
+                <!-- TUKTUK specific fields -->
                 <div class="form-row" id="tuktuk-fields" style="display:none;">
                     <div style="grid-column: span 2;">
                         <label>TUKTUK Type</label>
@@ -709,16 +394,17 @@
     let allProducts = [];
     let currentUser = null;
     let currentBranchId = null;
+    let currentBranch = null;
     let currentUserProfile = null;
-    let branches = {};
-    let branchIdMap = {};
 
     // ============================================
     // SIDEBAR FUNCTIONS
     // ============================================
-    window.toggleMenu = () => {
-        document.getElementById('sidebar').classList.toggle('mobile-active');
+    window.toggleSidebar = () => {
+        document.getElementById('sidebar').classList.toggle('active');
         document.getElementById('overlay').classList.toggle('active');
+        const hand = document.getElementById('onboardingHand');
+        if(hand) hand.style.display = 'none';
     };
 
     // ============================================
@@ -729,17 +415,6 @@
     function getCurrentBranchId() {
         const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
         return session.branch?.id || currentBranchId;
-    }
-
-    async function loadBranches() {
-        const { data } = await supabase.from('branches').select('*');
-        branches = {};
-        branchIdMap = {};
-        data?.forEach(b => {
-            branches[b.id] = b;
-            branchIdMap[b.code] = b.id;
-        });
-        return branches;
     }
 
     // Load user profile with branch info
@@ -796,6 +471,12 @@
         }
     }
 
+    window.logoutUser = async () => { 
+        localStorage.removeItem('pos_session');
+        await supabase.auth.signOut(); 
+        location.href = 'index.html'; 
+    };
+
     window.toggleCategoryFields = () => {
         const category = document.getElementById('cat').value;
         const typeSelect = document.getElementById('type');
@@ -804,7 +485,6 @@
         document.getElementById('gas-fields').style.display = 'none';
         document.getElementById('tuktuk-fields').style.display = 'none';
         
-        // Show appropriate fields based on category
         if (category === 'Gas') {
             document.getElementById('gas-fields').style.display = 'grid';
             // Reset type select for gas
@@ -831,39 +511,23 @@
         }
     };
 
-    window.logoutUser = async () => { 
-        localStorage.removeItem('pos_session'); // Clear session
-        await supabase.auth.signOut(); 
-        location.href = 'index.html'; 
-    };
-
     function getCategoryBadgeClass(category) {
         switch(category) {
-            case 'Gas':
-                return 'badge-gas';
-            case 'Spare Part':
-                return 'badge-spare';
-            case 'Motorbike':
-                return 'badge-bike';
-            case 'Tuktuk':
-                return 'badge-tuktuk';
-            default:
-                return 'badge-spare';
+            case 'Gas': return 'badge-gas';
+            case 'Spare Part': return 'badge-spare';
+            case 'Motorbike': return 'badge-bike';
+            case 'Tuktuk': return 'badge-tuktuk';
+            default: return '';
         }
     }
 
     function getCategoryIcon(category) {
         switch(category) {
-            case 'Gas':
-                return 'fa-fire';
-            case 'Spare Part':
-                return 'fa-cogs';
-            case 'Motorbike':
-                return 'fa-motorcycle';
-            case 'Tuktuk':
-                return 'fa-car-side';
-            default:
-                return 'fa-box';
+            case 'Gas': return 'fa-fire';
+            case 'Spare Part': return 'fa-cogs';
+            case 'Motorbike': return 'fa-motorcycle';
+            case 'Tuktuk': return 'fa-car-side';
+            default: return 'fa-box';
         }
     }
 
@@ -883,7 +547,7 @@
         }
 
         try {
-            // Only load suppliers for this branch
+            // Load suppliers for this branch
             const { data: sups } = await supabase
                 .from('suppliers')
                 .select('id, name')
@@ -893,7 +557,7 @@
             document.getElementById('prod-supplier').innerHTML = '<option value="">-- No Supplier --</option>' + 
                 (sups || []).map(s => `<option value="${s.id}">${s.name}</option>`).join('');
 
-            // Only load products for this branch
+            // Load products for this branch
             const { data, error } = await supabase
                 .from('products')
                 .select('*, suppliers(name)')
@@ -903,7 +567,7 @@
             if (error) throw error;
             
             allProducts = data || [];
-            console.log(`Loaded ${allProducts.length} products for branch ${branchId}`);
+            console.log(`Loaded ${allProducts.length} products`);
             render();
         } catch (error) {
             console.error("Error loading data:", error);
@@ -911,7 +575,7 @@
                 <tr>
                     <td colspan="8" style="text-align: center; padding: 40px; color: var(--danger);">
                         <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                        Error loading products: ${error.message}
+                        Error: ${error.message}
                     </td>
                 </tr>
             `;
@@ -938,7 +602,7 @@
             
             // Determine display type
             let typeDisplay = p.part_type;
-            if (isTuktuk && (p.part_type === 'Passenger' || p.part_type === 'Cargo' || p.part_type === 'Spare Part')) {
+            if (isTuktuk && ['Passenger', 'Cargo', 'Spare Part'].includes(p.part_type)) {
                 typeDisplay = p.part_type;
             } else if (isGas) {
                 typeDisplay = p.weight_category || 'Gas';
@@ -965,7 +629,7 @@
                     <td data-label="Supplier"><span class="sup-badge">${p.suppliers?.name || 'Manual'}</span></td>
                     <td data-label="Buying">Ksh ${p.cost_price?.toLocaleString() || '0'}</td>
                     <td data-label="Selling" style="font-weight:700; color:var(--primary)">Ksh ${p.selling_price?.toLocaleString() || '0'}</td>
-                    <td data-label="Min. Price">Ksh ${p.min_selling_price?.toLocaleString() || '0'}</td>
+                    <td data-label="Min. Price">Ksh ${p.min_selling_price?.toLocaleString() || p.min_price?.toLocaleString() || '0'}</td>
                     <td data-label="Stock Level" class="${isLow ? 'low-stock-text' : ''}" style="font-weight:800">
                         ${p.stock_quantity || 0} ${isLow ? '⚠️' : ''}
                     </td>
@@ -989,7 +653,7 @@
         
         const btn = event.target;
         const originalText = btn.innerText;
-        btn.innerHTML = '<span class="spinner"></span>';
+        btn.innerText = "...";
         btn.disabled = true;
 
         const { error } = await supabase
@@ -1009,7 +673,7 @@
 
     document.getElementById('cashier-form').onsubmit = async (e) => {
         e.preventDefault();
-        const btn = e.target.querySelector('button[type="submit"]');
+        const btn = e.target.querySelector('button');
         const branchId = getCurrentBranchId();
         const category = document.getElementById('cat').value;
         
@@ -1018,7 +682,7 @@
             return;
         }
         
-        btn.innerHTML = '<span class="spinner"></span> ADDING...';
+        btn.innerText = "Processing...";
         btn.disabled = true;
 
         const payload = {
@@ -1035,16 +699,14 @@
             branch_id: branchId
         };
 
-        // Add TUKTUK specific fields if category is Tuktuk
+        // Add TUKTUK type if category is Tuktuk
         if (category === 'Tuktuk') {
             payload.tuktuk_type = document.getElementById('tuktuk_type').value;
         }
 
-        console.log("Submitting payload:", payload);
-
         const { error } = await supabase.from('products').insert([payload]);
         
-        btn.innerHTML = 'Add Product to Database';
+        btn.innerText = "Add Product to Database";
         btn.disabled = false;
 
         if (!error) { 
@@ -1068,7 +730,6 @@
 
     // Initialize when page loads
     document.addEventListener('DOMContentLoaded', async function() {
-        await loadBranches();
         const profile = await loadUserProfile();
         if (profile) {
             await load();
