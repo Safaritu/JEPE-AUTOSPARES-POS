@@ -1399,7 +1399,7 @@
         const catMap = {
             'Gas': 'Gas',
             'Spare Part': 'Spare',
-            'Motorbike': 'Moto',
+            'Motorbike': 'Motorbike', // Changed from 'Moto' to 'Motorbike'
             'Tuktuk': 'TUKTUK'
         };
         return catMap[category] || 'Other';
@@ -1436,7 +1436,7 @@
         let totalItems = 0, activeProducts = 0, outOfStock = 0;
         let categoryMargins = {};
 
-        // Category specific containers
+        // Category specific containers - Fixed: Using 'Motorbike' not 'Moto'
         const categories = { 
             Gas: { profit: 0, revenue: 0, items: 0, units: 0, count: 0 }, 
             Spare: { profit: 0, revenue: 0, items: 0, units: 0, count: 0 },
@@ -1513,7 +1513,7 @@
                 kcbProf += itemProfit;
             }
 
-            // Category aggregation
+            // Category aggregation - Fixed: Using 'Motorbike' not checking for 'Moto'
             let catKey = 'Other';
             if (p.category === 'Gas') catKey = 'Gas';
             else if (p.category === 'Spare Part') catKey = 'Spare';
@@ -1598,7 +1598,7 @@
         });
         document.getElementById('margin-details').innerHTML = `Best: ${bestMargin.toFixed(1)}% | Worst: ${worstMargin.toFixed(1)}%`;
 
-        // Update category summary cards
+        // Update category summary cards - Fixed: Using 'Motorbike' key
         document.getElementById('tuktuk-rev').innerText = `Ksh ${(categoryMetrics.Tuktuk?.revenue || 0).toLocaleString()}`;
         document.getElementById('tuktuk-profit').innerText = `Ksh ${(categoryMetrics.Tuktuk?.profit || 0).toLocaleString()}`;
         document.getElementById('tuktuk-margin').innerText = `${categoryMetrics.Tuktuk?.margin || 0}% margin`;
@@ -1628,7 +1628,7 @@
         document.getElementById('total-moto').innerText = motoCount;
         document.getElementById('total-spare').innerText = spareCount;
 
-        // Render Category Performance Table
+        // Render Category Performance Table - Fixed: Using correct category keys
         document.getElementById('category-performance-body').innerHTML = Object.entries(categories)
             .filter(([_, val]) => val.revenue > 0 || val.profit > 0)
             .map(([name, val]) => {
@@ -1639,17 +1639,31 @@
                 const trendClass = margin > avgMargin ? 'trend-up' : 'trend-down';
                 const icon = getCategoryIcon(name === 'Spare' ? 'Spare Part' : name);
                 
+                // Fix category display name
+                let displayName = name;
+                if (name === 'Motorbike') displayName = 'MOTORBIKE';
+                else if (name === 'Tuktuk') displayName = 'TUKTUK';
+                else if (name === 'Spare') displayName = 'SPARE PARTS';
+                else if (name === 'Gas') displayName = 'GAS';
+                
+                // Fix badge class
+                let badgeClass = 'badge';
+                if (name === 'Tuktuk') badgeClass = 'badge tuktuk';
+                else if (name === 'Gas') badgeClass = 'badge gas';
+                else if (name === 'Motorbike') badgeClass = 'badge moto';
+                else if (name === 'Spare') badgeClass = 'badge spare';
+                
                 return `<tr>
                     <td>
-                        <span class="category-tag cat-${name.toLowerCase()}"></span>
+                        <span class="category-tag cat-${name === 'Motorbike' ? 'moto' : name.toLowerCase()}"></span>
                         <i class="fas ${icon}" style="margin-right: 5px;"></i>
-                        <b>${name === 'Tuktuk' ? 'TUKTUK' : name}</b>
+                        <b>${displayName}</b>
                     </td>
                     <td>${val.count}</td>
                     <td>${val.units}</td>
                     <td>Ksh ${val.revenue.toLocaleString()}</td>
                     <td class="text-profit">Ksh ${val.profit.toLocaleString()}</td>
-                    <td><span class="badge ${name === 'Tuktuk' ? 'tuktuk' : name === 'Gas' ? 'gas' : name === 'Motorbike' ? 'moto' : 'spare'}">${margin}%</span></td>
+                    <td><span class="${badgeClass}">${margin}%</span></td>
                     <td>${contribution}%</td>
                     <td>Ksh ${Number(avgPrice).toLocaleString()}</td>
                     <td class="${trendClass}">${trend}</td>
@@ -1702,21 +1716,24 @@
         // Render All Items Table
         const sortedItems = Object.entries(itemSummary).sort((a,b) => b[1].prof - a[1].prof);
         document.getElementById('sales-mix-body').innerHTML = sortedItems.slice(0, displayLimit).map(([name, data]) => {
-            const categoryColor = getCategoryColor(data.category);
             const margin = data.rev > 0 ? ((data.prof / data.rev) * 100).toFixed(1) : 0;
-            const categoryClass = data.category === 'Tuktuk' ? 'tuktuk' : 
-                                 data.category === 'Gas' ? 'gas' : 
-                                 data.category === 'Motorbike' ? 'moto' : 'spare';
+            
+            // Fix category class
+            let categoryClass = 'badge';
+            if (data.category === 'Tuktuk') categoryClass = 'badge tuktuk';
+            else if (data.category === 'Gas') categoryClass = 'badge gas';
+            else if (data.category === 'Motorbike') categoryClass = 'badge moto';
+            else if (data.category === 'Spare Part') categoryClass = 'badge spare';
             
             return `
             <tr>
                 <td><b>${name}</b></td>
-                <td><span class="badge ${categoryClass}">${data.category_display}</span></td>
+                <td><span class="${categoryClass}">${data.category_display}</span></td>
                 <td>${data.part_type || 'N/A'}</td>
                 <td>${data.qty}</td>
                 <td>Ksh ${data.rev.toLocaleString()}</td>
                 <td class="text-profit">Ksh ${data.prof.toLocaleString()}</td>
-                <td><span class="badge ${categoryClass}">${margin}%</span></td>
+                <td><span class="${categoryClass}">${margin}%</span></td>
                 <td><span class="badge ${data.stock > 0 ? 'success' : 'warning'}">${data.stock}</span></td>
                 <td><span class="branch-pill">${data.branch}</span></td>
             </tr>
@@ -1729,7 +1746,7 @@
         if (revenueChart) revenueChart.destroy();
         if (marginChart) marginChart.destroy();
 
-        // Prepare chart data
+        // Prepare chart data - Fix category names
         const chartLabels = [];
         const profitData = [];
         const revenueData = [];
@@ -1738,7 +1755,14 @@
 
         Object.entries(categories).forEach(([name, val]) => {
             if (val.profit > 0 || val.revenue > 0) {
-                chartLabels.push(name === 'Tuktuk' ? 'TUKTUK' : name);
+                // Fix display name for chart
+                let displayName = name;
+                if (name === 'Motorbike') displayName = 'MOTORBIKE';
+                else if (name === 'Tuktuk') displayName = 'TUKTUK';
+                else if (name === 'Spare') displayName = 'SPARE';
+                else if (name === 'Gas') displayName = 'GAS';
+                
+                chartLabels.push(displayName);
                 profitData.push(val.profit);
                 revenueData.push(val.revenue);
                 const margin = val.revenue > 0 ? (val.profit / val.revenue * 100) : 0;
