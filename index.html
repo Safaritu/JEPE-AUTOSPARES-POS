@@ -139,6 +139,7 @@
 
         input, select { background: rgba(15, 23, 42, 0.6); color: white; outline: none; }
         input:focus { border-color: var(--primary); background: rgba(15, 23, 42, 0.8); }
+        select option { background: #1e293b; color: white; }
 
         button { 
             background: linear-gradient(135deg, var(--primary), #4f46e5); 
@@ -172,6 +173,7 @@
         /* Branch selection styling */
         .branch-selector {
             margin: 6px 0;
+            cursor: pointer;
         }
         .branch-info-text {
             font-size: 0.7rem;
@@ -188,6 +190,21 @@
             font-size: 0.75rem;
             color: #cbd5e1;
             text-align: left;
+        }
+        .branch-note i {
+            margin-right: 5px;
+            color: var(--primary);
+        }
+        .required {
+            color: #ef4444;
+            margin-left: 2px;
+        }
+        .form-hint {
+            font-size: 0.65rem;
+            color: #64748b;
+            text-align: left;
+            margin-top: -2px;
+            margin-bottom: 5px;
         }
     </style>
 </head>
@@ -225,8 +242,8 @@
         <h2 id="auth-title">Staff Sign In</h2>
         <p class="tagline" id="auth-subtitle">Premium Parts Management</p>
         
-        <input type="email" id="email" placeholder="Your Email">
-        <input type="password" id="password" placeholder="Password">
+        <input type="email" id="email" placeholder="Your Email" autocomplete="email">
+        <input type="password" id="password" placeholder="Password" autocomplete="current-password">
         
         <div id="forgot-link" class="reset-link-container">
             <button type="button" class="forgot-btn" onclick="handleForgotPassword()">
@@ -236,18 +253,21 @@
 
         <div id="register-fields" class="hidden">
             <select id="role" class="branch-selector">
+                <option value="" disabled selected>Select Role *</option>
                 <option value="cashier">Cashier</option>
                 <option value="admin">Administrator</option>
             </select>
             
             <select id="branch" class="branch-selector">
                 <option value="" disabled selected>Select Branch *</option>
-                <option value="5326e4c6-6d0d-4500-83d9-f322c859b9fb">MUTOMO BRANCH</option>
-                <option value="ea91a65e-7c6e-43fd-b71e-3f2cc4f714a9">KITUI BRANCH</option>
+                <option value="5326e4c6-6d0d-4500-83d9-f322c859b9fb">🏪 MUTOMO BRANCH</option>
+                <option value="ea91a65e-7c6e-43fd-b71e-3f2cc4f714a9">🏪 KITUI BRANCH</option>
             </select>
-            <div class="branch-note">
+            <div class="form-hint" id="branch-hint">You will be assigned to this branch</div>
+            
+            <div class="branch-note" id="branch-note">
                 <i class="fas fa-info-circle"></i> 
-                <span id="branch-note-text">Cashiers must select their branch. Administrators can access all branches.</span>
+                <span id="branch-note-text">Cashiers must select their branch. You will only have access to this branch.</span>
             </div>
         </div>
 
@@ -271,7 +291,7 @@
 </div>
 
 <script type="module">
-    import { supabase, BRANCHES } from './auth.js';
+    import { supabase, BRANCHES, createUserProfile, getCurrentUser } from './auth.js';
 
     let isLogin = true;
 
@@ -288,32 +308,74 @@
     document.getElementById('role').addEventListener('change', (e) => {
         const role = e.target.value;
         const noteText = document.getElementById('branch-note-text');
+        const branchHint = document.getElementById('branch-hint');
+        
         if (role === 'admin') {
             noteText.innerText = 'Administrators can access all branches. Branch selection is for reference only.';
+            branchHint.innerText = 'Branch is for reference - you will have access to all branches';
         } else {
             noteText.innerText = 'Cashiers must select their branch. You will only have access to this branch.';
+            branchHint.innerText = 'You will be assigned to this branch';
         }
     });
 
     window.handleAuth = async () => {
-        const email = document.getElementById('email').value;
+        const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         const role = document.getElementById('role')?.value;
         const branchId = document.getElementById('branch')?.value;
         const btn = document.getElementById('main-btn');
 
-        if(!email || !password) return alert("Please fill all fields");
+        if (!email || !password) {
+            alert("Please fill all fields");
+            return;
+        }
 
         btn.disabled = true;
         btn.innerText = "PROCESSING...";
 
         try {
             if (isLogin) {
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                // LOGIN
+                const { data, error } = await supabase.auth.signInWithPassword({ 
+                    email, 
+                    password 
+                });
+                
                 if (error) throw error;
-                checkRoleAndRedirect(data.user.id);
+                
+                // Check if user has profile
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', data.user.id)
+                    .single();
+                
+                if (profileError || !profile) {
+                    // Create profile if it doesn't exist (for legacy users)
+                    const { error: insertError } = await supabase
+                        .from('profiles')
+                        .insert([{
+                            id: data.user.id,
+                            email: email,
+                            role: 'cashier', // Default role
+                            branch_id: BRANCHES.MUTOMO.id // Default branch
+                        }]);
+                    
+                    if (insertError) throw insertError;
+                }
+                
+                await checkRoleAndRedirect(data.user.id);
+                
             } else {
-                // SIGN UP LOGIC
+                // SIGN UP
+                if (!role) {
+                    alert("Please select your role");
+                    btn.disabled = false;
+                    btn.innerText = "Register Now";
+                    return;
+                }
+                
                 if (!branchId) {
                     alert("Please select your branch");
                     btn.disabled = false;
@@ -321,25 +383,30 @@
                     return;
                 }
 
+                // Sign up the user
                 const { data, error } = await supabase.auth.signUp({ 
                     email, 
                     password,
                     options: {
-                        data: { role: role, branch_id: branchId } 
+                        data: { 
+                            role: role, 
+                            branch_id: branchId 
+                        }
                     }
                 });
                 
                 if (error) throw error;
 
                 if (data.user) {
-                    // Create profile with branch_id
+                    // Create profile in profiles table
                     const { error: profileError } = await supabase
                         .from('profiles')
                         .insert([{ 
                             id: data.user.id, 
                             role: role, 
                             email: email,
-                            branch_id: branchId 
+                            branch_id: branchId,
+                            full_name: email.split('@')[0]
                         }]);
 
                     if (profileError) {
@@ -349,6 +416,7 @@
                         alert("Registration successful! Please check your email to confirm your account.");
                     }
                     
+                    // Switch back to login mode
                     window.toggleMode();
                     document.getElementById('email').value = '';
                     document.getElementById('password').value = '';
@@ -363,31 +431,52 @@
     };
 
     async function checkRoleAndRedirect(userId) {
-        const { data, error } = await supabase
+        const { data: profile, error } = await supabase
             .from('profiles')
-            .select('role, branch_id, branches(name)')
+            .select(`
+                role, 
+                branch_id,
+                branches!inner (
+                    name,
+                    code
+                )
+            `)
             .eq('id', userId)
             .single();
         
-        if (data) {
+        if (error) {
+            console.error("Error fetching profile:", error);
+            alert("Profile not found. Please contact admin.");
+            return;
+        }
+        
+        if (profile) {
             const overlay = document.getElementById('welcome-overlay');
             overlay.classList.remove('hidden');
             
-            const branchName = data.branches?.name || '';
-            document.getElementById('welcome-name').innerText = `WELCOME ${data.role.toUpperCase()}`;
-            document.getElementById('welcome-role').innerText = data.role === 'admin' 
+            const branchName = profile.branches?.name || '';
+            const roleUpper = profile.role.toUpperCase();
+            
+            document.getElementById('welcome-name').innerText = `WELCOME ${roleUpper}`;
+            document.getElementById('welcome-role').innerText = profile.role === 'admin' 
                 ? 'Administrator Access - All Branches' 
                 : (branchName ? `Assigned to ${branchName}` : 'Initializing Workspace...');
             
+            // Store session in localStorage for cross-page access
+            const session = {
+                user: { id: userId },
+                profile: profile,
+                branch: profile.branches,
+                role: profile.role
+            };
+            localStorage.setItem('pos_session', JSON.stringify(session));
+            
             setTimeout(() => {
-                window.location.href = (data.role === 'admin') ? 'admin.html' : 'cashier.html';
+                window.location.href = (profile.role === 'admin') ? 'admin.html' : 'cashier.html';
             }, 2000);
-        } else {
-            alert("Profile not found. Please contact admin.");
         }
     }
 
-    // --- UPDATED RESET PASSWORD LOGIC ---
     window.handleForgotPassword = async () => {
         const email = prompt("Enter your registered email address:");
         if (!email) return;
@@ -404,8 +493,14 @@
     };
 
     // Check if user is already logged in
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) checkRoleAndRedirect(user.id);
+    async function checkExistingSession() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            await checkRoleAndRedirect(user.id);
+        }
+    }
+    
+    checkExistingSession();
 </script>
 </body>
 </html>
