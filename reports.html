@@ -486,6 +486,12 @@
             font-weight: 600;
         }
         
+        .cat-cost {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+        
         .cat-units {
             font-size: 0.8rem;
             font-weight: 700;
@@ -955,7 +961,7 @@
             </div>
         </div>
 
-        <!-- Category Summary Cards with clear labels -->
+        <!-- Category Summary Cards with Revenue, Profit, Cost, and Units -->
         <div class="category-metrics" id="categorySummaryCards">
             <div class="cat-card tuktuk">
                 <div class="cat-title"><i class="fas fa-car-side"></i> TUKTUK</div>
@@ -963,12 +969,10 @@
                     <span class="cat-rev" id="tuktuk-rev">Ksh 0</span>
                     <span class="cat-profit" id="tuktuk-profit">Ksh 0</span>
                 </div>
+                <div class="cat-cost" id="tuktuk-cost">Cost: Ksh 0</div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
                     <span class="cat-margin" id="tuktuk-margin">0% margin</span>
                     <span class="cat-units" id="tuktuk-units">0 units</span>
-                </div>
-                <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 4px;">
-                    <span>Revenue | Profit | Margin</span>
                 </div>
             </div>
             <div class="cat-card gas">
@@ -977,12 +981,10 @@
                     <span class="cat-rev" id="gas-rev">Ksh 0</span>
                     <span class="cat-profit" id="gas-profit">Ksh 0</span>
                 </div>
+                <div class="cat-cost" id="gas-cost">Cost: Ksh 0</div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
                     <span class="cat-margin" id="gas-margin">0% margin</span>
                     <span class="cat-units" id="gas-units">0 cyl</span>
-                </div>
-                <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 4px;">
-                    <span>Revenue | Profit | Margin</span>
                 </div>
             </div>
             <div class="cat-card moto">
@@ -991,12 +993,10 @@
                     <span class="cat-rev" id="moto-rev">Ksh 0</span>
                     <span class="cat-profit" id="moto-profit">Ksh 0</span>
                 </div>
+                <div class="cat-cost" id="moto-cost">Cost: Ksh 0</div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
                     <span class="cat-margin" id="moto-margin">0% margin</span>
                     <span class="cat-units" id="moto-units">0 units</span>
-                </div>
-                <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 4px;">
-                    <span>Revenue | Profit | Margin</span>
                 </div>
             </div>
             <div class="cat-card spare">
@@ -1005,12 +1005,10 @@
                     <span class="cat-rev" id="spare-rev">Ksh 0</span>
                     <span class="cat-profit" id="spare-profit">Ksh 0</span>
                 </div>
+                <div class="cat-cost" id="spare-cost">Cost: Ksh 0</div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
                     <span class="cat-margin" id="spare-margin">0% margin</span>
                     <span class="cat-units" id="spare-units">0 pcs</span>
-                </div>
-                <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 4px;">
-                    <span>Revenue | Profit | Margin</span>
                 </div>
             </div>
         </div>
@@ -1050,10 +1048,10 @@
                             <th>Items</th>
                             <th>Units Sold</th>
                             <th>Revenue</th>
+                            <th>Cost</th>
                             <th>Profit</th>
                             <th>Margin</th>
                             <th>Contribution</th>
-                            <th>Avg. Price</th>
                             <th>Trend</th>
                         </tr>
                     </thead>
@@ -1143,6 +1141,7 @@
                             <th>Type</th>
                             <th>Qty Sold</th>
                             <th>Revenue</th>
+                            <th>Cost</th>
                             <th>Profit</th>
                             <th>Margin</th>
                             <th>Current Stock</th>
@@ -1151,7 +1150,7 @@
                     </thead>
                     <tbody id="sales-mix-body">
                         <tr>
-                            <td colspan="9" style="text-align: center; padding: 30px;">
+                            <td colspan="10" style="text-align: center; padding: 30px;">
                                 <div class="spinner" style="margin: 0 auto;"></div>
                                 Loading data...
                             </td>
@@ -1222,7 +1221,7 @@
         const rows = [];
         
         // Add headers
-        rows.push(['Item Name', 'Category', 'Type', 'Quantity Sold', 'Revenue', 'Profit', 'Margin %', 'Current Stock', 'Branch']);
+        rows.push(['Item Name', 'Category', 'Type', 'Quantity Sold', 'Revenue', 'Cost', 'Profit', 'Margin %', 'Current Stock', 'Branch']);
         
         // Add data
         Object.entries(itemSummary).forEach(([name, data]) => {
@@ -1233,6 +1232,7 @@
                 data.part_type || 'N/A',
                 data.qty,
                 data.rev,
+                data.cost || 0,
                 data.prof,
                 margin,
                 data.stock || 0,
@@ -1358,7 +1358,7 @@
                 productsQuery = productsQuery.eq('branch_id', selectedBranchId);
             }
             
-            // Build sales query - FIXED: Load all sales without problematic join
+            // Build sales query - Get all sales with category filter if needed
             let salesQuery = supabase
                 .from('sales')
                 .select('*')
@@ -1379,7 +1379,7 @@
             console.log("Products loaded:", allProducts.length);
             console.log("Sales loaded:", allSales.length);
             
-            // Log category distribution
+            // Log category distribution from sales
             const salesByCategory = {};
             allSales.forEach(s => {
                 const cat = s.category || 'Uncategorized';
@@ -1462,7 +1462,7 @@
     let itemSummary = {};
 
     function renderUI() {
-        let totalRev = 0, totalProf = 0, cashRev = 0, kcbRev = 0;
+        let totalRev = 0, totalProf = 0, totalCost = 0, cashRev = 0, kcbRev = 0;
         let cashProf = 0, kcbProf = 0;
         let invVal = 0, origQty = 0, copyQty = 0, gasFull = 0, gasEmpty = 0;
         let tuktukCount = 0, motoCount = 0, gasCount = 0, spareCount = 0;
@@ -1471,11 +1471,11 @@
 
         // Category specific containers - Using exact database category names
         const categories = { 
-            'Gas': { profit: 0, revenue: 0, items: 0, units: 0, count: 0 }, 
-            'Spare Part': { profit: 0, revenue: 0, items: 0, units: 0, count: 0 },
-            'Motorbike': { profit: 0, revenue: 0, items: 0, units: 0, count: 0 },
-            'Tuktuk': { profit: 0, revenue: 0, items: 0, units: 0, count: 0 },
-            'Other': { profit: 0, revenue: 0, items: 0, units: 0, count: 0 } 
+            'Gas': { profit: 0, revenue: 0, cost: 0, items: 0, units: 0, count: 0 }, 
+            'Spare Part': { profit: 0, revenue: 0, cost: 0, items: 0, units: 0, count: 0 },
+            'Motorbike': { profit: 0, revenue: 0, cost: 0, items: 0, units: 0, count: 0 },
+            'Tuktuk': { profit: 0, revenue: 0, cost: 0, items: 0, units: 0, count: 0 },
+            'Other': { profit: 0, revenue: 0, cost: 0, items: 0, units: 0, count: 0 } 
         };
         
         // Track top items per category
@@ -1529,9 +1529,9 @@
             }
         });
 
-        // Process sales data - FIXED: Use category from sales record directly
+        // Process sales data - Use category from sales record directly
         filteredSales.forEach(s => {
-            // Use the category from the sales record directly
+            // Use the category from the sales record
             const saleCategory = s.category || 'Other';
             
             // Try to find product for cost price, but use sale's own cost_price if available
@@ -1541,14 +1541,16 @@
                 stock_quantity: 0
             };
             
-            // Calculate profit using the best available cost price
+            // Calculate cost and profit
             const costPrice = s.cost_price || p.cost_price || 0;
+            const itemCost = costPrice * s.quantity;
             const itemProfit = (s.unit_price - costPrice) * s.quantity;
             
             const branch = branches[s.branch_id] || { code: '--' };
 
             totalRev += s.total_amount;
             totalProf += itemProfit;
+            totalCost += itemCost;
             
             // Payment method splits
             if (s.payment_method === 'Cash' || s.payment_method === 'Cash ') {
@@ -1567,6 +1569,7 @@
             
             categories[catKey].profit += itemProfit;
             categories[catKey].revenue += s.total_amount;
+            categories[catKey].cost += itemCost;
             categories[catKey].units += s.quantity;
             categories[catKey].count++;
 
@@ -1592,6 +1595,7 @@
                 itemSummary[itemKey] = { 
                     qty: 0, 
                     rev: 0, 
+                    cost: 0,
                     prof: 0, 
                     branch: branch.code,
                     category: saleCategory,
@@ -1602,6 +1606,7 @@
             }
             itemSummary[itemKey].qty += s.quantity;
             itemSummary[itemKey].rev += s.total_amount;
+            itemSummary[itemKey].cost += itemCost;
             itemSummary[itemKey].prof += itemProfit;
         });
 
@@ -1612,11 +1617,12 @@
         // Category metrics calculation
         const categoryMetrics = {};
         Object.entries(categories).forEach(([name, val]) => {
-            if (val.revenue > 0) {
-                const margin = (val.profit / val.revenue * 100).toFixed(1);
+            if (val.revenue > 0 || val.cost > 0) {
+                const margin = val.revenue > 0 ? (val.profit / val.revenue * 100).toFixed(1) : 0;
                 categoryMetrics[name] = {
                     revenue: val.revenue,
                     profit: val.profit,
+                    cost: val.cost,
                     margin: margin,
                     units: val.units,
                     items: val.count
@@ -1645,24 +1651,28 @@
         });
         document.getElementById('margin-details').innerHTML = `Best: ${bestMargin.toFixed(1)}% | Worst: ${worstMargin.toFixed(1)}%`;
 
-        // Update category summary cards with clear labels
+        // Update category summary cards with revenue, profit, cost, and units
         document.getElementById('tuktuk-rev').innerText = `Ksh ${(categoryMetrics.Tuktuk?.revenue || 0).toLocaleString()}`;
         document.getElementById('tuktuk-profit').innerText = `Ksh ${(categoryMetrics.Tuktuk?.profit || 0).toLocaleString()}`;
+        document.getElementById('tuktuk-cost').innerText = `Cost: Ksh ${(categoryMetrics.Tuktuk?.cost || 0).toLocaleString()}`;
         document.getElementById('tuktuk-margin').innerText = `${categoryMetrics.Tuktuk?.margin || 0}% margin`;
         document.getElementById('tuktuk-units').innerText = `${categoryMetrics.Tuktuk?.units || 0} units`;
 
         document.getElementById('gas-rev').innerText = `Ksh ${(categoryMetrics.Gas?.revenue || 0).toLocaleString()}`;
         document.getElementById('gas-profit').innerText = `Ksh ${(categoryMetrics.Gas?.profit || 0).toLocaleString()}`;
+        document.getElementById('gas-cost').innerText = `Cost: Ksh ${(categoryMetrics.Gas?.cost || 0).toLocaleString()}`;
         document.getElementById('gas-margin').innerText = `${categoryMetrics.Gas?.margin || 0}% margin`;
         document.getElementById('gas-units').innerText = `${categoryMetrics.Gas?.units || 0} cyl`;
 
         document.getElementById('moto-rev').innerText = `Ksh ${(categoryMetrics.Motorbike?.revenue || 0).toLocaleString()}`;
         document.getElementById('moto-profit').innerText = `Ksh ${(categoryMetrics.Motorbike?.profit || 0).toLocaleString()}`;
+        document.getElementById('moto-cost').innerText = `Cost: Ksh ${(categoryMetrics.Motorbike?.cost || 0).toLocaleString()}`;
         document.getElementById('moto-margin').innerText = `${categoryMetrics.Motorbike?.margin || 0}% margin`;
         document.getElementById('moto-units').innerText = `${categoryMetrics.Motorbike?.units || 0} units`;
 
         document.getElementById('spare-rev').innerText = `Ksh ${(categoryMetrics['Spare Part']?.revenue || 0).toLocaleString()}`;
         document.getElementById('spare-profit').innerText = `Ksh ${(categoryMetrics['Spare Part']?.profit || 0).toLocaleString()}`;
+        document.getElementById('spare-cost').innerText = `Cost: Ksh ${(categoryMetrics['Spare Part']?.cost || 0).toLocaleString()}`;
         document.getElementById('spare-margin').innerText = `${categoryMetrics['Spare Part']?.margin || 0}% margin`;
         document.getElementById('spare-units').innerText = `${categoryMetrics['Spare Part']?.units || 0} pcs`;
 
@@ -1675,13 +1685,12 @@
         document.getElementById('total-moto').innerText = motoCount;
         document.getElementById('total-spare').innerText = spareCount;
 
-        // Render Category Performance Table
+        // Render Category Performance Table with Cost column
         document.getElementById('category-performance-body').innerHTML = Object.entries(categories)
-            .filter(([_, val]) => val.revenue > 0 || val.profit > 0)
+            .filter(([_, val]) => val.revenue > 0 || val.profit > 0 || val.cost > 0)
             .map(([name, val]) => {
                 const margin = val.revenue > 0 ? ((val.profit / val.revenue) * 100).toFixed(1) : 0;
                 const contribution = totalRev > 0 ? ((val.revenue / totalRev) * 100).toFixed(1) : 0;
-                const avgPrice = val.units > 0 ? (val.revenue / val.units).toFixed(0) : 0;
                 const trend = margin > avgMargin ? '↑' : '↓';
                 const trendClass = margin > avgMargin ? 'trend-up' : 'trend-down';
                 const icon = getCategoryIcon(name);
@@ -1715,10 +1724,10 @@
                     <td>${val.count}</td>
                     <td>${val.units}</td>
                     <td>Ksh ${val.revenue.toLocaleString()}</td>
+                    <td>Ksh ${val.cost.toLocaleString()}</td>
                     <td class="text-profit">Ksh ${val.profit.toLocaleString()}</td>
                     <td><span class="${badgeClass}">${margin}%</span></td>
                     <td>${contribution}%</td>
-                    <td>Ksh ${Number(avgPrice).toLocaleString()}</td>
                     <td class="${trendClass}">${trend}</td>
                 </tr>`;
             }).join('');
@@ -1785,6 +1794,7 @@
                 <td>${data.part_type || 'N/A'}</td>
                 <td>${data.qty}</td>
                 <td>Ksh ${data.rev.toLocaleString()}</td>
+                <td>Ksh ${data.cost.toLocaleString()}</td>
                 <td class="text-profit">Ksh ${data.prof.toLocaleString()}</td>
                 <td><span class="${categoryClass}">${margin}%</span></td>
                 <td><span class="badge ${data.stock > 0 ? 'success' : 'warning'}">${data.stock}</span></td>
