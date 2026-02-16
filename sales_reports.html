@@ -290,49 +290,6 @@
             margin-right: 8px;
         }
 
-        /* --- SUMMARY CARDS --- */
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 24px;
-        }
-
-        .summary-card {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 15px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        }
-
-        .summary-label {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            color: var(--text-dim);
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            margin-bottom: 5px;
-        }
-
-        .summary-value {
-            font-size: 1.2rem;
-            font-weight: 800;
-            color: var(--text-main);
-        }
-
-        .summary-value.success {
-            color: var(--success);
-        }
-
-        .summary-value.primary {
-            color: var(--primary);
-        }
-
-        .summary-value.warning {
-            color: var(--warning);
-        }
-
         /* --- FILTER BAR --- */
         .filter-bar {
             background: white;
@@ -663,30 +620,6 @@
             </div>
         </div>
 
-        <!-- Summary Cards -->
-        <div class="summary-grid">
-            <div class="summary-card">
-                <div class="summary-label">Total Sales</div>
-                <div class="summary-value primary" id="totalSales">Ksh 0</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-label">Total Profit</div>
-                <div class="summary-value success" id="totalProfit">Ksh 0</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-label">Cash Sales</div>
-                <div class="summary-value" id="cashSales">Ksh 0</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-label">KCB Paybill</div>
-                <div class="summary-value" id="kcbSales">Ksh 0</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-label">Items Sold</div>
-                <div class="summary-value warning" id="totalItems">0</div>
-            </div>
-        </div>
-
         <!-- Filter Bar -->
         <div class="filter-bar">
             <div class="filter-group">
@@ -710,7 +643,7 @@
             </button>
         </div>
 
-        <!-- Desktop Table View (Status column removed) -->
+        <!-- Desktop Table View -->
         <div class="table-outer">
             <div class="table-container">
                 <table>
@@ -939,37 +872,7 @@
             return true;
         });
         
-        updateSummary();
         render();
-    }
-
-    function updateSummary() {
-        let totalAmount = 0;
-        let totalProfit = 0;
-        let cashTotal = 0;
-        let kcbTotal = 0;
-        let totalItems = 0;
-
-        allSales.forEach(sale => {
-            const amount = Number(sale.total_amount || 0);
-            const profit = (Number(sale.unit_price || 0) - Number(sale.cost_price || 0)) * (sale.quantity || 0);
-            
-            totalAmount += amount;
-            totalProfit += profit;
-            totalItems += sale.quantity || 0;
-
-            if (sale.payment_method === 'Cash') {
-                cashTotal += amount;
-            } else if (sale.payment_method === 'KCB Paybill') {
-                kcbTotal += amount;
-            }
-        });
-
-        document.getElementById('totalSales').textContent = `Ksh ${totalAmount.toLocaleString()}`;
-        document.getElementById('totalProfit').textContent = `Ksh ${totalProfit.toLocaleString()}`;
-        document.getElementById('cashSales').textContent = `Ksh ${cashTotal.toLocaleString()}`;
-        document.getElementById('kcbSales').textContent = `Ksh ${kcbTotal.toLocaleString()}`;
-        document.getElementById('totalItems').textContent = totalItems.toLocaleString();
     }
 
     // ==================== RENDER FUNCTIONS ====================
