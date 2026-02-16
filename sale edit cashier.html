@@ -495,7 +495,7 @@
         table { 
             width: 100%; 
             border-collapse: collapse; 
-            min-width: 1000px; 
+            min-width: 900px; 
         }
         
         th { 
@@ -863,8 +863,36 @@
     </div>
     
     <nav class="nav-list" id="nav-container">
-        <!-- Navigation will be dynamically loaded -->
+        <!-- Cashier Navigation -->
+        <a href="cashier.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+        <a href="cashiergashub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
+        <a href="moneyinout.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
+        <a href="shift history cashier.html" class="nav-link"><i class="fas fa-history"></i> <span>Shift History</span></a>
+        <a href="sales_reports.html" class="nav-link"><i class="fas fa-chart-line"></i> <span>Sales History</span></a>
+        <a href="cashier_inventory.html" class="nav-link"><i class="fas fa-plus-circle"></i> <span>Add Stock</span></a>
+        <a href="sales_editor.html" class="nav-link active"><i class="fas fa-edit"></i> <span>Edit Stock</span></a>
+
+        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+
+        <a href="low-stock-cashier.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
+        <a href="debtors.html" class="nav-link"><i class="fas fa-users"></i> <span>Debtors</span></a>
+        <a href="supplierscashier.html" class="nav-link"><i class="fas fa-handshake"></i> <span>Suppliers</span></a>
+        <a href="gas_delivery.html" class="nav-link"><i class="fas fa-truck"></i> <span>Delivery</span></a>
+
+        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+
+        <a href="cashier_report.html" class="nav-link"><i class="fas fa-file-alt"></i> <span>Today's Report</span></a>
+        <a href="pos.html" class="nav-link"><i class="fas fa-shopping-cart"></i> <span>Cart Shop</span></a>
+        <a href="cashierprofile.html" class="nav-link"><i class="fas fa-user"></i> <span>Settings</span></a>
+        <a href="cashier.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
     </nav>
+    
+    <!-- Logout Button -->
+    <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+        <button onclick="logoutUser()" style="width:100%; background:var(--danger); color:white; border:none; padding:12px; border-radius:10px; font-weight:700; cursor:pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
+            <i class="fas fa-sign-out-alt"></i> <span>Logout System</span>
+        </button>
+    </div>
 </div>
 
 <div class="main-wrapper">
@@ -880,9 +908,9 @@
             <div class="page-title">
                 <h1>
                     <i class="fas fa-boxes"></i>
-                    <span id="pageTitle">Inventory Control</span>
+                    <span>Inventory Control</span>
                 </h1>
-                <p id="subTitle">Manage stock levels, pricing, and product information</p>
+                <p>Manage stock levels and pricing</p>
             </div>
             <div class="branch-badge" id="branchDisplay">
                 <i class="fas fa-store"></i> <span id="branchName">Loading...</span>
@@ -921,7 +949,7 @@
                     <span class="stat-label">Low Stock</span>
                 </div>
                 <div class="stat-value" id="lowStockCount">0</div>
-                <div class="stat-detail">Items below threshold</div>
+                <div class="stat-detail">Items below 5 units</div>
             </div>
         </div>
 
@@ -1116,70 +1144,6 @@
         } catch (error) {
             console.error("Error loading profile:", error);
             return null;
-        }
-    }
-
-    // ==================== NAVIGATION SETUP ====================
-
-    function setupNavigation(role) {
-        const nav = document.getElementById('nav-container');
-        const isAdmin = role === 'admin' || (currentUser?.email && currentUser.email.includes('admin'));
-        
-        if (isAdmin) {
-            document.getElementById('pageTitle').textContent = 'Admin Inventory Control';
-            document.getElementById('subTitle').textContent = 'Manage stock across all branches';
-            nav.innerHTML = `
-                <a href="admin.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
-                <a href="gas_hub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
-                <a href="spares_hub.html" class="nav-link"><i class="fas fa-cogs"></i> <span>Spare Parts Hub</span></a>
-                <a href="motorbike_hub.html" class="nav-link"><i class="fas fa-motorcycle"></i> <span>Motorbike Hub</span></a>
-                <a href="tuktuk_hub.html" class="nav-link"><i class="fas fa-car-side"></i> <span>TUKTUK Hub</span></a>
-
-                <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
-
-                <a href="shift-history.html" class="nav-link"><i class="fas fa-history"></i> <span>Daily Shifts</span></a>
-                <a href="money-history.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
-                <a href="sales-history.html" class="nav-link"><i class="fas fa-chart-line"></i> <span>Sales History</span></a>
-
-                <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
-
-                <a href="inventory.html" class="nav-link"><i class="fas fa-plus-circle"></i> <span>Add Stock</span></a>
-                <a href="sales_editor.html" class="nav-link active"><i class="fas fa-edit"></i> <span>Edit Stock</span></a>
-                <a href="admin-debtors.html" class="nav-link"><i class="fas fa-users"></i> <span>Debtors</span></a>
-                <a href="low_stock.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
-
-                <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
-
-                <a href="reports.html" class="nav-link"><i class="fas fa-file-alt"></i> <span>Reports</span></a>
-                <a href="suppliers.html" class="nav-link"><i class="fas fa-handshake"></i> <span>Suppliers</span></a>
-                <a href="admin.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
-            `;
-        } else {
-            document.getElementById('pageTitle').textContent = 'Inventory Control';
-            document.getElementById('subTitle').textContent = 'Manage stock levels and pricing';
-            nav.innerHTML = `
-                <a href="cashier.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
-                <a href="cashiergashub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
-                <a href="moneyinout.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
-                <a href="shift history cashier.html" class="nav-link"><i class="fas fa-history"></i> <span>Shift History</span></a>
-                <a href="sales_reports.html" class="nav-link"><i class="fas fa-chart-line"></i> <span>Sales History</span></a>
-                <a href="cashier_inventory.html" class="nav-link"><i class="fas fa-plus-circle"></i> <span>Add Stock</span></a>
-                <a href="sales_editor.html" class="nav-link active"><i class="fas fa-edit"></i> <span>Edit Stock</span></a>
-
-                <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
-
-                <a href="low-stock-cashier.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
-                <a href="debtors.html" class="nav-link"><i class="fas fa-users"></i> <span>Debtors</span></a>
-                <a href="supplierscashier.html" class="nav-link"><i class="fas fa-handshake"></i> <span>Suppliers</span></a>
-                <a href="gas_delivery.html" class="nav-link"><i class="fas fa-truck"></i> <span>Delivery</span></a>
-
-                <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
-
-                <a href="cashier_report.html" class="nav-link"><i class="fas fa-file-alt"></i> <span>Today's Report</span></a>
-                <a href="pos.html" class="nav-link"><i class="fas fa-shopping-cart"></i> <span>Cart Shop</span></a>
-                <a href="cashierprofile.html" class="nav-link"><i class="fas fa-user"></i> <span>Settings</span></a>
-                <a href="cashier.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
-            `;
         }
     }
 
@@ -1480,6 +1444,12 @@
     window.saveProduct = async () => {
         const id = document.getElementById('prod-id').value;
         const category = document.getElementById('prod-category').value;
+        const branchId = getCurrentBranchId();
+        
+        if (!branchId) {
+            alert("Branch information not found. Please log out and log in again.");
+            return;
+        }
         
         const data = {
             name: document.getElementById('prod-name').value,
@@ -1491,7 +1461,7 @@
             cost_price: parseFloat(document.getElementById('prod-cost').value) || 0,
             selling_price: parseFloat(document.getElementById('prod-sell').value) || 0,
             empty_quantity: category === 'Gas' ? (parseInt(document.getElementById('prod-empty').value) || 0) : 0,
-            branch_id: getCurrentBranchId()
+            branch_id: branchId
         };
 
         // Add TUKTUK type if category is Tuktuk
@@ -1521,15 +1491,12 @@
     async function init() {
         const profile = await loadUserProfile();
         if (profile) {
-            setupNavigation(profile.role);
             await loadSuppliers();
             await fetchProducts();
         }
     }
 
     init();
-
-    window.handleLogout = logoutUser;
 </script>
 </body>
 </html>
