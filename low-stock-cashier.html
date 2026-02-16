@@ -585,12 +585,35 @@
             color: #92400e;
         }
 
-        /* --- BUTTONS --- */
-        .btn-update {
-            background: var(--primary);
+        /* --- ONE-TOUCH RESTOCK BUTTONS --- */
+        .restock-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .restock-input {
+            width: 70px;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 0.8rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .restock-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+        }
+
+        .btn-restock {
+            background: var(--success);
             color: white;
             border: none;
-            padding: 8px 20px;
+            padding: 8px 16px;
             border-radius: 30px;
             font-weight: 700;
             font-size: 0.75rem;
@@ -601,13 +624,19 @@
             transition: all 0.2s;
         }
 
-        .btn-update:hover {
-            background: #6366f1;
+        .btn-restock:hover {
+            background: #0d9488;
             transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
         }
 
-        .btn-update i {
+        .btn-restock:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-restock i {
             font-size: 0.8rem;
         }
 
@@ -689,6 +718,21 @@
             margin-top: 2px;
         }
 
+        .mobile-restock {
+            display: flex;
+            gap: 8px;
+            margin-top: 5px;
+        }
+
+        .mobile-restock .restock-input {
+            flex: 1;
+        }
+
+        .mobile-restock .btn-restock {
+            flex: 1;
+            justify-content: center;
+        }
+
         /* --- EMPTY STATE --- */
         .empty-state {
             text-align: center; 
@@ -738,6 +782,43 @@
             animation: spin 1s ease-in-out infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        .restock-spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        .success-message {
+            background: var(--success);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 40px;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 <body>
@@ -801,6 +882,9 @@
     </div>
 
     <div class="container">
+        <!-- Success Message Container -->
+        <div id="successMessage" style="display: none;"></div>
+
         <!-- Page Header -->
         <div class="page-header">
             <div class="page-title">
@@ -881,7 +965,7 @@
                     <th>Status</th>
                     <th>Supplier</th>
                     <th>Category</th>
-                    <th>Action</th>
+                    <th>Quick Restock</th>
                 </tr>
             </thead>
             <tbody id="table-body"></tbody>
@@ -998,6 +1082,68 @@
         applyFilters();
     };
 
+    // ==================== ONE-TOUCH RESTOCK FUNCTION ====================
+    window.quickRestock = async (id, name, currentStock) => {
+        const input = document.getElementById(`restock-${id}`);
+        const btn = document.getElementById(`btn-${id}`);
+        
+        if (!input || !btn) return;
+        
+        const quantity = parseInt(input.value);
+        if (isNaN(quantity) || quantity < 1) {
+            alert("Please enter a valid quantity (minimum 1)");
+            return;
+        }
+
+        // Disable button and show loading
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="restock-spinner"></span>';
+        btn.disabled = true;
+
+        try {
+            const branchId = getCurrentBranchId();
+            const newStock = (currentStock || 0) + quantity;
+
+            const { error } = await supabase
+                .from('products')
+                .update({ stock_quantity: newStock })
+                .eq('id', id)
+                .eq('branch_id', branchId);
+
+            if (error) throw error;
+
+            // Show success message
+            showSuccessMessage(`✅ Added ${quantity} units to ${name}`);
+
+            // Refresh the low stock list
+            await fetchLowStock();
+
+        } catch (error) {
+            console.error("Error restocking:", error);
+            alert("Failed to restock: " + error.message);
+        } finally {
+            // Restore button
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    };
+
+    function showSuccessMessage(message) {
+        const container = document.getElementById('successMessage');
+        container.innerHTML = `
+            <div class="success-message">
+                <i class="fas fa-check-circle"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        container.style.display = 'block';
+
+        // Auto hide after 3 seconds
+        setTimeout(() => {
+            container.style.display = 'none';
+        }, 3000);
+    }
+
     function getCategoryIcon(category) {
         switch(category) {
             case 'Gas': return 'fa-fire';
@@ -1089,7 +1235,7 @@
         cardView.style.display = 'grid';
         emptyState.style.display = 'none';
 
-        // Desktop Table View
+        // Desktop Table View with One-Touch Restock
         tableBody.innerHTML = products.map(p => {
             const isCritical = p.stock_quantity <= 2;
             const categoryIcon = getCategoryIcon(p.category);
@@ -1124,15 +1270,18 @@
                         <span class="badge" style="background:#f1f5f9;">${p.category}</span>
                     </td>
                     <td>
-                        <button class="btn-update" onclick="window.location.href='cashier_inventory.html'">
-                            <i class="fas fa-plus-circle"></i> Restock
-                        </button>
+                        <div class="restock-container">
+                            <input type="number" id="restock-${p.id}" class="restock-input" value="10" min="1" step="1">
+                            <button id="btn-${p.id}" class="btn-restock" onclick="quickRestock('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${p.stock_quantity})">
+                                <i class="fas fa-plus-circle"></i> Add
+                            </button>
+                        </div>
                     </td>
                 </tr>
             `;
         }).join('');
 
-        // Mobile Card View
+        // Mobile Card View with One-Touch Restock
         cardBody.innerHTML = products.map(p => {
             const isCritical = p.stock_quantity <= 2;
             const categoryIcon = getCategoryIcon(p.category);
@@ -1167,9 +1316,12 @@
                         </div>
                     </div>
                     
-                    <button class="btn-update" onclick="window.location.href='cashier_inventory.html'" style="width:100%; justify-content:center;">
-                        <i class="fas fa-plus-circle"></i> Restock Now
-                    </button>
+                    <div class="mobile-restock">
+                        <input type="number" id="restock-${p.id}" class="restock-input" value="10" min="1" step="1" placeholder="Qty">
+                        <button id="btn-${p.id}" class="btn-restock" onclick="quickRestock('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${p.stock_quantity})">
+                            <i class="fas fa-plus-circle"></i> Add Stock
+                        </button>
+                    </div>
                 </div>
             `;
         }).join('');
