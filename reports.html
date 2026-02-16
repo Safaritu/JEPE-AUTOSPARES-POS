@@ -1338,14 +1338,14 @@
                 productsQuery = productsQuery.eq('branch_id', selectedBranchId);
             }
             
-            // Build sales query
+            // Build sales query - FIXED: Remove the inner join that might be causing issues
             let salesQuery = supabase
                 .from('sales')
-                .select('*, products!inner(*)')
+                .select('*')
                 .order('created_at', { ascending: false });
             
             if (selectedBranchId) {
-                salesQuery = salesQuery.eq('products.branch_id', selectedBranchId);
+                salesQuery = salesQuery.eq('branch_id', selectedBranchId);
             }
 
             const [productsRes, salesRes] = await Promise.all([
@@ -1355,6 +1355,11 @@
 
             allProducts = productsRes.data || [];
             allSales = salesRes.data || [];
+            
+            console.log("Products loaded:", allProducts.length);
+            console.log("Sales loaded:", allSales.length);
+            console.log("Motorbike products:", allProducts.filter(p => p.category === 'Motorbike').length);
+            console.log("Motorbike sales:", allSales.filter(s => s.category === 'Motorbike').length);
             
             // Set default branch selector to user's branch if available
             if (currentBranch && document.getElementById('branchSelector').value === 'all') {
@@ -1399,7 +1404,7 @@
         const catMap = {
             'Gas': 'Gas',
             'Spare Part': 'Spare',
-            'Motorbike': 'Motorbike', // Changed from 'Moto' to 'Motorbike'
+            'Motorbike': 'Motorbike',
             'Tuktuk': 'TUKTUK'
         };
         return catMap[category] || 'Other';
@@ -1436,10 +1441,10 @@
         let totalItems = 0, activeProducts = 0, outOfStock = 0;
         let categoryMargins = {};
 
-        // Category specific containers - Fixed: Using 'Motorbike' not 'Moto'
+        // Category specific containers - FIXED: Match database categories
         const categories = { 
             Gas: { profit: 0, revenue: 0, items: 0, units: 0, count: 0 }, 
-            Spare: { profit: 0, revenue: 0, items: 0, units: 0, count: 0 },
+            'Spare Part': { profit: 0, revenue: 0, items: 0, units: 0, count: 0 },
             Motorbike: { profit: 0, revenue: 0, items: 0, units: 0, count: 0 },
             Tuktuk: { profit: 0, revenue: 0, items: 0, units: 0, count: 0 },
             Other: { profit: 0, revenue: 0, items: 0, units: 0, count: 0 } 
@@ -1450,11 +1455,17 @@
             Tuktuk: [],
             Gas: [],
             Motorbike: [],
-            Spare: []
+            'Spare Part': []
         };
         
         itemSummary = {};
         const lowStockItems = [];
+
+        // Create a map of products by ID for faster lookup
+        const productsMap = {};
+        allProducts.forEach(p => {
+            productsMap[p.id] = p;
+        });
 
         // Inventory Stats
         allProducts.forEach(p => {
@@ -1462,7 +1473,7 @@
             if(p.part_type === 'Original') origQty += p.stock_quantity;
             if(p.part_type === 'Copy') copyQty += p.stock_quantity;
             
-            // Count by category
+            // Count by category - FIXED: Use exact category names from database
             if(p.category === 'Gas') { 
                 gasFull += p.stock_quantity; 
                 gasEmpty += (p.empty_quantity || 0);
@@ -1490,22 +1501,29 @@
             }
         });
 
-        // Process sales data
+        // Process sales data - FIXED: Use category from sales record if available
         filteredSales.forEach(s => {
-            const p = allProducts.find(prod => prod.id === s.product_id) || { 
-                cost_price: 0, 
-                category: 'Other',
-                part_type: 'N/A',
-                stock_quantity: 0
-            };
+            // First try to find product by ID
+            let p = productsMap[s.product_id];
+            
+            // If product not found, create a placeholder with category from sales record
+            if (!p) {
+                p = { 
+                    cost_price: s.cost_price || 0, 
+                    category: s.category || 'Other', // Use category from sales record
+                    part_type: s.part_type || 'N/A',
+                    stock_quantity: 0
+                };
+            }
+            
             const itemProfit = (s.unit_price - p.cost_price) * s.quantity;
-            const branch = branches[p.branch_id] || { code: '--' };
+            const branch = branches[s.branch_id] || { code: '--' };
 
             totalRev += s.total_amount;
             totalProf += itemProfit;
             
             // Payment method splits
-            if (s.payment_method === 'Cash') {
+            if (s.payment_method === 'Cash' || s.payment_method === 'Cash ') {
                 cashRev += s.total_amount;
                 cashProf += itemProfit;
             } else {
@@ -1513,22 +1531,34 @@
                 kcbProf += itemProfit;
             }
 
-            // Category aggregation - Fixed: Using 'Motorbike' not checking for 'Moto'
+            // Category aggregation - FIXED: Match database category names exactly
             let catKey = 'Other';
             if (p.category === 'Gas') catKey = 'Gas';
-            else if (p.category === 'Spare Part') catKey = 'Spare';
+            else if (p.category === 'Spare Part') catKey = 'Spare Part';
             else if (p.category === 'Motorbike') catKey = 'Motorbike';
             else if (p.category === 'Tuktuk') catKey = 'Tuktuk';
             
-            categories[catKey].profit += itemProfit;
-            categories[catKey].revenue += s.total_amount;
-            categories[catKey].units += s.quantity;
-            categories[catKey].count++;
+            if (categories[catKey]) {
+                categories[catKey].profit += itemProfit;
+                categories[catKey].revenue += s.total_amount;
+                categories[catKey].units += s.quantity;
+                categories[catKey].count++;
 
-            // Track margins by category
-            if (!categoryMargins[catKey]) categoryMargins[catKey] = [];
-            if (s.total_amount > 0) {
-                categoryMargins[catKey].push(itemProfit / s.total_amount * 100);
+                // Track margins by category
+                if (!categoryMargins[catKey]) categoryMargins[catKey] = [];
+                if (s.total_amount > 0) {
+                    categoryMargins[catKey].push(itemProfit / s.total_amount * 100);
+                }
+
+                // Track top items per category
+                if (topItems[p.category]) {
+                    topItems[p.category].push({
+                        name: s.item_name,
+                        qty: s.quantity,
+                        profit: itemProfit,
+                        rev: s.total_amount
+                    });
+                }
             }
 
             // Item summary
@@ -1548,16 +1578,6 @@
             itemSummary[itemKey].qty += s.quantity;
             itemSummary[itemKey].rev += s.total_amount;
             itemSummary[itemKey].prof += itemProfit;
-            
-            // Track top items per category
-            if (p.category && topItems[p.category]) {
-                topItems[p.category].push({
-                    name: s.item_name,
-                    qty: s.quantity,
-                    profit: itemProfit,
-                    rev: s.total_amount
-                });
-            }
         });
 
         // Calculate averages and margins
@@ -1579,6 +1599,8 @@
             }
         });
 
+        console.log("Category Metrics:", categoryMetrics);
+
         // Update summary cards
         document.getElementById('total-profit').innerText = `Ksh ${totalProf.toLocaleString()}`;
         document.getElementById('profit-split').innerText = `Cash: ${cashProf.toLocaleString()} | KCB: ${kcbProf.toLocaleString()}`;
@@ -1598,7 +1620,7 @@
         });
         document.getElementById('margin-details').innerHTML = `Best: ${bestMargin.toFixed(1)}% | Worst: ${worstMargin.toFixed(1)}%`;
 
-        // Update category summary cards - Fixed: Using 'Motorbike' key
+        // Update category summary cards - FIXED: Use correct category keys
         document.getElementById('tuktuk-rev').innerText = `Ksh ${(categoryMetrics.Tuktuk?.revenue || 0).toLocaleString()}`;
         document.getElementById('tuktuk-profit').innerText = `Ksh ${(categoryMetrics.Tuktuk?.profit || 0).toLocaleString()}`;
         document.getElementById('tuktuk-margin').innerText = `${categoryMetrics.Tuktuk?.margin || 0}% margin`;
@@ -1614,10 +1636,10 @@
         document.getElementById('moto-margin').innerText = `${categoryMetrics.Motorbike?.margin || 0}% margin`;
         document.getElementById('moto-units').innerText = `${categoryMetrics.Motorbike?.units || 0} units`;
 
-        document.getElementById('spare-rev').innerText = `Ksh ${(categoryMetrics.Spare?.revenue || 0).toLocaleString()}`;
-        document.getElementById('spare-profit').innerText = `Ksh ${(categoryMetrics.Spare?.profit || 0).toLocaleString()}`;
-        document.getElementById('spare-margin').innerText = `${categoryMetrics.Spare?.margin || 0}% margin`;
-        document.getElementById('spare-units').innerText = `${categoryMetrics.Spare?.units || 0} pcs`;
+        document.getElementById('spare-rev').innerText = `Ksh ${(categoryMetrics['Spare Part']?.revenue || 0).toLocaleString()}`;
+        document.getElementById('spare-profit').innerText = `Ksh ${(categoryMetrics['Spare Part']?.profit || 0).toLocaleString()}`;
+        document.getElementById('spare-margin').innerText = `${categoryMetrics['Spare Part']?.margin || 0}% margin`;
+        document.getElementById('spare-units').innerText = `${categoryMetrics['Spare Part']?.units || 0} pcs`;
 
         // Update summary stats
         document.getElementById('total-items-count').innerText = totalItems;
@@ -1628,7 +1650,7 @@
         document.getElementById('total-moto').innerText = motoCount;
         document.getElementById('total-spare').innerText = spareCount;
 
-        // Render Category Performance Table - Fixed: Using correct category keys
+        // Render Category Performance Table - FIXED: Use correct category keys
         document.getElementById('category-performance-body').innerHTML = Object.entries(categories)
             .filter(([_, val]) => val.revenue > 0 || val.profit > 0)
             .map(([name, val]) => {
@@ -1637,13 +1659,13 @@
                 const avgPrice = val.units > 0 ? (val.revenue / val.units).toFixed(0) : 0;
                 const trend = margin > avgMargin ? '↑' : '↓';
                 const trendClass = margin > avgMargin ? 'trend-up' : 'trend-down';
-                const icon = getCategoryIcon(name === 'Spare' ? 'Spare Part' : name);
+                const icon = getCategoryIcon(name === 'Spare Part' ? 'Spare Part' : name);
                 
                 // Fix category display name
                 let displayName = name;
                 if (name === 'Motorbike') displayName = 'MOTORBIKE';
                 else if (name === 'Tuktuk') displayName = 'TUKTUK';
-                else if (name === 'Spare') displayName = 'SPARE PARTS';
+                else if (name === 'Spare Part') displayName = 'SPARE PARTS';
                 else if (name === 'Gas') displayName = 'GAS';
                 
                 // Fix badge class
@@ -1651,11 +1673,17 @@
                 if (name === 'Tuktuk') badgeClass = 'badge tuktuk';
                 else if (name === 'Gas') badgeClass = 'badge gas';
                 else if (name === 'Motorbike') badgeClass = 'badge moto';
-                else if (name === 'Spare') badgeClass = 'badge spare';
+                else if (name === 'Spare Part') badgeClass = 'badge spare';
+                
+                // Fix category tag class
+                let catTagClass = 'category-tag cat-';
+                if (name === 'Motorbike') catTagClass += 'moto';
+                else if (name === 'Spare Part') catTagClass += 'spare';
+                else catTagClass += name.toLowerCase();
                 
                 return `<tr>
                     <td>
-                        <span class="category-tag cat-${name === 'Motorbike' ? 'moto' : name.toLowerCase()}"></span>
+                        <span class="${catTagClass}"></span>
                         <i class="fas ${icon}" style="margin-right: 5px;"></i>
                         <b>${displayName}</b>
                     </td>
@@ -1691,7 +1719,7 @@
         renderTopCategory('Tuktuk', 'top-tuktuk-body');
         renderTopCategory('Gas', 'top-gas-body');
         renderTopCategory('Motorbike', 'top-moto-body');
-        renderTopCategory('Spare', 'top-spare-body');
+        renderTopCategory('Spare Part', 'top-spare-body');
 
         // Render low stock items
         if (lowStockItems.length === 0) {
@@ -1759,7 +1787,7 @@
                 let displayName = name;
                 if (name === 'Motorbike') displayName = 'MOTORBIKE';
                 else if (name === 'Tuktuk') displayName = 'TUKTUK';
-                else if (name === 'Spare') displayName = 'SPARE';
+                else if (name === 'Spare Part') displayName = 'SPARE';
                 else if (name === 'Gas') displayName = 'GAS';
                 
                 chartLabels.push(displayName);
@@ -1768,7 +1796,7 @@
                 const margin = val.revenue > 0 ? (val.profit / val.revenue * 100) : 0;
                 marginData.push(margin);
                 chartColors.push(getCategoryColor(
-                    name === 'Spare' ? 'Spare Part' : 
+                    name === 'Spare Part' ? 'Spare Part' : 
                     name === 'Motorbike' ? 'Motorbike' : 
                     name === 'Tuktuk' ? 'Tuktuk' : name
                 ));
