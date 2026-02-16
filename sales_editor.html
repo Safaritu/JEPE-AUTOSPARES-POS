@@ -19,6 +19,7 @@
             --blue: #2563eb; 
             --danger: #ef4444; 
             --warning: #f59e0b;
+            --tuktuk: #8b5cf6;
             --sidebar-width: 260px;
             --sidebar-collapsed: 70px;
             --border: #e2e8f0;
@@ -420,6 +421,10 @@
             background: #e0e7ff; 
             color: #4338ca; 
         }
+        .badge-tuktuk { 
+            background: #ede9fe; 
+            color: #6d28d9; 
+        }
 
         .branch-pill {
             background: #f1f5f9;
@@ -566,6 +571,7 @@
         <a href="gas_hub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
         <a href="spares_hub.html" class="nav-link"><i class="fas fa-cogs"></i> <span>Spare Parts Hub</span></a>
         <a href="motorbike_hub.html" class="nav-link"><i class="fas fa-motorcycle"></i> <span>Motorbike Hub</span></a>
+        <a href="tuktuk_hub.html" class="nav-link"><i class="fas fa-car-side"></i> <span>TUKTUK Hub</span></a>
 
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
 
@@ -676,6 +682,7 @@
                     <option value="Spare Part">Spare Part</option>
                     <option value="Gas">Gas</option>
                     <option value="Motorbike">Motorbike</option>
+                    <option value="Tuktuk">TUKTUK</option>
                 </select>
             </div>
 
@@ -691,6 +698,15 @@
             <div id="weight-container" style="display:none;">
                 <label><i class="fas fa-weight-scale"></i> Weight (Gas)</label>
                 <input type="text" id="prod-weight" placeholder="e.g. 6kg">
+            </div>
+
+            <div id="tuktuk-container" style="display:none;">
+                <label><i class="fas fa-car-side"></i> TUKTUK Type</label>
+                <select id="prod-tuktuk-type">
+                    <option value="Passenger">Passenger</option>
+                    <option value="Cargo">Cargo</option>
+                    <option value="Spare">Spare Part</option>
+                </select>
             </div>
 
             <div><label><i class="fas fa-coins"></i> Cost Price</label><input type="number" id="prod-cost" placeholder="0"></div>
@@ -875,9 +891,23 @@
 
     window.toggleFields = () => {
         const cat = document.getElementById('prod-category').value;
-        document.getElementById('type-container').style.display = (cat === 'Gas') ? 'none' : 'block';
-        document.getElementById('weight-container').style.display = (cat === 'Gas') ? 'block' : 'none';
-        document.getElementById('empty-container').style.display = (cat === 'Gas') ? 'block' : 'none';
+        
+        // Hide all conditional fields first
+        document.getElementById('type-container').style.display = 'none';
+        document.getElementById('weight-container').style.display = 'none';
+        document.getElementById('tuktuk-container').style.display = 'none';
+        document.getElementById('empty-container').style.display = 'none';
+        
+        // Show appropriate fields based on category
+        if (cat === 'Gas') {
+            document.getElementById('weight-container').style.display = 'block';
+            document.getElementById('empty-container').style.display = 'block';
+        } else if (cat === 'Tuktuk') {
+            document.getElementById('tuktuk-container').style.display = 'block';
+            document.getElementById('type-container').style.display = 'block';
+        } else {
+            document.getElementById('type-container').style.display = 'block';
+        }
     }
 
     function renderTable(data) {
@@ -896,7 +926,22 @@
 
         document.getElementById('product-list-body').innerHTML = data.map(p => {
             const isGas = p.category === 'Gas';
-            const badgeClass = p.category === 'Gas' ? 'badge-gas' : (p.category === 'Spare Part' ? 'badge-spare' : 'badge-bike');
+            const isTuktuk = p.category === 'Tuktuk';
+            
+            let badgeClass = 'badge-spare';
+            let icon = 'fa-cog';
+            
+            if (isGas) {
+                badgeClass = 'badge-gas';
+                icon = 'fa-fire';
+            } else if (p.category === 'Motorbike') {
+                badgeClass = 'badge-bike';
+                icon = 'fa-motorcycle';
+            } else if (isTuktuk) {
+                badgeClass = 'badge-tuktuk';
+                icon = 'fa-car-side';
+            }
+            
             const branchCode = p.branches?.code || branches[p.branch_id]?.code || '--';
             
             return `
@@ -921,8 +966,8 @@
                 </td>
                 <td data-label="Type">
                     <span class="badge ${badgeClass}">
-                        <i class="fas ${isGas ? 'fa-fire' : (p.category === 'Spare Part' ? 'fa-cog' : 'fa-motorcycle')}"></i> 
-                        ${isGas ? (p.weight_category || 'Gas') : p.part_type}
+                        <i class="fas ${icon}"></i> 
+                        ${isGas ? (p.weight_category || 'Gas') : (isTuktuk ? 'TUKTUK' : p.part_type)}
                     </span>
                 </td>
                 <td data-label="Actions">
@@ -943,6 +988,7 @@
         document.getElementById('prod-category').value = "Spare Part";
         document.getElementById('prod-type').value = "Original";
         document.getElementById('prod-weight').value = "";
+        document.getElementById('prod-tuktuk-type').value = "Passenger";
         document.getElementById('prod-cost').value = "";
         document.getElementById('prod-sell').value = "";
         document.getElementById('prod-min-sell').value = "";
@@ -964,6 +1010,7 @@
         document.getElementById('prod-category').value = p.category;
         document.getElementById('prod-type').value = p.part_type || "N/A";
         document.getElementById('prod-weight').value = p.weight_category || "";
+        document.getElementById('prod-tuktuk-type').value = p.tuktuk_type || "Passenger";
         document.getElementById('prod-cost').value = p.cost_price;
         document.getElementById('prod-sell').value = p.selling_price;
         document.getElementById('prod-min-sell').value = p.min_selling_price || 0;
@@ -983,17 +1030,20 @@
             return;
         }
         
+        const category = document.getElementById('prod-category').value;
+        
         const data = {
             name: document.getElementById('prod-name').value,
             supplier_id: document.getElementById('prod-supplier').value || null,
-            category: document.getElementById('prod-category').value,
+            category: category,
             part_type: document.getElementById('prod-type').value,
-            weight_category: document.getElementById('prod-weight').value || null,
+            weight_category: category === 'Gas' ? document.getElementById('prod-weight').value : null,
+            tuktuk_type: category === 'Tuktuk' ? document.getElementById('prod-tuktuk-type').value : null,
             cost_price: parseFloat(document.getElementById('prod-cost').value) || 0,
             selling_price: parseFloat(document.getElementById('prod-sell').value) || 0,
             min_selling_price: parseFloat(document.getElementById('prod-min-sell').value) || 0,
             stock_quantity: parseInt(document.getElementById('prod-stock').value) || 0,
-            empty_quantity: parseInt(document.getElementById('prod-empty').value) || 0,
+            empty_quantity: category === 'Gas' ? (parseInt(document.getElementById('prod-empty').value) || 0) : 0,
             branch_id: branchToUse
         };
 
