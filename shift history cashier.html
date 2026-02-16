@@ -9,54 +9,79 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { 
+            --admin-dark: #0f172a;
             --primary: #4f46e5; 
-            --primary-dark: #3730a3;
             --bg: #f8fafc; 
-            --card: #ffffff;
+            --card: #ffffff; 
+            --border: #e2e8f0; 
+            --text-main: #1e293b; 
+            --text-dim: #64748b;
             --success: #10b981; 
             --danger: #ef4444; 
             --warning: #f59e0b;
-            --text: #1e293b; 
-            --dim: #64748b; 
-            --border: #e2e8f0; 
             --sidebar-width: 260px;
-            --sidebar-bg: #0f172a; 
+            --sidebar-collapsed: 70px;
+            --header-height: 70px;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
             background: var(--bg); 
-            color: var(--text); 
+            color: var(--text-main); 
             margin: 0; 
             display: flex; 
             min-height: 100vh;
             overflow-x: hidden;
         }
 
-        /* --- SIDEBAR --- */
+        /* --- SIDEBAR - Collapsible like admin --- */
         .sidebar { 
-            width: var(--sidebar-width); 
-            background: var(--sidebar-bg); 
+            width: var(--sidebar-collapsed); 
+            height: 100vh; 
+            background: var(--admin-dark); 
             position: fixed; 
             left: 0; 
             top: 0; 
-            height: 100vh; 
             z-index: 3000; 
-            overflow-y: auto; 
-            transition: transform 0.3s ease;
+            overflow-x: hidden; 
+            overflow-y: auto;
+            transition: width 0.3s ease;
+            padding: 20px 10px; 
+            display: flex;
+            flex-direction: column;
+            color: white;
         }
+        
+        .sidebar:hover, .sidebar.mobile-active { 
+            width: var(--sidebar-width); 
+        }
+        
         .sidebar-header { 
-            padding: 25px; 
-            font-weight: 800; 
-            color: white; 
-            border-bottom: 1px solid rgba(255,255,255,0.1); 
-            font-size: 1.2rem; 
             display: flex; 
+            align-items: center; 
             justify-content: space-between; 
-            align-items: center;
+            margin-bottom: 30px; 
+            padding: 0 10px; 
+            min-height: 40px;
         }
-        .close-menu { 
+        
+        .sidebar h2 { 
+            font-size: 1.2rem; 
+            margin: 0; 
+            white-space: nowrap; 
+            opacity: 0; 
+            transition: opacity 0.2s; 
+            color: white;
+            font-weight: 800;
+        }
+        
+        .sidebar:hover h2, .sidebar.mobile-active h2 { 
+            opacity: 1; 
+        }
+        
+        .close-btn { 
             display: none; 
             background: none; 
             border: none; 
@@ -64,35 +89,94 @@
             font-size: 1.5rem; 
             cursor: pointer; 
         }
+
+        /* Branch Info in Sidebar */
+        .branch-info {
+            padding: 10px;
+            margin: 10px 0 20px;
+            background: rgba(79, 70, 229, 0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            white-space: nowrap;
+        }
+        
+        .branch-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            color: #94a3b8;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .sidebar:hover .branch-label, .sidebar.mobile-active .branch-label {
+            opacity: 1;
+        }
+        
+        .branch-name {
+            font-weight: 800;
+            color: white;
+            font-size: 0.85rem;
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .branch-name i { 
+            color: var(--primary); 
+            min-width: 20px;
+        }
+        
+        .branch-name span {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .sidebar:hover .branch-name span, .sidebar.mobile-active .branch-name span {
+            opacity: 1;
+        }
         
         .nav-list { 
-            padding: 15px; 
+            flex: 1;
             list-style: none; 
+            padding: 0; 
             margin: 0; 
+            overflow-y: auto;
         }
-        .nav-item { 
+        
+        .nav-link { 
             display: flex; 
             align-items: center; 
-            padding: 12px 15px; 
-            text-decoration: none; 
+            padding: 12px; 
             color: #94a3b8; 
-            font-weight: 600; 
-            border-radius: 10px; 
-            margin-bottom: 4px; 
-            transition: 0.2s; 
-            font-size: 0.9rem; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            margin-bottom: 5px; 
+            transition: 0.3s; 
+            white-space: nowrap;
+            font-weight: 600;
+            cursor: pointer;
         }
-        .nav-item i { 
-            margin-right: 12px; 
-            font-size: 1.1rem; 
-            width: 20px;
-            text-align: center;
+        
+        .nav-link i { 
+            min-width: 30px; 
+            font-size: 1.2rem; 
+            text-align: center; 
+            margin-right: 15px;
         }
-        .nav-item:hover { 
-            background: rgba(255,255,255,0.05); 
-            color: white; 
+        
+        .nav-link span { 
+            opacity: 0; 
+            white-space: nowrap; 
+            transition: opacity 0.2s; 
         }
-        .nav-item.active { 
+        
+        .sidebar:hover .nav-link span, 
+        .sidebar.mobile-active .nav-link span { 
+            opacity: 1; 
+        }
+        
+        .nav-link:hover, .nav-link.active { 
             background: var(--primary); 
             color: white; 
         }
@@ -104,48 +188,79 @@
             top: 15px; 
             left: 15px; 
             z-index: 2500;
-            background: var(--sidebar-bg); 
+            background: var(--admin-dark); 
             color: white; 
             border: none; 
-            padding: 10px 15px;
-            border-radius: 8px; 
+            padding: 12px 18px;
+            border-radius: 12px; 
             cursor: pointer; 
             font-size: 0.9rem; 
             font-weight: 700;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
-        /* --- MAIN CONTENT --- */
-        .main-content { 
-            flex-grow: 1; 
-            padding: 25px; 
+        /* --- MAIN LAYOUT --- */
+        .main-wrapper { 
             width: 100%; 
-            margin-left: var(--sidebar-width); 
-            position: relative; 
-            background: var(--bg);
+            margin-left: var(--sidebar-collapsed); 
+            transition: margin-left 0.3s ease;
             min-height: 100vh;
+            background: linear-gradient(135deg, var(--bg) 0%, #ffffff 100%);
         }
         
-        @media (max-width: 1024px) { 
+        @media (min-width: 1024px) {
+            .main-wrapper { 
+                margin-left: var(--sidebar-collapsed); 
+            }
+        }
+
+        .mobile-header {
+            display: none; 
+            background: var(--admin-dark); 
+            color: white; 
+            padding: 0 20px;
+            align-items: center; 
+            justify-content: space-between;
+            position: fixed; 
+            top: 0; 
+            width: 100%; 
+            height: 64px; 
+            z-index: 2000;
+        }
+
+        .container { 
+            padding: 40px 30px; 
+            max-width: 1400px; 
+            margin: auto; 
+        }
+
+        @media (max-width: 1024px) {
             .sidebar { 
                 transform: translateX(-100%); 
+                width: var(--sidebar-width);
             }
-            .sidebar.active { 
+            .sidebar.mobile-active { 
                 transform: translateX(0); 
             }
-            .main-content { 
+            .main-wrapper { 
                 margin-left: 0; 
-                padding-top: 80px; 
-                padding: 15px;
+                padding-top: 64px;
             }
             .menu-trigger { 
                 display: block; 
             }
-            .close-menu { 
+            .mobile-header { 
+                display: flex; 
+            }
+            .close-btn { 
                 display: block; 
             }
+            .container {
+                padding: 20px 15px;
+            }
         }
-        
+
+        /* --- PAGE HEADER --- */
         .page-header { 
             background: white; 
             padding: 20px; 
@@ -153,54 +268,29 @@
             border: 1px solid var(--border); 
             margin-bottom: 24px; 
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .branch-badge {
             display: inline-block;
             background: var(--primary);
             color: white;
-            padding: 6px 15px;
-            border-radius: 30px;
-            font-size: 0.8rem;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 0.85rem;
             font-weight: 700;
-            margin-top: 10px;
-            border: 2px solid white;
-            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
         }
         
         .branch-badge i {
-            margin-right: 6px;
+            margin-right: 8px;
         }
 
-        /* --- MOBILE SLIDE INDICATOR --- */
-        .slide-indicator { 
-            background: #0f172a; 
-            color: white; 
-            padding: 14px; 
-            border-radius: 12px; 
-            display: none; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 12px; 
-            margin-bottom: 15px; 
-            font-size: 0.8rem; 
-            font-weight: 700;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        .hand-icon { 
-            font-size: 1.2rem; 
-            animation: tapSide 1.5s infinite; 
-        }
-        @keyframes tapSide { 
-            0%, 100% { transform: translateX(5px); } 
-            50% { transform: translateX(-5px); } 
-        }
-        @media (max-width: 1024px) { 
-            .slide-indicator { 
-                display: flex; 
-            } 
-        }
-
+        /* --- SEARCH --- */
         .search-input { 
             width: 100%; 
             padding: 14px 20px; 
@@ -212,7 +302,11 @@
             background: white; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.02); 
         }
+        .search-input:focus {
+            border-color: var(--primary);
+        }
 
+        /* --- TABLE STYLES --- */
         .table-outer { 
             border-radius: 16px; 
             overflow: hidden; 
@@ -244,7 +338,7 @@
             font-size: 0.75rem; 
             text-transform: uppercase; 
             letter-spacing: 0.05em; 
-            color: var(--dim); 
+            color: var(--text-dim); 
             border-bottom: 1px solid var(--border); 
             text-align: left; 
         }
@@ -263,13 +357,13 @@
             padding-bottom: 2px; 
         }
         .account-label { 
-            color: var(--dim); 
+            color: var(--text-dim); 
             font-size: 0.75rem; 
             font-weight: 500; 
         }
         .account-val { 
             font-weight: 600; 
-            color: var(--text); 
+            color: var(--text-main); 
             font-size: 0.8rem; 
         }
 
@@ -294,12 +388,16 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
             border: 1px solid transparent; 
         }
-        .active-shift { 
+        .status-open { 
             background: #e0e7ff; 
             color: #4338ca; 
             border: 1px solid #c7d2fe; 
         }
-        /* Variance specific classes */
+        .status-closed { 
+            background: #f1f5f9; 
+            color: var(--text-main); 
+            border: 1px solid var(--border); 
+        }
         .var-positive { 
             background: #dcfce7; 
             color: #15803d; 
@@ -312,7 +410,7 @@
         }
         .var-balanced { 
             background: #f1f5f9; 
-            color: var(--text); 
+            color: var(--text-main); 
             border-color: var(--border); 
         }
 
@@ -329,15 +427,6 @@
             border-color: var(--primary); 
             transform: translateY(-2px); 
         }
-        
-        .adj-box { 
-            padding: 12px; 
-            border-radius: 10px; 
-            background: #fafafa; 
-            border: 1px solid #f0f0f0; 
-            text-decoration: none; 
-            display: block; 
-        }
 
         .date-cell b { 
             display: block; 
@@ -350,7 +439,7 @@
             border-radius: 4px; 
             font-size: 0.7rem; 
             font-weight: 700; 
-            color: var(--dim); 
+            color: var(--text-dim); 
             display: inline-block; 
             margin-top: 4px; 
         }
@@ -373,8 +462,6 @@
                 margin-bottom: 20px;
                 border: 1px solid var(--border);
                 box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-                position: relative;
-                overflow: hidden;
             }
             
             .shift-mobile-header {
@@ -389,13 +476,13 @@
             .shift-mobile-date {
                 font-weight: 800;
                 font-size: 1rem;
-                color: var(--text);
+                color: var(--text-main);
             }
             
             .shift-mobile-date small {
                 display: block;
                 font-size: 0.75rem;
-                color: var(--dim);
+                color: var(--text-dim);
                 font-weight: 500;
                 margin-top: 4px;
             }
@@ -431,7 +518,7 @@
             
             .shift-mobile-section-title {
                 font-size: 0.75rem;
-                color: var(--dim);
+                color: var(--text-dim);
                 font-weight: 700;
                 margin-bottom: 10px;
                 text-transform: uppercase;
@@ -458,13 +545,13 @@
             }
             
             .shift-mobile-detail-label {
-                color: var(--dim);
+                color: var(--text-dim);
                 font-weight: 500;
             }
             
             .shift-mobile-detail-value {
                 font-weight: 600;
-                color: var(--text);
+                color: var(--text-main);
             }
             
             .shift-mobile-total {
@@ -480,7 +567,7 @@
             
             .shift-mobile-expected {
                 font-size: 0.75rem;
-                color: var(--dim);
+                color: var(--text-dim);
                 text-align: center;
                 margin-top: 8px;
                 font-weight: 500;
@@ -492,7 +579,7 @@
                 border-radius: 8px;
                 margin-top: 15px;
                 font-size: 0.8rem;
-                color: var(--dim);
+                color: var(--text-dim);
                 font-style: italic;
                 border-left: 3px solid var(--primary);
             }
@@ -521,33 +608,16 @@
             .sales-action {
                 background: var(--primary);
                 color: white;
-                border: 1px solid var(--primary-dark);
             }
             
             .money-action {
                 background: var(--success);
                 color: white;
-                border: 1px solid #0d9664;
             }
             
             .shift-mobile-action-btn:hover {
                 transform: translateY(-2px);
                 box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            }
-            
-            .shift-mobile-action-btn i {
-                font-size: 0.9rem;
-            }
-        }
-        
-        /* Desktop specific */
-        @media (min-width: 769px) {
-            .mobile-shifts-container {
-                display: none !important;
-            }
-            
-            .table-outer {
-                display: block;
             }
         }
         
@@ -577,7 +647,7 @@
         .no-results {
             text-align: center;
             padding: 40px 20px;
-            color: var(--dim);
+            color: var(--text-dim);
             font-size: 0.9rem;
         }
         
@@ -609,9 +679,19 @@
         }
         
         .refresh-btn:hover {
-            transform: rotate(45deg);
-            background: var(--primary-dark);
+            transform: rotate(180deg);
+            background: var(--admin-dark);
         }
+        
+        .overlay { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(15, 23, 42, 0.6); 
+            backdrop-filter: blur(4px); 
+            display: none; 
+            z-index: 2500; 
+        }
+        .overlay.active { display: block; }
         
         @media (max-width: 768px) {
             .refresh-btn {
@@ -625,83 +705,117 @@
 </head>
 <body>
 
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 <button class="menu-trigger" onclick="toggleMenu()">☰ MENU</button>
 
-<nav class="sidebar" id="sidebar">
+<div class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        JEPE CASHIER
-        <button class="close-menu" onclick="toggleMenu()">×</button>
+        <h2>JEPE CASHIER</h2>
+        <button class="close-btn" onclick="toggleMenu()">×</button>
     </div>
-    <div class="nav-list">
-        <a href="cashier.html" class="nav-item"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-        <a href="cashiergashub.html" class="nav-item"><i class="fas fa-fire"></i> Gas Hub</a>
-        <a href="low-stock-cashier.html" class="nav-item"><i class="fas fa-exclamation-triangle"></i> Low Stock</a>
-        <a href="debtors.html" class="nav-item"><i class="fas fa-users"></i> Debtors</a>
-        <a href="supplierscashier.html" class="nav-item"><i class="fas fa-handshake"></i> Suppliers</a>
-        <a href="cashier_inventory.html" class="nav-item"><i class="fas fa-boxes"></i> Add Items</a>
-        <a href="moneyinout.html" class="nav-item"><i class="fas fa-money-bill-wave"></i> Money History</a>
-        <a href="shift history cashier.html" class="nav-item active"><i class="fas fa-history"></i> Shift History</a>
-        <a href="sales_reports.html" class="nav-item"><i class="fas fa-chart-line"></i> Sales History</a>
-        <a href="pos.html" class="nav-item"><i class="fas fa-shopping-cart"></i> View Stock</a>
-        <a href="gas_delivery.html" class="nav-item"><i class="fas fa-truck"></i> Deliveries</a>
-        <a href="cashier_report.html" class="nav-item"><i class="fas fa-file-alt"></i> Today's Report</a>
-        <a href="index.html" class="nav-item" style="color: #fb7185; margin-top: 20px;" onclick="logoutUser()"><i class="fas fa-sign-out-alt"></i> Logout</a>
-    </div>
-</nav>
-
-<main class="main-content">
-    <div class="page-header">
-        <h1 style="margin:0; font-size: 1.6rem;">DAILY SHIFT HISTORY</h1>
-        <p style="margin:6px 0 0; color: var(--dim);">Comprehensive reconciliation of all physical and system balances.</p>
-        <div id="branchDisplay" class="branch-badge" style="display: none;">
-            <i class="fas fa-store"></i> <span id="branchName"></span>
-        </div>
-    </div>
-
-    <div class="slide-indicator" id="scrollHint">
-        <span class="hand-icon">👉</span>
-        <span style="letter-spacing: 1px;">SWIPE/SLIDE TABLE BELOW TO VIEW ALL SHIFT DETAILS</span>
-    </div>
-
-    <input type="text" id="auditSearch" class="search-input" placeholder="Search by date (e.g. 10 Jan 2026)...">
-
-    <!-- Desktop Table View -->
-    <div class="table-outer">
-        <div class="table-container" id="scrollContainer">
-            <table>
-                <thead>
-                    <tr>
-                        <th width="160">DATE</th>
-                        <th width="210">OPENING FLOATS</th>
-                        <th width="210">PAYMENT METHOD</th>
-                        <th width="190">MONEY IN/OUT</th>
-                        <th width="210">CLOSING FLOATS</th>
-                        <th width="190">VARIANCE</th>
-                        <th width="200">VARIANCE REASON</th>
-                    </tr>
-                </thead>
-                <tbody id="audit-body-desktop"></tbody>
-            </table>
+    
+    <!-- Branch Info Display -->
+    <div class="branch-info" id="sidebarBranchInfo">
+        <div class="branch-label">Your Assigned Branch</div>
+        <div class="branch-name" id="sidebarBranchName">
+            <i class="fas fa-store"></i>
+            <span>Loading...</span>
         </div>
     </div>
     
-    <!-- Mobile Card View -->
-    <div id="mobile-shifts-container" class="mobile-shifts-container">
-        <!-- Mobile cards will be inserted here by JavaScript -->
+    <nav class="nav-list">
+        <!-- Main Navigation -->
+        <a href="cashier.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+        <a href="cashiergashub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
+        <a href="moneyinout.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
+        <a href="shift history cashier.html" class="nav-link active"><i class="fas fa-history"></i> <span>Shift History</span></a>
+        <a href="sales_reports.html" class="nav-link"><i class="fas fa-chart-line"></i> <span>Sales History</span></a>
+        <a href="cashier_inventory.html" class="nav-link"><i class="fas fa-plus-circle"></i> <span>Add Stock</span></a>
+        <a href="sale edit cashier.html" class="nav-link"><i class="fas fa-edit"></i> <span>Edit Sales</span></a>
+
+        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+
+        <!-- Secondary Navigation -->
+        <a href="low-stock-cashier.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
+        <a href="debtors.html" class="nav-link"><i class="fas fa-users"></i> <span>Debtors</span></a>
+        <a href="supplierscashier.html" class="nav-link"><i class="fas fa-handshake"></i> <span>Suppliers</span></a>
+        <a href="gas_delivery.html" class="nav-link"><i class="fas fa-truck"></i> <span>Delivery</span></a>
+
+        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+
+        <!-- Tertiary Navigation -->
+        <a href="cashier_report.html" class="nav-link"><i class="fas fa-file-alt"></i> <span>Today's Report</span></a>
+        <a href="pos.html" class="nav-link"><i class="fas fa-shopping-cart"></i> <span>Cart Shop</span></a>
+        <a href="cashierprofile.html" class="nav-link"><i class="fas fa-user"></i> <span>Settings</span></a>
+        <a href="cashier.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
+        
+        <!-- Logout Button -->
+        <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <button onclick="logoutUser()" style="width:100%; background:var(--danger); color:white; border:none; padding:12px; border-radius:10px; font-weight:700; cursor:pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <i class="fas fa-sign-out-alt"></i> <span>Logout System</span>
+            </button>
+        </div>
+    </nav>
+</div>
+
+<div class="main-wrapper">
+    <div class="mobile-header">
+        <button onclick="toggleMenu()" style="background:none; border:none; color:white; font-size:1.5rem;">☰</button>
+        <div style="font-weight:800;">SHIFT HISTORY</div>
+        <div style="width:24px;"></div>
     </div>
-    
-    <!-- Loading Spinner -->
-    <div id="loadingSpinner" class="loading-spinner" style="display: none;">
-        <div class="spinner"></div>
+
+    <div class="container">
+        <div class="page-header">
+            <div>
+                <h1 style="margin:0; font-size: 1.6rem;">DAILY SHIFT HISTORY</h1>
+                <p style="margin:6px 0 0; color: var(--text-dim);">Comprehensive reconciliation of all physical and system balances.</p>
+            </div>
+            <div class="branch-badge" id="branchDisplay">
+                <i class="fas fa-store"></i> <span id="branchName">Loading...</span>
+            </div>
+        </div>
+
+        <input type="text" id="auditSearch" class="search-input" placeholder="Search by date (e.g. 10 Jan 2026)...">
+
+        <!-- Desktop Table View -->
+        <div class="table-outer">
+            <div class="table-container" id="scrollContainer">
+                <table>
+                    <thead>
+                        <tr>
+                            <th width="160">DATE</th>
+                            <th width="210">OPENING FLOATS</th>
+                            <th width="210">PAYMENT METHOD</th>
+                            <th width="190">MONEY IN/OUT</th>
+                            <th width="210">CLOSING FLOATS</th>
+                            <th width="190">VARIANCE</th>
+                            <th width="200">VARIANCE REASON</th>
+                        </tr>
+                    </thead>
+                    <tbody id="audit-body-desktop"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Mobile Card View -->
+        <div id="mobile-shifts-container" class="mobile-shifts-container">
+            <!-- Mobile cards will be inserted here by JavaScript -->
+        </div>
+        
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+            <div class="spinner"></div>
+        </div>
+        
+        <!-- No Results Message -->
+        <div id="noResults" class="no-results" style="display: none;">
+            <i class="fas fa-search"></i>
+            <p>No shift records found</p>
+            <p style="font-size: 0.8rem; margin-top: 5px;">Try searching with a different date</p>
+        </div>
     </div>
-    
-    <!-- No Results Message -->
-    <div id="noResults" class="no-results" style="display: none;">
-        <i class="fas fa-search"></i>
-        <p>No shift records found</p>
-        <p style="font-size: 0.8rem; margin-top: 5px;">Try searching with a different date</p>
-    </div>
-</main>
+</div>
 
 <!-- Refresh Button -->
 <button class="refresh-btn" onclick="refreshData()" id="refreshBtn">
@@ -715,11 +829,15 @@
     let isMobile = window.innerWidth <= 768;
     let currentUser = null;
     let currentBranchId = null;
-    let currentUserProfile = null;
+    let currentBranch = null;
 
-    // ============================================
-    // BRANCH-AWARE HELPER FUNCTIONS
-    // ============================================
+    // ==================== SIDEBAR FUNCTIONS ====================
+    window.toggleMenu = () => {
+        document.getElementById('sidebar').classList.toggle('mobile-active');
+        document.getElementById('overlay').classList.toggle('active');
+    };
+
+    // ==================== BRANCH FUNCTIONS ====================
 
     // Get current user's branch ID from session
     function getCurrentBranchId() {
@@ -751,14 +869,17 @@
                     )
                 `)
                 .eq('id', user.id)
-                .single();
+                .maybeSingle();
             
             if (error) throw error;
+            if (!profile) {
+                console.error("No profile found");
+                return null;
+            }
             
-            currentUserProfile = profile;
             currentBranchId = profile.branch_id;
+            currentBranch = profile.branches;
             
-            // Store in session for other functions
             const session = {
                 user: user,
                 profile: profile,
@@ -767,14 +888,16 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
-            // Display branch in header
-            if (profile.branches) {
-                const branchDisplay = document.getElementById('branchDisplay');
-                const branchName = document.getElementById('branchName');
-                if (branchDisplay && branchName) {
-                    branchName.textContent = profile.branches.name;
-                    branchDisplay.style.display = 'inline-block';
-                }
+            // Update sidebar with user's assigned branch
+            const sidebarBranchName = document.querySelector('#sidebarBranchName span');
+            if (profile.branches && sidebarBranchName) {
+                sidebarBranchName.textContent = profile.branches.name;
+            }
+            
+            // Update branch display
+            const branchNameSpan = document.getElementById('branchName');
+            if (branchNameSpan && profile.branches) {
+                branchNameSpan.textContent = profile.branches.name;
             }
             
             return profile;
@@ -784,26 +907,11 @@
         }
     }
 
-    window.toggleMenu = function() {
-        document.getElementById('sidebar').classList.toggle('active');
-    };
-
-    window.logoutUser = async function() {
+    window.logoutUser = async () => { 
         localStorage.removeItem('pos_session');
-        await supabase.auth.signOut();
-        window.location.href = 'index.html';
+        await supabase.auth.signOut(); 
+        location.href = 'index.html'; 
     };
-
-    const scrollContainer = document.getElementById('scrollContainer');
-    const scrollHint = document.getElementById('scrollHint');
-    if (scrollContainer && scrollHint) {
-        scrollContainer.addEventListener('scroll', () => {
-            if (scrollContainer.scrollLeft > 20) {
-                scrollHint.style.opacity = '0';
-                setTimeout(() => scrollHint.style.display = 'none', 500);
-            }
-        });
-    }
 
     async function fetchData() {
         showLoading(true);
@@ -831,6 +939,8 @@
             allShifts = shiftsRes.data || [];
             allTransactions = transRes.data || [];
             allSales = salesRes.data || [];
+            
+            console.log(`Loaded ${allShifts.length} shifts`);
             
             render();
         } catch (error) {
@@ -881,7 +991,9 @@
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
-            const isClosed = sh.status === 'closed';
+            // Fix: Check status correctly (case insensitive)
+            const isClosed = sh.status && sh.status.toLowerCase() === 'closed';
+            
             const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             
@@ -891,8 +1003,8 @@
             let varianceClass = '';
 
             if (!isClosed) {
-                varianceDisplay = 'SHIFT ACTIVE';
-                varianceClass = 'active-shift';
+                varianceDisplay = 'OPEN';
+                varianceClass = 'status-open';
             } else {
                 // If closed, check the amount for sign and color
                 if (varianceVal > 0) {
@@ -902,25 +1014,27 @@
                     varianceDisplay = 'VAR: ' + varianceVal.toLocaleString();
                     varianceClass = 'var-negative';
                 } else {
-                    varianceDisplay = 'VAR: 0';
+                    varianceDisplay = 'BALANCED';
                     varianceClass = 'var-balanced';
                 }
             }
 
             const startD = new Date(sh.start_time);
+            const endD = sh.end_time ? new Date(sh.end_time) : null;
             
             tableHtml += `
                 <tr>
                     <td class="date-cell">
                         <b>${startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'})}</b>
                         <span class="time-pill">IN: ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span><br>
-                        <span class="time-pill">${sh.end_time ? 'OUT: '+new Date(sh.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'ACTIVE'}</span>
+                        <span class="time-pill">${endD ? 'OUT: '+endD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'ACTIVE'}</span>
                     </td>
                     <td>
                         <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity||0).toLocaleString()}</span></div>
+                        <div class="account-line"><span class="account-label">KCB Bank</span><span class="account-val">${(sh.open_kcb_bank||0).toLocaleString()}</span></div>
                         <div class="total-row">Total: ${openTotal.toLocaleString()}</div>
                     </td>
                     <td>
@@ -942,18 +1056,18 @@
                         <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.close_kcb||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.close_equity||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">Paybill</span><span class="account-val">${(sh.close_kcb_bank||0).toLocaleString()}</span></div>
+                        <div class="account-line"><span class="account-label">KCB Bank</span><span class="account-val">${(sh.close_kcb_bank||0).toLocaleString()}</span></div>
                         <div class="total-row" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>
                     </td>
                     <td>
                         <span class="status-badge ${varianceClass}">
                             ${varianceDisplay}
                         </span>
-                        <div style="font-size: 0.65rem; color: var(--dim); margin-top: 8px; text-align: center;">
+                        <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 8px; text-align: center;">
                             Expected: ${expected.toLocaleString()}
                         </div>
                     </td>
-                    <td><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--dim); font-style: italic;">${sh.variance_note || 'No notes added.'}</div></td>
+                    <td><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim); font-style: italic;">${sh.variance_note || 'No notes added.'}</div></td>
                 </tr>`;
         });
 
@@ -978,7 +1092,9 @@
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
-            const isClosed = sh.status === 'closed';
+            // Fix: Check status correctly (case insensitive)
+            const isClosed = sh.status && sh.status.toLowerCase() === 'closed';
+            
             const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             const varianceVal = isClosed ? (closeTotal - expected) : 0;
@@ -986,21 +1102,21 @@
             const startD = new Date(sh.start_time);
             const endD = sh.end_time ? new Date(sh.end_time) : null;
             
-            let varianceClass = '';
-            let varianceText = '';
+            let statusClass = '';
+            let statusText = '';
             
             if (!isClosed) {
-                varianceClass = 'active-shift';
-                varianceText = 'ACTIVE';
+                statusClass = 'status-open';
+                statusText = 'OPEN';
             } else if (varianceVal > 0) {
-                varianceClass = 'var-positive';
-                varianceText = `+${varianceVal.toLocaleString()}`;
+                statusClass = 'var-positive';
+                statusText = `+${varianceVal.toLocaleString()}`;
             } else if (varianceVal < 0) {
-                varianceClass = 'var-negative';
-                varianceText = varianceVal.toLocaleString();
+                statusClass = 'var-negative';
+                statusText = varianceVal.toLocaleString();
             } else {
-                varianceClass = 'var-balanced';
-                varianceText = 'BALANCED';
+                statusClass = 'var-balanced';
+                statusText = 'BALANCED';
             }
             
             mobileHtml += `
@@ -1013,8 +1129,8 @@
                                 ${endD ? ` - ${endD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}` : ''}
                             </small>
                         </div>
-                        <div class="shift-mobile-status ${varianceClass}">
-                            ${isClosed ? varianceText : 'ACTIVE'}
+                        <div class="shift-mobile-status ${statusClass}">
+                            ${statusText}
                         </div>
                     </div>
                     
@@ -1039,6 +1155,10 @@
                                 <div class="shift-mobile-detail-line">
                                     <span class="shift-mobile-detail-label">Equity</span>
                                     <span class="shift-mobile-detail-value">${(sh.open_equity||0).toLocaleString()}</span>
+                                </div>
+                                <div class="shift-mobile-detail-line">
+                                    <span class="shift-mobile-detail-label">KCB Bank</span>
+                                    <span class="shift-mobile-detail-value">${(sh.open_kcb_bank||0).toLocaleString()}</span>
                                 </div>
                                 <div class="shift-mobile-total">
                                     Total: ${openTotal.toLocaleString()}
@@ -1100,7 +1220,7 @@
                                     <span class="shift-mobile-detail-value">${(sh.close_equity||0).toLocaleString()}</span>
                                 </div>
                                 <div class="shift-mobile-detail-line">
-                                    <span class="shift-mobile-detail-label">Paybill</span>
+                                    <span class="shift-mobile-detail-label">KCB Bank</span>
                                     <span class="shift-mobile-detail-value">${(sh.close_kcb_bank||0).toLocaleString()}</span>
                                 </div>
                                 <div class="shift-mobile-total" style="background:#f0f9ff">
@@ -1138,7 +1258,7 @@
     function filterData(searchTerm) {
         const filtered = allShifts.filter(sh => {
             const dateStr = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'}).toLowerCase();
-            const status = sh.status.toLowerCase();
+            const status = (sh.status || '').toLowerCase();
             const note = (sh.variance_note || '').toLowerCase();
             
             return dateStr.includes(searchTerm) || 
@@ -1150,8 +1270,12 @@
     }
 
     document.getElementById('auditSearch').addEventListener('input', (e) => {
-        const term = e.target.value.toLowerCase();
-        filterData(term);
+        const term = e.target.value.toLowerCase().trim();
+        if (term === '') {
+            render(allShifts);
+        } else {
+            filterData(term);
+        }
     });
 
     async function refreshData() {
@@ -1190,12 +1314,6 @@
         
         // Check if we're on mobile initially
         isMobile = window.innerWidth <= 768;
-        if (isMobile) {
-            const desktopTable = document.querySelector('.table-outer');
-            const mobileContainer = document.getElementById('mobile-shifts-container');
-            if (desktopTable) desktopTable.style.display = 'none';
-            if (mobileContainer) mobileContainer.style.display = 'block';
-        }
     });
 </script>
 </body>
