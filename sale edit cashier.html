@@ -3,256 +3,1533 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Inventory Control | JEPE COMPANY</title>
+    <title>Inventory Control | JEPE CASHIER</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { 
-            --primary: #4f46e5; --primary-light: #eef2ff; --bg: #f8fafc;
-            --white: #ffffff; --text: #0f172a; --text-dim: #64748b;
-            --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
-            --border: #e2e8f0; --sidebar-width: 260px;
+            --admin-dark: #0f172a;
+            --primary: #4f46e5; 
+            --bg: #f8fafc; 
+            --card: #ffffff; 
+            --border: #e2e8f0; 
+            --text-main: #1e293b; 
+            --text-dim: #64748b;
+            --success: #10b981; 
+            --danger: #ef4444; 
+            --warning: #f59e0b;
+            --tuktuk: #8b5cf6;
+            --sidebar-width: 260px;
+            --sidebar-collapsed: 70px;
+            --header-height: 70px;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); margin: 0; color: var(--text); display: flex; min-height: 100vh; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
 
-        /* --- SIDEBAR --- */
-        .sidebar {
-            position: fixed; left: 0; top: 0; width: var(--sidebar-width); height: 100vh;
-            background: var(--white); z-index: 2000; padding: 25px; display: flex;
-            flex-direction: column; border-right: 1px solid var(--border);
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg); 
+            color: var(--text-main); 
+            margin: 0; 
+            display: flex; 
+            min-height: 100vh;
+            overflow-x: hidden;
         }
-        .sidebar h2 { color: var(--primary); font-weight: 800; font-size: 1.3rem; margin-bottom: 30px; text-transform: uppercase; }
-        .nav-link {
-            display: flex; align-items: center; padding: 12px 15px; color: var(--text-dim);
-            text-decoration: none; font-weight: 600; border-radius: 12px; margin-bottom: 5px;
-            transition: 0.2s; font-size: 0.85rem; cursor: pointer;
+
+        /* --- SIDEBAR - Collapsible like admin --- */
+        .sidebar { 
+            width: var(--sidebar-collapsed); 
+            height: 100vh; 
+            background: var(--admin-dark); 
+            position: fixed; 
+            left: 0; 
+            top: 0; 
+            z-index: 3000; 
+            overflow-x: hidden; 
+            overflow-y: auto;
+            transition: width 0.3s ease;
+            padding: 20px 10px; 
+            display: flex;
+            flex-direction: column;
+            color: white;
         }
-        .nav-link:hover { background: var(--primary-light); color: var(--primary); }
-        .nav-link.active { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2); }
-
-        /* --- CONTENT --- */
-        .main-wrapper { flex: 1; margin-left: var(--sidebar-width); padding: 30px; width: calc(100% - var(--sidebar-width)); }
-        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .card { background: var(--white); padding: 25px; border-radius: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border: 1px solid var(--border); }
-
-        /* --- SEARCH & TABLE --- */
-        #searchBar { width: 100%; padding: 14px 20px; border-radius: 14px; border: 1px solid var(--border); margin-bottom: 20px; font-size: 0.9rem; background: var(--bg); }
-        .table-container { width: 100%; overflow-x: auto; border-radius: 12px; }
-        table { width: 100%; border-collapse: collapse; min-width: 900px; }
-        th { text-align: left; padding: 15px; background: #f1f5f9; color: var(--text-dim); font-size: 0.7rem; text-transform: uppercase; }
-        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; }
         
-        .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; }
-        .badge-gas { background: #fee2e2; color: #b91c1c; }
-        .badge-spare { background: #dcfce7; color: #15803d; }
+        .sidebar:hover, .sidebar.mobile-active { 
+            width: var(--sidebar-width); 
+        }
+        
+        .sidebar-header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            margin-bottom: 30px; 
+            padding: 0 10px; 
+            min-height: 40px;
+        }
+        
+        .sidebar h2 { 
+            font-size: 1.2rem; 
+            margin: 0; 
+            white-space: nowrap; 
+            opacity: 0; 
+            transition: opacity 0.2s; 
+            color: white;
+            font-weight: 800;
+        }
+        
+        .sidebar:hover h2, .sidebar.mobile-active h2 { 
+            opacity: 1; 
+        }
+        
+        .close-btn { 
+            display: none; 
+            background: none; 
+            border: none; 
+            color: white; 
+            font-size: 1.5rem; 
+            cursor: pointer; 
+        }
 
-        .btn { padding: 10px 18px; border-radius: 10px; border: none; cursor: pointer; font-weight: 700; transition: 0.2s; }
-        .btn-add { background: var(--primary); color: white; }
-        .btn-edit { background: var(--primary-light); color: var(--primary); }
-        .btn-delete { background: #fff1f2; color: var(--danger); }
+        /* Branch Info in Sidebar */
+        .branch-info {
+            padding: 10px;
+            margin: 10px 0 20px;
+            background: rgba(79, 70, 229, 0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            white-space: nowrap;
+        }
+        
+        .branch-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            color: #94a3b8;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .sidebar:hover .branch-label, .sidebar.mobile-active .branch-label {
+            opacity: 1;
+        }
+        
+        .branch-name {
+            font-weight: 800;
+            color: white;
+            font-size: 0.85rem;
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .branch-name i { 
+            color: var(--primary); 
+            min-width: 20px;
+        }
+        
+        .branch-name span {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .sidebar:hover .branch-name span, .sidebar.mobile-active .branch-name span {
+            opacity: 1;
+        }
+        
+        .nav-list { 
+            flex: 1;
+            list-style: none; 
+            padding: 0; 
+            margin: 0; 
+            overflow-y: auto;
+        }
+        
+        .nav-link { 
+            display: flex; 
+            align-items: center; 
+            padding: 12px; 
+            color: #94a3b8; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            margin-bottom: 5px; 
+            transition: 0.3s; 
+            white-space: nowrap;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .nav-link i { 
+            min-width: 30px; 
+            font-size: 1.2rem; 
+            text-align: center; 
+            margin-right: 15px;
+        }
+        
+        .nav-link span { 
+            opacity: 0; 
+            white-space: nowrap; 
+            transition: opacity 0.2s; 
+        }
+        
+        .sidebar:hover .nav-link span, 
+        .sidebar.mobile-active .nav-link span { 
+            opacity: 1; 
+        }
+        
+        .nav-link:hover, .nav-link.active { 
+            background: var(--primary); 
+            color: white; 
+        }
 
-        /* --- MODAL --- */
-        #productModal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 3000; padding: 20px; }
-        .modal-content { background: white; padding: 30px; border-radius: 24px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
-        .grid-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .full { grid-column: span 2; }
-        input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; }
-        label { font-size: 0.75rem; color: var(--text-dim); font-weight: 700; margin-top: 10px; display: block; }
+        /* --- MENU TRIGGER --- */
+        .menu-trigger {
+            display: none; 
+            position: fixed; 
+            top: 15px; 
+            left: 15px; 
+            z-index: 2500;
+            background: var(--admin-dark); 
+            color: white; 
+            border: none; 
+            padding: 12px 18px;
+            border-radius: 12px; 
+            cursor: pointer; 
+            font-size: 0.9rem; 
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        /* --- MAIN LAYOUT --- */
+        .main-wrapper { 
+            width: 100%; 
+            margin-left: var(--sidebar-collapsed); 
+            transition: margin-left 0.3s ease;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--bg) 0%, #ffffff 100%);
+        }
+        
+        @media (min-width: 1024px) {
+            .main-wrapper { 
+                margin-left: var(--sidebar-collapsed); 
+            }
+        }
+
+        .mobile-header {
+            display: none; 
+            background: var(--admin-dark); 
+            color: white; 
+            padding: 0 20px;
+            align-items: center; 
+            justify-content: space-between;
+            position: fixed; 
+            top: 0; 
+            width: 100%; 
+            height: 64px; 
+            z-index: 2000;
+        }
+
+        .container { 
+            padding: 30px; 
+            max-width: 1400px; 
+            margin: 0 auto; 
+        }
 
         @media (max-width: 1024px) {
-            .sidebar { left: -260px; }
-            .main-wrapper { margin-left: 0; width: 100%; }
-            .sidebar.active { left: 0; }
+            .sidebar { 
+                transform: translateX(-100%); 
+                width: var(--sidebar-width);
+            }
+            .sidebar.mobile-active { 
+                transform: translateX(0); 
+            }
+            .main-wrapper { 
+                margin-left: 0; 
+                padding-top: 64px;
+            }
+            .menu-trigger { 
+                display: block; 
+            }
+            .mobile-header { 
+                display: flex; 
+            }
+            .close-btn { 
+                display: block; 
+            }
+            .container {
+                padding: 20px 15px;
+            }
+        }
+
+        /* --- HEADER SECTION --- */
+        .page-header {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px 25px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        .page-title {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .page-title h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--admin-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .page-title h1 i {
+            color: var(--primary);
+            background: #eef2ff;
+            padding: 8px;
+            border-radius: 12px;
+            font-size: 1.2rem;
+        }
+
+        .page-title p {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            margin-left: 45px;
+        }
+
+        .branch-badge {
+            background: var(--primary);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+        }
+
+        .action-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+        }
+
+        .action-btn:hover {
+            background: #6366f1;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+        }
+
+        .action-btn i {
+            font-size: 1rem;
+        }
+
+        /* --- SEARCH SECTION --- */
+        .search-section {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .search-wrapper {
+            flex: 1;
+            min-width: 280px;
+            position: relative;
+        }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        .search-wrapper input {
+            width: 100%;
+            padding: 14px 20px 14px 45px;
+            border: 1px solid var(--border);
+            border-radius: 40px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .search-wrapper input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            padding: 8px 16px;
+            border-radius: 30px;
+            border: 1px solid var(--border);
+            background: white;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filter-tab:hover {
+            background: #f1f5f9;
+        }
+
+        .filter-tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .filter-tab i {
+            font-size: 0.8rem;
+        }
+
+        /* --- STATS CARDS --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .stat-header i {
+            font-size: 1.5rem;
+            color: var(--primary);
+            background: #eef2ff;
+            padding: 8px;
+            border-radius: 12px;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            font-weight: 700;
+        }
+
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--admin-dark);
+        }
+
+        .stat-detail {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 8px;
+        }
+
+        /* --- TABLE STYLES --- */
+        .table-container { 
+            background: white; 
+            border-radius: 16px; 
+            border: 1px solid var(--border); 
+            overflow: hidden; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            min-width: 1000px; 
+        }
+        
+        th { 
+            text-align: left; 
+            padding: 16px; 
+            background: #f8fafc; 
+            color: var(--text-dim); 
+            font-size: 0.7rem; 
+            text-transform: uppercase; 
+            font-weight: 800;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        td { 
+            padding: 16px; 
+            border-bottom: 1px solid #f1f5f9; 
+            font-size: 0.85rem; 
+            vertical-align: middle;
+            transition: background 0.2s;
+        }
+
+        tr:hover td {
+            background: #fafaff;
+        }
+
+        .product-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .product-icon {
+            width: 40px;
+            height: 40px;
+            background: #eef2ff;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .product-details h4 {
+            font-weight: 800;
+            margin: 0 0 4px 0;
+            font-size: 0.9rem;
+        }
+
+        .product-details small {
+            color: var(--text-dim);
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .badge { 
+            padding: 4px 10px; 
+            border-radius: 30px; 
+            font-size: 0.7rem; 
+            font-weight: 700; 
+            display: inline-block;
+        }
+        
+        .badge-gas { 
+            background: #fee2e2; 
+            color: #b91c1c; 
+        }
+        .badge-spare { 
+            background: #dcfce7; 
+            color: #15803d; 
+        }
+        .badge-bike { 
+            background: #e0e7ff; 
+            color: #4338ca; 
+        }
+        .badge-tuktuk { 
+            background: #ede9fe; 
+            color: #6d28d9; 
+        }
+
+        .stock-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stock-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .stock-dot.high { background: var(--success); }
+        .stock-dot.medium { background: var(--warning); }
+        .stock-dot.low { background: var(--danger); }
+
+        .price-tag {
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .cost-tag {
+            color: var(--text-dim);
+            font-size: 0.7rem;
+        }
+
+        .btn-edit {
+            background: #eef2ff;
+            color: var(--primary);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-edit:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* --- MODAL --- */
+        #productModal { 
+            display: none; 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(15, 23, 42, 0.6); 
+            backdrop-filter: blur(8px);
+            justify-content: center; 
+            align-items: center; 
+            z-index: 4000; 
+            padding: 20px;
+        }
+        
+        .modal-content { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 24px; 
+            width: 100%; 
+            max-width: 550px; 
+            max-height: 90vh; 
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--admin-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-header h2 i {
+            color: var(--primary);
+        }
+
+        .modal-close {
+            background: #f1f5f9;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .grid-form { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 15px; 
+        }
+        
+        .full { 
+            grid-column: span 2; 
+        }
+        
+        label { 
+            font-size: 0.7rem; 
+            color: var(--text-dim); 
+            font-weight: 700; 
+            margin-bottom: 5px; 
+            display: block;
+            text-transform: uppercase;
+        }
+        
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid var(--border); 
+            border-radius: 10px; 
+            font-size: 0.9rem; 
+            font-family: inherit; 
+            outline: none;
+            transition: all 0.2s;
+        }
+        
+        input:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .btn-save {
+            flex: 2;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-save:hover {
+            background: #6366f1;
+            transform: translateY(-2px);
+        }
+
+        .btn-cancel {
+            flex: 1;
+            background: #f1f5f9;
+            color: var(--text-dim);
+            border: none;
+            padding: 14px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel:hover {
+            background: #e2e8f0;
+        }
+
+        .overlay { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(15, 23, 42, 0.6); 
+            backdrop-filter: blur(4px); 
+            display: none; 
+            z-index: 2500; 
+        }
+        .overlay.active { display: block; }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-dim);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-dim);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: #cbd5e1;
+            margin-bottom: 15px;
+        }
+
+        .empty-state p {
+            font-size: 0.9rem;
+        }
+
+        /* --- TOOLTIP --- */
+        [data-tooltip] {
+            position: relative;
+            cursor: help;
+        }
+
+        [data-tooltip]:before {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 4px 8px;
+            background: var(--admin-dark);
+            color: white;
+            font-size: 0.65rem;
+            border-radius: 4px;
+            white-space: nowrap;
+            display: none;
+            z-index: 100;
+        }
+
+        [data-tooltip]:hover:before {
+            display: block;
         }
     </style>
 </head>
 <body>
 
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+<button class="menu-trigger" onclick="toggleMenu()">☰ MENU</button>
+
 <div class="sidebar" id="sidebar">
-    <h2 id="role-title">JEPE POS</h2>
-    <nav id="nav-container">
-        </nav>
-    <div style="margin-top: auto;">
-        <a onclick="handleLogout()" class="nav-link" style="color: var(--danger);">🚪 Logout</a>
+    <div class="sidebar-header">
+        <h2 id="role-title">JEPE CASHIER</h2>
+        <button class="close-btn" onclick="toggleMenu()">×</button>
     </div>
+    
+    <!-- Branch Info Display -->
+    <div class="branch-info" id="sidebarBranchInfo">
+        <div class="branch-label">Your Assigned Branch</div>
+        <div class="branch-name" id="sidebarBranchName">
+            <i class="fas fa-store"></i>
+            <span>Loading...</span>
+        </div>
+    </div>
+    
+    <nav class="nav-list" id="nav-container">
+        <!-- Navigation will be dynamically loaded -->
+    </nav>
 </div>
 
 <div class="main-wrapper">
-    <div class="header-flex">
-        <div>
-            <h1 style="margin:0; font-size: 1.5rem; font-weight: 800;">Inventory Control</h1>
-            <p id="sub-title" style="color: var(--text-dim); font-size: 0.9rem;">Manage Stock Levels and Pricing.</p>
-        </div>
-        <button class="btn btn-add" id="add-btn" onclick="openModal()">+ Add New Product</button>
+    <div class="mobile-header">
+        <button onclick="toggleMenu()" style="background:none; border:none; color:white; font-size:1.5rem;">☰</button>
+        <div style="font-weight:800;">INVENTORY CONTROL</div>
+        <div style="width:24px;"></div>
     </div>
 
-    <div class="card">
-        <input type="text" id="searchBar" placeholder="Search products, categories, or suppliers...">
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <h1>
+                    <i class="fas fa-boxes"></i>
+                    <span id="pageTitle">Inventory Control</span>
+                </h1>
+                <p id="subTitle">Manage stock levels, pricing, and product information</p>
+            </div>
+            <div class="branch-badge" id="branchDisplay">
+                <i class="fas fa-store"></i> <span id="branchName">Loading...</span>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <i class="fas fa-cubes"></i>
+                    <span class="stat-label">Total Products</span>
+                </div>
+                <div class="stat-value" id="totalProducts">0</div>
+                <div class="stat-detail">Across all categories</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <i class="fas fa-boxes"></i>
+                    <span class="stat-label">Total Stock</span>
+                </div>
+                <div class="stat-value" id="totalStock">0</div>
+                <div class="stat-detail">Units in inventory</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <i class="fas fa-fire"></i>
+                    <span class="stat-label">Gas Cylinders</span>
+                </div>
+                <div class="stat-value" id="gasCount">0</div>
+                <div class="stat-detail">Full / Empty</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <i class="fas fa-exclamation-triangle" style="color: var(--warning);"></i>
+                    <span class="stat-label">Low Stock</span>
+                </div>
+                <div class="stat-value" id="lowStockCount">0</div>
+                <div class="stat-detail">Items below threshold</div>
+            </div>
+        </div>
+
+        <!-- Search & Filter Section -->
+        <div class="search-section">
+            <div class="search-wrapper">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchBar" placeholder="Search products by name, category, or supplier...">
+            </div>
+            <div class="filter-tabs">
+                <button class="filter-tab active" onclick="filterCategory('all')">
+                    <i class="fas fa-border-all"></i> All
+                </button>
+                <button class="filter-tab" onclick="filterCategory('Spare Part')">
+                    <i class="fas fa-cogs"></i> Spare Parts
+                </button>
+                <button class="filter-tab" onclick="filterCategory('Motorbike')">
+                    <i class="fas fa-motorcycle"></i> Motorbikes
+                </button>
+                <button class="filter-tab" onclick="filterCategory('Gas')">
+                    <i class="fas fa-fire"></i> Gas
+                </button>
+                <button class="filter-tab" onclick="filterCategory('Tuktuk')">
+                    <i class="fas fa-car-side"></i> TUKTUK
+                </button>
+            </div>
+            <button class="action-btn" onclick="openModal()">
+                <i class="fas fa-plus"></i> Add Product
+            </button>
+        </div>
+
+        <!-- Products Table -->
         <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Product Details</th>
-                        <th>Supplier</th>
-                        <th>Stock (Full/Empty)</th>
-                        <th>Price (Cost/Sell)</th>
-                        <th>Type/Weight</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="product-list-body"></tbody>
-            </table>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product Details</th>
+                            <th>Supplier</th>
+                            <th>Stock Level</th>
+                            <th>Pricing</th>
+                            <th>Category</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="product-list-body">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 40px;">
+                                <div class="spinner" style="margin: 0 auto;"></div>
+                                Loading products...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
+<!-- Product Modal -->
 <div id="productModal">
     <div class="modal-content">
-        <h2 id="modalTitle" style="margin:0 0 20px 0;">Product Details</h2>
+        <div class="modal-header">
+            <h2><i class="fas fa-edit"></i> <span id="modalTitle">Edit Product</span></h2>
+            <button class="modal-close" onclick="closeModal()">×</button>
+        </div>
         <input type="hidden" id="prod-id">
         <div class="grid-form">
-            <div class="full"><label>Product Name</label><input type="text" id="prod-name"></div>
-            <div class="full"><label>Supplier</label><select id="prod-supplier"></select></div>
-            <div><label>Category</label>
+            <div class="full"><label><i class="fas fa-tag"></i> Product Name</label><input type="text" id="prod-name" placeholder="Enter product name"></div>
+            <div class="full"><label><i class="fas fa-truck"></i> Supplier</label><select id="prod-supplier"></select></div>
+            
+            <div><label><i class="fas fa-layer-group"></i> Category</label>
                 <select id="prod-category" onchange="toggleFields()">
                     <option value="Spare Part">Spare Part</option>
                     <option value="Gas">Gas</option>
                     <option value="Motorbike">Motorbike</option>
+                    <option value="Tuktuk">🚖 TUKTUK</option>
                 </select>
             </div>
-            <div id="type-container"><label>Part Type</label>
-                <select id="prod-type"><option value="Original">Original</option><option value="Copy">Copy</option></select>
+
+            <div id="type-container">
+                <label><i class="fas fa-cog"></i> Part Type</label>
+                <select id="prod-type">
+                    <option value="Original">Original</option>
+                    <option value="Copy">Copy</option>
+                    <option value="N/A">N/A</option>
+                </select>
             </div>
-            <div id="weight-container" style="display:none;"><label>Weight (Gas)</label><input type="text" id="prod-weight"></div>
-            <div><label>Cost Price</label><input type="number" id="prod-cost"></div>
-            <div><label>Selling Price</label><input type="number" id="prod-sell"></div>
-            <div><label>Stock Qty</label><input type="number" id="prod-stock"></div>
-            <div id="empty-container" style="display:none;"><label>Empty Qty</label><input type="number" id="prod-empty"></div>
+
+            <div id="weight-container" style="display:none;">
+                <label><i class="fas fa-weight-scale"></i> Weight (Gas)</label>
+                <input type="text" id="prod-weight" placeholder="e.g. 6kg">
+            </div>
+
+            <div id="tuktuk-container" style="display:none;">
+                <label><i class="fas fa-car-side"></i> TUKTUK Type</label>
+                <select id="tuktuk-type">
+                    <option value="Passenger">Passenger</option>
+                    <option value="Cargo">Cargo</option>
+                    <option value="Spare Part">Spare Part</option>
+                </select>
+            </div>
+
+            <div><label><i class="fas fa-coins"></i> Cost Price</label><input type="number" id="prod-cost" placeholder="0"></div>
+            <div><label><i class="fas fa-tag"></i> Selling Price</label><input type="number" id="prod-sell" placeholder="0"></div>
+            <div><label><i class="fas fa-box"></i> Stock Qty</label><input type="number" id="prod-stock" placeholder="0"></div>
+            <div id="empty-container" style="display:none;"><label><i class="fas fa-gas-pump"></i> Empty Qty</label><input type="number" id="prod-empty" placeholder="0"></div>
         </div>
-        <div style="display:flex; gap:12px; margin-top:25px;">
-            <button class="btn btn-add" style="flex:2;" onclick="saveProduct()">Save Changes</button>
-            <button class="btn" style="flex:1; background:#f1f5f9;" onclick="closeModal()">Cancel</button>
+        <div class="modal-actions">
+            <button class="btn-save" onclick="saveProduct()"><i class="fas fa-save"></i> Save Changes</button>
+            <button class="btn-cancel" onclick="closeModal()"><i class="fas fa-times"></i> Cancel</button>
         </div>
     </div>
 </div>
 
 <script type="module">
     import { supabase } from './auth.js';
+    
     let allProducts = [];
+    let currentUser = null;
+    let currentBranchId = null;
+    let currentBranch = null;
+    let currentCategoryFilter = 'all';
 
-    async function checkRoleAndInit() {
-        // 1. Get User Data
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { window.location.href = 'index.html'; return; }
+    // ==================== SIDEBAR FUNCTIONS ====================
+    window.toggleMenu = () => {
+        document.getElementById('sidebar').classList.toggle('mobile-active');
+        document.getElementById('overlay').classList.toggle('active');
+    };
 
-        // 2. Determine Role
-        const isAdmin = user.email.includes('admin');
-        document.getElementById('role-title').innerText = isAdmin ? "JEPE ADMIN" : "JEPE CASHIER";
-        
-        // 3. Render Sidebar based on role
-        const nav = document.getElementById('nav-container');
-        if (isAdmin) {
-            nav.innerHTML = `
-                <a href="admin.html" class="nav-link">📊 Dashboard</a>
-                <a href="inventory.html" class="nav-link">📦 Inventory</a>
-                <a href="sales_editor.html" class="nav-link active">✏️ Edit Stock</a>
-                <a href="sales-history.html" class="nav-link">📜 Sales History</a>
-            `;
-        } else {
-            // Cashier Links
-            nav.innerHTML = `
-                <a href="cashier.html" class="nav-link">📊 Dashboard</a>
-                <a href="cashiergashub.html" class="nav-link">⛽ Gas Hub</a>
-                <a href="pos.html" class="nav-link">🛒 POS System</a>
-                <a href="sales_editor.html" class="nav-link active">✏️ Inventory List</a>
-                <a href="sales_reports.html" class="nav-link">📜 My Sales</a>
-            `;
-            // Optional: Hide "Add New Product" for cashiers if you want
-            // document.getElementById('add-btn').style.display = 'none';
-        }
+    // ==================== BRANCH FUNCTIONS ====================
 
-        // 4. Initialize Data
-        const { data: sups } = await supabase.from('suppliers').select('id, name').order('name');
-        document.getElementById('prod-supplier').innerHTML = '<option value="">-- No Supplier --</option>' + 
-            sups.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-        
-        await fetchProducts();
+    function getCurrentBranchId() {
+        const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
+        return session.branch?.id || currentBranchId;
     }
 
+    async function loadUserProfile() {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return null;
+            }
+            
+            currentUser = user;
+            
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select(`
+                    *,
+                    branches (
+                        id,
+                        name,
+                        code,
+                        location
+                    )
+                `)
+                .eq('id', user.id)
+                .maybeSingle();
+            
+            if (error) throw error;
+            if (!profile) {
+                console.error("No profile found");
+                return null;
+            }
+            
+            currentBranchId = profile.branch_id;
+            currentBranch = profile.branches;
+            
+            const session = {
+                user: user,
+                profile: profile,
+                branch: profile.branches,
+                role: profile.role
+            };
+            localStorage.setItem('pos_session', JSON.stringify(session));
+            
+            // Update sidebar with user's assigned branch
+            const sidebarBranchName = document.querySelector('#sidebarBranchName span');
+            if (profile.branches && sidebarBranchName) {
+                sidebarBranchName.textContent = profile.branches.name;
+            }
+            
+            // Update branch display
+            const branchNameSpan = document.getElementById('branchName');
+            if (branchNameSpan && profile.branches) {
+                branchNameSpan.textContent = profile.branches.name;
+            }
+            
+            return profile;
+        } catch (error) {
+            console.error("Error loading profile:", error);
+            return null;
+        }
+    }
+
+    // ==================== NAVIGATION SETUP ====================
+
+    function setupNavigation(role) {
+        const nav = document.getElementById('nav-container');
+        const isAdmin = role === 'admin' || (currentUser?.email && currentUser.email.includes('admin'));
+        
+        if (isAdmin) {
+            document.getElementById('pageTitle').textContent = 'Admin Inventory Control';
+            document.getElementById('subTitle').textContent = 'Manage stock across all branches';
+            nav.innerHTML = `
+                <a href="admin.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+                <a href="gas_hub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
+                <a href="spares_hub.html" class="nav-link"><i class="fas fa-cogs"></i> <span>Spare Parts Hub</span></a>
+                <a href="motorbike_hub.html" class="nav-link"><i class="fas fa-motorcycle"></i> <span>Motorbike Hub</span></a>
+                <a href="tuktuk_hub.html" class="nav-link"><i class="fas fa-car-side"></i> <span>TUKTUK Hub</span></a>
+
+                <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+
+                <a href="shift-history.html" class="nav-link"><i class="fas fa-history"></i> <span>Daily Shifts</span></a>
+                <a href="money-history.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
+                <a href="sales-history.html" class="nav-link"><i class="fas fa-chart-line"></i> <span>Sales History</span></a>
+
+                <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+
+                <a href="inventory.html" class="nav-link"><i class="fas fa-plus-circle"></i> <span>Add Stock</span></a>
+                <a href="sales_editor.html" class="nav-link active"><i class="fas fa-edit"></i> <span>Edit Stock</span></a>
+                <a href="admin-debtors.html" class="nav-link"><i class="fas fa-users"></i> <span>Debtors</span></a>
+                <a href="low_stock.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
+
+                <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+
+                <a href="reports.html" class="nav-link"><i class="fas fa-file-alt"></i> <span>Reports</span></a>
+                <a href="suppliers.html" class="nav-link"><i class="fas fa-handshake"></i> <span>Suppliers</span></a>
+                <a href="admin.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
+            `;
+        } else {
+            document.getElementById('pageTitle').textContent = 'Inventory Control';
+            document.getElementById('subTitle').textContent = 'Manage stock levels and pricing';
+            nav.innerHTML = `
+                <a href="cashier.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+                <a href="cashiergashub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
+                <a href="moneyinout.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
+                <a href="shift history cashier.html" class="nav-link"><i class="fas fa-history"></i> <span>Shift History</span></a>
+                <a href="sales_reports.html" class="nav-link"><i class="fas fa-chart-line"></i> <span>Sales History</span></a>
+                <a href="cashier_inventory.html" class="nav-link"><i class="fas fa-plus-circle"></i> <span>Add Stock</span></a>
+                <a href="sales_editor.html" class="nav-link active"><i class="fas fa-edit"></i> <span>Edit Stock</span></a>
+
+                <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+
+                <a href="low-stock-cashier.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
+                <a href="debtors.html" class="nav-link"><i class="fas fa-users"></i> <span>Debtors</span></a>
+                <a href="supplierscashier.html" class="nav-link"><i class="fas fa-handshake"></i> <span>Suppliers</span></a>
+                <a href="gas_delivery.html" class="nav-link"><i class="fas fa-truck"></i> <span>Delivery</span></a>
+
+                <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+
+                <a href="cashier_report.html" class="nav-link"><i class="fas fa-file-alt"></i> <span>Today's Report</span></a>
+                <a href="pos.html" class="nav-link"><i class="fas fa-shopping-cart"></i> <span>Cart Shop</span></a>
+                <a href="cashierprofile.html" class="nav-link"><i class="fas fa-user"></i> <span>Settings</span></a>
+                <a href="cashier.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
+            `;
+        }
+    }
+
+    window.logoutUser = async () => { 
+        localStorage.removeItem('pos_session');
+        await supabase.auth.signOut(); 
+        location.href = 'index.html'; 
+    };
+
+    // ==================== PRODUCT FUNCTIONS ====================
+
     async function fetchProducts() {
-        const { data } = await supabase.from('products').select('*, suppliers(name)').order('name');
-        allProducts = data || [];
-        renderTable(allProducts);
+        try {
+            const branchId = getCurrentBranchId();
+            
+            let query = supabase
+                .from('products')
+                .select('*, suppliers(name)')
+                .order('name');
+
+            if (branchId) {
+                query = query.eq('branch_id', branchId);
+            }
+
+            const { data, error } = await query;
+            
+            if (error) throw error;
+            
+            allProducts = data || [];
+            console.log(`Loaded ${allProducts.length} products`);
+            
+            updateStats();
+            renderTable(allProducts);
+            
+        } catch (error) {
+            console.error("Error fetching products:", error);
+        }
+    }
+
+    async function loadSuppliers() {
+        try {
+            const branchId = getCurrentBranchId();
+            let query = supabase.from('suppliers').select('id, name').order('name');
+            
+            if (branchId) {
+                query = query.eq('branch_id', branchId);
+            }
+            
+            const { data } = await query;
+            document.getElementById('prod-supplier').innerHTML = '<option value="">-- No Supplier --</option>' + 
+                (data || []).map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        } catch (error) {
+            console.error("Error loading suppliers:", error);
+        }
+    }
+
+    function updateStats() {
+        let totalProducts = allProducts.length;
+        let totalStock = 0;
+        let gasFull = 0;
+        let gasEmpty = 0;
+        let lowStock = 0;
+
+        allProducts.forEach(p => {
+            totalStock += p.stock_quantity || 0;
+            
+            if (p.category === 'Gas') {
+                gasFull += p.stock_quantity || 0;
+                gasEmpty += p.empty_quantity || 0;
+            }
+            
+            if ((p.stock_quantity || 0) < 5) {
+                lowStock++;
+            }
+        });
+
+        document.getElementById('totalProducts').textContent = totalProducts;
+        document.getElementById('totalStock').textContent = totalStock;
+        document.getElementById('gasCount').innerHTML = `${gasFull} <span style="font-size:0.7rem;">/ ${gasEmpty}</span>`;
+        document.getElementById('lowStockCount').textContent = lowStock;
+    }
+
+    function getCategoryIcon(category) {
+        switch(category) {
+            case 'Gas': return 'fa-fire';
+            case 'Spare Part': return 'fa-cogs';
+            case 'Motorbike': return 'fa-motorcycle';
+            case 'Tuktuk': return 'fa-car-side';
+            default: return 'fa-box';
+        }
+    }
+
+    function getCategoryBadgeClass(category) {
+        switch(category) {
+            case 'Gas': return 'badge-gas';
+            case 'Spare Part': return 'badge-spare';
+            case 'Motorbike': return 'badge-bike';
+            case 'Tuktuk': return 'badge-tuktuk';
+            default: return '';
+        }
+    }
+
+    function getStockLevel(stock) {
+        if (stock >= 10) return { class: 'high', text: 'High' };
+        if (stock >= 5) return { class: 'medium', text: 'Medium' };
+        return { class: 'low', text: 'Low' };
+    }
+
+    window.filterCategory = (category) => {
+        currentCategoryFilter = category;
+        
+        // Update active tab
+        document.querySelectorAll('.filter-tab').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        applyFilters();
+    };
+
+    function applyFilters() {
+        const searchTerm = document.getElementById('searchBar').value.toLowerCase();
+        
+        let filtered = allProducts.filter(p => {
+            // Category filter
+            if (currentCategoryFilter !== 'all' && p.category !== currentCategoryFilter) {
+                return false;
+            }
+            
+            // Search filter
+            if (searchTerm) {
+                return p.name.toLowerCase().includes(searchTerm) || 
+                       p.category.toLowerCase().includes(searchTerm) ||
+                       (p.suppliers?.name && p.suppliers.name.toLowerCase().includes(searchTerm));
+            }
+            
+            return true;
+        });
+        
+        renderTable(filtered);
+    }
+
+    function renderTable(data) {
+        const tbody = document.getElementById('product-list-body');
+        
+        if (data.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="empty-state">
+                        <i class="fas fa-box-open"></i>
+                        <p>No products found</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = data.map(p => {
+            const isGas = p.category === 'Gas';
+            const stockLevel = getStockLevel(p.stock_quantity);
+            const categoryIcon = getCategoryIcon(p.category);
+            const badgeClass = getCategoryBadgeClass(p.category);
+            
+            return `
+                <tr>
+                    <td>
+                        <div class="product-info">
+                            <div class="product-icon">
+                                <i class="fas ${categoryIcon}"></i>
+                            </div>
+                            <div class="product-details">
+                                <h4>${p.name}</h4>
+                                <small>
+                                    <i class="fas fa-box"></i> ${p.category}
+                                    ${isGas && p.weight_category ? ` • ${p.weight_category}` : ''}
+                                </small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge" style="background:#f1f5f9;">${p.suppliers?.name || 'No Supplier'}</span>
+                    </td>
+                    <td>
+                        <div class="stock-indicator">
+                            <span class="stock-dot ${stockLevel.class}" data-tooltip="${stockLevel.text} Stock"></span>
+                            <span style="font-weight:700; ${p.stock_quantity < 5 ? 'color:var(--danger)' : ''}">
+                                ${p.stock_quantity || 0} Full
+                            </span>
+                        </div>
+                        ${isGas ? `
+                            <div style="font-size:0.7rem; color:var(--text-dim); margin-top:4px;">
+                                <i class="fas fa-gas-pump"></i> ${p.empty_quantity || 0} Empty
+                            </div>
+                        ` : ''}
+                    </td>
+                    <td>
+                        <div class="price-tag">Ksh ${(p.selling_price || 0).toLocaleString()}</div>
+                        <div class="cost-tag">Cost: Ksh ${(p.cost_price || 0).toLocaleString()}</div>
+                    </td>
+                    <td>
+                        <span class="badge ${badgeClass}">
+                            <i class="fas ${categoryIcon}"></i> ${p.category}
+                        </span>
+                        ${p.part_type && p.part_type !== 'N/A' ? `
+                            <div style="font-size:0.7rem; color:var(--text-dim); margin-top:4px;">
+                                ${p.part_type}
+                            </div>
+                        ` : ''}
+                    </td>
+                    <td>
+                        <button class="btn-edit" onclick="editProduct('${p.id}')">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
 
     window.toggleFields = () => {
         const cat = document.getElementById('prod-category').value;
-        document.getElementById('type-container').style.display = cat === 'Gas' ? 'none' : 'block';
-        document.getElementById('weight-container').style.display = cat === 'Gas' ? 'block' : 'none';
-        document.getElementById('empty-container').style.display = cat === 'Gas' ? 'block' : 'none';
+        const typeSelect = document.getElementById('prod-type');
+        
+        document.getElementById('type-container').style.display = 'none';
+        document.getElementById('weight-container').style.display = 'none';
+        document.getElementById('tuktuk-container').style.display = 'none';
+        document.getElementById('empty-container').style.display = 'none';
+        
+        if (cat === 'Gas') {
+            document.getElementById('weight-container').style.display = 'block';
+            document.getElementById('empty-container').style.display = 'block';
+            typeSelect.innerHTML = `
+                <option value="Original">Original</option>
+                <option value="Copy">Copy</option>
+                <option value="N/A">N/A</option>
+            `;
+        } else if (cat === 'Tuktuk') {
+            document.getElementById('tuktuk-container').style.display = 'block';
+            document.getElementById('type-container').style.display = 'block';
+            typeSelect.innerHTML = `
+                <option value="Passenger">Passenger</option>
+                <option value="Cargo">Cargo</option>
+                <option value="Spare Part">Spare Part</option>
+            `;
+        } else {
+            document.getElementById('type-container').style.display = 'block';
+            typeSelect.innerHTML = `
+                <option value="Original">Original</option>
+                <option value="Copy">Copy</option>
+                <option value="N/A">N/A</option>
+            `;
+        }
     };
 
-    function renderTable(data) {
-        document.getElementById('product-list-body').innerHTML = data.map(p => `
-            <tr>
-                <td><div style="font-weight:700;">${p.name}</div><small>${p.category}</small></td>
-                <td><small>${p.suppliers?.name || '---'}</small></td>
-                <td><b>${p.stock_quantity}</b> Full ${p.category==='Gas' ? `<br><small>${p.empty_quantity||0} Empty</small>` : ''}</td>
-                <td><small>C: ${p.cost_price}</small><br><b style="color:var(--primary)">S: ${p.selling_price}</b></td>
-                <td><span class="badge ${p.category==='Gas'?'badge-gas':'badge-spare'}">${p.category==='Gas'?p.weight_category:p.part_type}</span></td>
-                <td>
-                    <button class="btn btn-edit" onclick="editProduct('${p.id}')">Edit</button>
-                </td>
-            </tr>
-        `).join('');
-    }
-
     window.openModal = () => {
-        document.getElementById('prod-id').value = "";
-        document.getElementById('productModal').style.display = "flex";
+        document.getElementById('modalTitle').textContent = 'Add New Product';
+        document.getElementById('prod-id').value = '';
+        document.getElementById('prod-name').value = '';
+        document.getElementById('prod-category').value = 'Spare Part';
+        document.getElementById('prod-stock').value = '';
+        document.getElementById('prod-cost').value = '';
+        document.getElementById('prod-sell').value = '';
+        document.getElementById('prod-empty').value = '';
+        document.getElementById('prod-weight').value = '';
+        document.getElementById('productModal').style.display = 'flex';
         toggleFields();
     };
 
-    window.closeModal = () => document.getElementById('productModal').style.display = "none";
+    window.closeModal = () => {
+        document.getElementById('productModal').style.display = 'none';
+    };
 
     window.editProduct = (id) => {
         const p = allProducts.find(x => x.id === id);
+        if (!p) return;
+        
+        document.getElementById('modalTitle').textContent = 'Edit Product';
         document.getElementById('prod-id').value = p.id;
         document.getElementById('prod-name').value = p.name;
         document.getElementById('prod-category').value = p.category;
         document.getElementById('prod-stock').value = p.stock_quantity;
         document.getElementById('prod-cost').value = p.cost_price;
         document.getElementById('prod-sell').value = p.selling_price;
-        document.getElementById('productModal').style.display = "flex";
+        document.getElementById('prod-empty').value = p.empty_quantity || 0;
+        document.getElementById('prod-weight').value = p.weight_category || '';
+        
+        // Set the type field based on category
+        if (p.category === 'Tuktuk') {
+            document.getElementById('prod-type').value = p.part_type || 'Passenger';
+        } else {
+            document.getElementById('prod-type').value = p.part_type || 'Original';
+        }
+        
+        document.getElementById('productModal').style.display = 'flex';
         toggleFields();
     };
 
     window.saveProduct = async () => {
         const id = document.getElementById('prod-id').value;
+        const category = document.getElementById('prod-category').value;
+        
         const data = {
             name: document.getElementById('prod-name').value,
-            category: document.getElementById('prod-category').value,
-            stock_quantity: parseInt(document.getElementById('prod-stock').value),
-            cost_price: parseFloat(document.getElementById('prod-cost').value),
-            selling_price: parseFloat(document.getElementById('prod-sell').value)
+            category: category,
+            part_type: document.getElementById('prod-type').value,
+            supplier_id: document.getElementById('prod-supplier').value || null,
+            weight_category: category === 'Gas' ? document.getElementById('prod-weight').value : null,
+            stock_quantity: parseInt(document.getElementById('prod-stock').value) || 0,
+            cost_price: parseFloat(document.getElementById('prod-cost').value) || 0,
+            selling_price: parseFloat(document.getElementById('prod-sell').value) || 0,
+            empty_quantity: category === 'Gas' ? (parseInt(document.getElementById('prod-empty').value) || 0) : 0,
+            branch_id: getCurrentBranchId()
         };
-        const { error } = id ? await supabase.from('products').update(data).eq('id', id) : await supabase.from('products').insert([data]);
-        if (error) alert(error.message); else { closeModal(); fetchProducts(); }
+
+        // Add TUKTUK type if category is Tuktuk
+        if (category === 'Tuktuk') {
+            data.tuktuk_type = document.getElementById('tuktuk-type').value;
+        }
+
+        const { error } = id 
+            ? await supabase.from('products').update(data).eq('id', id)
+            : await supabase.from('products').insert([data]);
+
+        if (error) {
+            alert("Error: " + error.message);
+        } else {
+            closeModal();
+            await fetchProducts();
+            alert(id ? "✅ Product updated successfully!" : "✅ Product added successfully!");
+        }
     };
 
-    window.handleLogout = async () => {
-        await supabase.auth.signOut();
-        window.location.replace('index.html'); // Use replace to prevent back-button issues
-    };
+    // ==================== EVENT LISTENERS ====================
 
-    document.getElementById('searchBar').oninput = (e) => {
-        const term = e.target.value.toLowerCase();
-        renderTable(allProducts.filter(p => p.name.toLowerCase().includes(term) || p.category.toLowerCase().includes(term)));
-    };
+    document.getElementById('searchBar').addEventListener('input', applyFilters);
 
-    checkRoleAndInit();
+    // ==================== INITIALIZATION ====================
+
+    async function init() {
+        const profile = await loadUserProfile();
+        if (profile) {
+            setupNavigation(profile.role);
+            await loadSuppliers();
+            await fetchProducts();
+        }
+    }
+
+    init();
+
+    window.handleLogout = logoutUser;
 </script>
 </body>
 </html>
