@@ -7,14 +7,20 @@
     <title>JEPE AUTOSPARES | Internal Portal</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { 
-            --primary: #6366f1; 
+            --primary: #4f46e5; 
             --accent: #818cf8;
             --bg: #0b1120; 
             --glass: rgba(30, 41, 59, 0.75); 
             --border: rgba(255, 255, 255, 0.1);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
         }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
@@ -24,10 +30,11 @@
             display: flex;
             justify-content: center;
             align-items: center; 
-            height: 100vh; 
+            min-height: 100vh; 
             width: 100vw;
-            overflow: hidden; 
+            overflow-x: hidden; 
             position: relative;
+            padding: 15px;
         }
 
         #welcome-overlay {
@@ -44,9 +51,9 @@
         }
 
         .welcome-content h1 {
-            font-size: 1.8rem;
+            font-size: 2rem;
             font-weight: 800;
-            background: linear-gradient(to right, #ffffff, #6366f1);
+            background: linear-gradient(to right, #ffffff, var(--primary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             margin: 20px 15px 10px;
@@ -78,7 +85,7 @@
             filter: brightness(0.4) contrast(1.2);
             border-radius: 20px;
             animation: float 8s ease-in-out infinite;
-            opacity: 0.2;
+            opacity: 0.15;
         }
 
         .img-bike { top: 5%; left: -10%; width: 200px; --rot: -10deg; }
@@ -95,116 +102,231 @@
             align-items: center;
             justify-content: center;
             width: 100%;
-            max-width: 400px;
-            padding: 10px;
+            max-width: 420px;
             z-index: 10;
-            box-sizing: border-box;
         }
 
         .auth-card { 
             background: var(--glass); 
-            padding: 25px 20px;
+            padding: 30px 25px;
             border-radius: 28px; 
             width: 100%; 
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); 
             backdrop-filter: blur(15px); 
             border: 1px solid var(--border);
             text-align: center;
-            box-sizing: border-box;
         }
 
         .logo-container {
             width: 80px; height: 80px;
-            margin: 0 auto 10px;
+            margin: 0 auto 15px;
             display: flex; align-items: center; justify-content: center;
         }
 
         .logo-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.5)); }
 
         .brand-name {
-            font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; margin: 0;
+            font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; margin: 0 0 5px;
             background: linear-gradient(to right, #ffffff, #818cf8, #ffffff);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             text-transform: uppercase;
         }
 
-        h2 { font-weight: 600; margin: 5px 0 2px 0; font-size: 1rem; color: #f8fafc; }
-        .tagline { color: #94a3b8; font-size: 0.75rem; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        h2 { font-weight: 600; margin: 5px 0 2px; font-size: 1rem; color: #f8fafc; }
+        .tagline { color: #94a3b8; font-size: 0.75rem; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
 
         input, select, button { 
-            width: 100%; padding: 12px; margin: 6px 0; 
+            width: 100%; padding: 14px; margin: 8px 0; 
             border-radius: 12px; border: 1px solid var(--border); 
-            box-sizing: border-box; font-size: 0.9rem; transition: 0.3s;
+            box-sizing: border-box; font-size: 0.95rem; transition: all 0.3s;
         }
 
-        input, select { background: rgba(15, 23, 42, 0.6); color: white; outline: none; }
-        input:focus { border-color: var(--primary); background: rgba(15, 23, 42, 0.8); }
-        select option { background: #1e293b; color: white; }
+        input, select { 
+            background: rgba(15, 23, 42, 0.8); 
+            color: white; 
+            outline: none; 
+        }
+        
+        input:focus, select:focus { 
+            border-color: var(--primary); 
+            background: rgba(15, 23, 42, 1); 
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+        
+        select option { 
+            background: #1e293b; 
+            color: white; 
+            padding: 10px;
+        }
 
         button { 
             background: linear-gradient(135deg, var(--primary), #4f46e5); 
-            color: white; font-weight: 800; cursor: pointer; border: none; 
-            margin-top: 8px; text-transform: uppercase;
+            color: white; 
+            font-weight: 800; 
+            cursor: pointer; 
+            border: none; 
+            margin-top: 15px; 
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+        }
+        
+        button:disabled { 
+            opacity: 0.6; 
+            cursor: not-allowed; 
+            transform: none;
+        }
 
-        .reset-link-container { display: flex; justify-content: flex-end; width: 100%; margin-bottom: 5px; }
-        .forgot-btn { background: none; border: none; color: #94a3b8; font-size: 0.75rem; cursor: pointer; width: auto; padding: 2px; text-transform: none;}
+        .reset-link-container { 
+            display: flex; 
+            justify-content: flex-end; 
+            width: 100%; 
+            margin: 5px 0 10px; 
+        }
+        
+        .forgot-btn { 
+            background: none; 
+            border: none; 
+            color: #94a3b8; 
+            font-size: 0.8rem; 
+            cursor: pointer; 
+            width: auto; 
+            padding: 5px; 
+            text-transform: none;
+            margin: 0;
+        }
+        
+        .forgot-btn:hover {
+            color: var(--primary);
+            background: none;
+            transform: none;
+            box-shadow: none;
+        }
+        
         .forgot-btn b { color: var(--accent); }
 
-        .banking-section { margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--border); }
-        .banking-label { font-size: 0.6rem; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
-        .bank-text { font-size: 0.75rem; font-weight: 700; color: #818cf8; }
+        .banking-section { 
+            margin-top: 20px; 
+            padding-top: 15px; 
+            border-top: 1px solid var(--border); 
+        }
+        
+        .banking-label { 
+            font-size: 0.65rem; 
+            color: #64748b; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            margin-bottom: 6px; 
+        }
+        
+        .bank-text { 
+            font-size: 0.8rem; 
+            font-weight: 700; 
+            color: var(--accent); 
+        }
 
-        .toggle-link { text-align: center; font-size: 0.85rem; margin-top: 12px; cursor: pointer; color: #94a3b8; }
-        .toggle-link b { color: var(--primary); }
+        .toggle-link { 
+            text-align: center; 
+            font-size: 0.9rem; 
+            margin-top: 15px; 
+            cursor: pointer; 
+            color: #94a3b8; 
+            transition: color 0.2s;
+        }
+        
+        .toggle-link:hover {
+            color: white;
+        }
+        
+        .toggle-link b { 
+            color: var(--primary); 
+            font-weight: 800;
+        }
 
         .saftech-footer {
-            margin-top: 15px; text-align: center; padding: 10px;
-            border-radius: 20px; background: rgba(255, 255, 255, 0.03);
-            width: 100%; box-sizing: border-box; border: 1px solid var(--border);
+            margin-top: 20px; 
+            text-align: center; 
+            padding: 15px;
+            border-radius: 20px; 
+            background: rgba(255, 255, 255, 0.03);
+            width: 100%; 
+            border: 1px solid var(--border);
         }
-        .saftech-footer h4 { font-size: 0.6rem; text-transform: uppercase; color: var(--primary); margin: 0 0 2px 0; }
-        .contact-info { font-weight: 700; color: #ffffff; margin-top: 2px; font-size: 0.8rem; }
+        
+        .saftech-footer h4 { 
+            font-size: 0.65rem; 
+            text-transform: uppercase; 
+            color: var(--primary); 
+            margin: 0 0 5px; 
+            letter-spacing: 1px;
+        }
+        
+        .contact-info { 
+            font-weight: 700; 
+            color: #ffffff; 
+            margin-top: 5px; 
+            font-size: 0.9rem; 
+        }
 
         .hidden { display: none !important; }
         
         /* Branch selection styling */
-        .branch-selector {
-            margin: 6px 0;
-            cursor: pointer;
-        }
-        .branch-info-text {
-            font-size: 0.7rem;
-            color: #94a3b8;
-            margin-top: 2px;
-            text-align: left;
-        }
         .branch-note {
-            background: rgba(99, 102, 241, 0.1);
-            border-left: 3px solid var(--primary);
-            padding: 8px 12px;
-            border-radius: 8px;
-            margin: 10px 0;
-            font-size: 0.75rem;
+            background: rgba(79, 70, 229, 0.15);
+            border-left: 4px solid var(--primary);
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin: 15px 0 10px;
+            font-size: 0.8rem;
             color: #cbd5e1;
             text-align: left;
         }
+        
         .branch-note i {
-            margin-right: 5px;
+            margin-right: 8px;
             color: var(--primary);
         }
-        .required {
-            color: #ef4444;
-            margin-left: 2px;
-        }
+        
         .form-hint {
-            font-size: 0.65rem;
+            font-size: 0.7rem;
             color: #64748b;
             text-align: left;
-            margin-top: -2px;
-            margin-bottom: 5px;
+            margin: 5px 0 10px;
+            padding-left: 5px;
+        }
+        
+        .success-message {
+            background: rgba(16, 185, 129, 0.15);
+            border-left: 4px solid var(--success);
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            color: #d1fae5;
+            text-align: left;
+        }
+        
+        .success-message i {
+            color: var(--success);
+            margin-right: 8px;
+        }
+        
+        .error-message {
+            background: rgba(239, 68, 68, 0.15);
+            border-left: 4px solid var(--danger);
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            color: #fee2e2;
+            text-align: left;
+        }
+        
+        .required {
+            color: var(--danger);
+            margin-left: 2px;
         }
     </style>
 </head>
@@ -231,7 +353,7 @@
                 <path d="M60 30H45V60C45 68 52 70 55 70C60 70 65 65 65 60V55" stroke="url(#logo-grad)" stroke-width="10" stroke-linecap="round" fill="none"/>
                 <defs>
                     <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+                        <stop offset="0%" style="stop-color:#4f46e5;stop-opacity:1" />
                         <stop offset="100%" style="stop-color:#818cf8;stop-opacity:1" />
                     </linearGradient>
                 </defs>
@@ -242,20 +364,22 @@
         <h2 id="auth-title">Staff Sign In</h2>
         <p class="tagline" id="auth-subtitle">Premium Parts Management</p>
         
+        <div id="message-container"></div>
+        
         <input type="email" id="email" placeholder="Your Email" autocomplete="email">
         <input type="password" id="password" placeholder="Password" autocomplete="current-password">
         
         <div id="forgot-link" class="reset-link-container">
             <button type="button" class="forgot-btn" onclick="handleForgotPassword()">
-                Forgot Password? <b>Reset</b>
+                <i class="fas fa-key"></i> Forgot Password? <b>Reset</b>
             </button>
         </div>
 
         <div id="register-fields" class="hidden">
             <select id="role" class="branch-selector">
                 <option value="" disabled selected>Select Role *</option>
-                <option value="cashier">Cashier</option>
-                <option value="admin">Administrator</option>
+                <option value="cashier">👤 Cashier</option>
+                <option value="admin">👑 Administrator</option>
             </select>
             
             <select id="branch" class="branch-selector">
@@ -263,45 +387,78 @@
                 <option value="5326e4c6-6d0d-4500-83d9-f322c859b9fb">🏪 MUTOMO BRANCH</option>
                 <option value="ea91a65e-7c6e-43fd-b71e-3f2cc4f714a9">🏪 KITUI BRANCH</option>
             </select>
-            <div class="form-hint" id="branch-hint">You will be assigned to this branch</div>
+            <div class="form-hint" id="branch-hint">
+                <i class="fas fa-info-circle"></i> You will be assigned to this branch
+            </div>
             
             <div class="branch-note" id="branch-note">
-                <i class="fas fa-info-circle"></i> 
+                <i class="fas fa-store"></i> 
                 <span id="branch-note-text">Cashiers must select their branch. You will only have access to this branch.</span>
             </div>
         </div>
 
-        <button id="main-btn" onclick="handleAuth()">Sign In</button>
+        <button id="main-btn" onclick="handleAuth()">
+            <i class="fas fa-sign-in-alt"></i> <span>Sign In</span>
+        </button>
         
         <div class="toggle-link" onclick="toggleMode()" id="toggle-text">
             New staff? <b>Create Account</b>
         </div>
 
         <div class="banking-section">
-            <div class="banking-label">Accepted Channels</div>
-            <div class="bank-text">M-PESA | CASH | KCB | EQUITY</div>
+            <div class="banking-label">Accepted Payment Channels</div>
+            <div class="bank-text">💳 M-PESA | CASH | KCB | EQUITY</div>
         </div>
     </div>
 
     <div class="saftech-footer">
-        <h4>System by SAFTECH SOLUTIONS</h4>
-        <p style="font-size: 0.7rem; margin:0; color: #94a3b8;">Engineered by <b>ALEX SAFARI</b></p>
-        <p class="contact-info">📞 0794963537 | 0707441702</p>
+        <h4>⚡ System by SAFTECH SOLUTIONS</h4>
+        <p style="font-size: 0.75rem; margin:5px 0; color: #94a3b8;">Engineered by <b>ALEX SAFARI</b></p>
+        <p class="contact-info"><i class="fas fa-phone"></i> 0794963537 | 0707441702</p>
     </div>
 </div>
 
 <script type="module">
-    import { supabase, BRANCHES, createUserProfile, getCurrentUser } from './auth.js';
+    import { supabase, BRANCHES } from './auth.js';
 
     let isLogin = true;
+
+    function showMessage(text, type = 'error') {
+        const container = document.getElementById('message-container');
+        const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
+        const bgClass = type === 'success' ? 'success-message' : 'error-message';
+        
+        container.innerHTML = `
+            <div class="${bgClass}">
+                <i class="fas fa-${icon}"></i> ${text}
+            </div>
+        `;
+        
+        setTimeout(() => {
+            container.innerHTML = '';
+        }, 5000);
+    }
 
     window.toggleMode = () => {
         isLogin = !isLogin;
         document.getElementById('auth-title').innerText = isLogin ? "Staff Sign In" : "Staff Registration";
         document.getElementById('register-fields').classList.toggle('hidden', isLogin);
         document.getElementById('forgot-link').classList.toggle('hidden', !isLogin);
-        document.getElementById('main-btn').innerText = isLogin ? "Sign In" : "Register Now";
-        document.getElementById('toggle-text').innerHTML = isLogin ? "New staff? <b>Create Account</b>" : "Already have an account? <b>Sign In</b>";
+        
+        const btnIcon = document.getElementById('main-btn').querySelector('i');
+        const btnSpan = document.getElementById('main-btn').querySelector('span');
+        
+        if (isLogin) {
+            btnIcon.className = 'fas fa-sign-in-alt';
+            btnSpan.innerText = 'Sign In';
+        } else {
+            btnIcon.className = 'fas fa-user-plus';
+            btnSpan.innerText = 'Register Now';
+        }
+        
+        document.getElementById('toggle-text').innerHTML = isLogin 
+            ? 'New staff? <b>Create Account</b>' 
+            : 'Already have an account? <b>Sign In</b>';
     };
 
     // Update branch note based on role selection
@@ -312,10 +469,10 @@
         
         if (role === 'admin') {
             noteText.innerText = 'Administrators can access all branches. Branch selection is for reference only.';
-            branchHint.innerText = 'Branch is for reference - you will have access to all branches';
+            branchHint.innerHTML = '<i class="fas fa-globe"></i> Branch is for reference - you will have access to all branches';
         } else {
             noteText.innerText = 'Cashiers must select their branch. You will only have access to this branch.';
-            branchHint.innerText = 'You will be assigned to this branch';
+            branchHint.innerHTML = '<i class="fas fa-store"></i> You will be assigned to this branch';
         }
     });
 
@@ -327,12 +484,12 @@
         const btn = document.getElementById('main-btn');
 
         if (!email || !password) {
-            alert("Please fill all fields");
+            showMessage("Please fill all fields", 'error');
             return;
         }
 
         btn.disabled = true;
-        btn.innerText = "PROCESSING...";
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> PROCESSING...';
 
         try {
             if (isLogin) {
@@ -347,22 +504,21 @@
                 // Check if user has profile
                 const { data: profile, error: profileError } = await supabase
                     .from('profiles')
-                    .select('*')
+                    .select(`
+                        *,
+                        branches (
+                            name,
+                            code
+                        )
+                    `)
                     .eq('id', data.user.id)
                     .single();
                 
                 if (profileError || !profile) {
-                    // Create profile if it doesn't exist (for legacy users)
-                    const { error: insertError } = await supabase
-                        .from('profiles')
-                        .insert([{
-                            id: data.user.id,
-                            email: email,
-                            role: 'cashier', // Default role
-                            branch_id: BRANCHES.MUTOMO.id // Default branch
-                        }]);
-                    
-                    if (insertError) throw insertError;
+                    showMessage("Profile not found. Please contact admin.", 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+                    return;
                 }
                 
                 await checkRoleAndRedirect(data.user.id);
@@ -370,20 +526,20 @@
             } else {
                 // SIGN UP
                 if (!role) {
-                    alert("Please select your role");
+                    showMessage("Please select your role", 'error');
                     btn.disabled = false;
-                    btn.innerText = "Register Now";
+                    btn.innerHTML = '<i class="fas fa-user-plus"></i> Register Now';
                     return;
                 }
                 
                 if (!branchId) {
-                    alert("Please select your branch");
+                    showMessage("Please select your branch", 'error');
                     btn.disabled = false;
-                    btn.innerText = "Register Now";
+                    btn.innerHTML = '<i class="fas fa-user-plus"></i> Register Now';
                     return;
                 }
 
-                // Sign up the user
+                // Sign up the user - profile will be created by database trigger
                 const { data, error } = await supabase.auth.signUp({ 
                     email, 
                     password,
@@ -391,42 +547,40 @@
                         data: { 
                             role: role, 
                             branch_id: branchId 
-                        }
+                        },
+                        emailRedirectTo: window.location.origin + '/cashier.html'
                     }
                 });
                 
                 if (error) throw error;
 
                 if (data.user) {
-                    // Create profile in profiles table
-                    const { error: profileError } = await supabase
-                        .from('profiles')
-                        .insert([{ 
-                            id: data.user.id, 
-                            role: role, 
-                            email: email,
-                            branch_id: branchId,
-                            full_name: email.split('@')[0]
-                        }]);
-
-                    if (profileError) {
-                        console.error("Profile creation error:", profileError);
-                        alert("Account created but profile setup failed. Please contact admin.");
-                    } else {
-                        alert("Registration successful! Please check your email to confirm your account.");
-                    }
+                    // Don't try to create profile here - the database trigger will handle it
+                    showMessage(
+                        '✅ Registration successful! Please check your email to confirm your account. You will be redirected after confirmation.', 
+                        'success'
+                    );
                     
-                    // Switch back to login mode
-                    window.toggleMode();
+                    // Clear form
                     document.getElementById('email').value = '';
                     document.getElementById('password').value = '';
+                    
+                    // Switch back to login mode after 3 seconds
+                    setTimeout(() => {
+                        window.toggleMode();
+                    }, 3000);
                 }
             }
         } catch (err) {
-            alert(err.message);
+            showMessage(err.message, 'error');
         } finally {
-            btn.disabled = false;
-            btn.innerText = isLogin ? "Sign In" : "Register Now";
+            if (!isLogin) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-user-plus"></i> Register Now';
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+            }
         }
     };
 
@@ -436,7 +590,7 @@
             .select(`
                 role, 
                 branch_id,
-                branches!inner (
+                branches (
                     name,
                     code
                 )
@@ -446,7 +600,7 @@
         
         if (error) {
             console.error("Error fetching profile:", error);
-            alert("Profile not found. Please contact admin.");
+            showMessage("Profile not found. Please contact admin.", 'error');
             return;
         }
         
@@ -457,10 +611,10 @@
             const branchName = profile.branches?.name || '';
             const roleUpper = profile.role.toUpperCase();
             
-            document.getElementById('welcome-name').innerText = `WELCOME ${roleUpper}`;
+            document.getElementById('welcome-name').innerText = `WELCOME ${roleUpper}!`;
             document.getElementById('welcome-role').innerText = profile.role === 'admin' 
                 ? 'Administrator Access - All Branches' 
-                : (branchName ? `Assigned to ${branchName}` : 'Initializing Workspace...');
+                : (branchName ? `Assigned to ${branchName}` : 'Loading workspace...');
             
             // Store session in localStorage for cross-page access
             const session = {
@@ -486,9 +640,9 @@
         });
 
         if (error) {
-            alert("Error: " + error.message);
+            showMessage(error.message, 'error');
         } else {
-            alert("Password reset link has been sent to your email!");
+            showMessage("✅ Password reset link has been sent to your email!", 'success');
         }
     };
 
@@ -500,6 +654,18 @@
         }
     }
     
+    // Check for email confirmation redirect
+    async function handleEmailConfirmation() {
+        const hash = window.location.hash;
+        if (hash && hash.includes('access_token')) {
+            // User just confirmed email, show success message
+            showMessage('✅ Email confirmed! You can now sign in.', 'success');
+            // Clear the hash
+            window.location.hash = '';
+        }
+    }
+    
+    handleEmailConfirmation();
     checkExistingSession();
 </script>
 </body>
