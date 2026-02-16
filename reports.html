@@ -18,6 +18,7 @@
             --text-dim: #64748b;
             --success: #10b981;
             --danger: #ef4444;
+            --tuktuk: #8b5cf6;
             --sidebar-width: 260px;
             --sidebar-collapsed: 70px;
             --border: #e2e8f0;
@@ -445,6 +446,11 @@
             color: var(--primary); 
         }
         
+        .badge.tuktuk {
+            background: var(--tuktuk);
+            color: white;
+        }
+        
         .branch-pill {
             background: #f1f5f9;
             color: var(--text-dim);
@@ -455,6 +461,18 @@
             display: inline-block;
             margin-left: 5px;
         }
+        
+        .category-tag {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            margin-right: 6px;
+        }
+        .cat-gas { background: #10b981; }
+        .cat-spare { background: #4f46e5; }
+        .cat-moto { background: #f59e0b; }
+        .cat-tuktuk { background: #8b5cf6; }
         
         .overlay { 
             position: fixed; 
@@ -520,6 +538,7 @@
         <a href="gas_hub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
         <a href="spares_hub.html" class="nav-link"><i class="fas fa-cogs"></i> <span>Spare Parts Hub</span></a>
         <a href="motorbike_hub.html" class="nav-link"><i class="fas fa-motorcycle"></i> <span>Motorbike Hub</span></a>
+        <a href="tuktuk_hub.html" class="nav-link"><i class="fas fa-car-side"></i> <span>TUKTUK Hub</span></a>
 
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
 
@@ -564,8 +583,6 @@
                 <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
                 <select id="branchSelector" class="branch-select" onchange="handleBranchChange()">
                     <option value="all">🏢 ALL BRANCHES (Consolidated)</option>
-                    <option value="MUT">🏪 MUTOMO BRANCH</option>
-                    <option value="KIT">🏪 KITUI BRANCH</option>
                 </select>
             </div>
             <div class="branch-badge" id="currentBranchBadge">
@@ -607,9 +624,9 @@
                 <span class="text-small" id="stock-split">Orig: 0 | Copy: 0</span>
             </div>
             <div class="metric-card">
-                <span class="metric-label"><i class="fas fa-fire"></i> Gas Status</span>
+                <span class="metric-label"><i class="fas fa-fire"></i> Gas & TUKTUK</span>
                 <span class="metric-val" id="gas-count">0 Full</span>
-                <span class="text-small" id="gas-empty">0 Empty</span>
+                <span class="text-small" id="gas-empty">0 Empty | <span id="tuktuk-count">0 TUKTUK</span></span>
             </div>
         </div>
 
@@ -653,6 +670,7 @@
                     <thead>
                         <tr>
                             <th>Item Name</th>
+                            <th>Category</th>
                             <th>Qty</th>
                             <th>Revenue</th>
                             <th>Net Profit</th>
@@ -661,7 +679,7 @@
                     </thead>
                     <tbody id="sales-mix-body">
                         <tr>
-                            <td colspan="5" style="text-align: center; padding: 30px;">
+                            <td colspan="6" style="text-align: center; padding: 30px;">
                                 <div class="spinner" style="margin: 0 auto;"></div>
                                 Loading data...
                             </td>
@@ -699,10 +717,18 @@
         const { data } = await supabase.from('branches').select('*');
         branches = {};
         branchIdMap = {};
+        
+        // Populate branch selector
+        const selector = document.getElementById('branchSelector');
+        let options = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>';
+        
         data?.forEach(b => {
             branches[b.id] = b;
             branchIdMap[b.code] = b.id;
+            options += `<option value="${b.code}">🏪 ${b.name}</option>`;
         });
+        selector.innerHTML = options;
+        
         console.log("✅ Branches loaded:", branches);
         return branches;
     }
@@ -818,40 +844,17 @@
             
             console.log(`Loaded ${allProducts.length} products, ${allSales.length} sales`);
             
+            // Set default branch selector to user's branch if available
+            if (currentBranch && document.getElementById('branchSelector').value === 'all') {
+                document.getElementById('branchSelector').value = currentBranch.code;
+                selectedBranchId = currentBranch.id;
+                document.getElementById('currentBranchDisplay').textContent = currentBranch.name;
+            }
+            
             applyFilter();
         } catch (error) {
             console.error("Error loading data:", error);
         }
-    }
-
-    window.toggleSidebar = function() {
-        document.getElementById('sidebar').classList.toggle('active');
-        document.getElementById('overlay').classList.toggle('active');
-    };
-
-    async function init() {
-        await loadBranches();
-        await loadUserProfile();
-        
-        // Set today's date
-        const today = new Date();
-        document.getElementById('dateRange').textContent = today.toLocaleDateString('en-GB', { 
-            day: 'numeric', month: 'long', year: 'numeric' 
-        });
-        
-        // Set default branch selector
-        document.getElementById('branchSelector').value = 'all';
-        selectedBranchId = null;
-        
-        await loadData();
-
-        document.getElementById('dateFilter').onchange = (e) => {
-            document.getElementById('customDateRange').style.display = e.target.value === 'custom' ? 'flex' : 'none';
-            applyFilter();
-        };
-        document.getElementById('startDate').onchange = applyFilter;
-        document.getElementById('endDate').onchange = applyFilter;
-        document.getElementById('loadMoreSales').onclick = () => { displayLimit += 15; renderUI(); };
     }
 
     function applyFilter() {
@@ -880,10 +883,30 @@
         renderUI();
     }
 
+    function getCategoryDisplay(category) {
+        const catMap = {
+            'Gas': 'Gas',
+            'Spare Part': 'Spare',
+            'Motorbike': 'Moto',
+            'Tuktuk': 'TUKTUK'
+        };
+        return catMap[category] || 'Other';
+    }
+
+    function getCategoryColor(category) {
+        const colorMap = {
+            'Gas': '#10b981',
+            'Spare Part': '#4f46e5',
+            'Motorbike': '#f59e0b',
+            'Tuktuk': '#8b5cf6'
+        };
+        return colorMap[category] || '#64748b';
+    }
+
     function renderUI() {
         let totalRev = 0, totalProf = 0, cashRev = 0, kcbRev = 0;
         let cashProf = 0, kcbProf = 0;
-        let invVal = 0, origQty = 0, copyQty = 0, gasFull = 0, gasEmpty = 0;
+        let invVal = 0, origQty = 0, copyQty = 0, gasFull = 0, gasEmpty = 0, tuktukCount = 0;
 
         // Inventory Stats
         allProducts.forEach(p => {
@@ -894,18 +917,27 @@
                 gasFull += p.stock_quantity; 
                 gasEmpty += (p.empty_quantity || 0); 
             }
+            if(p.category === 'Tuktuk') {
+                tuktukCount += p.stock_quantity;
+            }
         });
 
-        // Category & Item Summary Containers
+        // Category & Item Summary Containers - Now including TUKTUK
         const categories = { 
             Gas: { profit: 0, revenue: 0 }, 
-            Spare: { profit: 0, revenue: 0 }, 
+            Spare: { profit: 0, revenue: 0 },
+            Motorbike: { profit: 0, revenue: 0 },
+            Tuktuk: { profit: 0, revenue: 0 },
             Other: { profit: 0, revenue: 0 } 
         };
         const itemSummary = {};
 
         filteredSales.forEach(s => {
-            const p = allProducts.find(prod => prod.id === s.product_id) || { cost_price: 0, category: 'Other' };
+            const p = allProducts.find(prod => prod.id === s.product_id) || { 
+                cost_price: 0, 
+                category: 'Other',
+                part_type: 'N/A'
+            };
             const itemProfit = (s.unit_price - p.cost_price) * s.quantity;
             const branch = branches[p.branch_id] || { code: '--' };
 
@@ -921,18 +953,31 @@
                 kcbProf += itemProfit;
             }
 
-            // Category Logic
+            // Category Logic - Map to our categories
             let catKey = 'Other';
             if (p.category === 'Gas') catKey = 'Gas';
             else if (p.category === 'Spare Part') catKey = 'Spare';
+            else if (p.category === 'Motorbike') catKey = 'Motorbike';
+            else if (p.category === 'Tuktuk') catKey = 'Tuktuk';
+            
             categories[catKey].profit += itemProfit;
             categories[catKey].revenue += s.total_amount;
 
             // Item Logic
-            if (!itemSummary[s.item_name]) itemSummary[s.item_name] = { qty: 0, rev: 0, prof: 0, branch: branch.code };
-            itemSummary[s.item_name].qty += s.quantity;
-            itemSummary[s.item_name].rev += s.total_amount;
-            itemSummary[s.item_name].prof += itemProfit;
+            const itemKey = `${s.item_name} (${getCategoryDisplay(p.category)})`;
+            if (!itemSummary[itemKey]) {
+                itemSummary[itemKey] = { 
+                    qty: 0, 
+                    rev: 0, 
+                    prof: 0, 
+                    branch: branch.code,
+                    category: p.category,
+                    category_display: getCategoryDisplay(p.category)
+                };
+            }
+            itemSummary[itemKey].qty += s.quantity;
+            itemSummary[itemKey].rev += s.total_amount;
+            itemSummary[itemKey].prof += itemProfit;
         });
 
         // Update Top Cards
@@ -945,43 +990,74 @@
         document.getElementById('total-val').innerText = `Ksh ${invVal.toLocaleString()}`;
         document.getElementById('stock-split').innerText = `Original: ${origQty} | Copy: ${copyQty}`;
         document.getElementById('gas-count').innerText = `${gasFull} Full Cylinders`;
-        document.getElementById('gas-empty').innerText = `${gasEmpty} Empty Cylinders`;
+        document.getElementById('gas-empty').innerHTML = `${gasEmpty} Empty | <span style="color: var(--tuktuk);">${tuktukCount} TUKTUK</span>`;
 
-        // Render Category Table
-        document.getElementById('profit-breakdown-body').innerHTML = Object.entries(categories).map(([name, val]) => {
-            const margin = val.revenue > 0 ? ((val.profit / val.revenue) * 100).toFixed(1) : 0;
-            return `<tr>
-                <td><b>${name}</b></td>
-                <td>Ksh ${val.revenue.toLocaleString()}</td>
-                <td class="text-profit">Ksh ${val.profit.toLocaleString()}</td>
-                <td><span class="badge">${margin}%</span></td>
-            </tr>`;
-        }).join('');
+        // Render Category Table - Now including all categories
+        document.getElementById('profit-breakdown-body').innerHTML = Object.entries(categories)
+            .filter(([_, val]) => val.revenue > 0 || val.profit > 0)
+            .map(([name, val]) => {
+                const margin = val.revenue > 0 ? ((val.profit / val.revenue) * 100).toFixed(1) : 0;
+                const colorClass = name === 'Tuktuk' ? 'tuktuk' : '';
+                return `<tr>
+                    <td>
+                        <span class="category-tag cat-${name.toLowerCase()}"></span>
+                        <b>${name === 'Tuktuk' ? '🚖 TUKTUK' : name}</b>
+                    </td>
+                    <td>Ksh ${val.revenue.toLocaleString()}</td>
+                    <td class="text-profit">Ksh ${val.profit.toLocaleString()}</td>
+                    <td><span class="badge ${colorClass}">${margin}%</span></td>
+                </tr>`;
+            }).join('');
 
-        // Render Top Items Table
+        // Render Top Items Table - Now with category column
         const sortedItems = Object.entries(itemSummary).sort((a,b) => b[1].prof - a[1].prof);
-        document.getElementById('sales-mix-body').innerHTML = sortedItems.slice(0, displayLimit).map(([name, data]) => `
+        document.getElementById('sales-mix-body').innerHTML = sortedItems.slice(0, displayLimit).map(([name, data]) => {
+            const categoryColor = getCategoryColor(data.category);
+            const categoryBadge = data.category === 'Tuktuk' ? 'badge tuktuk' : 'badge';
+            
+            return `
             <tr>
-                <td><b>${name}</b></td>
+                <td><b>${name.replace(/\s*\([^)]*\)/, '')}</b></td>
+                <td><span class="${categoryBadge}" style="background: ${categoryColor}; color: white;">${data.category_display}</span></td>
                 <td>${data.qty}</td>
                 <td>Ksh ${data.rev.toLocaleString()}</td>
                 <td class="text-profit" style="font-weight:800;">Ksh ${data.prof.toLocaleString()}</td>
                 <td><span class="branch-pill">${data.branch}</span></td>
             </tr>
-        `).join('');
+        `}).join('');
         
         document.getElementById('loadMoreSales').style.display = displayLimit >= sortedItems.length ? 'none' : 'block';
 
-        // Render Chart
+        // Render Chart - Now including TUKTUK
         if (chartInstance) chartInstance.destroy();
         const ctx = document.getElementById('profitChart').getContext('2d');
+        
+        // Filter out categories with zero profit
+        const chartData = {
+            labels: [],
+            profits: [],
+            colors: []
+        };
+        
+        Object.entries(categories).forEach(([name, val]) => {
+            if (val.profit > 0) {
+                chartData.labels.push(name === 'Tuktuk' ? 'TUKTUK' : name);
+                chartData.profits.push(val.profit);
+                chartData.colors.push(getCategoryColor(
+                    name === 'Spare' ? 'Spare Part' : 
+                    name === 'Moto' ? 'Motorbike' : 
+                    name === 'Tuktuk' ? 'Tuktuk' : name
+                ));
+            }
+        });
+        
         chartInstance = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: ['Gas', 'Spares', 'Others'],
+                labels: chartData.labels,
                 datasets: [{
-                    data: [categories.Gas.profit, categories.Spare.profit, categories.Other.profit],
-                    backgroundColor: ['#10b981', '#4f46e5', '#f59e0b'],
+                    data: chartData.profits,
+                    backgroundColor: chartData.colors,
                     borderWidth: 0
                 }]
             },
@@ -1001,11 +1077,36 @@
         });
     }
 
+    document.getElementById('dateFilter').onchange = (e) => {
+        document.getElementById('customDateRange').style.display = e.target.value === 'custom' ? 'flex' : 'none';
+        applyFilter();
+    };
+    document.getElementById('startDate').onchange = applyFilter;
+    document.getElementById('endDate').onchange = applyFilter;
+    document.getElementById('loadMoreSales').onclick = () => { displayLimit += 15; renderUI(); };
+
     window.handleLogout = async () => { 
         localStorage.removeItem('pos_session');
         await supabase.auth.signOut(); 
         window.location.href = 'index.html'; 
     };
+
+    async function init() {
+        await loadBranches();
+        await loadUserProfile();
+        
+        // Set today's date
+        const today = new Date();
+        document.getElementById('dateRange').textContent = today.toLocaleDateString('en-GB', { 
+            day: 'numeric', month: 'long', year: 'numeric' 
+        });
+        
+        // Set default branch selector
+        document.getElementById('branchSelector').value = 'all';
+        selectedBranchId = null;
+        
+        await loadData();
+    }
 
     init();
 </script>
