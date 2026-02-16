@@ -687,26 +687,21 @@
             </div>
 
             <div id="type-container">
-                <label><i class="fas fa-cog"></i> Part Type</label>
+                <label><i class="fas fa-cog"></i> 
+                    <span id="type-label">Part Type</span>
+                </label>
                 <select id="prod-type">
                     <option value="Original">Original</option>
                     <option value="Copy">Copy</option>
                     <option value="N/A">N/A</option>
+                    <option value="Passenger">Passenger</option>
+                    <option value="Cargo">Cargo</option>
                 </select>
             </div>
 
             <div id="weight-container" style="display:none;">
                 <label><i class="fas fa-weight-scale"></i> Weight (Gas)</label>
                 <input type="text" id="prod-weight" placeholder="e.g. 6kg">
-            </div>
-
-            <div id="tuktuk-container" style="display:none;">
-                <label><i class="fas fa-car-side"></i> TUKTUK Type</label>
-                <select id="prod-tuktuk-type">
-                    <option value="Passenger">Passenger</option>
-                    <option value="Cargo">Cargo</option>
-                    <option value="Spare">Spare Part</option>
-                </select>
             </div>
 
             <div><label><i class="fas fa-coins"></i> Cost Price</label><input type="number" id="prod-cost" placeholder="0"></div>
@@ -891,22 +886,40 @@
 
     window.toggleFields = () => {
         const cat = document.getElementById('prod-category').value;
+        const typeLabel = document.getElementById('type-label');
+        const typeSelect = document.getElementById('prod-type');
         
         // Hide all conditional fields first
-        document.getElementById('type-container').style.display = 'none';
         document.getElementById('weight-container').style.display = 'none';
-        document.getElementById('tuktuk-container').style.display = 'none';
         document.getElementById('empty-container').style.display = 'none';
         
-        // Show appropriate fields based on category
+        // Update type select options based on category
         if (cat === 'Gas') {
             document.getElementById('weight-container').style.display = 'block';
             document.getElementById('empty-container').style.display = 'block';
+            typeLabel.textContent = 'Part Type';
+            // Reset type select for gas
+            typeSelect.innerHTML = `
+                <option value="Original">Original</option>
+                <option value="Copy">Copy</option>
+                <option value="N/A">N/A</option>
+            `;
         } else if (cat === 'Tuktuk') {
-            document.getElementById('tuktuk-container').style.display = 'block';
-            document.getElementById('type-container').style.display = 'block';
+            typeLabel.textContent = 'TUKTUK Type';
+            // Update type select for tuktuk
+            typeSelect.innerHTML = `
+                <option value="Passenger">Passenger</option>
+                <option value="Cargo">Cargo</option>
+                <option value="Spare">Spare Part</option>
+            `;
         } else {
-            document.getElementById('type-container').style.display = 'block';
+            typeLabel.textContent = 'Part Type';
+            // Reset type select for other categories
+            typeSelect.innerHTML = `
+                <option value="Original">Original</option>
+                <option value="Copy">Copy</option>
+                <option value="N/A">N/A</option>
+            `;
         }
     }
 
@@ -944,6 +957,14 @@
             
             const branchCode = p.branches?.code || branches[p.branch_id]?.code || '--';
             
+            // Determine display type
+            let typeDisplay = p.part_type;
+            if (isTuktuk && (p.part_type === 'Passenger' || p.part_type === 'Cargo' || p.part_type === 'Spare')) {
+                typeDisplay = p.part_type;
+            } else if (isGas) {
+                typeDisplay = p.weight_category || 'Gas';
+            }
+            
             return `
             <tr>
                 <td data-label="Product">
@@ -967,7 +988,7 @@
                 <td data-label="Type">
                     <span class="badge ${badgeClass}">
                         <i class="fas ${icon}"></i> 
-                        ${isGas ? (p.weight_category || 'Gas') : (isTuktuk ? 'TUKTUK' : p.part_type)}
+                        ${typeDisplay}
                     </span>
                 </td>
                 <td data-label="Actions">
@@ -988,7 +1009,6 @@
         document.getElementById('prod-category').value = "Spare Part";
         document.getElementById('prod-type').value = "Original";
         document.getElementById('prod-weight').value = "";
-        document.getElementById('prod-tuktuk-type').value = "Passenger";
         document.getElementById('prod-cost').value = "";
         document.getElementById('prod-sell').value = "";
         document.getElementById('prod-min-sell').value = "";
@@ -1008,9 +1028,22 @@
         document.getElementById('prod-name').value = p.name;
         document.getElementById('prod-supplier').value = p.supplier_id || "";
         document.getElementById('prod-category').value = p.category;
-        document.getElementById('prod-type').value = p.part_type || "N/A";
+        
+        // Set the type field based on category
+        if (p.category === 'Tuktuk') {
+            // For Tuktuk, we need to set the type select with the appropriate options first
+            const typeSelect = document.getElementById('prod-type');
+            typeSelect.innerHTML = `
+                <option value="Passenger">Passenger</option>
+                <option value="Cargo">Cargo</option>
+                <option value="Spare">Spare Part</option>
+            `;
+            document.getElementById('prod-type').value = p.part_type || "Passenger";
+        } else {
+            document.getElementById('prod-type').value = p.part_type || "N/A";
+        }
+        
         document.getElementById('prod-weight').value = p.weight_category || "";
-        document.getElementById('prod-tuktuk-type').value = p.tuktuk_type || "Passenger";
         document.getElementById('prod-cost').value = p.cost_price;
         document.getElementById('prod-sell').value = p.selling_price;
         document.getElementById('prod-min-sell').value = p.min_selling_price || 0;
@@ -1038,7 +1071,6 @@
             category: category,
             part_type: document.getElementById('prod-type').value,
             weight_category: category === 'Gas' ? document.getElementById('prod-weight').value : null,
-            tuktuk_type: category === 'Tuktuk' ? document.getElementById('prod-tuktuk-type').value : null,
             cost_price: parseFloat(document.getElementById('prod-cost').value) || 0,
             selling_price: parseFloat(document.getElementById('prod-sell').value) || 0,
             min_selling_price: parseFloat(document.getElementById('prod-min-sell').value) || 0,
