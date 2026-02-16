@@ -18,6 +18,7 @@
             --text-dim: #64748b;
             --success: #10b981; 
             --danger: #ef4444;
+            --warning: #f59e0b;
             --sidebar-width: 260px;
             --sidebar-collapsed: 70px;
             --header-height: 70px;
@@ -273,18 +274,101 @@
             box-shadow: 0 4px 10px rgba(79,70,229,0.3);
         }
 
+        /* --- SUMMARY BANNER --- */
         .summary-banner {
             background: white; 
             border: 1px solid var(--border); 
             border-radius: 16px;
             padding: 20px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
             margin-bottom: 20px; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin-top: 5px;
+        }
+
+        .stat-value.in { color: var(--success); }
+        .stat-value.out { color: var(--danger); }
+        .stat-value.net { color: var(--primary); }
+
+        /* --- FILTER BAR --- */
+        .filter-bar {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            display: flex;
             flex-wrap: wrap;
             gap: 15px;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            padding: 10px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            background: white;
+            min-width: 150px;
+        }
+
+        .search-input {
+            padding: 10px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            min-width: 250px;
+            flex: 1;
+        }
+
+        .reset-btn {
+            background: #f1f5f9;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .reset-btn:hover {
+            background: #e2e8f0;
         }
 
         .card { 
@@ -372,10 +456,23 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        .loading-skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            height: 20px;
+            border-radius: 4px;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
         @media (max-width: 1024px) {
             .table-responsive { display: none; }
             .mobile-list { display: block; }
-            .summary-banner { flex-direction: column; text-align: center; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .search-input { width: 100%; }
         }
     </style>
 </head>
@@ -443,20 +540,49 @@
 
     <div class="container">
         <div class="summary-banner">
-            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-                <div>
-                    <small style="color:var(--text-dim); font-weight:800; text-transform:uppercase; font-size:0.65rem;">
-                        <i class="fas fa-scale-balanced"></i> Ledger Balance
-                    </small>
-                    <span id="net-balance" style="font-size:1.7rem; font-weight:800; display:block; margin-top: 4px;">Ksh 0</span>
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                    <span class="branch-badge" id="branchDisplay">
+                        <i class="fas fa-store"></i> <span>Loading...</span>
+                    </span>
                 </div>
-                <span class="branch-badge" id="branchDisplay">
-                    <i class="fas fa-store"></i> <span>Loading...</span>
-                </span>
+                <div id="record-count" style="font-weight:700; color:var(--primary); font-size:0.75rem; background: #eef2ff; padding: 8px 16px; border-radius: 20px;">
+                    0 Records
+                </div>
             </div>
-            <div id="record-count" style="font-weight:700; color:var(--primary); font-size:0.75rem; background: #eef2ff; padding: 8px 16px; border-radius: 20px;">
-                0 Records
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Money In</div>
+                    <div class="stat-value in" id="total-in">Ksh 0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Money Out</div>
+                    <div class="stat-value out" id="total-out">Ksh 0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Net Balance</div>
+                    <div class="stat-value net" id="net-balance">Ksh 0</div>
+                </div>
             </div>
+        </div>
+
+        <div class="filter-bar">
+            <div class="filter-group">
+                <i class="fas fa-filter" style="color: var(--text-dim);"></i>
+                <select id="typeFilter" class="filter-select">
+                    <option value="all">All Transactions</option>
+                    <option value="in">Money In Only</option>
+                    <option value="out">Money Out Only</option>
+                </select>
+            </div>
+            <div class="filter-group" style="flex: 1;">
+                <i class="fas fa-search" style="color: var(--text-dim);"></i>
+                <input type="text" id="searchInput" class="search-input" placeholder="Search by description or category...">
+            </div>
+            <button id="resetFilters" class="reset-btn">
+                <i class="fas fa-undo"></i> Reset
+            </button>
         </div>
 
         <div class="card">
@@ -495,11 +621,14 @@
 <script type="module">
     import { supabase } from './auth.js';
     
-    let limit = 20;
+    let limit = 50; // Increased for faster initial load
     let allTransactions = [];
+    let filteredTransactions = [];
     let currentUser = null;
     let currentBranchId = null;
     let currentBranch = null;
+    let typeFilter = 'all';
+    let searchTerm = '';
 
     // ==================== SIDEBAR FUNCTIONS ====================
     window.toggleMenu = () => {
@@ -519,6 +648,7 @@
             
             currentUser = user;
             
+            // Use maybeSingle() instead of single() to avoid errors
             const { data: profile, error } = await supabase
                 .from('profiles')
                 .select(`
@@ -531,9 +661,13 @@
                     )
                 `)
                 .eq('id', user.id)
-                .single();
+                .maybeSingle();
             
             if (error) throw error;
+            if (!profile) {
+                console.error("No profile found");
+                return null;
+            }
             
             currentBranchId = profile.branch_id;
             currentBranch = profile.branches;
@@ -571,26 +705,55 @@
         location.href = 'index.html'; 
     };
 
-    async function fetchData() {
+    // Apply filters to transactions
+    function applyFilters() {
+        filteredTransactions = allTransactions.filter(transaction => {
+            // Type filter
+            if (typeFilter !== 'all') {
+                const isIn = transaction.type === 'Money In' || transaction.type === 'In' || transaction.type === 'IN';
+                if (typeFilter === 'in' && !isIn) return false;
+                if (typeFilter === 'out' && isIn) return false;
+            }
+            
+            // Search filter
+            if (searchTerm) {
+                const term = searchTerm.toLowerCase();
+                const description = (transaction.description || '').toLowerCase();
+                const category = (transaction.category || '').toLowerCase();
+                if (!description.includes(term) && !category.includes(term)) {
+                    return false;
+                }
+            }
+            
+            return true;
+        });
+        
+        renderTransactions(filteredTransactions);
+    }
+
+    async function fetchAllData() {
         try {
             if (!currentBranchId) {
                 console.error("No branch ID found");
                 return;
             }
 
+            // Fetch all transactions at once for accurate totals
             const { data, error } = await supabase
                 .from('cash_transactions')
                 .select('*')
                 .eq('branch_id', currentBranchId)
-                .order('created_at', { ascending: false })
-                .limit(limit);
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
 
             allTransactions = data || [];
             console.log(`Loaded ${allTransactions.length} transactions for branch ${currentBranch?.name}`);
             
-            renderTransactions(allTransactions);
+            // Initial display with limit
+            filteredTransactions = allTransactions;
+            renderTransactions(allTransactions.slice(0, limit));
+            
         } catch (error) {
             console.error("Error fetching data:", error);
             document.getElementById('data-body-desktop').innerHTML = `
@@ -603,8 +766,34 @@
         }
     }
 
+    function calculateTotals(transactions) {
+        let totalIn = 0;
+        let totalOut = 0;
+        
+        transactions.forEach(t => {
+            const isIn = t.type === 'Money In' || t.type === 'In' || t.type === 'IN';
+            const amount = parseFloat(t.amount || 0);
+            
+            if (isIn) {
+                totalIn += amount;
+            } else {
+                totalOut += amount;
+            }
+        });
+        
+        const net = totalIn - totalOut;
+        
+        document.getElementById('total-in').innerHTML = `Ksh ${totalIn.toLocaleString()}`;
+        document.getElementById('total-out').innerHTML = `Ksh ${totalOut.toLocaleString()}`;
+        
+        const netEl = document.getElementById('net-balance');
+        netEl.innerHTML = `Ksh ${net.toLocaleString()}`;
+        netEl.style.color = net >= 0 ? 'var(--success)' : 'var(--danger)';
+    }
+
     function renderTransactions(transactions) {
-        let net = 0;
+        calculateTotals(allTransactions); // Calculate totals from all transactions
+        
         let desktopHTML = '';
         let mobileHTML = '';
 
@@ -613,26 +802,20 @@
                 <tr>
                     <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-dim);">
                         <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                        No transactions found
+                        No transactions match your filters
                     </td>
                 </tr>
             `;
             mobileHTML = `
                 <div style="text-align: center; padding: 40px; color: var(--text-dim);">
                     <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                    <p>No transactions found</p>
+                    <p>No transactions match your filters</p>
                 </div>
             `;
         } else {
             transactions.forEach(t => {
                 const isMoneyIn = t.type === 'Money In' || t.type === 'In' || t.type === 'IN';
                 const amount = parseFloat(t.amount || 0);
-                
-                if (isMoneyIn) {
-                    net += amount;
-                } else {
-                    net -= amount;
-                }
                 
                 const dt = new Date(t.created_at);
                 const date = dt.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
@@ -676,24 +859,49 @@
         document.getElementById('data-body-desktop').innerHTML = desktopHTML;
         document.getElementById('data-body-mobile').innerHTML = mobileHTML;
         
-        const netEl = document.getElementById('net-balance');
-        netEl.innerHTML = `Ksh ${net.toLocaleString()}`;
-        netEl.style.color = net >= 0 ? 'var(--success)' : 'var(--danger)';
-        
         document.getElementById('record-count').innerHTML = `
-            <i class="fas fa-list"></i> ${transactions.length} Transaction${transactions.length !== 1 ? 's' : ''}
+            <i class="fas fa-list"></i> ${transactions.length} Transaction${transactions.length !== 1 ? 's' : ''} (Filtered)
         `;
     }
 
+    // Event listeners for filters
+    document.getElementById('typeFilter').addEventListener('change', (e) => {
+        typeFilter = e.target.value;
+        applyFilters();
+    });
+
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+        searchTerm = e.target.value;
+        applyFilters();
+    });
+
+    document.getElementById('resetFilters').addEventListener('click', () => {
+        typeFilter = 'all';
+        searchTerm = '';
+        document.getElementById('typeFilter').value = 'all';
+        document.getElementById('searchInput').value = '';
+        applyFilters();
+    });
+
     document.getElementById('loadMore').addEventListener('click', () => { 
-        limit += 20; 
-        fetchData(); 
+        limit += 50;
+        renderTransactions(filteredTransactions.slice(0, limit));
     });
 
     async function init() {
+        // Show loading skeleton
+        document.getElementById('data-body-desktop').innerHTML = `
+            <tr>
+                <td colspan="5" style="padding: 40px;">
+                    <div class="loading-skeleton" style="width: 100%; height: 20px; margin-bottom: 10px;"></div>
+                    <div class="loading-skeleton" style="width: 80%; height: 20px;"></div>
+                </td>
+            </tr>
+        `;
+        
         const profile = await loadUserProfile();
         if (profile) {
-            await fetchData();
+            await fetchAllData();
         }
     }
 
