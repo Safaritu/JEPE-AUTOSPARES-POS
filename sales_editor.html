@@ -346,7 +346,7 @@
         table { 
             width: 100%; 
             border-collapse: collapse; 
-            min-width: 1000px;
+            min-width: 1100px; /* Increased to accommodate new column */
         }
         
         th { 
@@ -424,6 +424,31 @@
         .badge-tuktuk { 
             background: #ede9fe; 
             color: #6d28d9; 
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .category-gas {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+        .category-spare {
+            background: #dcfce7;
+            color: #15803d;
+        }
+        .category-moto {
+            background: #e0e7ff;
+            color: #4338ca;
+        }
+        .category-tuktuk {
+            background: #ede9fe;
+            color: #6d28d9;
         }
 
         .branch-pill {
@@ -646,6 +671,7 @@
                 <thead>
                     <tr>
                         <th>Product Details</th>
+                        <th>Category</th>
                         <th>Supplier</th>
                         <th>Branch</th>
                         <th>Stock Levels</th>
@@ -656,7 +682,7 @@
                 </thead>
                 <tbody id="product-list-body">
                     <tr>
-                        <td colspan="7" style="text-align:center; padding:40px;">
+                        <td colspan="8" style="text-align:center; padding:40px;">
                             <div class="spinner" style="margin: 0 auto;"></div>
                             Loading products...
                         </td>
@@ -875,7 +901,7 @@
             console.error("Error fetching products:", error);
             document.getElementById('product-list-body').innerHTML = `
                 <tr>
-                    <td colspan="7" style="text-align:center; padding:40px; color: var(--danger);">
+                    <td colspan="8" style="text-align:center; padding:40px; color: var(--danger);">
                         <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
                         Error loading products: ${error.message}
                     </td>
@@ -923,12 +949,42 @@
         }
     }
 
+    function getCategoryBadgeClass(category) {
+        switch(category) {
+            case 'Gas':
+                return 'category-gas';
+            case 'Spare Part':
+                return 'category-spare';
+            case 'Motorbike':
+                return 'category-moto';
+            case 'Tuktuk':
+                return 'category-tuktuk';
+            default:
+                return '';
+        }
+    }
+
+    function getCategoryIcon(category) {
+        switch(category) {
+            case 'Gas':
+                return 'fa-fire';
+            case 'Spare Part':
+                return 'fa-cogs';
+            case 'Motorbike':
+                return 'fa-motorcycle';
+            case 'Tuktuk':
+                return 'fa-car-side';
+            default:
+                return 'fa-box';
+        }
+    }
+
     function renderTable(data) {
         if (data.length === 0) {
             const branchName = selectedBranchId ? branches[selectedBranchId]?.name : (currentBranch?.name || 'this branch');
             document.getElementById('product-list-body').innerHTML = `
                 <tr>
-                    <td colspan="7" style="text-align:center; padding:40px; color: var(--text-dim);">
+                    <td colspan="8" style="text-align:center; padding:40px; color: var(--text-dim);">
                         <i class="fas fa-box-open" style="font-size: 2rem; margin-bottom: 10px;"></i>
                         No products found for ${branchName}
                     </td>
@@ -965,10 +1021,19 @@
                 typeDisplay = p.weight_category || 'Gas';
             }
             
+            // Get category badge class
+            const categoryBadgeClass = getCategoryBadgeClass(p.category);
+            const categoryIcon = getCategoryIcon(p.category);
+            
             return `
             <tr>
                 <td data-label="Product">
                     <div style="font-weight:700; color:var(--primary)">${p.name}</div>
+                </td>
+                <td data-label="Category">
+                    <span class="category-badge ${categoryBadgeClass}">
+                        <i class="fas ${categoryIcon}"></i> ${p.category}
+                    </span>
                 </td>
                 <td data-label="Supplier"><small><i class="fas fa-truck"></i> ${p.suppliers?.name || '---'}</small></td>
                 <td data-label="Branch">
