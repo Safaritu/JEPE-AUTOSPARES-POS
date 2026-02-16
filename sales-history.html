@@ -16,7 +16,9 @@
             --text: #1e293b; 
             --text-dim: #64748b;
             --border: #e2e8f0; 
-            --green: #10b981; 
+            --success: #10b981; 
+            --danger: #ef4444;
+            --warning: #f59e0b;
             --sidebar-width: 260px;
             --sidebar-collapsed: 70px;
             --primary: #4f46e5;
@@ -305,7 +307,122 @@
             font-weight: 500;
         }
 
-        /* --- SEARCH & FILTERS --- */
+        /* --- SUMMARY CARDS --- */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .summary-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .summary-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .summary-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .summary-value.success {
+            color: var(--success);
+        }
+
+        .summary-value.primary {
+            color: var(--primary);
+        }
+
+        .summary-value.warning {
+            color: var(--warning);
+        }
+
+        .summary-value.danger {
+            color: var(--danger);
+        }
+
+        .summary-detail {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin-top: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* --- FILTER BAR --- */
+        .filter-bar {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-group i {
+            color: var(--text-dim);
+            width: 20px;
+        }
+
+        .filter-select, .filter-input {
+            padding: 10px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            background: white;
+            width: 100%;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .filter-select:focus, .filter-input:focus {
+            border-color: var(--primary);
+        }
+
+        .reset-btn {
+            background: #f1f5f9;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .reset-btn:hover {
+            background: #e2e8f0;
+        }
+
+        /* --- SEARCH --- */
         .search-input {
             width: 100%; 
             padding: 16px; 
@@ -425,8 +542,14 @@
             display: inline-block;
         }
         
+        .badge-cash { background: #dcfce7; color: #166534; }
+        .badge-mpesa { background: #fee2e2; color: #991b1b; }
+        .badge-kcb { background: #e0e7ff; color: #4338ca; }
+        .badge-bank { background: #fef3c7; color: #92400e; }
+        .badge-debt { background: #f1f5f9; color: #475569; }
+        
         .profit-text { 
-            color: var(--green); 
+            color: var(--success); 
             font-weight: 700; 
         }
         
@@ -500,6 +623,7 @@
         <a href="gas_hub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
         <a href="spares_hub.html" class="nav-link"><i class="fas fa-cogs"></i> <span>Spare Parts Hub</span></a>
         <a href="motorbike_hub.html" class="nav-link"><i class="fas fa-motorcycle"></i> <span>Motorbike Hub</span></a>
+        <a href="tuktuk_hub.html" class="nav-link"><i class="fas fa-car-side"></i> <span>TUKTUK Hub</span></a>
 
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
 
@@ -539,8 +663,8 @@
 
     <div class="container">
         <div style="margin-bottom: 25px;">
-            <h2 style="margin:0; font-weight:800; font-size: 1.5rem; letter-spacing: -1px;">Recent Transactions</h2>
-            <p style="color:var(--text-dim); margin-top:5px;">Full history of items sold across all categories.</p>
+            <h2 style="margin:0; font-weight:800; font-size: 1.5rem; letter-spacing: -1px;">Sales Transactions</h2>
+            <p style="color:var(--text-dim); margin-top:5px;">Complete history of all sales across all branches</p>
         </div>
 
         <!-- Branch Selector -->
@@ -549,8 +673,6 @@
                 <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
                 <select id="branchSelector" class="branch-select" onchange="handleBranchChange()">
                     <option value="all">🏢 ALL BRANCHES (Consolidated)</option>
-                    <option value="MUT">🏪 MUTOMO BRANCH</option>
-                    <option value="KIT">🏪 KITUI BRANCH</option>
                 </select>
             </div>
             <div class="branch-badge" id="currentBranchBadge">
@@ -560,7 +682,85 @@
             <span class="date-range" id="dateRange"></span>
         </div>
 
-        <input type="text" id="salesSearch" class="search-input" placeholder="🔍 Search by item, payment, or staff...">
+        <!-- Summary Cards -->
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="summary-label">Total Sales</div>
+                <div class="summary-value primary" id="totalSales">Ksh 0</div>
+                <div class="summary-detail">
+                    <span>All transactions</span>
+                    <span id="totalTransactions">0</span>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Total Profit</div>
+                <div class="summary-value success" id="totalProfit">Ksh 0</div>
+                <div class="summary-detail">
+                    <span>Average margin</span>
+                    <span id="avgMargin">0%</span>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Cash Sales</div>
+                <div class="summary-value" id="cashSales">Ksh 0</div>
+                <div class="summary-detail">
+                    <span>Transactions</span>
+                    <span id="cashCount">0</span>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">KCB Paybill</div>
+                <div class="summary-value" id="kcbSales">Ksh 0</div>
+                <div class="summary-detail">
+                    <span>Transactions</span>
+                    <span id="kcbCount">0</span>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">M-Pesa</div>
+                <div class="summary-value" id="mpesaSales">Ksh 0</div>
+                <div class="summary-detail">
+                    <span>Transactions</span>
+                    <span id="mpesaCount">0</span>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Items Sold</div>
+                <div class="summary-value warning" id="totalItems">0</div>
+                <div class="summary-detail">
+                    <span>Avg per sale</span>
+                    <span id="avgItems">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <div class="filter-group">
+                <i class="fas fa-calendar"></i>
+                <input type="text" id="dateSearch" class="filter-input" placeholder="Search by date (e.g. 16 Feb 2026)">
+            </div>
+            <div class="filter-group">
+                <i class="fas fa-filter"></i>
+                <select id="paymentFilter" class="filter-select">
+                    <option value="all">All Payment Methods</option>
+                    <option value="Cash">Cash</option>
+                    <option value="KCB Paybill">KCB Paybill</option>
+                    <option value="Mpesa">M-Pesa</option>
+                    <option value="Bank">Bank</option>
+                    <option value="Debt">Debt</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <i class="fas fa-search"></i>
+                <input type="text" id="itemSearch" class="filter-input" placeholder="Search by item name...">
+            </div>
+            <button id="resetFilters" class="reset-btn">
+                <i class="fas fa-undo"></i> Reset
+            </button>
+        </div>
+
+        <input type="text" id="salesSearch" class="search-input" placeholder="🔍 Quick search by item, category, or payment method...">
 
         <div class="data-card-container">
             <table id="sales-table">
@@ -592,14 +792,21 @@
 <script type="module">
     import { supabase } from './auth.js';
     
-    let limit = 25;
+    let limit = 50;
     let allSales = [];
+    let filteredSales = [];
     let currentUser = null;
     let currentBranchId = null;
     let currentBranch = null;
     let selectedBranchId = null;
     let branches = {};
     let branchIdMap = {};
+
+    // Filter states
+    let paymentFilter = 'all';
+    let dateSearchTerm = '';
+    let itemSearchTerm = '';
+    let quickSearchTerm = '';
 
     // ==================== SIDEBAR FUNCTION ====================
     window.toggleMenu = function() {
@@ -613,11 +820,17 @@
         const { data } = await supabase.from('branches').select('*');
         branches = {};
         branchIdMap = {};
+        
+        // Populate branch selector
+        const selector = document.getElementById('branchSelector');
+        let options = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>';
         data?.forEach(b => {
             branches[b.id] = b;
             branchIdMap[b.code] = b.id;
+            options += `<option value="${b.code}">🏪 ${b.name}</option>`;
         });
-        console.log("✅ Branches loaded:", branches);
+        selector.innerHTML = options;
+        
         return branches;
     }
 
@@ -647,7 +860,7 @@
                     )
                 `)
                 .eq('id', user.id)
-                .single();
+                .maybeSingle();
             
             if (error) throw error;
             
@@ -682,9 +895,6 @@
         const branchDisplay = document.getElementById('currentBranchDisplay');
         const dateRange = document.getElementById('dateRange');
         
-        console.log("========== BRANCH CHANGE ==========");
-        console.log("Selected code:", selectedCode);
-        
         if (selectedCode === 'all') {
             branchDisplay.textContent = 'ALL BRANCHES';
             selectedBranchId = null;
@@ -695,7 +905,6 @@
                 selectedBranchId = branchId;
                 branchDisplay.textContent = branches[branchId].name;
                 dateRange.textContent = `Showing ${branches[branchId].name} only`;
-                console.log(`Selected branch: ${branches[branchId].name} (ID: ${branchId})`);
             }
         }
         
@@ -714,42 +923,28 @@
         `;
 
         try {
-            console.log("Fetching sales for branch ID:", selectedBranchId || 'ALL');
-            
-            // Build query with branch filter
+            // Build query
             let query = supabase
                 .from('sales')
-                .select(`
-                    *,
-                    products!inner(
-                        cost_price, 
-                        category,
-                        branch_id,
-                        branches!inner(
-                            name,
-                            code
-                        )
-                    )
-                `)
-                .order('created_at', { ascending: false })
-                .limit(limit);
+                .select('*')
+                .order('created_at', { ascending: false });
 
             // Apply branch filter if a specific branch is selected
             if (selectedBranchId) {
-                query = query.eq('products.branch_id', selectedBranchId);
+                query = query.eq('branch_id', selectedBranchId);
             }
 
             const { data, error } = await query;
 
-            if (error) {
-                console.error("❌ Fetch error:", error);
-                throw error;
-            }
+            if (error) throw error;
 
             allSales = data || [];
+            filteredSales = [...allSales];
             console.log(`Loaded ${allSales.length} sales transactions`);
             
-            renderSales(allSales);
+            updateSummary();
+            applyFilters();
+            
         } catch (error) {
             console.error("Error fetching sales:", error);
             document.getElementById('data-body').innerHTML = `
@@ -760,6 +955,121 @@
                     </td>
                 </tr>
             `;
+        }
+    }
+
+    function updateSummary() {
+        let totalAmount = 0;
+        let totalProfit = 0;
+        let cashTotal = 0;
+        let kcbTotal = 0;
+        let mpesaTotal = 0;
+        let totalItems = 0;
+        let cashCount = 0;
+        let kcbCount = 0;
+        let mpesaCount = 0;
+
+        allSales.forEach(sale => {
+            const amount = Number(sale.total_amount || 0);
+            const cost = Number(sale.cost_price || 0) * sale.quantity;
+            const profit = amount - cost;
+            
+            totalAmount += amount;
+            totalProfit += profit;
+            totalItems += sale.quantity || 0;
+
+            switch(sale.payment_method) {
+                case 'Cash':
+                    cashTotal += amount;
+                    cashCount++;
+                    break;
+                case 'KCB Paybill':
+                    kcbTotal += amount;
+                    kcbCount++;
+                    break;
+                case 'Mpesa':
+                    mpesaTotal += amount;
+                    mpesaCount++;
+                    break;
+            }
+        });
+
+        const avgMargin = totalAmount > 0 ? ((totalProfit / totalAmount) * 100).toFixed(1) : 0;
+        const avgItems = allSales.length > 0 ? (totalItems / allSales.length).toFixed(1) : 0;
+
+        document.getElementById('totalSales').textContent = `Ksh ${totalAmount.toLocaleString()}`;
+        document.getElementById('totalProfit').textContent = `Ksh ${totalProfit.toLocaleString()}`;
+        document.getElementById('avgMargin').textContent = `${avgMargin}%`;
+        document.getElementById('totalTransactions').textContent = allSales.length;
+        
+        document.getElementById('cashSales').textContent = `Ksh ${cashTotal.toLocaleString()}`;
+        document.getElementById('cashCount').textContent = cashCount;
+        
+        document.getElementById('kcbSales').textContent = `Ksh ${kcbTotal.toLocaleString()}`;
+        document.getElementById('kcbCount').textContent = kcbCount;
+        
+        document.getElementById('mpesaSales').textContent = `Ksh ${mpesaTotal.toLocaleString()}`;
+        document.getElementById('mpesaCount').textContent = mpesaCount;
+        
+        document.getElementById('totalItems').textContent = totalItems;
+        document.getElementById('avgItems').textContent = avgItems;
+    }
+
+    function applyFilters() {
+        filteredSales = allSales.filter(sale => {
+            // Payment filter
+            if (paymentFilter !== 'all' && sale.payment_method !== paymentFilter) {
+                return false;
+            }
+            
+            // Date search
+            if (dateSearchTerm) {
+                const saleDate = new Date(sale.created_at).toLocaleDateString('en-GB', { 
+                    day: '2-digit', 
+                    month: 'short', 
+                    year: 'numeric' 
+                }).toLowerCase();
+                if (!saleDate.includes(dateSearchTerm.toLowerCase())) {
+                    return false;
+                }
+            }
+            
+            // Item search
+            if (itemSearchTerm) {
+                const itemName = (sale.item_name || '').toLowerCase();
+                if (!itemName.includes(itemSearchTerm.toLowerCase())) {
+                    return false;
+                }
+            }
+            
+            // Quick search
+            if (quickSearchTerm) {
+                const itemName = (sale.item_name || '').toLowerCase();
+                const category = (sale.category || '').toLowerCase();
+                const payment = (sale.payment_method || '').toLowerCase();
+                const searchTerm = quickSearchTerm.toLowerCase();
+                
+                if (!itemName.includes(searchTerm) && 
+                    !category.includes(searchTerm) && 
+                    !payment.includes(searchTerm)) {
+                    return false;
+                }
+            }
+            
+            return true;
+        });
+        
+        renderSales(filteredSales.slice(0, limit));
+    }
+
+    function getPaymentBadgeClass(method) {
+        switch(method) {
+            case 'Cash': return 'badge-cash';
+            case 'Mpesa': return 'badge-mpesa';
+            case 'KCB Paybill': return 'badge-kcb';
+            case 'Bank': return 'badge-bank';
+            case 'Debt': return 'badge-debt';
+            default: return '';
         }
     }
 
@@ -781,18 +1091,15 @@
         }
 
         tbody.innerHTML = data.map(s => {
-            // Logic: Use cost_price from sale record if available, else from product record
-            const saleCost = s.cost_price || s.products?.cost_price || 0;
+            const cost = Number(s.cost_price || 0) * s.quantity;
             const revenue = s.total_amount || 0;
-            const profit = revenue - (saleCost * s.quantity);
+            const profit = revenue - cost;
             const date = new Date(s.created_at);
             
             // Get branch info
-            const branchCode = s.products?.branches?.code || '--';
-            const branchName = s.products?.branches?.name || 'Unknown';
+            const branch = branches[s.branch_id] || { code: '--', name: 'Unknown' };
             
-            // Category
-            const category = s.category || s.products?.category || 'General';
+            const paymentClass = getPaymentBadgeClass(s.payment_method);
             
             return `
                 <tr>
@@ -803,7 +1110,7 @@
                     <td data-label="Item Details">
                         <div style="font-weight:700; color:var(--admin-dark);">${s.item_name}</div>
                         <div style="font-size:0.7rem; color:var(--text-dim)">
-                            <i class="fas fa-tag"></i> ${category}
+                            <i class="fas fa-tag"></i> ${s.category || 'General'}
                         </div>
                     </td>
                     <td data-label="Quantity" style="font-weight:700;">${s.quantity}</td>
@@ -811,32 +1118,59 @@
                     <td data-label="Est. Profit">
                         <span class="profit-text">+Ksh ${profit.toLocaleString()}</span>
                     </td>
-                    <td data-label="Method"><span class="badge">${s.payment_method}</span></td>
+                    <td data-label="Method">
+                        <span class="badge ${paymentClass}">${s.payment_method}</span>
+                    </td>
                     <td data-label="Branch">
-                        <span class="branch-pill" title="${branchName}">
-                            <i class="fas fa-store"></i> ${branchCode}
+                        <span class="branch-pill" title="${branch.name}">
+                            <i class="fas fa-store"></i> ${branch.code}
                         </span>
                     </td>
                 </tr>
             `;
         }).join('');
         
-        document.getElementById('loadMore').style.display = data.length < limit ? 'none' : 'block';
+        document.getElementById('loadMore').style.display = data.length < filteredSales.length ? 'block' : 'none';
     }
 
+    // Event listeners for filters
+    document.getElementById('paymentFilter').addEventListener('change', (e) => {
+        paymentFilter = e.target.value;
+        applyFilters();
+    });
+
+    document.getElementById('dateSearch').addEventListener('input', (e) => {
+        dateSearchTerm = e.target.value;
+        applyFilters();
+    });
+
+    document.getElementById('itemSearch').addEventListener('input', (e) => {
+        itemSearchTerm = e.target.value;
+        applyFilters();
+    });
+
     document.getElementById('salesSearch').addEventListener('input', (e) => {
-        const term = e.target.value.toLowerCase();
-        const filtered = allSales.filter(s => 
-            s.item_name.toLowerCase().includes(term) || 
-            s.payment_method.toLowerCase().includes(term) ||
-            (s.products?.category && s.products.category.toLowerCase().includes(term))
-        );
-        renderSales(filtered);
+        quickSearchTerm = e.target.value;
+        applyFilters();
+    });
+
+    document.getElementById('resetFilters').addEventListener('click', () => {
+        paymentFilter = 'all';
+        dateSearchTerm = '';
+        itemSearchTerm = '';
+        quickSearchTerm = '';
+        
+        document.getElementById('paymentFilter').value = 'all';
+        document.getElementById('dateSearch').value = '';
+        document.getElementById('itemSearch').value = '';
+        document.getElementById('salesSearch').value = '';
+        
+        applyFilters();
     });
 
     document.getElementById('loadMore').addEventListener('click', () => { 
-        limit += 25; 
-        fetchSales(); 
+        limit += 50;
+        renderSales(filteredSales.slice(0, limit));
     });
 
     window.handleLogout = async () => {
