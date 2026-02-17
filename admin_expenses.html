@@ -87,56 +87,6 @@
             cursor: pointer; 
         }
 
-        /* Branch Selector in Sidebar */
-        .branch-selector-sidebar {
-            padding: 10px;
-            margin: 10px 0 20px;
-            background: rgba(79, 70, 229, 0.2);
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.1);
-            white-space: nowrap;
-        }
-        
-        .branch-selector-sidebar label {
-            font-size: 0.6rem;
-            text-transform: uppercase;
-            color: #94a3b8;
-            opacity: 0;
-            transition: opacity 0.2s;
-            display: block;
-            margin-bottom: 5px;
-        }
-        
-        .sidebar:hover .branch-selector-sidebar label, 
-        .sidebar.mobile-active .branch-selector-sidebar label {
-            opacity: 1;
-        }
-        
-        .branch-selector-sidebar select {
-            width: 100%;
-            padding: 8px 10px;
-            background: var(--admin-dark);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 6px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            outline: none;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        
-        .sidebar:hover .branch-selector-sidebar select,
-        .sidebar.mobile-active .branch-selector-sidebar select {
-            opacity: 1;
-        }
-        
-        .branch-selector-sidebar select option {
-            background: var(--admin-dark);
-            color: white;
-        }
-        
         .nav-list { 
             flex: 1;
             list-style: none; 
@@ -257,7 +207,61 @@
             }
         }
 
-        /* --- BRANCH BADGE --- */
+        /* --- BRANCH SELECTOR (MOVED TO MAIN PAGE) --- */
+        .branch-selector-main {
+            background: white;
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+        
+        .branch-selector-main label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .branch-selector-main label i {
+            color: var(--admin-accent);
+            font-size: 1rem;
+        }
+        
+        .branch-selector-main select {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px 16px;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 600;
+            background: #f8fafc;
+            color: var(--text-main);
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s;
+        }
+        
+        .branch-selector-main select:hover {
+            border-color: var(--admin-accent);
+        }
+        
+        .branch-selector-main select:focus {
+            border-color: var(--admin-accent);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
         .branch-badge {
             background: var(--admin-accent);
             color: white;
@@ -281,6 +285,15 @@
         @media (max-width: 768px) {
             .container {
                 padding: 20px 15px;
+            }
+            
+            .branch-selector-main {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .branch-selector-main select {
+                min-width: 100%;
             }
         }
 
@@ -569,14 +582,6 @@
         <button class="close-btn" onclick="toggleMenu()">×</button>
     </div>
     
-    <!-- Branch Selector in Sidebar -->
-    <div class="branch-selector-sidebar" id="sidebarBranchSelector">
-        <label for="sidebarBranchSelect"><i class="fas fa-store"></i> SELECT BRANCH</label>
-        <select id="sidebarBranchSelect" onchange="handleBranchChange(this.value)">
-            <option value="">Loading branches...</option>
-        </select>
-    </div>
-    
     <nav class="nav-list">
         <a href="#" onclick="confirmSwitchToCashier(event)" class="nav-link switch-link">
             <i class="fas fa-exchange-alt"></i> <span>SWITCH TO CASHIER</span>
@@ -630,6 +635,16 @@
             <span id="branchDisplay" class="branch-badge">
                 <i class="fas fa-store"></i> <span>Loading...</span>
             </span>
+        </div>
+
+        <!-- Branch Selector - Moved to Main Page -->
+        <div class="branch-selector-main">
+            <label for="mainBranchSelect">
+                <i class="fas fa-store-alt"></i> SELECT BRANCH:
+            </label>
+            <select id="mainBranchSelect" onchange="handleBranchChange(this.value)">
+                <option value="">Loading branches...</option>
+            </select>
         </div>
 
         <div class="balance-preview">
@@ -740,13 +755,13 @@
             
             allBranches = branches || [];
             
-            const sidebarSelect = document.getElementById('sidebarBranchSelect');
+            const mainSelect = document.getElementById('mainBranchSelect');
             
             if (branches && branches.length > 0) {
-                sidebarSelect.innerHTML = '<option value="">Select Branch</option>' + 
+                mainSelect.innerHTML = '<option value="">Select Branch</option>' + 
                     branches.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
             } else {
-                sidebarSelect.innerHTML = '<option value="">No branches found</option>';
+                mainSelect.innerHTML = '<option value="">No branches found</option>';
             }
             
             return branches;
@@ -789,7 +804,6 @@
     }
 
     function showNotification(message, type = 'info') {
-        // Create notification element
         const notification = document.createElement('div');
         notification.style.cssText = `
             position: fixed;
@@ -900,9 +914,9 @@
     }
 
     function updateBranchSelector(selectedBranchId) {
-        const sidebarSelect = document.getElementById('sidebarBranchSelect');
-        if (sidebarSelect && selectedBranchId) {
-            sidebarSelect.value = selectedBranchId;
+        const mainSelect = document.getElementById('mainBranchSelect');
+        if (mainSelect && selectedBranchId) {
+            mainSelect.value = selectedBranchId;
         }
     }
 
