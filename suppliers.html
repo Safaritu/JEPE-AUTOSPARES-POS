@@ -264,7 +264,7 @@
             }
         }
 
-        /* --- BRANCH SELECTOR --- */
+        /* --- BRANCH SELECTOR - FIXED LIKE SALES HISTORY --- */
         .branch-selector-container {
             background: white;
             border: 1px solid var(--border);
@@ -309,6 +309,12 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
+        }
+        
+        .date-range {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            font-weight: 500;
         }
 
         /* --- PAGE HEADER --- */
@@ -914,7 +920,7 @@
     </div>
 
     <div class="container">
-        <!-- Branch Selector -->
+        <!-- Branch Selector - Fixed like Sales History -->
         <div class="branch-selector-container">
             <div class="branch-filter">
                 <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
@@ -926,6 +932,7 @@
                 <i class="fas fa-store"></i>
                 <span id="currentBranchDisplay">ALL BRANCHES</span>
             </div>
+            <span class="date-range" id="dateRange"></span>
         </div>
 
         <!-- Page Header -->
@@ -1167,7 +1174,7 @@
     let currentCategoryFilter = 'all';
 
     // ==================== SIDEBAR FUNCTIONS ====================
-    window.toggleMenu = () => {
+    window.toggleMenu = function() {
         document.getElementById('sidebar').classList.toggle('mobile-active');
         document.getElementById('overlay').classList.toggle('active');
     };
@@ -1177,21 +1184,19 @@
         if(confirm("Switch to Cashier Mode?")) window.location.href = "cashier.html";
     };
 
-    // ==================== BRANCH FUNCTIONS ====================
+    // ==================== BRANCH FUNCTIONS - FIXED LIKE SALES HISTORY ====================
 
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
         branches = {};
         branchIdMap = {};
-        data?.forEach(b => {
-            branches[b.id] = b;
-            branchIdMap[b.code] = b.id;
-        });
         
         // Populate branch selector
         const selector = document.getElementById('branchSelector');
         let options = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>';
         data?.forEach(b => {
+            branches[b.id] = b;
+            branchIdMap[b.code] = b.id;
             options += `<option value="${b.code}">🏪 ${b.name}</option>`;
         });
         selector.innerHTML = options;
@@ -1250,15 +1255,9 @@
                 sidebarBranchName.textContent = profile.branches.name;
             }
             
-            // Update branch display
-            const branchNameSpan = document.getElementById('branchName');
-            if (branchNameSpan && profile.branches) {
-                branchNameSpan.textContent = profile.branches.name;
-            }
-            
             return profile;
         } catch (error) {
-            console.error("Error loading profile:", error);
+            console.error("❌ Error loading profile:", error);
             return null;
         }
     }
@@ -1268,15 +1267,18 @@
         const selectedCode = selector.value;
         
         const branchDisplay = document.getElementById('currentBranchDisplay');
+        const dateRange = document.getElementById('dateRange');
         
         if (selectedCode === 'all') {
             branchDisplay.textContent = 'ALL BRANCHES';
             selectedBranchId = null;
+            dateRange.textContent = 'Showing all branches';
         } else {
             const branchId = getBranchIdFromCode(selectedCode);
             if (branchId) {
                 selectedBranchId = branchId;
                 branchDisplay.textContent = branches[branchId].name;
+                dateRange.textContent = `Showing ${branches[branchId].name} only`;
             }
         }
         
@@ -1644,18 +1646,15 @@
         window.location.href = 'index.html'; 
     };
 
-    // ==================== INITIALIZATION ====================
+    // ==================== INITIALIZATION - FIXED LIKE SALES HISTORY ====================
     async function init() {
         await loadBranches();
-        const profile = await loadUserProfile();
-        if (!profile) return;
+        await loadUserProfile();
         
-        // Set default branch selector to user's branch
-        if (currentBranch) {
-            document.getElementById('branchSelector').value = currentBranch.code;
-            selectedBranchId = currentBranch.id;
-            document.getElementById('currentBranchDisplay').textContent = currentBranch.name;
-        }
+        // Set default branch selector - FIXED: Don't set to user's branch by default
+        document.getElementById('branchSelector').value = 'all';
+        selectedBranchId = null;
+        document.getElementById('currentBranchDisplay').textContent = 'ALL BRANCHES';
         
         await fetchSuppliers();
         await fetchOrders();
