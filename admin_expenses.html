@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Paybill Manager | JEPE AUTOSPARES</title>
+    <title>Finance Manager | JEPE AUTOSPARES</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -720,29 +720,15 @@
     window.confirmSwitchToCashier = (e) => {
         e.preventDefault();
         if(confirm("Switch to Cashier Mode?")) {
+            // You can add branch selection logic here if needed
             window.location.href = "cashier.html";
         }
     };
 
     // ==================== BRANCH FUNCTIONS ====================
+
     async function loadUserProfile() {
         try {
-            // Try to load from session first
-            const savedSession = localStorage.getItem('pos_session');
-            if (savedSession) {
-                const session = JSON.parse(savedSession);
-                if (session.branch) {
-                    currentBranch = session.branch;
-                    currentBranchId = session.branch.id;
-                    currentUser = session.user;
-                    
-                    // Update displays
-                    updateBranchDisplay();
-                    return session.profile;
-                }
-            }
-
-            // If no session, fetch from Supabase
             const { data: { user }, error } = await supabase.auth.getUser();
             if (error || !user) {
                 console.log("No authenticated user, redirecting to login");
@@ -771,7 +757,6 @@
             currentBranchId = profile.branch_id;
             currentBranch = profile.branches;
             
-            // Save session
             const session = {
                 user: user,
                 profile: profile,
@@ -780,25 +765,21 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
-            // Update displays
-            updateBranchDisplay();
+            // Update branch displays
+            const branchDisplay = document.getElementById('branchDisplay');
+            const sidebarBranchName = document.querySelector('#sidebarBranchName span');
+            
+            if (branchDisplay && profile.branches) {
+                branchDisplay.innerHTML = `<i class="fas fa-store"></i> ${profile.branches.name}`;
+            }
+            if (sidebarBranchName && profile.branches) {
+                sidebarBranchName.textContent = profile.branches.name;
+            }
             
             return profile;
         } catch (error) {
             console.error("Error loading profile:", error);
             return null;
-        }
-    }
-
-    function updateBranchDisplay() {
-        const branchDisplay = document.getElementById('branchDisplay');
-        const sidebarBranchName = document.querySelector('#sidebarBranchName span');
-        
-        if (branchDisplay && currentBranch) {
-            branchDisplay.innerHTML = `<i class="fas fa-store"></i> ${currentBranch.name}`;
-        }
-        if (sidebarBranchName && currentBranch) {
-            sidebarBranchName.textContent = currentBranch.name;
         }
     }
 
@@ -822,26 +803,22 @@
         loadHistory();
     };
 
-    // Recalculate Totals
+    // Recalculate Totals Logic (Fixed Funding vs Expense Addition)
     async function calculateTotals() {
-        if (!currentBranchId) return;
-
         try {
-            const { data: sales, error: salesError } = await supabase
+            const branchFilter = currentBranchId;
+            
+            const { data: sales } = await supabase
                 .from('sales')
                 .select('total_amount')
                 .eq('payment_method', 'KCB Paybill')
-                .eq('branch_id', currentBranchId);
-
-            if (salesError) console.error('Sales error:', salesError);
-
-            const { data: records, error: recordsError } = await supabase
+                .eq('branch_id', branchFilter);
+                
+            const { data: records } = await supabase
                 .from('admin_expenses')
                 .select('amount, type')
                 .eq('payment_source', 'KCB Paybill')
-                .eq('branch_id', currentBranchId);
-
-            if (recordsError) console.error('Records error:', recordsError);
+                .eq('branch_id', branchFilter);
 
             const totalSales = sales?.reduce((sum, s) => sum + parseFloat(s.total_amount || 0), 0) || 0;
             
@@ -856,7 +833,7 @@
 
             const finalBalance = totalSales + manualFunding - manualExpense;
             
-            document.getElementById('live-pb-total').innerText = `Ksh ${finalBalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('live-pb-total').innerText = `Ksh ${finalBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
             document.getElementById('stat-funding').innerText = `Ksh ${manualFunding.toLocaleString()}`;
             document.getElementById('stat-expense').innerText = `Ksh ${manualExpense.toLocaleString()}`;
         } catch (error) {
@@ -864,22 +841,21 @@
         }
     }
 
-    // Load History
+    // Load History with Delete Feature
     async function loadHistory() {
-        if (!currentBranchId) return;
-
         try {
+            const branchFilter = currentBranchId;
+            
             const { data, error } = await supabase
                 .from('admin_expenses')
                 .select('*')
                 .eq('payment_source', 'KCB Paybill')
-                .eq('branch_id', currentBranchId)
+                .eq('branch_id', branchFilter)
                 .order('created_at', { ascending: false })
                 .limit(displayLimit);
 
             const list = document.getElementById('expenseList');
-            
-            if (error) throw error;
+            if (error || !data) throw error;
 
             if (data.length === 0) {
                 list.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-dim);">
@@ -914,14 +890,6 @@
                         </div>
                     </div>`;
             }).join('');
-
-            // Show/hide "View More" button
-            const showMoreBtn = document.getElementById('showMoreBtn');
-            if (data.length < displayLimit) {
-                showMoreBtn.style.display = 'none';
-            } else {
-                showMoreBtn.style.display = 'block';
-            }
         } catch (error) {
             console.error("Error loading history:", error);
             document.getElementById('expenseList').innerHTML = `
@@ -933,9 +901,9 @@
         }
     }
 
-    // Delete Function
+    // New Delete Function
     window.deleteTransaction = async (id, amount, type) => {
-        if (!confirm(`Are you sure you want to delete this ${type} of Ksh ${amount.toLocaleString()}?`)) return;
+        if (!confirm(`Are you sure you want to delete this ${type} of Ksh ${amount.toLocaleString()}? This will update your balance immediately.`)) return;
 
         const btn = event.target.closest('button');
         const originalText = btn.innerHTML;
@@ -952,8 +920,8 @@
             btn.innerHTML = originalText;
             btn.disabled = false;
         } else {
-            await calculateTotals();
-            await loadHistory();
+            await calculateTotals(); // Refresh Balance
+            await loadHistory();   // Refresh List
         }
     };
 
@@ -970,31 +938,22 @@
         const type = document.querySelector('input[name="tx_type"]:checked').value;
         const amount = parseFloat(document.getElementById('amount').value);
         
-        if(!amount || amount <= 0) {
-            alert('Please enter a valid amount');
-            return;
-        }
-        
         if(!confirm(`Commit this ${type} of Ksh ${amount.toLocaleString()}?`)) return;
 
         btn.disabled = true; 
         btn.innerHTML = '<span class="spinner"></span> SAVING...';
 
-        const { error } = await supabase
-            .from('admin_expenses')
-            .insert([{
-                amount: amount,
-                description: document.getElementById('description').value || null,
-                category: document.getElementById('category').value,
-                type: type,
-                payment_source: 'KCB Paybill',
-                branch_id: currentBranchId,
-                admin_id: currentUser?.id || null
-            }]);
+        const { error } = await supabase.from('admin_expenses').insert([{
+            amount: amount,
+            description: document.getElementById('description').value || null,
+            category: document.getElementById('category').value,
+            type: type,
+            payment_source: 'KCB Paybill',
+            branch_id: currentBranchId
+        }]);
 
         if (error) {
             alert("Error: " + error.message);
-            console.error("Insert error:", error);
         } else {
             await calculateTotals();
             await loadHistory();
@@ -1013,13 +972,11 @@
         }
     };
 
-    // Initialize
+    // Initial load
     async function init() {
         await loadUserProfile();
-        if (currentBranchId) {
-            await calculateTotals();
-            await loadHistory();
-        }
+        await calculateTotals();
+        await loadHistory();
     }
     
     init();
