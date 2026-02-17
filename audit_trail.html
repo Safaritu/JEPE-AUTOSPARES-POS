@@ -551,6 +551,30 @@
             color: var(--danger);
             font-weight: 800;
         }
+
+        /* Stats summary */
+        .stats-summary {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-pill {
+            background: white;
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .stat-pill i {
+            color: var(--primary);
+        }
     </style>
 </head>
 <body>
@@ -619,7 +643,7 @@
         <div style="width:24px;"></div>
     </div>
 
-    <!-- Branch Selector - copied from add stock page -->
+    <!-- Branch Selector -->
     <div class="branch-selector-container">
         <div class="branch-filter">
             <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
@@ -642,6 +666,13 @@
             <span style="width:8px; height:8px; background:#22c55e; border-radius:50%; animation: pulse 1.5s infinite;"></span> 
             <i class="fas fa-sync-alt"></i> LIVE SYNC ACTIVE
         </div>
+    </div>
+
+    <!-- Stats Summary -->
+    <div class="stats-summary">
+        <span class="stat-pill"><i class="fas fa-list"></i> <span id="total-logs">0</span> Total Logs</span>
+        <span class="stat-pill"><i class="fas fa-store"></i> <span id="branch-name-display">All Branches</span></span>
+        <span class="stat-pill"><i class="fas fa-calendar"></i> <span id="date-range-display">All Dates</span></span>
     </div>
 
     <!-- Filter bar -->
@@ -711,7 +742,7 @@
         if(confirm("Switch to Cashier Mode?")) window.location.href = "cashier.html";
     };
 
-    // ==================== BRANCH FUNCTIONS (copied from add stock) ====================
+    // ==================== BRANCH FUNCTIONS ====================
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
         branches = {};
@@ -758,9 +789,13 @@
                     )
                 `)
                 .eq('id', user.id)
-                .single();
+                .maybeSingle();
             
             if (error) throw error;
+            if (!profile) {
+                console.error("No profile found");
+                return null;
+            }
             
             currentBranchId = profile.branch_id;
             currentBranch = profile.branches;
@@ -791,15 +826,18 @@
         const selectedCode = selector.value;
         
         const branchDisplay = document.getElementById('currentBranchDisplay');
+        const branchNameDisplay = document.getElementById('branch-name-display');
         
         if (selectedCode === 'all') {
             branchDisplay.textContent = 'ALL BRANCHES';
+            if (branchNameDisplay) branchNameDisplay.textContent = 'All Branches';
             selectedBranchId = null;
         } else {
             const branchId = getBranchIdFromCode(selectedCode);
             if (branchId) {
                 selectedBranchId = branchId;
                 branchDisplay.textContent = branches[branchId].name;
+                if (branchNameDisplay) branchNameDisplay.textContent = branches[branchId].name;
             }
         }
         
@@ -813,6 +851,11 @@
         document.getElementById('dateFilter').value = '';
         actionFilter = 'all';
         dateFilter = '';
+        
+        // Update date range display
+        const dateRangeDisplay = document.getElementById('date-range-display');
+        if (dateRangeDisplay) dateRangeDisplay.textContent = 'All Dates';
+        
         applyFilters();
     };
 
@@ -824,15 +867,38 @@
         
         document.getElementById('dateFilter').addEventListener('change', (e) => {
             dateFilter = e.target.value;
+            
+            // Update date range display
+            const dateRangeDisplay = document.getElementById('date-range-display');
+            if (dateRangeDisplay) {
+                if (dateFilter) {
+                    const date = new Date(dateFilter);
+                    dateRangeDisplay.textContent = date.toLocaleDateString('en-GB', { 
+                        day: '2-digit', 
+                        month: 'short', 
+                        year: 'numeric' 
+                    });
+                } else {
+                    dateRangeDisplay.textContent = 'All Dates';
+                }
+            }
+            
             applyFilters();
         });
     }
 
     function applyFilters() {
         filteredLogs = allLogs.filter(log => {
-            // Action filter
-            if (actionFilter !== 'all' && log.action_type !== actionFilter) {
-                return false;
+            // Action filter - normalize action types
+            if (actionFilter !== 'all') {
+                const logAction = (log.action_type || '').toUpperCase();
+                const filterAction = actionFilter.toUpperCase();
+                
+                // Handle different variations of action types
+                if (filterAction === 'RESTOCK' && !(logAction.includes('RESTOCK') || logAction === 'ADD')) return false;
+                if (filterAction === 'SALE' && !(logAction.includes('SALE') || logAction.includes('SOLD'))) return false;
+                if (filterAction === 'ADD' && logAction !== 'ADD' && !logAction.includes('RESTOCK')) return false;
+                if (filterAction === 'EDIT' && !logAction.includes('EDIT')) return false;
             }
             
             // Date filter
@@ -847,6 +913,10 @@
         });
         
         renderLogs();
+        
+        // Update total logs count
+        const totalLogsEl = document.getElementById('total-logs');
+        if (totalLogsEl) totalLogsEl.textContent = filteredLogs.length;
     }
 
     // ==================== FETCH LOGS ====================
@@ -861,6 +931,8 @@
                     </td>
                 </tr>
             `;
+
+            console.log("Fetching logs with branch filter:", selectedBranchId || 'ALL');
 
             // Build query with branch filter
             let query = supabase
@@ -889,12 +961,19 @@
                     </tr>
                 `;
                 document.getElementById('loadMoreBtn').style.display = 'none';
+                document.getElementById('total-logs').textContent = '0';
                 return;
             }
 
+            console.log(`Loaded ${logs.length} logs`);
             allLogs = logs;
             filteredLogs = logs;
-            renderLogs();
+            
+            // Update total logs count
+            document.getElementById('total-logs').textContent = logs.length;
+            
+            // Apply any existing filters
+            applyFilters();
             
             document.getElementById('loadMoreBtn').style.display = logs.length < logsLimit ? 'none' : 'block';
             
@@ -931,25 +1010,34 @@
             let actionClass = 'badge-restock';
             let actionIcon = 'fa-plus-circle';
             
-            if (l.action_type === 'SALE' || l.action_type === 'SOLD') {
+            const actionType = (l.action_type || '').toUpperCase();
+            
+            if (actionType.includes('SALE') || actionType.includes('SOLD')) {
                 actionClass = 'badge-sale';
                 actionIcon = 'fa-shopping-cart';
-            } else if (l.action_type === 'EDIT' || l.action_type === 'UPDATE') {
+            } else if (actionType.includes('EDIT') || actionType.includes('UPDATE')) {
                 actionClass = 'badge-edit';
                 actionIcon = 'fa-edit';
-            } else if (l.action_type === 'ADD') {
+            } else if (actionType === 'ADD') {
                 actionClass = 'badge-add';
                 actionIcon = 'fa-box';
             }
             
             // Determine if change should be negative (for sales) or positive (for restocks)
-            const isSale = l.action_type === 'SALE' || l.action_type === 'SOLD';
-            const qtyChange = Math.abs(l.quantity || 0); // Use absolute value
+            const isSale = actionType.includes('SALE') || actionType.includes('SOLD');
+            const qtyChange = Math.abs(l.quantity || 0);
             const changeValue = isSale ? -qtyChange : qtyChange;
             const changeClass = isSale ? 'change-negative' : 'change-positive';
             const changeSign = isSale ? '-' : '+';
             
-            const branchCode = l.branch_id ? (branches[l.branch_id]?.code || '--') : '--';
+            // Get branch code - handle both branch_id in logs and branches mapping
+            let branchCode = '--';
+            if (l.branch_id && branches[l.branch_id]) {
+                branchCode = branches[l.branch_id].code;
+            } else if (l.branch_id) {
+                // Try to fetch branch name from logs if not in mapping (shouldn't happen)
+                branchCode = l.branch_id.substring(0, 4).toUpperCase();
+            }
             
             // Use performer_name which now contains the actual user names
             const performerName = l.performer_name || l.performed_by || 'System';
@@ -1003,7 +1091,9 @@
                 table: 'inventory_logs' 
             },
             (payload) => {
+                console.log("New log inserted:", payload);
                 const logBranchId = payload.new.branch_id;
+                // Only refresh if the log is for the currently selected branch or all branches
                 if (!selectedBranchId || selectedBranchId === logBranchId) {
                     fetchLogs();
                 }
@@ -1030,6 +1120,7 @@
             document.getElementById('branchSelector').value = currentBranch.code;
             selectedBranchId = currentBranch.id;
             document.getElementById('currentBranchDisplay').textContent = currentBranch.name;
+            document.getElementById('branch-name-display').textContent = currentBranch.name;
         }
         
         setupFilterListeners();
