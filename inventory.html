@@ -807,9 +807,9 @@
                 </div>
                 <div class="form-row">
                     <select id="type">
-                   <option value="Original">Original</option>
+                        <option value="Original">Original</option>
                         <option value="Copy">Copy</option>
-                         <option value="N/A">Part Type (N/A)</option>
+                        <option value="N/A">Part Type (N/A)</option>
                     </select>
                     <input type="number" id="cost" placeholder="Buy Price (Cost)" required>
                     <input type="number" id="sell" placeholder="Sell Price" required>
@@ -821,11 +821,11 @@
                         <option value="50kg">50 KG</option>
                     </select>
                 </div>
-                <!-- TUKTUK specific fields (initially hidden) -->
+                <!-- TUKTUK specific fields (initially hidden) - FIXED VALUES TO MATCH DATABASE -->
                 <div class="form-row" id="tuktuk-row" style="display:none;">
                     <select id="tuktuk_type">
-                        <option value="Passenger">Passenger Tuktuk</option>
-                        <option value="Cargo">Cargo Tuktuk</option>
+                        <option value="PASSENGER TUKTUK">Passenger Tuktuk</option>
+                        <option value="CARGO TUKTUK">Cargo Tuktuk</option>
                         <option value="Spare Part">Tuktuk Spare Part</option>
                     </select>
                     <input type="text" id="tuktuk_model" placeholder="Model (e.g., Bajaj, TVS)">
@@ -891,13 +891,13 @@
         if(confirm("Switch to Cashier Mode?")) window.location.href = "cashier.html";
     };
 
-    // Updated function to handle category fields
+    // FIXED: Updated function to handle category fields
     window.toggleCategoryFields = () => {
         const category = document.getElementById('cat').value;
         document.getElementById('gas-row').style.display = (category === 'Gas') ? 'grid' : 'none';
         document.getElementById('tuktuk-row').style.display = (category === 'Tuktuk') ? 'grid' : 'none';
         
-        // For TUKTUK, disable part type selector if not needed
+        // For TUKTUK, set appropriate part_type
         if (category === 'Tuktuk') {
             document.getElementById('type').value = 'N/A';
         }
@@ -1174,17 +1174,22 @@
                     badgeClass = 'badge tuktuk';
                 }
                 
+                // Show tuktuk type if available
+                const tuktukInfo = (p.category === 'Tuktuk' && p.tuktuk_type) ? 
+                    `<span class="badge tuktuk"><i class="fas fa-car-side"></i> ${p.tuktuk_type}</span>` : '';
+                
                 return `
                 <div class="stock-item-box ${p.stock_quantity < 5 ? 'low-stock-box' : ''}" data-category="${p.category || 'other'}">
                     <div class="stock-meta">
                         <span class="badge ${p.stock_quantity < 5 ? 'low-badge' : ''}">${p.stock_quantity} in stock</span>
                         <span class="${badgeClass}">${p.weight_category || p.part_type || p.category}</span>
-                        ${p.category === 'Tuktuk' ? '<span class="badge tuktuk"><i class="fas fa-car-side"></i> TUKTUK</span>' : ''}
+                        ${tuktukInfo}
                         <span class="badge" style="background: #f1f5f9;"><i class="fas fa-store"></i> ${branchCode}</span>
                     </div>
                     <div class="stock-title">${p.name}</div>
                     <div style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: 15px;">
                         <i class="fas fa-truck"></i> <strong>${p.suppliers?.name || 'No supplier'}</strong>
+                        ${p.tuktuk_model ? `<span style="margin-left: 8px;"><i class="fas fa-tag"></i> ${p.tuktuk_model}</span>` : ''}
                     </div>
 
                     <div class="stock-details-grid">
@@ -1252,6 +1257,7 @@
         }
     };
 
+    // FIXED: Complete form submission handler with proper TUKTUK handling
     document.getElementById('admin-form').onsubmit = async (e) => {
         e.preventDefault();
         
@@ -1270,28 +1276,49 @@
             return;
         }
         
-        // Build payload with TUKTUK fields
+        // Build base payload
         const payload = {
             name: document.getElementById('name').value,
             category: category,
             part_type: document.getElementById('type').value,
             supplier_id: document.getElementById('prod-supplier').value || null,
-            weight_category: (category === 'Gas') ? document.getElementById('weight_cat').value : null,
-            cost_price: parseFloat(document.getElementById('cost').value),
-            selling_price: parseFloat(document.getElementById('sell').value),
-            min_price: parseFloat(document.getElementById('min_p').value),
-            min_selling_price: parseFloat(document.getElementById('min_p').value), // For compatibility
-            stock_quantity: parseInt(document.getElementById('stock').value),
+            cost_price: parseFloat(document.getElementById('cost').value) || 0,
+            selling_price: parseFloat(document.getElementById('sell').value) || 0,
+            min_price: parseFloat(document.getElementById('min_p').value) || 0,
+            min_selling_price: parseFloat(document.getElementById('min_p').value) || 0,
+            stock_quantity: parseInt(document.getElementById('stock').value) || 0,
             branch_id: branchToUse
         };
         
-        // Add TUKTUK specific fields if category is Tuktuk
-        if (category === 'Tuktuk') {
-            payload.tuktuk_type = document.getElementById('tuktuk_type').value;
-            payload.tuktuk_model = document.getElementById('tuktuk_model').value;
-            // You might want to store these in a separate field or combine with name
-            payload.name = `${document.getElementById('tuktuk_model').value} ${document.getElementById('tuktuk_type').value} - ${document.getElementById('name').value}`;
+        // Handle Gas category
+        if (category === 'Gas') {
+            payload.weight_category = document.getElementById('weight_cat').value;
         }
+        
+        // FIXED: Handle TUKTUK category properly
+        if (category === 'Tuktuk') {
+            const tuktukType = document.getElementById('tuktuk_type').value;
+            const tuktukModel = document.getElementById('tuktuk_model').value;
+            
+            // Add tuktuk-specific fields
+            payload.tuktuk_type = tuktukType;
+            payload.tuktuk_model = tuktukModel;
+            
+            // Combine name with model for better identification
+            if (tuktukModel) {
+                payload.name = `${tuktukModel} ${tuktukType} - ${document.getElementById('name').value}`;
+            }
+            
+            // For TUKTUK Spare Part, adjust category
+            if (tuktukType === 'Spare Part') {
+                payload.category = 'Spare Part';
+            }
+        }
+        
+        // Remove any undefined/null values
+        Object.keys(payload).forEach(key => 
+            payload[key] === undefined && delete payload[key]
+        );
         
         try {
             const { error } = await supabase.from('products').insert([payload]);
@@ -1303,8 +1330,10 @@
             
             // Hide TUKTUK fields after submit
             document.getElementById('tuktuk-row').style.display = 'none';
+            document.getElementById('gas-row').style.display = 'none';
             
         } catch (err) {
+            console.error("Insert error:", err);
             alert("❌ Error: " + err.message);
         } finally {
             btn.innerHTML = originalText;
