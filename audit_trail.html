@@ -266,7 +266,7 @@
             flex-wrap: wrap;
         }
         
-        /* --- BRANCH SELECTOR --- */
+        /* --- BRANCH SELECTOR (copied from add stock page) --- */
         .branch-selector-container {
             background: white;
             border: 1px solid var(--border);
@@ -365,6 +365,10 @@
             background: #e0e7ff;
             color: #3730a3;
         }
+        .badge-add {
+            background: #dbeafe;
+            color: #1e40af;
+        }
         
         #live-indicator { 
             display: flex; 
@@ -387,7 +391,6 @@
             font-size: 0.7rem;
             font-weight: 700;
             display: inline-block;
-            margin-left: 5px;
         }
         
         /* --- OVERLAY --- */
@@ -481,7 +484,7 @@
             background: #f8fafc;
         }
 
-        /* User avatar styling */
+        /* User badge styling */
         .user-badge {
             display: inline-flex;
             align-items: center;
@@ -495,6 +498,48 @@
         }
         .user-badge i {
             font-size: 0.7rem;
+        }
+
+        /* Filter bar */
+        .filter-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .action-filter {
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            font-size: 0.85rem;
+            background: white;
+            cursor: pointer;
+            outline: none;
+            min-width: 150px;
+        }
+        
+        .date-input {
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            font-size: 0.85rem;
+            background: white;
+        }
+        
+        .clear-btn {
+            padding: 10px 20px;
+            background: #f1f5f9;
+            border: none;
+            border-radius: 30px;
+            font-weight: 600;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .clear-btn:hover {
+            background: #e2e8f0;
         }
     </style>
 </head>
@@ -564,7 +609,7 @@
         <div style="width:24px;"></div>
     </div>
 
-    <!-- Branch Selector -->
+    <!-- Branch Selector - copied from add stock page -->
     <div class="branch-selector-container">
         <div class="branch-filter">
             <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
@@ -581,12 +626,25 @@
     <div class="header-flex">
         <div>
             <h1 style="margin:0; font-weight: 800; letter-spacing: -1px; font-size: 2rem;">Audit Trail</h1>
-            <p style="color: var(--text-dim); margin: 5px 0 0;">Recent inventory activity logs across all branches.</p>
+            <p style="color: var(--text-dim); margin: 5px 0 0;">Inventory activity logs across all branches</p>
         </div>
         <div id="live-indicator">
             <span style="width:8px; height:8px; background:#22c55e; border-radius:50%; animation: pulse 1.5s infinite;"></span> 
             <i class="fas fa-sync-alt"></i> LIVE SYNC ACTIVE
         </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+        <select id="actionFilter" class="action-filter">
+            <option value="all">All Actions</option>
+            <option value="RESTOCK">Restock</option>
+            <option value="SALE">Sale</option>
+            <option value="ADD">Add Item</option>
+            <option value="EDIT">Edit</option>
+        </select>
+        <input type="date" id="dateFilter" class="date-input">
+        <button class="clear-btn" onclick="clearFilters()">Clear Filters</button>
     </div>
 
     <div class="table-view">
@@ -606,7 +664,7 @@
                 <tr>
                     <td colspan="7" style="text-align:center; padding:50px;">
                         <div class="spinner" style="margin: 0 auto;"></div>
-                        Syncing logs...
+                        <p style="margin-top: 15px; color: var(--text-dim);">Loading audit logs...</p>
                     </td>
                 </tr>
             </tbody>
@@ -625,9 +683,12 @@
     let branches = {};
     let branchIdMap = {};
     let logsLimit = 50;
+    let allLogs = [];
+    let filteredLogs = [];
     
-    // Cache for user names to avoid repeated fetches
-    const userNameCache = new Map();
+    // Filter state
+    let actionFilter = 'all';
+    let dateFilter = '';
 
     // ==================== SIDEBAR FUNCTIONS ====================
     window.toggleMenu = () => {
@@ -640,7 +701,7 @@
         if(confirm("Switch to Cashier Mode?")) window.location.href = "cashier.html";
     };
 
-    // ==================== BRANCH FUNCTIONS ====================
+    // ==================== BRANCH FUNCTIONS (copied from add stock) ====================
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
         branches = {};
@@ -663,40 +724,6 @@
 
     function getBranchIdFromCode(code) {
         return branchIdMap[code] || null;
-    }
-
-    // ==================== FETCH USER FULL NAME ====================
-    async function getUserFullName(userId) {
-        if (!userId || userId === 'System') return 'System';
-        
-        // Check cache first
-        if (userNameCache.has(userId)) {
-            return userNameCache.get(userId);
-        }
-        
-        try {
-            // First try to get from profiles table
-            const { data: profile, error } = await supabase
-                .from('profiles')
-                .select('full_name, email')
-                .eq('id', userId)
-                .maybeSingle();
-            
-            if (error) throw error;
-            
-            let displayName = 'Unknown User';
-            if (profile) {
-                displayName = profile.full_name || profile.email?.split('@')[0] || 'User';
-            }
-            
-            // Cache it
-            userNameCache.set(userId, displayName);
-            return displayName;
-            
-        } catch (error) {
-            console.error('Error fetching user name:', error);
-            return userId.substring(0, 8); // Return short ID on error
-        }
     }
 
     async function loadUserProfile() {
@@ -770,6 +797,48 @@
         await fetchLogs();
     };
 
+    // ==================== FILTER FUNCTIONS ====================
+    window.clearFilters = () => {
+        document.getElementById('actionFilter').value = 'all';
+        document.getElementById('dateFilter').value = '';
+        actionFilter = 'all';
+        dateFilter = '';
+        applyFilters();
+    };
+
+    function setupFilterListeners() {
+        document.getElementById('actionFilter').addEventListener('change', (e) => {
+            actionFilter = e.target.value;
+            applyFilters();
+        });
+        
+        document.getElementById('dateFilter').addEventListener('change', (e) => {
+            dateFilter = e.target.value;
+            applyFilters();
+        });
+    }
+
+    function applyFilters() {
+        filteredLogs = allLogs.filter(log => {
+            // Action filter
+            if (actionFilter !== 'all' && log.action_type !== actionFilter) {
+                return false;
+            }
+            
+            // Date filter
+            if (dateFilter) {
+                const logDate = new Date(log.timestamp).toISOString().split('T')[0];
+                if (logDate !== dateFilter) {
+                    return false;
+                }
+            }
+            
+            return true;
+        });
+        
+        renderLogs();
+    }
+
     // ==================== FETCH LOGS ====================
     async function fetchLogs() {
         try {
@@ -778,7 +847,7 @@
                 <tr>
                     <td colspan="7" style="text-align:center; padding:50px;">
                         <div class="spinner" style="margin: 0 auto;"></div>
-                        Syncing logs...
+                        <p style="margin-top: 15px; color: var(--text-dim);">Loading audit logs...</p>
                     </td>
                 </tr>
             `;
@@ -793,9 +862,6 @@
             // Apply branch filter if a specific branch is selected
             if (selectedBranchId) {
                 query = query.eq('branch_id', selectedBranchId);
-            } else if (currentBranchId && !selectedBranchId) {
-                // If no branch selected but user has a branch, filter by user's branch
-                query = query.eq('branch_id', currentBranchId);
             }
 
             const { data: logs, error } = await query;
@@ -803,12 +869,12 @@
             if (error) throw error;
 
             if (!logs || logs.length === 0) {
-                const branchName = selectedBranchId ? branches[selectedBranchId]?.name : 'your branch';
+                const branchName = selectedBranchId ? branches[selectedBranchId]?.name : 'any branch';
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="7" style="text-align:center; padding:40px; color: var(--text-dim);">
                             <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                            No logs found for ${branchName}
+                            <p>No logs found for ${branchName}</p>
                         </td>
                     </tr>
                 `;
@@ -816,50 +882,146 @@
                 return;
             }
 
-            // Use performer_name which should now have the actual names
-            tbody.innerHTML = logs.map(l => {
-                const date = new Date(l.timestamp);
-                let actionClass = 'badge-restock';
-                let actionIcon = 'fa-plus-circle';
-                
-                if (l.action_type === 'SALE' || l.action_type === 'SOLD') {
-                    actionClass = 'badge-sale';
-                    actionIcon = 'fa-shopping-cart';
-                } else if (l.action_type === 'EDIT' || l.action_type === 'UPDATE') {
-                    actionClass = 'badge-edit';
-                    actionIcon = 'fa-edit';
+            allLogs = logs;
+            filteredLogs = logs;
+            renderLogs();
+            
+            document.getElementById('loadMoreBtn').style.display = logs.length < logsLimit ? 'none' : 'block';
+            
+        } catch (error) {
+            console.error("Error fetching logs:", error);
+            document.getElementById('desktop-tbody').innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align:center; padding:40px; color: var(--danger);">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        <p>Error loading logs: ${error.message}</p>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    function renderLogs() {
+        const tbody = document.getElementById('desktop-tbody');
+        
+        if (filteredLogs.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align:center; padding:40px; color: var(--text-dim);">
+                        <i class="fas fa-filter" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        <p>No logs match your filters</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = filteredLogs.map(l => {
+            const date = new Date(l.timestamp);
+            let actionClass = 'badge-restock';
+            let actionIcon = 'fa-plus-circle';
+            
+            if (l.action_type === 'SALE' || l.action_type === 'SOLD') {
+                actionClass = 'badge-sale';
+                actionIcon = 'fa-shopping-cart';
+            } else if (l.action_type === 'EDIT' || l.action_type === 'UPDATE') {
+                actionClass = 'badge-edit';
+                actionIcon = 'fa-edit';
+            } else if (l.action_type === 'ADD') {
+                actionClass = 'badge-add';
+                actionIcon = 'fa-box';
+            }
+            
+            const qtyChange = l.quantity || 0;
+            const branchCode = l.branch_id ? (branches[l.branch_id]?.code || '--') : '--';
+            
+            // Use performer_name which now contains the actual user names
+            const performerName = l.performer_name || l.performed_by || 'System';
+            
+            return `
+                <tr>
+                    <td data-label="Date & Time">
+                        <div style="font-weight:700">${date.toLocaleDateString('en-GB')}</div>
+                        <small style="color:var(--text-dim)">${date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</small>
+                    </td>
+                    <td data-label="Action">
+                        <span class="badge ${actionClass}">
+                            <i class="fas ${actionIcon}"></i> ${l.action_type || 'LOG'}
+                        </span>
+                    </td>
+                    <td data-label="Product"><b style="font-size:0.95rem">${l.product_name || 'System'}</b></td>
+                    <td data-label="Change" style="color:${qtyChange > 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:800">
+                        ${qtyChange > 0 ? '+' : ''}${qtyChange}
+                    </td>
+                    <td data-label="User">
+                        <span class="user-badge">
+                            <i class="fas fa-user-circle"></i> ${performerName}
+                        </span>
+                    </td>
+                    <td data-label="Branch">
+                        <span class="branch-pill">
+                            <i class="fas fa-store"></i> ${branchCode}
+                        </span>
+                    </td>
+                    <td data-label="Full Details" style="font-size:0.8rem; max-width:250px;">
+                        <i class="fas fa-info-circle" style="color:var(--primary);"></i> ${l.details || '-'}
+                    </td>
+                </tr>`;
+        }).join('');
+    }
+
+    document.getElementById('loadMoreBtn').addEventListener('click', () => {
+        logsLimit += 30;
+        fetchLogs();
+    });
+
+    // ==================== REAL-TIME SUBSCRIPTION ====================
+    function setupRealtimeSubscription() {
+        const channel = supabase.channel('logs-channel');
+        
+        channel.on(
+            'postgres_changes',
+            { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'inventory_logs' 
+            },
+            (payload) => {
+                const logBranchId = payload.new.branch_id;
+                if (!selectedBranchId || selectedBranchId === logBranchId) {
+                    fetchLogs();
                 }
-                
-                const qtyChange = l.quantity || 0;
-                const branchCode = l.branch_id ? (branches[l.branch_id]?.code || '--') : '--';
-                
-                // Use performer_name directly
-                const performerName = l.performer_name || l.performed_by || 'System';
-                
-                return `
-                    <tr>
-                        <td data-label="Date & Time">
-                            <div style="font-weight:700">${date.toLocaleDateString('en-GB')}</div>
-                            <small style="color:var(--text-dim)">${date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</small>
-                        </td>
-                        <td data-label="Action">
-                            <span class="badge ${actionClass}">
-                                <i class="fas ${actionIcon}"></i> ${l.action_type || 'LOG'}
-                            </span>
-                        </td>
-                        <td data-label="Product"><b style="font-size:0.95rem">${l.product_name || 'System'}</b></td>
-                        <td data-label="Change" style="color:${qtyChange > 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:800">
-                            ${qtyChange > 0 ? '+' : ''}${qtyChange}
-                        </td>
-                        <td data-label="User">
-                            <span class="user-badge">
-                                <i class="fas fa-user-circle"></i> ${performerName}
-                            </span>
-                        </td>
-                        <td data-label="Branch">
-                            <span class="branch-pill">
-                                <i class="fas fa-store"></i> ${branchCode}
-                            </span>
-                        </td>
-                        <td data-label="Full Details" style="font-size:0.8rem;">
-                            <i class="fas fa
+            }
+        ).subscribe();
+    }
+
+    // ==================== LOGOUT ====================
+    window.handleLogout = async () => {
+        if(confirm("Logout?")) {
+            localStorage.removeItem('pos_session');
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
+        }
+    };
+
+    // ==================== INITIALIZATION ====================
+    async function init() {
+        await loadBranches();
+        await loadUserProfile();
+        
+        // Set default branch selector to user's branch
+        if (currentBranch) {
+            document.getElementById('branchSelector').value = currentBranch.code;
+            selectedBranchId = currentBranch.id;
+            document.getElementById('currentBranchDisplay').textContent = currentBranch.name;
+        }
+        
+        setupFilterListeners();
+        await fetchLogs();
+        setupRealtimeSubscription();
+    }
+    
+    init();
+</script>
+</body>
+</html>
