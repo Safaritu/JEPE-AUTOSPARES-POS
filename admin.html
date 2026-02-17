@@ -1895,12 +1895,16 @@
         let productsQuery = supabase.from('products').select('*');
         let salesQuery = supabase.from('sales').select('*, products(*)');
         
+        // FIXED: Properly filter by branch when a specific branch is selected
         if (selectedBranchId) {
+            // If a specific branch is selected, filter products by that branch
             productsQuery = productsQuery.eq('branch_id', selectedBranchId);
             salesQuery = salesQuery.eq('branch_id', selectedBranchId);
-        } else if (currentBranchId) {
-            productsQuery = productsQuery.eq('branch_id', currentBranchId);
-            salesQuery = salesQuery.eq('branch_id', currentBranchId);
+            console.log("Filtering products for specific branch:", selectedBranchId);
+        } else {
+            // If "All Branches" is selected, we need to get products from ALL branches
+            // No filter needed - get all products
+            console.log("Getting products from ALL branches");
         }
         
         const [productsRes, salesRes] = await Promise.all([
@@ -1910,6 +1914,13 @@
 
         allProducts = productsRes.data || [];
         allSales = salesRes.data || [];
+
+        console.log(`Loaded ${allProducts.length} products, ${allSales.length} sales`);
+        
+        // Log products for Kitui branch specifically to verify
+        if (selectedBranchId === branchIdMap['KIT']) {
+            console.log("Kitui branch products:", allProducts);
+        }
 
         // ========== 6. PROCESS SPARE PARTS DATA ==========
         const spareProducts = allProducts.filter(p => p.category === 'Spare Part');
@@ -1950,10 +1961,12 @@
         });
 
         // ========== 7. CALCULATE CATEGORY BREAKDOWN ==========
+        // ADDED TUKTUK to categories
         const categories = { 
             Gas: { profit: 0, revenue: 0 }, 
             Spare: { profit: 0, revenue: 0 }, 
             Motorbike: { profit: 0, revenue: 0 },
+            Tuktuk: { profit: 0, revenue: 0 }, // ADDED TUKTUK
             Other: { profit: 0, revenue: 0 } 
         };
 
@@ -1965,12 +1978,13 @@
             if (p.category === 'Gas') catKey = 'Gas';
             else if (p.category === 'Spare Part') catKey = 'Spare';
             else if (p.category === 'Motorbike') catKey = 'Motorbike';
+            else if (p.category === 'Tuktuk') catKey = 'Tuktuk'; // ADDED TUKTUK
             
             categories[catKey].profit += itemProfit;
             categories[catKey].revenue += s.total_amount;
         });
 
-        // Update category breakdown table
+        // Update category breakdown table - ADDED TUKTUK row
         document.getElementById('profit-breakdown-body').innerHTML = Object.entries(categories).map(([name, val]) => {
             const margin = val.revenue > 0 ? ((val.profit / val.revenue) * 100).toFixed(1) : 0;
             return `<tr>
@@ -2009,11 +2023,17 @@
         if (recentSales && recentSales.length > 0) {
             transactionList.innerHTML = recentSales.map(s => {
                 const branchName = branches[s.branch_id]?.name || 'Unknown';
+                // ADDED TUKTUK icon
+                let icon = 'fa-cog';
+                if (s.category === 'Gas') icon = 'fa-fire';
+                else if (s.category === 'Motorbike') icon = 'fa-motorcycle';
+                else if (s.category === 'Tuktuk') icon = 'fa-car'; // or 'fa-taxi' or appropriate icon
+                
                 return `
                     <div class="transaction-item">
                         <div class="transaction-info">
                             <div class="transaction-icon">
-                                <i class="fas ${s.category === 'Gas' ? 'fa-fire' : s.category === 'Motorbike' ? 'fa-motorcycle' : 'fa-cog'}"></i>
+                                <i class="fas ${icon}"></i>
                             </div>
                             <div class="transaction-details">
                                 <div class="item-name">${s.item_name}</div>
@@ -2037,20 +2057,23 @@
         if (profitChart) profitChart.destroy();
         if (invChart) invChart.destroy();
         
-        // Profit Chart (doughnut)
+        // Profit Chart (doughnut) - ADDED TUKTUK
         const profitCtx = document.getElementById('profitChart').getContext('2d');
         profitChart = new Chart(profitCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Gas', 'Spares', 'Motorbike', 'Others'],
+                // ADDED 'Tuktuk' to labels
+                labels: ['Gas', 'Spares', 'Motorbike', 'Tuktuk', 'Others'],
                 datasets: [{
                     data: [
                         categories.Gas.profit, 
                         categories.Spare.profit, 
                         categories.Motorbike.profit,
+                        categories.Tuktuk.profit, // ADDED TUKTUK
                         categories.Other.profit
                     ],
-                    backgroundColor: ['#10b981', '#4f46e5', '#f59e0b', '#64748b'],
+                    // ADDED color for Tuktuk (purple)
+                    backgroundColor: ['#10b981', '#4f46e5', '#f59e0b', '#8b5cf6', '#64748b'],
                     borderWidth: 0
                 }]
             },
