@@ -541,6 +541,16 @@
         .clear-btn:hover {
             background: #e2e8f0;
         }
+
+        /* Change column styling */
+        .change-positive {
+            color: var(--success);
+            font-weight: 800;
+        }
+        .change-negative {
+            color: var(--danger);
+            font-weight: 800;
+        }
     </style>
 </head>
 <body>
@@ -932,7 +942,13 @@
                 actionIcon = 'fa-box';
             }
             
-            const qtyChange = l.quantity || 0;
+            // Determine if change should be negative (for sales) or positive (for restocks)
+            const isSale = l.action_type === 'SALE' || l.action_type === 'SOLD';
+            const qtyChange = Math.abs(l.quantity || 0); // Use absolute value
+            const changeValue = isSale ? -qtyChange : qtyChange;
+            const changeClass = isSale ? 'change-negative' : 'change-positive';
+            const changeSign = isSale ? '-' : '+';
+            
             const branchCode = l.branch_id ? (branches[l.branch_id]?.code || '--') : '--';
             
             // Use performer_name which now contains the actual user names
@@ -950,8 +966,8 @@
                         </span>
                     </td>
                     <td data-label="Product"><b style="font-size:0.95rem">${l.product_name || 'System'}</b></td>
-                    <td data-label="Change" style="color:${qtyChange > 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:800">
-                        ${qtyChange > 0 ? '+' : ''}${qtyChange}
+                    <td data-label="Change" class="${changeClass}">
+                        ${changeSign}${qtyChange}
                     </td>
                     <td data-label="User">
                         <span class="user-badge">
