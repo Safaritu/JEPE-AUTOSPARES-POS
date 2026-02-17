@@ -25,6 +25,10 @@
 
         .container { padding: 16px; max-width: 600px; margin: auto; }
 
+        /* Branch Selector */
+        .branch-selector { background: white; padding: 15px; border-radius: 16px; margin-bottom: 15px; border: 1px solid #e2e8f0; }
+        .branch-selector select { width: 100%; padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-family: inherit; font-size: 0.9rem; background: #fcfdfe; }
+
         /* Debug Banner */
         .debug-banner { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; margin-bottom: 15px; border-radius: 8px; font-size: 0.8rem; }
         .debug-banner.error { background: #fee2e2; border-left-color: #dc2626; }
@@ -87,6 +91,14 @@
 <div class="container">
     <!-- Debug info will be shown here -->
     <div id="debugBanner" class="debug-banner" style="display: none;"></div>
+
+    <!-- Branch Selection (Important: branch_id is required) -->
+    <div class="branch-selector">
+        <label style="font-weight: 700; font-size: 0.8rem; margin-bottom: 8px; display: block;">Select Branch</label>
+        <select id="branchSelect" onchange="changeBranch()">
+            <option value="">Loading branches...</option>
+        </select>
+    </div>
 
     <div class="balance-preview">
         <label>Live KCB Paybill Balance</label>
@@ -157,6 +169,8 @@
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let displayLimit = 10;
+    let currentBranchId = null;
+    let currentUser = null;
     let debugBanner = document.getElementById('debugBanner');
 
     function showDebug(message, type = 'info') {
@@ -164,13 +178,69 @@
         debugBanner.textContent = message;
         debugBanner.className = 'debug-banner ' + type;
         
-        // Auto hide after 5 seconds for success messages
         if (type === 'success') {
             setTimeout(() => {
                 debugBanner.style.display = 'none';
             }, 5000);
         }
     }
+
+    // Get current user
+    async function getCurrentUser() {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) {
+            console.error('Error getting user:', error);
+            return null;
+        }
+        return user;
+    }
+
+    // Load branches
+    async function loadBranches() {
+        try {
+            const { data: branches, error } = await supabase
+                .from('branches')
+                .select('id, name')
+                .order('name');
+
+            if (error) throw error;
+
+            const select = document.getElementById('branchSelect');
+            select.innerHTML = '<option value="">Select a branch</option>';
+            
+            branches.forEach(branch => {
+                select.innerHTML += `<option value="${branch.id}">${branch.name}</option>`;
+            });
+
+            // Try to get last selected branch from localStorage
+            const savedBranch = localStorage.getItem('selectedBranchId');
+            if (savedBranch && branches.some(b => b.id === savedBranch)) {
+                select.value = savedBranch;
+                currentBranchId = savedBranch;
+                await loadData();
+            }
+
+        } catch (err) {
+            console.error('Error loading branches:', err);
+            showDebug('Error loading branches: ' + err.message, 'error');
+        }
+    }
+
+    window.changeBranch = async () => {
+        const select = document.getElementById('branchSelect');
+        currentBranchId = select.value;
+        
+        if (currentBranchId) {
+            localStorage.setItem('selectedBranchId', currentBranchId);
+            await loadData();
+        } else {
+            // Clear display if no branch selected
+            document.getElementById('live-pb-total').innerText = 'Ksh 0.00';
+            document.getElementById('stat-funding').innerText = 'Ksh 0';
+            document.getElementById('stat-expense').innerText = 'Ksh 0';
+            document.getElementById('expenseList').innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-dim);">Select a branch to view transactions</div>';
+        }
+    };
 
     // UI Toggle Logic
     const radios = document.querySelectorAll('input[name="tx_type"]');
@@ -192,41 +262,29 @@
         loadHistory();
     };
 
-    // Test Supabase connection
-    async function testConnection() {
-        try {
-            const { data, error } = await supabase.from('admin_expenses').select('count', { count: 'exact', head: true });
-            if (error) {
-                showDebug('⚠️ Database connection error: ' + error.message, 'error');
-                return false;
-            }
-            showDebug('✅ Connected to database successfully', 'success');
-            return true;
-        } catch (err) {
-            showDebug('❌ Failed to connect: ' + err.message, 'error');
-            return false;
-        }
-    }
-
     // Recalculate Totals Logic
     async function calculateTotals() {
+        if (!currentBranchId) return;
+
         try {
-            // Get sales from KCB Paybill
+            // Get sales from KCB Paybill for selected branch
             const { data: sales, error: salesError } = await supabase
                 .from('sales')
                 .select('total_amount')
-                .eq('payment_method', 'KCB Paybill');
+                .eq('payment_method', 'KCB Paybill')
+                .eq('branch_id', currentBranchId);
 
             if (salesError) {
                 console.error('Sales fetch error:', salesError);
                 showDebug('Error fetching sales: ' + salesError.message, 'error');
             }
 
-            // Get manual records from KCB Paybill
+            // Get manual records from KCB Paybill for selected branch
             const { data: records, error: recordsError } = await supabase
                 .from('admin_expenses')
                 .select('amount, type')
-                .eq('payment_source', 'KCB Paybill');
+                .eq('payment_source', 'KCB Paybill')
+                .eq('branch_id', currentBranchId);
 
             if (recordsError) {
                 console.error('Records fetch error:', recordsError);
@@ -250,7 +308,7 @@
             document.getElementById('stat-funding').innerText = `Ksh ${manualFunding.toLocaleString()}`;
             document.getElementById('stat-expense').innerText = `Ksh ${manualExpense.toLocaleString()}`;
 
-            console.log('Calculation results:', { totalSales, manualFunding, manualExpense, finalBalance });
+            console.log('Calculation results for branch', currentBranchId, { totalSales, manualFunding, manualExpense, finalBalance });
             
         } catch (err) {
             console.error('Calculate totals error:', err);
@@ -258,8 +316,10 @@
         }
     }
 
-    // Load History with Delete Feature
+    // Load History
     async function loadHistory() {
+        if (!currentBranchId) return;
+
         try {
             const list = document.getElementById('expenseList');
             list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-dim);">Loading records...</div>';
@@ -268,6 +328,7 @@
                 .from('admin_expenses')
                 .select('*')
                 .eq('payment_source', 'KCB Paybill')
+                .eq('branch_id', currentBranchId)
                 .order('created_at', { ascending: false })
                 .limit(displayLimit);
 
@@ -278,7 +339,7 @@
             }
 
             if (!data || data.length === 0) {
-                list.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-dim);">No transactions found. Add your first transaction above.</div>`;
+                list.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-dim);">No transactions found for this branch. Add your first transaction above.</div>`;
                 return;
             }
 
@@ -322,7 +383,7 @@
         }
     }
 
-    // New Delete Function
+    // Delete Function
     window.deleteTransaction = async (id, amount, type) => {
         if (!confirm(`Are you sure you want to delete this ${type} of Ksh ${amount.toLocaleString()}? This will update your balance immediately.`)) return;
 
@@ -337,8 +398,8 @@
                 showDebug('Delete failed: ' + error.message, 'error');
             } else {
                 showDebug('Transaction deleted successfully', 'success');
-                await calculateTotals(); // Refresh Balance
-                await loadHistory();   // Refresh List
+                await calculateTotals();
+                await loadHistory();
             }
         } catch (err) {
             alert("Error: " + err.message);
@@ -349,6 +410,12 @@
     // Form Submission
     document.getElementById('expenseForm').onsubmit = async (e) => {
         e.preventDefault();
+        
+        if (!currentBranchId) {
+            alert('Please select a branch first');
+            return;
+        }
+
         const btn = document.getElementById('submitBtn');
         const type = document.querySelector('input[name="tx_type"]:checked').value;
         const amount = parseFloat(document.getElementById('amount').value);
@@ -364,6 +431,10 @@
         btn.innerText = "SAVING...";
 
         try {
+            // Get current user
+            const user = await getCurrentUser();
+            
+            // Insert with required branch_id
             const { error } = await supabase
                 .from('admin_expenses')
                 .insert([{
@@ -372,12 +443,15 @@
                     category: document.getElementById('category').value,
                     type: type,
                     payment_source: 'KCB Paybill',
+                    branch_id: currentBranchId,  // Required field
+                    admin_id: user?.id || null,   // Optional
                     created_at: new Date().toISOString()
                 }]);
 
             if (error) {
                 alert("Error: " + error.message);
                 showDebug('Save failed: ' + error.message, 'error');
+                console.error('Insert error:', error);
             } else {
                 await calculateTotals();
                 await loadHistory();
@@ -387,19 +461,23 @@
         } catch (err) {
             alert("Error: " + err.message);
             showDebug('Save error: ' + err.message, 'error');
+            console.error('Save error:', err);
         } finally {
             btn.disabled = false; 
             btn.innerText = "COMMIT TRANSACTION";
         }
     };
 
-    // Check connection and load data on page load
-    async function init() {
-        const connected = await testConnection();
-        if (connected) {
+    async function loadData() {
+        if (currentBranchId) {
             await calculateTotals();
             await loadHistory();
         }
+    }
+
+    // Initialize
+    async function init() {
+        await loadBranches();
     }
 
     init();
