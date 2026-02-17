@@ -14,8 +14,6 @@
             --danger: #ef4444; 
             --bg: #f8fafc;
             --success: #10b981;
-            --warning: #f59e0b;
-            --info: #3b82f6;
             --text-main: #1e293b;
             --text-dim: #64748b;
             --border: #e2e8f0;
@@ -89,6 +87,52 @@
             cursor: pointer; 
         }
 
+        /* Branch Info in Sidebar */
+        .branch-info {
+            padding: 10px;
+            margin: 10px 0 20px;
+            background: rgba(79, 70, 229, 0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            white-space: nowrap;
+        }
+        
+        .branch-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            color: #94a3b8;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .sidebar:hover .branch-label, .sidebar.mobile-active .branch-label {
+            opacity: 1;
+        }
+        
+        .branch-name {
+            font-weight: 800;
+            color: white;
+            font-size: 0.85rem;
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .branch-name i { 
+            color: var(--admin-accent); 
+            min-width: 20px;
+        }
+        
+        .branch-name span {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .sidebar:hover .branch-name span, .sidebar.mobile-active .branch-name span {
+            opacity: 1;
+        }
+        
         .nav-list { 
             flex: 1;
             list-style: none; 
@@ -209,61 +253,7 @@
             }
         }
 
-        /* --- BRANCH SELECTOR WITH ALL BRANCHES OPTION --- */
-        .branch-selector-main {
-            background: white;
-            border-radius: 16px;
-            padding: 16px 20px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-        }
-        
-        .branch-selector-main label {
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .branch-selector-main label i {
-            color: var(--admin-accent);
-            font-size: 1rem;
-        }
-        
-        .branch-selector-main select {
-            flex: 1;
-            min-width: 250px;
-            padding: 12px 16px;
-            border: 1.5px solid var(--border);
-            border-radius: 12px;
-            font-family: inherit;
-            font-size: 0.95rem;
-            font-weight: 600;
-            background: #f8fafc;
-            color: var(--text-main);
-            cursor: pointer;
-            outline: none;
-            transition: all 0.2s;
-        }
-        
-        .branch-selector-main select:hover {
-            border-color: var(--admin-accent);
-        }
-        
-        .branch-selector-main select:focus {
-            border-color: var(--admin-accent);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-
+        /* --- BRANCH BADGE --- */
         .branch-badge {
             background: var(--admin-accent);
             color: white;
@@ -278,10 +268,6 @@
             box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
         }
 
-        .branch-badge.all {
-            background: var(--info);
-        }
-
         .container { 
             padding: 30px; 
             max-width: 1200px; 
@@ -291,15 +277,6 @@
         @media (max-width: 768px) {
             .container {
                 padding: 20px 15px;
-            }
-            
-            .branch-selector-main {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .branch-selector-main select {
-                min-width: 100%;
             }
         }
 
@@ -328,10 +305,10 @@
             color: #fff; 
         }
 
-        /* Stats Row - Now 2 columns as requested */
+        /* Stats Row */
         .stats-grid { 
             display: grid; 
-            grid-template-columns: repeat(2, 1fr); 
+            grid-template-columns: 1fr 1fr; 
             gap: 15px; 
             margin-bottom: 25px; 
         }
@@ -364,49 +341,6 @@
             justify-content: space-between; 
             align-items: center; 
             color: var(--admin-dark); 
-        }
-
-        /* Quick Filter Buttons */
-        .quick-filters {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        
-        .filter-btn {
-            padding: 10px 20px;
-            border: 1.5px solid var(--border);
-            border-radius: 30px;
-            background: white;
-            color: var(--text-main);
-            font-weight: 600;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .filter-btn:hover {
-            border-color: var(--admin-accent);
-            background: #f5f3ff;
-        }
-        
-        .filter-btn.active {
-            background: var(--admin-accent);
-            color: white;
-            border-color: var(--admin-accent);
-        }
-        
-        .filter-btn.active i {
-            color: white;
-        }
-        
-        .filter-btn i {
-            color: var(--admin-accent);
-            font-size: 0.9rem;
         }
 
         /* Form Card */
@@ -490,188 +424,84 @@
             cursor: not-allowed;
         }
 
-        /* Export Buttons */
-        .export-buttons {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
+        /* History List */
+        .history-list { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+            margin-bottom: 15px; 
+        }
+        .history-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 16px; 
+            background: white; 
+            border-radius: 16px; 
+            border: 1px solid #eef2f6; 
+            position: relative;
+            transition: transform 0.2s;
+        }
+        .history-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+        }
+        .item-info .title { 
+            font-weight: 700; 
+            font-size: 0.9rem; 
+            color: var(--text-main); 
+        }
+        .item-info .date { 
+            font-size: 0.7rem; 
+            color: var(--text-dim); 
+            margin-top: 3px; 
         }
         
-        .btn-export {
-            padding: 10px 16px;
-            background: white;
-            border: 1.5px solid var(--border);
-            border-radius: 10px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
+        .item-right { 
+            display: flex; 
+            align-items: center; 
+            gap: 15px; 
         }
-        
-        .btn-export:hover {
-            background: var(--admin-accent);
-            color: white;
-            border-color: var(--admin-accent);
+        .item-amount-box { 
+            text-align: right; 
         }
-
-        /* Improved Transaction Table */
-        .transactions-table {
-            background: white;
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            overflow: hidden;
-            margin-bottom: 15px;
+        .amt-out { 
+            color: var(--danger); 
+            font-weight: 800; 
+            font-size: 1rem; 
         }
-        
-        .table-header {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1.5fr 1fr 0.8fr;
-            background: #f8fafc;
-            padding: 15px 20px;
-            font-weight: 700;
-            font-size: 0.8rem;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 2px solid var(--border);
+        .amt-in { 
+            color: var(--success); 
+            font-weight: 800; 
+            font-size: 1rem; 
         }
-        
-        .transaction-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1.5fr 1fr 0.8fr;
-            padding: 15px 20px;
-            align-items: center;
-            border-bottom: 1px solid #eef2f6;
-            transition: background 0.2s;
-        }
-        
-        .transaction-row:hover {
-            background: #f8fafc;
-        }
-        
-        .transaction-row:last-child {
-            border-bottom: none;
-        }
-        
-        .transaction-date {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-main);
-        }
-        
-        .transaction-time {
-            font-size: 0.7rem;
-            color: var(--text-dim);
+        .cat-tag { 
+            font-size: 0.65rem; 
+            color: var(--text-dim); 
+            text-transform: uppercase; 
+            font-weight: 600; 
             margin-top: 2px;
         }
-        
-        .transaction-type {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .type-badge {
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            width: fit-content;
-        }
-        
-        .type-badge.funding {
-            background: #d1fae5;
-            color: #065f46;
-        }
-        
-        .type-badge.expense {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        
-        .transaction-category {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-main);
-        }
-        
-        .transaction-desc {
-            font-size: 0.75rem;
-            color: var(--text-dim);
-            margin-top: 2px;
-        }
-        
-        .transaction-amount {
-            font-weight: 800;
-            font-size: 1rem;
-        }
-        
-        .amount-positive {
-            color: var(--success);
-        }
-        
-        .amount-negative {
-            color: var(--danger);
-        }
-        
-        .branch-tag {
-            font-size: 0.7rem;
-            background: #e0f2fe;
-            color: #0369a1;
-            padding: 3px 8px;
-            border-radius: 20px;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            width: fit-content;
-        }
-        
-        .delete-btn-table {
-            background: none;
-            border: none;
-            color: var(--text-dim);
-            cursor: pointer;
-            font-size: 1rem;
-            padding: 8px;
-            border-radius: 8px;
-            transition: all 0.2s;
-            width: fit-content;
-        }
-        
-        .delete-btn-table:hover {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-        
-        @media (max-width: 768px) {
-            .table-header {
-                display: none;
-            }
-            
-            .transaction-row {
-                grid-template-columns: 1fr;
-                gap: 8px;
-                padding: 15px;
-            }
-            
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-        }
 
-        .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 3px solid rgba(255,255,255,.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
+        /* Delete Button */
+        .btn-delete { 
+            background: #fee2e2; 
+            color: #b91c1c; 
+            border: none; 
+            padding: 10px 12px; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            font-size: 0.8rem; 
+            display: flex; 
+            align-items: center; 
+            gap: 5px;
+            transition: 0.2s; 
+            font-weight: 600;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .btn-delete:hover {
+            background: #fecaca;
+            transform: scale(1.02);
+        }
 
         .btn-more { 
             width: 100%; 
@@ -699,6 +529,29 @@
             backdrop-filter: blur(4px); 
         }
         .overlay.active { display: block; }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 768px) {
+            .history-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .item-right {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
     </style>
 </head>
 <body>
@@ -710,6 +563,15 @@
     <div class="sidebar-header">
         <h2>JEPE ADMIN</h2>
         <button class="close-btn" onclick="toggleMenu()">×</button>
+    </div>
+    
+    <!-- Branch Info Display -->
+    <div class="branch-info" id="sidebarBranchInfo">
+        <div class="branch-label">Your Assigned Branch</div>
+        <div class="branch-name" id="sidebarBranchName">
+            <i class="fas fa-store"></i>
+            <span>Loading...</span>
+        </div>
     </div>
     
     <nav class="nav-list">
@@ -765,32 +627,6 @@
             <span id="branchDisplay" class="branch-badge">
                 <i class="fas fa-store"></i> <span>Loading...</span>
             </span>
-        </div>
-
-        <!-- Branch Selector with ALL BRANCHES option -->
-        <div class="branch-selector-main">
-            <label for="mainBranchSelect">
-                <i class="fas fa-store-alt"></i> SELECT BRANCH:
-            </label>
-            <select id="mainBranchSelect" onchange="handleBranchChange(this.value)">
-                <option value="">Loading branches...</option>
-            </select>
-        </div>
-
-        <!-- Quick Filter Buttons - Removed summary stats boxes as requested -->
-        <div class="quick-filters">
-            <button class="filter-btn active" onclick="setFilter('lifetime')" id="filterLifetime">
-                <i class="fas fa-infinity"></i> Lifetime
-            </button>
-            <button class="filter-btn" onclick="setFilter('today')" id="filterToday">
-                <i class="fas fa-sun"></i> Today
-            </button>
-            <button class="filter-btn" onclick="setFilter('week')" id="filterWeek">
-                <i class="fas fa-calendar-week"></i> This Week
-            </button>
-            <button class="filter-btn" onclick="setFilter('month')" id="filterMonth">
-                <i class="fas fa-calendar-alt"></i> This Month
-            </button>
         </div>
 
         <div class="balance-preview">
@@ -852,25 +688,9 @@
 
         <div class="section-title">
             <span><i class="fas fa-history" style="color: var(--admin-accent);"></i> Recent Activity</span>
-            <div class="export-buttons">
-                <button class="btn-export" onclick="exportToPDF()">
-                    <i class="fas fa-file-pdf"></i> PDF
-                </button>
-                <button class="btn-export" onclick="exportToExcel()">
-                    <i class="fas fa-file-excel"></i> Excel
-                </button>
-            </div>
         </div>
         
-        <!-- Improved Transaction Table -->
-        <div class="transactions-table" id="expenseList">
-            <div class="table-header">
-                <div>Date & Time</div>
-                <div>Type</div>
-                <div>Category</div>
-                <div>Amount</div>
-                <div>Actions</div>
-            </div>
+        <div id="expenseList" class="history-list">
             <div style="text-align:center; padding:30px; color:var(--text-dim);">
                 <div class="spinner" style="margin: 0 auto;"></div>
                 Loading records...
@@ -890,10 +710,6 @@
     let currentUser = null;
     let currentBranchId = null;
     let currentBranch = null;
-    let allBranches = [];
-    let allTransactions = [];
-    let filteredTransactions = [];
-    let currentFilter = 'lifetime';
 
     // ==================== SIDEBAR FUNCTIONS ====================
     window.toggleMenu = () => {
@@ -908,260 +724,25 @@
         }
     };
 
-    // ==================== FILTER FUNCTIONS ====================
-    window.setFilter = (filter) => {
-        currentFilter = filter;
-        
-        // Update active button styles
-        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-        document.getElementById(`filter${filter.charAt(0).toUpperCase() + filter.slice(1)}`).classList.add('active');
-        
-        applyFilter();
-    };
-
-    function applyFilter() {
-        const now = new Date();
-        let startDate = null;
-        
-        switch(currentFilter) {
-            case 'today':
-                startDate = new Date(now.setHours(0, 0, 0, 0));
-                break;
-            case 'week':
-                startDate = new Date(now);
-                startDate.setDate(now.getDate() - now.getDay());
-                startDate.setHours(0, 0, 0, 0);
-                break;
-            case 'month':
-                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-                break;
-            case 'lifetime':
-            default:
-                startDate = null;
-                break;
-        }
-        
-        if (startDate) {
-            filteredTransactions = allTransactions.filter(t => new Date(t.created_at) >= startDate);
-        } else {
-            filteredTransactions = allTransactions;
-        }
-        
-        loadHistory();
-    }
-
-    // ==================== BRANCH SELECTION WITH ALL BRANCHES ====================
-    async function loadAllBranches() {
-        try {
-            const { data: branches, error } = await supabase
-                .from('branches')
-                .select('id, name, code, location')
-                .order('name');
-
-            if (error) throw error;
-            
-            allBranches = branches || [];
-            
-            const mainSelect = document.getElementById('mainBranchSelect');
-            
-            if (branches && branches.length > 0) {
-                mainSelect.innerHTML = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>' + 
-                    branches.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
-            } else {
-                mainSelect.innerHTML = '<option value="">No branches found</option>';
-            }
-            
-            return branches;
-        } catch (error) {
-            console.error("Error loading branches:", error);
-            return [];
-        }
-    }
-
-    window.handleBranchChange = async (branchId) => {
-        if (!branchId) return;
-        
-        if (branchId === 'all') {
-            currentBranchId = 'all';
-            currentBranch = { id: 'all', name: 'All Branches' };
-            document.getElementById('branchDisplay').innerHTML = '<i class="fas fa-store-alt"></i> ALL BRANCHES';
-            document.getElementById('branchDisplay').classList.add('all');
-        } else {
-            const selectedBranch = allBranches.find(b => b.id === branchId);
-            if (!selectedBranch) return;
-            
-            currentBranchId = branchId;
-            currentBranch = selectedBranch;
-            document.getElementById('branchDisplay').classList.remove('all');
-        }
-        
-        localStorage.setItem('selectedBranchId', branchId);
-        if (branchId !== 'all') {
-            localStorage.setItem('selectedBranch', JSON.stringify(currentBranch));
-        } else {
-            localStorage.removeItem('selectedBranch');
-        }
-        
-        const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
-        session.branch = currentBranch;
-        session.branch_id = branchId;
-        localStorage.setItem('pos_session', JSON.stringify(session));
-        
-        updateBranchDisplay();
-        await loadAllTransactions();
-        
-        showNotification(`Switched to ${currentBranch.name}`, 'success');
-    }
-
-    // ==================== LOAD ALL TRANSACTIONS ====================
-    async function loadAllTransactions() {
-        if (!currentBranchId) return;
-
-        try {
-            let query = supabase
-                .from('admin_expenses')
-                .select(`
-                    *,
-                    branches (
-                        name
-                    )
-                `)
-                .eq('payment_source', 'KCB Paybill')
-                .order('created_at', { ascending: false });
-            
-            if (currentBranchId !== 'all') {
-                query = query.eq('branch_id', currentBranchId);
-            }
-            
-            const { data, error } = await query;
-
-            if (error) throw error;
-            
-            allTransactions = data || [];
-            applyFilter();
-            await calculateTotals();
-            
-        } catch (error) {
-            console.error("Error loading transactions:", error);
-        }
-    }
-
-    // ==================== EXPORT FUNCTIONS ====================
-    window.exportToPDF = () => {
-        const transactions = filteredTransactions;
-        const branchName = currentBranch?.name || 'All Branches';
-        
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(`
-            <html>
-                <head>
-                    <title>Paybill Transactions - ${branchName}</title>
-                    <style>
-                        body { font-family: Arial; padding: 20px; }
-                        h1 { color: #4f46e5; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                        th { background: #4f46e5; color: white; padding: 10px; text-align: left; }
-                        td { padding: 8px; border-bottom: 1px solid #ddd; }
-                        .funding { color: #10b981; }
-                        .expense { color: #ef4444; }
-                    </style>
-                </head>
-                <body>
-                    <h1>KCB Paybill Transactions - ${branchName}</h1>
-                    <p>Generated on: ${new Date().toLocaleString()}</p>
-                    <p>Filter: ${currentFilter}</p>
-                    <table>
-                        <tr>
-                            <th>Date</th>
-                            <th>Type</th>
-                            <th>Category</th>
-                            <th>Description</th>
-                            <th>Amount</th>
-                        </tr>
-                        ${transactions.map(t => `
-                            <tr>
-                                <td>${new Date(t.created_at).toLocaleString()}</td>
-                                <td class="${t.type}">${t.type === 'funding' ? 'Funding (+)' : 'Deduction (-)'}</td>
-                                <td>${t.category}</td>
-                                <td>${t.description || '-'}</td>
-                                <td>Ksh ${parseFloat(t.amount).toLocaleString()}</td>
-                            </tr>
-                        `).join('')}
-                    </table>
-                </body>
-            </html>
-        `);
-        printWindow.document.close();
-        printWindow.print();
-    };
-
-    window.exportToExcel = () => {
-        const transactions = filteredTransactions;
-        const branchName = currentBranch?.name || 'All Branches';
-        
-        const headers = ['Date', 'Type', 'Category', 'Description', 'Amount'];
-        const csvData = transactions.map(t => [
-            new Date(t.created_at).toLocaleString(),
-            t.type === 'funding' ? 'Funding (+)' : 'Deduction (-)',
-            t.category,
-            t.description || '',
-            t.amount
-        ]);
-        
-        const csv = [headers, ...csvData].map(row => row.join(',')).join('\n');
-        
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `paybill_transactions_${branchName}_${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-        
-        showNotification('Excel file downloaded successfully', 'success');
-    };
-
-    function showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 20px;
-            background: ${type === 'success' ? '#10b981' : '#4f46e5'};
-            color: white;
-            border-radius: 8px;
-            font-weight: 600;
-            z-index: 9999;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            animation: slideIn 0.3s ease;
-        `;
-        notification.textContent = message;
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => notification.remove(), 300);
-        }, 3000);
-    }
-
-    // ==================== USER PROFILE ====================
+    // ==================== BRANCH FUNCTIONS ====================
     async function loadUserProfile() {
         try {
+            // Try to load from session first
             const savedSession = localStorage.getItem('pos_session');
             if (savedSession) {
                 const session = JSON.parse(savedSession);
                 if (session.branch) {
                     currentBranch = session.branch;
-                    currentBranchId = session.branch_id || session.branch.id;
+                    currentBranchId = session.branch.id;
                     currentUser = session.user;
                     
+                    // Update displays
                     updateBranchDisplay();
-                    updateBranchSelector(currentBranchId);
                     return session.profile;
                 }
             }
 
+            // If no session, fetch from Supabase
             const { data: { user }, error } = await supabase.auth.getUser();
             if (error || !user) {
                 console.log("No authenticated user, redirecting to login");
@@ -1187,33 +768,20 @@
             
             if (profileError) throw profileError;
             
-            const savedBranchId = localStorage.getItem('selectedBranchId');
-            if (savedBranchId) {
-                if (savedBranchId === 'all') {
-                    currentBranchId = 'all';
-                    currentBranch = { id: 'all', name: 'All Branches' };
-                } else if (allBranches.some(b => b.id === savedBranchId)) {
-                    currentBranchId = savedBranchId;
-                    currentBranch = allBranches.find(b => b.id === savedBranchId);
-                }
-            } else {
-                currentBranchId = profile.branch_id;
-                currentBranch = profile.branches;
-                localStorage.setItem('selectedBranchId', profile.branch_id);
-                localStorage.setItem('selectedBranch', JSON.stringify(profile.branches));
-            }
+            currentBranchId = profile.branch_id;
+            currentBranch = profile.branches;
             
+            // Save session
             const session = {
                 user: user,
                 profile: profile,
-                branch: currentBranch,
-                branch_id: currentBranchId,
+                branch: profile.branches,
                 role: profile.role
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
+            // Update displays
             updateBranchDisplay();
-            updateBranchSelector(currentBranchId);
             
             return profile;
         } catch (error) {
@@ -1224,21 +792,13 @@
 
     function updateBranchDisplay() {
         const branchDisplay = document.getElementById('branchDisplay');
+        const sidebarBranchName = document.querySelector('#sidebarBranchName span');
+        
         if (branchDisplay && currentBranch) {
-            if (currentBranchId === 'all') {
-                branchDisplay.innerHTML = `<i class="fas fa-store-alt"></i> ALL BRANCHES`;
-                branchDisplay.classList.add('all');
-            } else {
-                branchDisplay.innerHTML = `<i class="fas fa-store"></i> ${currentBranch.name}`;
-                branchDisplay.classList.remove('all');
-            }
+            branchDisplay.innerHTML = `<i class="fas fa-store"></i> ${currentBranch.name}`;
         }
-    }
-
-    function updateBranchSelector(selectedBranchId) {
-        const mainSelect = document.getElementById('mainBranchSelect');
-        if (mainSelect && selectedBranchId) {
-            mainSelect.value = selectedBranchId;
+        if (sidebarBranchName && currentBranch) {
+            sidebarBranchName.textContent = currentBranch.name;
         }
     }
 
@@ -1267,28 +827,21 @@
         if (!currentBranchId) return;
 
         try {
-            let salesQuery = supabase
+            const { data: sales, error: salesError } = await supabase
                 .from('sales')
                 .select('total_amount')
-                .eq('payment_method', 'KCB Paybill');
-            
-            let recordsQuery = supabase
+                .eq('payment_method', 'KCB Paybill')
+                .eq('branch_id', currentBranchId);
+
+            if (salesError) console.error('Sales error:', salesError);
+
+            const { data: records, error: recordsError } = await supabase
                 .from('admin_expenses')
                 .select('amount, type')
-                .eq('payment_source', 'KCB Paybill');
-            
-            if (currentBranchId !== 'all') {
-                salesQuery = salesQuery.eq('branch_id', currentBranchId);
-                recordsQuery = recordsQuery.eq('branch_id', currentBranchId);
-            }
+                .eq('payment_source', 'KCB Paybill')
+                .eq('branch_id', currentBranchId);
 
-            const [salesResult, recordsResult] = await Promise.all([
-                salesQuery,
-                recordsQuery
-            ]);
-
-            const sales = salesResult.data || [];
-            const records = recordsResult.data || [];
+            if (recordsError) console.error('Records error:', recordsError);
 
             const totalSales = sales?.reduce((sum, s) => sum + parseFloat(s.total_amount || 0), 0) || 0;
             
@@ -1311,90 +864,67 @@
         }
     }
 
-    // Load History with improved table layout
+    // Load History
     async function loadHistory() {
-        const list = document.getElementById('expenseList');
-        
-        try {
-            const displayTransactions = filteredTransactions.slice(0, displayLimit);
+        if (!currentBranchId) return;
 
-            if (displayTransactions.length === 0) {
-                list.innerHTML = `
-                    <div class="table-header">
-                        <div>Date & Time</div>
-                        <div>Type</div>
-                        <div>Category</div>
-                        <div>Amount</div>
-                        <div>Actions</div>
-                    </div>
-                    <div style="text-align:center; padding:30px; color:var(--text-dim);">
-                        <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                        No transactions found for ${currentBranch?.name || 'this branch'}
-                    </div>
-                `;
+        try {
+            const { data, error } = await supabase
+                .from('admin_expenses')
+                .select('*')
+                .eq('payment_source', 'KCB Paybill')
+                .eq('branch_id', currentBranchId)
+                .order('created_at', { ascending: false })
+                .limit(displayLimit);
+
+            const list = document.getElementById('expenseList');
+            
+            if (error) throw error;
+
+            if (data.length === 0) {
+                list.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-dim);">
+                    <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    No transactions found for ${currentBranch?.name || 'this branch'}
+                </div>`;
                 return;
             }
 
-            list.innerHTML = `
-                <div class="table-header">
-                    <div>Date & Time</div>
-                    <div>Type</div>
-                    <div>Category</div>
-                    <div>Amount</div>
-                    <div>Actions</div>
-                </div>
-                ${displayTransactions.map(ex => {
-                    const isFunding = ex.type === 'funding';
-                    const date = new Date(ex.created_at);
-                    const formattedDate = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-                    const formattedTime = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+            list.innerHTML = data.map(ex => {
+                const isFunding = ex.type === 'funding';
+                const formattedDate = new Date(ex.created_at).toLocaleDateString('en-GB', {
+                    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
 
-                    return `
-                        <div class="transaction-row">
-                            <div>
-                                <div class="transaction-date">${formattedDate}</div>
-                                <div class="transaction-time">${formattedTime}</div>
-                                ${currentBranchId === 'all' && ex.branches ? 
-                                    `<div class="branch-tag"><i class="fas fa-store"></i> ${ex.branches.name}</div>` : ''}
-                            </div>
-                            <div class="transaction-type">
-                                <span class="type-badge ${isFunding ? 'funding' : 'expense'}">
-                                    ${isFunding ? 'Funding' : 'Deduction'}
-                                </span>
-                            </div>
-                            <div>
-                                <div class="transaction-category">${ex.category}</div>
-                                ${ex.description ? `<div class="transaction-desc">${ex.description}</div>` : ''}
-                            </div>
-                            <div class="transaction-amount ${isFunding ? 'amount-positive' : 'amount-negative'}">
-                                ${isFunding ? '+' : '-'} Ksh ${parseFloat(ex.amount).toLocaleString()}
-                            </div>
-                            <div>
-                                <button class="delete-btn-table" onclick="deleteTransaction('${ex.id}', ${ex.amount}, '${ex.type}')" title="Delete">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
-                            </div>
+                return `
+                    <div class="history-item">
+                        <div class="item-info">
+                            <div class="title">${ex.description || ex.category}</div>
+                            <div class="date">${formattedDate}</div>
                         </div>
-                    `;
-                }).join('')}
-            `;
+                        <div class="item-right">
+                            <div class="item-amount-box">
+                                <div class="${isFunding ? 'amt-in' : 'amt-out'}">
+                                    ${isFunding ? '+' : '-'} Ksh ${parseFloat(ex.amount).toLocaleString()}
+                                </div>
+                                <div class="cat-tag">${ex.category}</div>
+                            </div>
+                            <button class="btn-delete" onclick="deleteTransaction('${ex.id}', ${ex.amount}, '${ex.type}')">
+                                <i class="fas fa-undo-alt"></i> UNDO
+                            </button>
+                        </div>
+                    </div>`;
+            }).join('');
 
+            // Show/hide "View More" button
             const showMoreBtn = document.getElementById('showMoreBtn');
-            if (filteredTransactions.length <= displayLimit) {
+            if (data.length < displayLimit) {
                 showMoreBtn.style.display = 'none';
             } else {
                 showMoreBtn.style.display = 'block';
             }
         } catch (error) {
             console.error("Error loading history:", error);
-            list.innerHTML = `
-                <div class="table-header">
-                    <div>Date & Time</div>
-                    <div>Type</div>
-                    <div>Category</div>
-                    <div>Amount</div>
-                    <div>Actions</div>
-                </div>
+            document.getElementById('expenseList').innerHTML = `
                 <div style="text-align:center; padding:30px; color: var(--danger);">
                     <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
                     Error loading transactions: ${error.message}
@@ -1408,8 +938,8 @@
         if (!confirm(`Are you sure you want to delete this ${type} of Ksh ${amount.toLocaleString()}?`)) return;
 
         const btn = event.target.closest('button');
-        const originalHTML = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner"></span>';
         btn.disabled = true;
 
         const { error } = await supabase
@@ -1419,11 +949,11 @@
 
         if (error) {
             alert("Error deleting: " + error.message);
-            btn.innerHTML = originalHTML;
+            btn.innerHTML = originalText;
             btn.disabled = false;
         } else {
-            await loadAllTransactions();
-            showNotification('Transaction deleted successfully', 'success');
+            await calculateTotals();
+            await loadHistory();
         }
     };
 
@@ -1431,8 +961,8 @@
     document.getElementById('expenseForm').onsubmit = async (e) => {
         e.preventDefault();
         
-        if (!currentBranchId || currentBranchId === 'all') {
-            alert("Please select a specific branch (not 'All Branches') to record transactions");
+        if (!currentBranchId) {
+            alert("Branch information not found");
             return;
         }
         
@@ -1448,7 +978,7 @@
         if(!confirm(`Commit this ${type} of Ksh ${amount.toLocaleString()}?`)) return;
 
         btn.disabled = true; 
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> SAVING...';
+        btn.innerHTML = '<span class="spinner"></span> SAVING...';
 
         const { error } = await supabase
             .from('admin_expenses')
@@ -1466,9 +996,10 @@
             alert("Error: " + error.message);
             console.error("Insert error:", error);
         } else {
-            await loadAllTransactions();
+            await calculateTotals();
+            await loadHistory();
             document.getElementById('expenseForm').reset();
-            showNotification('Transaction recorded successfully!', 'success');
+            alert("✅ Transaction Recorded Successfully!");
         }
         btn.disabled = false; 
         btn.innerHTML = '<i class="fas fa-check-circle"></i> COMMIT TRANSACTION';
@@ -1477,8 +1008,6 @@
     window.handleLogout = async () => {
         if(confirm("Logout?")) {
             localStorage.removeItem('pos_session');
-            localStorage.removeItem('selectedBranchId');
-            localStorage.removeItem('selectedBranch');
             await supabase.auth.signOut();
             window.location.href = 'index.html';
         }
@@ -1486,23 +1015,10 @@
 
     // Initialize
     async function init() {
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-            @keyframes slideOut {
-                from { transform: translateX(0); opacity: 1; }
-                to { transform: translateX(100%); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-        
-        await loadAllBranches();
         await loadUserProfile();
         if (currentBranchId) {
-            await loadAllTransactions();
+            await calculateTotals();
+            await loadHistory();
         }
     }
     
