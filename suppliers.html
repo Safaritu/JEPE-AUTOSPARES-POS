@@ -264,7 +264,7 @@
             }
         }
 
-        /* --- BRANCH SELECTOR - FIXED LIKE SALES HISTORY --- */
+        /* --- BRANCH SELECTOR --- */
         .branch-selector-container {
             background: white;
             border: 1px solid var(--border);
@@ -920,7 +920,7 @@
     </div>
 
     <div class="container">
-        <!-- Branch Selector - Fixed like Sales History -->
+        <!-- Branch Selector -->
         <div class="branch-selector-container">
             <div class="branch-filter">
                 <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
@@ -1184,7 +1184,7 @@
         if(confirm("Switch to Cashier Mode?")) window.location.href = "cashier.html";
     };
 
-    // ==================== BRANCH FUNCTIONS - FIXED LIKE SALES HISTORY ====================
+    // ==================== BRANCH FUNCTIONS ====================
 
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
@@ -1279,10 +1279,15 @@
                 selectedBranchId = branchId;
                 branchDisplay.textContent = branches[branchId].name;
                 dateRange.textContent = `Showing ${branches[branchId].name} only`;
+                
+                // Save selected branch to localStorage so it persists
+                localStorage.setItem('selectedBranchCode', selectedCode);
             }
         }
         
-        await init();
+        // Reset limit and reload data
+        orderLimit = 10;
+        await loadAllData();
     };
 
     // ==================== CATEGORY FILTER ====================
@@ -1315,6 +1320,13 @@
     }
 
     // ==================== DATA FETCHING ====================
+    async function loadAllData() {
+        await fetchSuppliers();
+        await fetchOrders();
+        await fetchPayments();
+        await fetchProducts();
+    }
+
     async function fetchProducts() {
         let query = supabase.from('products').select('*').order('name');
         
@@ -1497,7 +1509,7 @@
 
             showSuccessMessage(`✅ Stock received! Total: Ksh ${totalCost.toLocaleString()}`);
             closeModals();
-            await init();
+            await loadAllData();
         } catch (error) {
             alert("Error: " + error.message);
         } finally {
@@ -1564,7 +1576,7 @@
                 showSuccessMessage("✅ Supplier added successfully!");
             }
             closeModals();
-            await init();
+            await loadAllData();
         } catch (error) {
             alert("Error: " + error.message);
         } finally {
@@ -1621,7 +1633,7 @@
 
             showSuccessMessage(`✅ Payment of Ksh ${amount.toLocaleString()} recorded.`);
             closeModals();
-            await init();
+            await loadAllData();
         } catch (error) {
             alert("Error: " + error.message);
         } finally {
@@ -1642,24 +1654,34 @@
 
     window.handleLogout = async () => { 
         localStorage.removeItem('pos_session');
+        localStorage.removeItem('selectedBranchCode'); // Clear saved branch on logout
         await supabase.auth.signOut(); 
         window.location.href = 'index.html'; 
     };
 
-    // ==================== INITIALIZATION - FIXED LIKE SALES HISTORY ====================
+    // ==================== INITIALIZATION ====================
     async function init() {
         await loadBranches();
         await loadUserProfile();
         
-        // Set default branch selector - FIXED: Don't set to user's branch by default
-        document.getElementById('branchSelector').value = 'all';
-        selectedBranchId = null;
-        document.getElementById('currentBranchDisplay').textContent = 'ALL BRANCHES';
+        // Check if there's a saved branch in localStorage
+        const savedBranchCode = localStorage.getItem('selectedBranchCode');
         
-        await fetchSuppliers();
-        await fetchOrders();
-        await fetchPayments();
-        await fetchProducts();
+        if (savedBranchCode && branchIdMap[savedBranchCode]) {
+            // Use saved branch
+            document.getElementById('branchSelector').value = savedBranchCode;
+            selectedBranchId = branchIdMap[savedBranchCode];
+            document.getElementById('currentBranchDisplay').textContent = branches[selectedBranchId].name;
+            document.getElementById('dateRange').textContent = `Showing ${branches[selectedBranchId].name} only`;
+        } else {
+            // Default to all branches
+            document.getElementById('branchSelector').value = 'all';
+            selectedBranchId = null;
+            document.getElementById('currentBranchDisplay').textContent = 'ALL BRANCHES';
+            document.getElementById('dateRange').textContent = 'Showing all branches';
+        }
+        
+        await loadAllData();
     }
 
     // Event listeners
