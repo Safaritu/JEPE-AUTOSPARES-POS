@@ -1716,6 +1716,417 @@
         }
     }
 
+    // ============================================
+    // CRITICAL FIX: CHECK FOR ACTIVE SHIFT WITH PROPER BRANCH FILTERING
+    // ============================================
+    async function checkForOpenShift(branchId) {
+        if (!branchId) {
+            console.error("No branch ID provided to checkForOpenShift");
+            return null;
+        }
+        
+        console.log("Checking for open shift in branch:", branchId);
+        
+        const { data, error } = await supabase
+            .from('daily_shifts')
+            .select('*')
+            .eq('branch_id', branchId)
+            .eq('status', 'Open')
+            .maybeSingle();
+        
+        if (error) {
+            console.error("Error checking for open shift:", error);
+            return null;
+        }
+        
+        if (data) {
+            console.log("Found open shift:", data.id);
+        } else {
+            console.log("No open shift found for branch:", branchId);
+        }
+        
+        return data;
+    }
+
+    // ============================================
+    // FIXED: START SHIFT FUNCTION WITH PROPER VALIDATION
+    // ============================================
+    document.getElementById('confirm-open').addEventListener('click', async function() {
+        const branchId = getCurrentBranchId();
+        
+        if (!branchId) {
+            alert("❌ Branch ID not found. Please refresh the page.");
+            return;
+        }
+        
+        // Double-check for any open shift in this branch
+        const existingOpenShift = await checkForOpenShift(branchId);
+        
+        if (existingOpenShift) {
+            alert("❌ There is already an open shift for this branch. Please close the existing shift before starting a new one.");
+            document.getElementById('open-modal').style.display = 'none';
+            // Refresh the page to show the correct state
+            location.reload();
+            return;
+        }
+        
+        const cash = parseFloat(document.getElementById('o-cash').value || 0);
+        const mpesa = parseFloat(document.getElementById('o-mpesa').value || 0);
+        const kcb = parseFloat(document.getElementById('o-kcb').value || 0);
+        const equity = parseFloat(document.getElementById('o-equity').value || 0);
+        const total = cash + mpesa + kcb + equity;
+        
+        const confirmed = confirm(
+            `Are these the correct opening floats? Please confirm before starting your shift.\n\n` +
+            `Cash: Ksh ${cash.toLocaleString()}\n` +
+            `Mpesa: Ksh ${mpesa.toLocaleString()}\n` +
+            `KCB Float: Ksh ${kcb.toLocaleString()}\n` +
+            `Equity Float: Ksh ${equity.toLocaleString()}\n\n` +
+            `Total: Ksh ${total.toLocaleString()}`
+        );
+        
+        if (!confirmed) {
+            return;
+        }
+        
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner"></span> STARTING...';
+        
+        const openData = {
+            user_id: currentUser?.id,
+            branch_id: branchId,
+            open_cash: cash,
+            open_mpesa: mpesa,
+            open_kcb: kcb,
+            open_equity: equity,
+            open_kcb_bank: 0,
+            status: 'Open',
+            start_time: new Date().toISOString()
+        };
+        
+        try {
+            // One more check before insert
+            const finalCheck = await checkForOpenShift(branchId);
+            if (finalCheck) {
+                alert("❌ Another shift was just opened. Please refresh the page.");
+                location.reload();
+                return;
+            }
+            
+            const { error } = await supabase.from('daily_shifts').insert([openData]);
+            if (error) throw error;
+            
+            // Show success message
+            const banner = document.getElementById('congrats-banner');
+            if (banner) {
+                banner.textContent = '✅ Shift started successfully!';
+                banner.style.display = 'block';
+                setTimeout(() => {
+                    banner.style.display = 'none';
+                }, 3000);
+            }
+            
+            // Reload to show active shift
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+            
+        } catch (error) {
+            console.error("Error starting shift:", error);
+            alert("Error starting shift: " + error.message);
+            this.disabled = false;
+            this.innerHTML = 'START DAY';
+        }
+    });
+
+    // ============================================
+    // FIXED: INIT FUNCTION WITH BETTER SHIFT DETECTION
+    // ============================================
+    async function init() {
+        try {
+            await loadBranches();
+            
+            const profile = await loadUserProfile();
+            if (!profile) {
+                return;
+            }
+            
+            const branchId = getCurrentBranchId();
+            console.log("Current branch ID for cashier:", branchId);
+
+            // Update branch name display in header
+            const branchNameHeader = document.getElementById('branch-name-header');
+            if (branchNameHeader && branchId && branches[branchId]) {
+                branchNameHeader.innerHTML = `<i class="fas fa-store"></i> ${branches[branchId].name}`;
+            }
+
+            updateGreeting();
+            setInterval(updateGreeting, 60000);
+
+            try {
+                // Fetch inventory for this branch
+                const { data: prodData } = await supabase
+                    .from('products')
+                    .select('*')
+                    .eq('branch_id', branchId);
+                inventory = prodData || [];
+                refreshProductDatalist();
+
+                // CRITICAL FIX: Check for open shift with proper branch filtering
+                const openShift = await checkForOpenShift(branchId);
+                
+                const actionBtnContainer = document.getElementById('shift-action-container');
+                if (openShift) {
+                    currentShift = openShift;
+                    console.log("Active shift found:", currentShift.id);
+                    
+                    actionBtnContainer.innerHTML = `
+                        <button class="btn btn-danger special-action-btn" onclick="showCloseModal()">🔴 CLOSE DAY</button>
+                        <button class="btn" onclick="refreshData()" style="background: #e2e8f0; padding: 8px 12px; font-size: 0.8rem;">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    `;
+                    
+                    // Update float displays
+                    const floatCash = document.getElementById('float-cash');
+                    const floatMpesa = document.getElementById('float-mpesa');
+                    const floatKcb = document.getElementById('float-kcb');
+                    const floatEquity = document.getElementById('float-equity');
+                    
+                    if (floatCash) floatCash.innerText = (currentShift.open_cash || 0).toLocaleString();
+                    if (floatMpesa) floatMpesa.innerText = (currentShift.open_mpesa || 0).toLocaleString();
+                    if (floatKcb) floatKcb.innerText = (currentShift.open_kcb || 0).toLocaleString();
+                    if (floatEquity) floatEquity.innerText = (currentShift.open_equity || 0).toLocaleString();
+                    
+                    await loadShiftData();
+                    updateGreeting();
+                    
+                    setTimeout(checkLowFloats, 500);
+                } else {
+                    console.log("No active shift found for branch:", branchId);
+                    currentShift = null;
+                    
+                    actionBtnContainer.innerHTML = `
+                        <button class="btn btn-primary special-action-btn start-btn-large" onclick="document.getElementById('open-modal').style.display='flex'">🚀 START DAY</button>
+                        <button class="btn" onclick="refreshData()" style="background: #e2e8f0; padding: 8px 12px; font-size: 0.8rem;">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    `;
+                    
+                    // Clear float displays
+                    document.getElementById('float-cash').innerText = '0';
+                    document.getElementById('float-mpesa').innerText = '0';
+                    document.getElementById('float-kcb').innerText = '0';
+                    document.getElementById('float-equity').innerText = '0';
+                }
+                
+                await loadHistory();
+            } catch (error) {
+                console.error("Error initializing:", error);
+            }
+        } catch (error) {
+            console.error("Error in init:", error);
+        }
+    }
+
+    // ============================================
+    // FIXED: CLOSE SHIFT WITH PROPER VALIDATION
+    // ============================================
+    window.showCloseModal = function() {
+        if (!currentShift) {
+            alert("No active shift found. Please refresh the page.");
+            return;
+        }
+        document.getElementById('close-modal').style.display = 'flex';
+    };
+
+    // Function to show confirmation card with entered values
+    function showCloseConfirmation() {
+        const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
+        const clK = parseFloat(document.getElementById('c-kcb').value || 0);
+        const clE = parseFloat(document.getElementById('c-equity').value || 0);
+        const clC = parseFloat(document.getElementById('c-cash').value || 0);
+        const clB = currentKcbSalesTotal;
+        
+        // Hide the close modal
+        document.getElementById('close-modal').style.display = 'none';
+        
+        // Create confirmation card
+        const card = document.createElement('div');
+        card.className = 'overlay';
+        card.id = 'close-confirm-card';
+        card.style.display = 'flex';
+        card.innerHTML = `
+            <div class="modal" style="max-width: 500px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="color: var(--danger); margin: 0;">🔒 Confirm Closing Amounts</h3>
+                    <button onclick="closeConfirmationCard()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-dim);">✕</button>
+                </div>
+                
+                <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin: 15px 0;">
+                    <h4 style="margin: 0 0 15px 0; font-size: 0.9rem; color: var(--text);">Please verify the closing amounts:</h4>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div style="background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase;">Mpesa</small>
+                            <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">Ksh ${clM.toLocaleString()}</span>
+                        </div>
+                        <div style="background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase;">KCB Float</small>
+                            <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">Ksh ${clK.toLocaleString()}</span>
+                        </div>
+                        <div style="background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase;">Equity</small>
+                            <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">Ksh ${clE.toLocaleString()}</span>
+                        </div>
+                        <div style="background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase;">Cash</small>
+                            <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">Ksh ${clC.toLocaleString()}</span>
+                        </div>
+                        <div style="grid-column: span 2; background: #f0f9ff; padding: 15px; border-radius: 10px; border: 1px solid #bae6fd;">
+                            <small style="display: block; color: #0369a1; font-size: 0.7rem; text-transform: uppercase;">KCB Paybill</small>
+                            <span style="font-weight: 800; font-size: 1.3rem; color: var(--primary);">Ksh ${clB.toLocaleString()}</span>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 15px; padding: 12px; background: #fff7ed; border-radius: 8px; border-left: 4px solid var(--warning);">
+                        <small style="color: #9a3412; font-weight: 600;">
+                            <i class="fas fa-info-circle"></i> Please verify all amounts are correct before proceeding.
+                        </small>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-danger" style="flex: 1;" onclick="processFinalClose()">✅ CONFIRM & CLOSE</button>
+                    <button class="btn" style="flex: 1; background: #e2e8f0;" onclick="closeConfirmationCard()">✕ CANCEL</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(card);
+    }
+
+    // Function to close confirmation card
+    window.closeConfirmationCard = function() {
+        const card = document.getElementById('close-confirm-card');
+        if (card) card.remove();
+        document.getElementById('close-modal').style.display = 'flex';
+    };
+
+    // Modified close handler - shows confirmation first
+    document.getElementById('confirm-close').addEventListener('click', function() {
+        if (!currentShift) {
+            alert("No active shift found. Please refresh the page.");
+            return;
+        }
+        
+        const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
+        const clK = parseFloat(document.getElementById('c-kcb').value || 0);
+        const clE = parseFloat(document.getElementById('c-equity').value || 0);
+        const clC = parseFloat(document.getElementById('c-cash').value || 0);
+        
+        if (clM === 0 && clK === 0 && clE === 0 && clC === 0) {
+            alert("❌ Please enter closing amounts for all floats before closing the shift.");
+            return;
+        }
+        
+        // Show confirmation card with entered values
+        showCloseConfirmation();
+    });
+
+    // Process final close after confirmation
+    window.processFinalClose = async function() {
+        const card = document.getElementById('close-confirm-card');
+        if (!card) return;
+        
+        if (!currentShift) {
+            alert("No active shift found. Please refresh the page.");
+            card.remove();
+            return;
+        }
+        
+        const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
+        const clK = parseFloat(document.getElementById('c-kcb').value || 0);
+        const clE = parseFloat(document.getElementById('c-equity').value || 0);
+        const clC = parseFloat(document.getElementById('c-cash').value || 0);
+        const clB = currentKcbSalesTotal;
+        
+        card.remove();
+        
+        const btn = document.getElementById('confirm-close');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> FINALIZING...';
+        
+        try {
+            const { data: sales } = await supabase.from('sales')
+                .select('total_amount')
+                .eq('shift_id', currentShift.id)
+                .neq('payment_method','Debt')
+                .eq('refunded', false)
+                .gt('total_amount', 0);
+                
+            const { data: trans } = await supabase.from('cash_transactions').select('amount, type').eq('shift_id', currentShift.id);
+            
+            const totalSales = (sales || []).reduce((a,b) => a + b.total_amount, 0);
+            const moneyIn = (trans || []).filter(t => t.type === 'Money In').reduce((a,b) => a + b.amount, 0);
+            const moneyOut = (trans || []).filter(t => t.type === 'Money Out').reduce((a,b) => a + b.amount, 0);
+
+            const opTotal = currentShift.open_cash + currentShift.open_mpesa + currentShift.open_kcb + currentShift.open_equity;
+            const expected = (opTotal + totalSales + moneyIn) - moneyOut;
+            const actual = clM + clK + clE + clB + clC;
+            const variance = actual - expected;
+
+            let note = "";
+            if (Math.abs(variance) < 1) {
+                note = "Balanced";
+            } else {
+                const sign = variance > 0 ? "+" : "-";
+                note = prompt(`Variance: ${sign}${Math.abs(variance).toFixed(2)}. Please enter reason:`);
+                if (!note) {
+                    btn.disabled = false;
+                    btn.innerHTML = 'FINALIZE & CLOSE';
+                    return;
+                }
+                note = `${sign}${Math.abs(variance).toFixed(2)} - ${note}`;
+            }
+
+            const { error } = await supabase.from('daily_shifts').update({
+                close_mpesa: clM, 
+                close_kcb: clK, 
+                close_equity: clE, 
+                close_kcb_bank: clB, 
+                close_cash: clC,
+                status: 'Closed',
+                end_time: new Date().toISOString(), 
+                variance_note: note, 
+                system_expected_total: expected
+            }).eq('id', currentShift.id);
+            
+            if (error) throw error;
+            
+            // Show success message
+            const banner = document.getElementById('congrats-banner');
+            if (banner) {
+                banner.textContent = '✅ Shift closed successfully!';
+                banner.style.display = 'block';
+                setTimeout(() => {
+                    banner.style.display = 'none';
+                }, 3000);
+            }
+            
+            // Reload to show closed shift
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+            
+        } catch (error) {
+            console.error("Error closing shift:", error);
+            alert("Error closing shift: " + error.message);
+            btn.disabled = false;
+            btn.innerHTML = 'FINALIZE & CLOSE';
+        }
+    };
+
     window.openRefundModal = function(sale) {
         refundingSale = sale;
         document.getElementById('refund-item-name').textContent = sale.item_name || 'Unknown Item';
@@ -1892,7 +2303,16 @@
         
         btn.disabled = false;
         btn.innerHTML = originalText;
-        alert('Data refreshed successfully!');
+        
+        // Show success message
+        const banner = document.getElementById('congrats-banner');
+        if (banner) {
+            banner.textContent = '✅ Data refreshed successfully!';
+            banner.style.display = 'block';
+            setTimeout(() => {
+                banner.style.display = 'none';
+            }, 2000);
+        }
     };
 
     const productSubscription = supabase
@@ -2033,92 +2453,6 @@
         }
     }
 
-    async function checkForOpenShift(branchId) {
-        const { data } = await supabase
-            .from('daily_shifts')
-            .select('*')
-            .eq('branch_id', branchId)
-            .eq('status', 'Open')
-            .maybeSingle();
-        
-        return data;
-    }
-
-    async function init() {
-        try {
-            await loadBranches();
-            
-            const profile = await loadUserProfile();
-            if (!profile) {
-                return;
-            }
-            
-            const branchId = getCurrentBranchId();
-            console.log("Current branch ID for cashier:", branchId);
-
-            // Update branch name display in header
-            const branchNameHeader = document.getElementById('branch-name-header');
-            if (branchNameHeader && branchId && branches[branchId]) {
-                branchNameHeader.innerHTML = `<i class="fas fa-store"></i> ${branches[branchId].name}`;
-            }
-
-            updateGreeting();
-            setInterval(updateGreeting, 60000);
-
-            try {
-                const [prodRes, shiftRes] = await Promise.all([
-                    supabase.from('products').select('*').eq('branch_id', branchId),
-                    supabase.from('daily_shifts')
-                        .select('*')
-                        .eq('branch_id', branchId)
-                        .eq('status', 'Open')
-                        .maybeSingle()
-                ]);
-
-                inventory = prodRes.data || [];
-                refreshProductDatalist();
-
-                const actionBtnContainer = document.getElementById('shift-action-container');
-                if (shiftRes.data) {
-                    currentShift = shiftRes.data;
-                    actionBtnContainer.innerHTML = `
-                        <button class="btn btn-danger special-action-btn" onclick="showCloseModal()">🔴 CLOSE DAY</button>
-                        <button class="btn" onclick="refreshData()" style="background: #e2e8f0; padding: 8px 12px; font-size: 0.8rem;">
-                            <i class="fas fa-sync-alt"></i> Refresh
-                        </button>
-                    `;
-                    
-                    const floatCash = document.getElementById('float-cash');
-                    const floatMpesa = document.getElementById('float-mpesa');
-                    const floatKcb = document.getElementById('float-kcb');
-                    const floatEquity = document.getElementById('float-equity');
-                    
-                    if (floatCash) floatCash.innerText = (currentShift.open_cash || 0).toLocaleString();
-                    if (floatMpesa) floatMpesa.innerText = (currentShift.open_mpesa || 0).toLocaleString();
-                    if (floatKcb) floatKcb.innerText = (currentShift.open_kcb || 0).toLocaleString();
-                    if (floatEquity) floatEquity.innerText = (currentShift.open_equity || 0).toLocaleString();
-                    
-                    await loadShiftData();
-                    updateGreeting();
-                    
-                    setTimeout(checkLowFloats, 500);
-                } else {
-                    actionBtnContainer.innerHTML = `
-                        <button class="btn btn-primary special-action-btn start-btn-large" onclick="document.getElementById('open-modal').style.display='flex'">🚀 START DAY</button>
-                        <button class="btn" onclick="refreshData()" style="background: #e2e8f0; padding: 8px 12px; font-size: 0.8rem;">
-                            <i class="fas fa-sync-alt"></i> Refresh
-                        </button>
-                    `;
-                }
-                await loadHistory();
-            } catch (error) {
-                console.error("Error initializing:", error);
-            }
-        } catch (error) {
-            console.error("Error in init:", error);
-        }
-    }
-
     function refreshProductDatalist() {
         const pList = document.getElementById('pList');
         if (pList) {
@@ -2188,8 +2522,6 @@
             return;
         }
 
-        // Gas sales are now allowed directly - removed redirect
-
         const price = parseFloat(document.getElementById('pPrice').value);
         const qty = parseInt(document.getElementById('pQty').value);
         const total = price * qty;
@@ -2249,9 +2581,6 @@
             
             if (updateError) throw updateError;
 
-            // For gas sales, update empty_quantity if it's a refill? 
-            // This is handled in gas hub for exchange, but for complete sales we don't track empty
-
             if(method === "Debt") {
                 const dName = prompt("Customer Name:");
                 if(dName) {
@@ -2286,7 +2615,15 @@
             btn.disabled = false;
             btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
             
-            alert("✅ Sale Saved Successfully!");
+            // Show success message
+            const banner = document.getElementById('congrats-banner');
+            if (banner) {
+                banner.textContent = '✅ Sale recorded successfully!';
+                banner.style.display = 'block';
+                setTimeout(() => {
+                    banner.style.display = 'none';
+                }, 2000);
+            }
         } catch (error) { 
             console.error("Sale Error:", error);
             alert("❌ Error: " + error.message); 
@@ -2395,227 +2732,6 @@
             console.error("Error loading shift data:", error);
         }
     }
-
-    document.getElementById('confirm-open').addEventListener('click', async function() {
-        const branchId = getCurrentBranchId();
-        
-        const existingOpenShift = await checkForOpenShift(branchId);
-        
-        if (existingOpenShift) {
-            alert("❌ There is already an open shift for this branch. Please close the existing shift before starting a new one.");
-            this.disabled = false;
-            this.innerHTML = 'START DAY';
-            document.getElementById('open-modal').style.display = 'none';
-            return;
-        }
-        
-        const cash = parseFloat(document.getElementById('o-cash').value || 0);
-        const mpesa = parseFloat(document.getElementById('o-mpesa').value || 0);
-        const kcb = parseFloat(document.getElementById('o-kcb').value || 0);
-        const equity = parseFloat(document.getElementById('o-equity').value || 0);
-        const total = cash + mpesa + kcb + equity;
-        
-        const confirmed = confirm(
-            `Are these the correct opening floats? Please confirm before starting your shift.\n\n` +
-            `Cash: Ksh ${cash.toLocaleString()}\n` +
-            `Mpesa: Ksh ${mpesa.toLocaleString()}\n` +
-            `KCB Float: Ksh ${kcb.toLocaleString()}\n` +
-            `Equity Float: Ksh ${equity.toLocaleString()}\n\n` +
-            `Total: Ksh ${total.toLocaleString()}`
-        );
-        
-        if (!confirmed) {
-            return;
-        }
-        
-        this.disabled = true;
-        this.innerHTML = '<span class="spinner"></span> STARTING...';
-        
-        const openData = {
-            user_id: currentUser.id,
-            branch_id: branchId,
-            open_cash: cash,
-            open_mpesa: mpesa,
-            open_kcb: kcb,
-            open_equity: equity,
-            status: 'Open',
-            start_time: new Date().toISOString()
-        };
-        
-        try {
-            const { error } = await supabase.from('daily_shifts').insert([openData]);
-            if (error) throw error;
-            location.reload();
-        } catch (error) {
-            alert("Error starting shift: " + error.message);
-            this.disabled = false;
-            this.innerHTML = 'START DAY';
-        }
-    });
-
-    // Show close modal with cancel button
-    window.showCloseModal = function() {
-        document.getElementById('close-modal').style.display = 'flex';
-    };
-
-    // Function to show confirmation card with entered values
-    function showCloseConfirmation() {
-        const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
-        const clK = parseFloat(document.getElementById('c-kcb').value || 0);
-        const clE = parseFloat(document.getElementById('c-equity').value || 0);
-        const clC = parseFloat(document.getElementById('c-cash').value || 0);
-        const clB = currentKcbSalesTotal;
-        
-        // Hide the close modal
-        document.getElementById('close-modal').style.display = 'none';
-        
-        // Create confirmation card
-        const card = document.createElement('div');
-        card.className = 'overlay';
-        card.id = 'close-confirm-card';
-        card.style.display = 'flex';
-        card.innerHTML = `
-            <div class="modal" style="max-width: 500px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="color: var(--danger); margin: 0;">🔒 Confirm Closing Amounts</h3>
-                    <button onclick="closeConfirmationCard()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-dim);">✕</button>
-                </div>
-                
-                <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin: 15px 0;">
-                    <h4 style="margin: 0 0 15px 0; font-size: 0.9rem; color: var(--text);">Please verify the closing amounts:</h4>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                        <div style="background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
-                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase;">Mpesa</small>
-                            <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">Ksh ${clM.toLocaleString()}</span>
-                        </div>
-                        <div style="background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
-                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase;">KCB Float</small>
-                            <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">Ksh ${clK.toLocaleString()}</span>
-                        </div>
-                        <div style="background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
-                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase;">Equity</small>
-                            <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">Ksh ${clE.toLocaleString()}</span>
-                        </div>
-                        <div style="background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
-                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase;">Cash</small>
-                            <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">Ksh ${clC.toLocaleString()}</span>
-                        </div>
-                        <div style="grid-column: span 2; background: #f0f9ff; padding: 15px; border-radius: 10px; border: 1px solid #bae6fd;">
-                            <small style="display: block; color: #0369a1; font-size: 0.7rem; text-transform: uppercase;">KCB Paybill</small>
-                            <span style="font-weight: 800; font-size: 1.3rem; color: var(--primary);">Ksh ${clB.toLocaleString()}</span>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-top: 15px; padding: 12px; background: #fff7ed; border-radius: 8px; border-left: 4px solid var(--warning);">
-                        <small style="color: #9a3412; font-weight: 600;">
-                            <i class="fas fa-info-circle"></i> Please verify all amounts are correct before proceeding.
-                        </small>
-                    </div>
-                </div>
-                
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn btn-danger" style="flex: 1;" onclick="processFinalClose()">✅ CONFIRM & CLOSE</button>
-                    <button class="btn" style="flex: 1; background: #e2e8f0;" onclick="closeConfirmationCard()">✕ CANCEL</button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(card);
-    }
-
-    // Function to close confirmation card
-    window.closeConfirmationCard = function() {
-        const card = document.getElementById('close-confirm-card');
-        if (card) card.remove();
-        document.getElementById('close-modal').style.display = 'flex';
-    };
-
-    // Modified close handler - shows confirmation first
-    document.getElementById('confirm-close').addEventListener('click', function() {
-        const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
-        const clK = parseFloat(document.getElementById('c-kcb').value || 0);
-        const clE = parseFloat(document.getElementById('c-equity').value || 0);
-        const clC = parseFloat(document.getElementById('c-cash').value || 0);
-        
-        if (clM === 0 && clK === 0 && clE === 0 && clC === 0) {
-            alert("❌ Please enter closing amounts for all floats before closing the shift.");
-            return;
-        }
-        
-        // Show confirmation card with entered values
-        showCloseConfirmation();
-    });
-
-    // Process final close after confirmation
-    window.processFinalClose = async function() {
-        const card = document.getElementById('close-confirm-card');
-        if (!card) return;
-        
-        const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
-        const clK = parseFloat(document.getElementById('c-kcb').value || 0);
-        const clE = parseFloat(document.getElementById('c-equity').value || 0);
-        const clC = parseFloat(document.getElementById('c-cash').value || 0);
-        const clB = currentKcbSalesTotal;
-        
-        card.remove();
-        
-        const btn = document.getElementById('confirm-close');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> FINALIZING...';
-        
-        try {
-            const { data: sales } = await supabase.from('sales')
-                .select('total_amount')
-                .eq('shift_id', currentShift.id)
-                .neq('payment_method','Debt')
-                .eq('refunded', false)
-                .gt('total_amount', 0);
-                
-            const { data: trans } = await supabase.from('cash_transactions').select('amount, type').eq('shift_id', currentShift.id);
-            
-            const totalSales = (sales || []).reduce((a,b) => a + b.total_amount, 0);
-            const moneyIn = (trans || []).filter(t => t.type === 'Money In').reduce((a,b) => a + b.amount, 0);
-            const moneyOut = (trans || []).filter(t => t.type === 'Money Out').reduce((a,b) => a + b.amount, 0);
-
-            const opTotal = currentShift.open_cash + currentShift.open_mpesa + currentShift.open_kcb + currentShift.open_equity;
-            const expected = (opTotal + totalSales + moneyIn) - moneyOut;
-            const actual = clM + clK + clE + clB + clC;
-            const variance = actual - expected;
-
-            let note = "";
-            if (Math.abs(variance) < 1) {
-                note = "Balanced";
-            } else {
-                const sign = variance > 0 ? "+" : "-";
-                note = prompt(`Variance: ${sign}${Math.abs(variance).toFixed(2)}. Please enter reason:`);
-                if (!note) {
-                    btn.disabled = false;
-                    btn.innerHTML = 'FINALIZE & CLOSE';
-                    return;
-                }
-                note = `${sign}${Math.abs(variance).toFixed(2)} - ${note}`;
-            }
-
-            await supabase.from('daily_shifts').update({
-                close_mpesa: clM, 
-                close_kcb: clK, 
-                close_equity: clE, 
-                close_kcb_bank: clB, 
-                close_cash: clC,
-                status: 'Closed',
-                end_time: new Date().toISOString(), 
-                variance_note: note, 
-                system_expected_total: expected
-            }).eq('id', currentShift.id);
-            
-            location.reload();
-        } catch (error) {
-            alert("Error closing shift: " + error.message);
-            btn.disabled = false;
-            btn.innerHTML = 'FINALIZE & CLOSE';
-        }
-    };
 
     async function loadHistory(searchQuery = "") {
         try {
@@ -2934,11 +3050,21 @@
                 await loadShiftData();
                 this.disabled = false;
                 this.innerHTML = 'RECORD MONEY';
-                alert("✅ Transaction recorded successfully!");
+                
+                // Show success message
+                const banner = document.getElementById('congrats-banner');
+                if (banner) {
+                    banner.textContent = '✅ Transaction recorded!';
+                    banner.style.display = 'block';
+                    setTimeout(() => {
+                        banner.style.display = 'none';
+                    }, 2000);
+                }
             } else {
                 throw error;
             }
         } catch (error) {
+            console.error("Error recording transaction:", error);
             alert("❌ Error recording transaction: " + error.message);
             this.disabled = false;
             this.innerHTML = 'RECORD MONEY';
