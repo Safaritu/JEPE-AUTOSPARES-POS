@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Finance Manager | JEPE AUTOSPARES</title>
+    <title>Paybill Manager | JEPE AUTOSPARES</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -14,6 +14,8 @@
             --danger: #ef4444; 
             --bg: #f8fafc;
             --success: #10b981;
+            --warning: #f59e0b;
+            --info: #3b82f6;
             --text-main: #1e293b;
             --text-dim: #64748b;
             --border: #e2e8f0;
@@ -87,52 +89,6 @@
             cursor: pointer; 
         }
 
-        /* Branch Info in Sidebar */
-        .branch-info {
-            padding: 10px;
-            margin: 10px 0 20px;
-            background: rgba(79, 70, 229, 0.2);
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.1);
-            white-space: nowrap;
-        }
-        
-        .branch-label {
-            font-size: 0.6rem;
-            text-transform: uppercase;
-            color: #94a3b8;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        
-        .sidebar:hover .branch-label, .sidebar.mobile-active .branch-label {
-            opacity: 1;
-        }
-        
-        .branch-name {
-            font-weight: 800;
-            color: white;
-            font-size: 0.85rem;
-            margin-top: 3px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .branch-name i { 
-            color: var(--admin-accent); 
-            min-width: 20px;
-        }
-        
-        .branch-name span {
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        
-        .sidebar:hover .branch-name span, .sidebar.mobile-active .branch-name span {
-            opacity: 1;
-        }
-        
         .nav-list { 
             flex: 1;
             list-style: none; 
@@ -253,7 +209,61 @@
             }
         }
 
-        /* --- BRANCH BADGE --- */
+        /* --- BRANCH SELECTOR WITH ALL BRANCHES OPTION --- */
+        .branch-selector-main {
+            background: white;
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+        
+        .branch-selector-main label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .branch-selector-main label i {
+            color: var(--admin-accent);
+            font-size: 1rem;
+        }
+        
+        .branch-selector-main select {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px 16px;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 600;
+            background: #f8fafc;
+            color: var(--text-main);
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s;
+        }
+        
+        .branch-selector-main select:hover {
+            border-color: var(--admin-accent);
+        }
+        
+        .branch-selector-main select:focus {
+            border-color: var(--admin-accent);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
         .branch-badge {
             background: var(--admin-accent);
             color: white;
@@ -268,6 +278,10 @@
             box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
         }
 
+        .branch-badge.all {
+            background: var(--info);
+        }
+
         .container { 
             padding: 30px; 
             max-width: 1200px; 
@@ -277,6 +291,15 @@
         @media (max-width: 768px) {
             .container {
                 padding: 20px 15px;
+            }
+            
+            .branch-selector-main {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .branch-selector-main select {
+                min-width: 100%;
             }
         }
 
@@ -308,7 +331,7 @@
         /* Stats Row */
         .stats-grid { 
             display: grid; 
-            grid-template-columns: 1fr 1fr; 
+            grid-template-columns: repeat(2, 1fr); 
             gap: 15px; 
             margin-bottom: 25px; 
         }
@@ -341,6 +364,110 @@
             justify-content: space-between; 
             align-items: center; 
             color: var(--admin-dark); 
+        }
+
+        /* Filter Section */
+        .filter-section {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .quick-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 10px 20px;
+            border: 1.5px solid var(--border);
+            border-radius: 30px;
+            background: white;
+            color: var(--text-main);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .filter-btn:hover {
+            border-color: var(--admin-accent);
+            background: #f5f3ff;
+        }
+        
+        .filter-btn.active {
+            background: var(--admin-accent);
+            color: white;
+            border-color: var(--admin-accent);
+        }
+        
+        .filter-btn.active i {
+            color: white;
+        }
+        
+        .filter-btn i {
+            color: var(--admin-accent);
+            font-size: 0.9rem;
+        }
+
+        /* Custom Date Range */
+        .custom-date-range {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding-top: 15px;
+            border-top: 1px dashed var(--border);
+        }
+        
+        .date-input {
+            flex: 1;
+            min-width: 150px;
+            padding: 10px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+        
+        .apply-date-btn {
+            padding: 10px 20px;
+            background: var(--info);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+        
+        .apply-date-btn:hover {
+            background: #2563eb;
+        }
+        
+        .clear-date-btn {
+            padding: 10px 20px;
+            background: #f1f5f9;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .clear-date-btn:hover {
+            background: #e2e8f0;
         }
 
         /* Form Card */
@@ -424,84 +551,193 @@
             cursor: not-allowed;
         }
 
-        /* History List */
-        .history-list { 
-            display: flex; 
-            flex-direction: column; 
-            gap: 10px; 
-            margin-bottom: 15px; 
-        }
-        .history-item { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            padding: 16px; 
-            background: white; 
-            border-radius: 16px; 
-            border: 1px solid #eef2f6; 
-            position: relative;
-            transition: transform 0.2s;
-        }
-        .history-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 15px rgba(0,0,0,0.05);
-        }
-        .item-info .title { 
-            font-weight: 700; 
-            font-size: 0.9rem; 
-            color: var(--text-main); 
-        }
-        .item-info .date { 
-            font-size: 0.7rem; 
-            color: var(--text-dim); 
-            margin-top: 3px; 
+        /* Export Buttons */
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
         }
         
-        .item-right { 
-            display: flex; 
-            align-items: center; 
-            gap: 15px; 
+        .btn-export {
+            padding: 10px 16px;
+            background: white;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
         }
-        .item-amount-box { 
-            text-align: right; 
-        }
-        .amt-out { 
-            color: var(--danger); 
-            font-weight: 800; 
-            font-size: 1rem; 
-        }
-        .amt-in { 
-            color: var(--success); 
-            font-weight: 800; 
-            font-size: 1rem; 
-        }
-        .cat-tag { 
-            font-size: 0.65rem; 
-            color: var(--text-dim); 
-            text-transform: uppercase; 
-            font-weight: 600; 
-            margin-top: 2px;
+        
+        .btn-export:hover {
+            background: var(--admin-accent);
+            color: white;
+            border-color: var(--admin-accent);
         }
 
-        /* Delete Button */
-        .btn-delete { 
-            background: #fee2e2; 
-            color: #b91c1c; 
-            border: none; 
-            padding: 10px 12px; 
-            border-radius: 10px; 
-            cursor: pointer; 
-            font-size: 0.8rem; 
-            display: flex; 
-            align-items: center; 
-            gap: 5px;
-            transition: 0.2s; 
+        /* Improved Transaction Table */
+        .transactions-table {
+            background: white;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        
+        .table-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1.5fr 1fr 0.8fr;
+            background: #f8fafc;
+            padding: 15px 20px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border);
+        }
+        
+        .transaction-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1.5fr 1fr 0.8fr;
+            padding: 15px 20px;
+            align-items: center;
+            border-bottom: 1px solid #eef2f6;
+            transition: background 0.2s;
+        }
+        
+        .transaction-row:hover {
+            background: #f8fafc;
+        }
+        
+        .transaction-row:last-child {
+            border-bottom: none;
+        }
+        
+        .transaction-date {
+            font-size: 0.85rem;
             font-weight: 600;
+            color: var(--text-main);
         }
-        .btn-delete:hover {
-            background: #fecaca;
-            transform: scale(1.02);
+        
+        .transaction-time {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin-top: 2px;
         }
+        
+        .transaction-type {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .type-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            width: fit-content;
+        }
+        
+        .type-badge.funding {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .type-badge.expense {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .transaction-category {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        
+        .transaction-desc {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+        
+        .transaction-amount {
+            font-weight: 800;
+            font-size: 1rem;
+        }
+        
+        .amount-positive {
+            color: var(--success);
+        }
+        
+        .amount-negative {
+            color: var(--danger);
+        }
+        
+        .branch-tag {
+            font-size: 0.7rem;
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 3px 8px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            width: fit-content;
+        }
+        
+        .delete-btn-table {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            width: fit-content;
+        }
+        
+        .delete-btn-table:hover {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+        
+        @media (max-width: 768px) {
+            .table-header {
+                display: none;
+            }
+            
+            .transaction-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+                padding: 15px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .custom-date-range {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         .btn-more { 
             width: 100%; 
@@ -530,27 +766,14 @@
         }
         .overlay.active { display: block; }
 
-        .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 3px solid rgba(255,255,255,.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        @media (max-width: 768px) {
-            .history-item {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 12px;
-            }
-            .item-right {
-                width: 100%;
-                justify-content: space-between;
-            }
+        .active-filter-badge {
+            background: var(--info);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 10px;
         }
     </style>
 </head>
@@ -563,15 +786,6 @@
     <div class="sidebar-header">
         <h2>JEPE ADMIN</h2>
         <button class="close-btn" onclick="toggleMenu()">×</button>
-    </div>
-    
-    <!-- Branch Info Display -->
-    <div class="branch-info" id="sidebarBranchInfo">
-        <div class="branch-label">Your Assigned Branch</div>
-        <div class="branch-name" id="sidebarBranchName">
-            <i class="fas fa-store"></i>
-            <span>Loading...</span>
-        </div>
     </div>
     
     <nav class="nav-list">
@@ -627,6 +841,47 @@
             <span id="branchDisplay" class="branch-badge">
                 <i class="fas fa-store"></i> <span>Loading...</span>
             </span>
+        </div>
+
+        <!-- Branch Selector with ALL BRANCHES option -->
+        <div class="branch-selector-main">
+            <label for="mainBranchSelect">
+                <i class="fas fa-store-alt"></i> SELECT BRANCH:
+            </label>
+            <select id="mainBranchSelect" onchange="handleBranchChange(this.value)">
+                <option value="">Loading branches...</option>
+            </select>
+        </div>
+
+        <!-- Filter Section with Quick Filters and Custom Date Range -->
+        <div class="filter-section">
+            <div class="quick-filters">
+                <button class="filter-btn active" onclick="setFilter('lifetime')" id="filterLifetime">
+                    <i class="fas fa-infinity"></i> Lifetime
+                </button>
+                <button class="filter-btn" onclick="setFilter('today')" id="filterToday">
+                    <i class="fas fa-sun"></i> Today
+                </button>
+                <button class="filter-btn" onclick="setFilter('week')" id="filterWeek">
+                    <i class="fas fa-calendar-week"></i> This Week
+                </button>
+                <button class="filter-btn" onclick="setFilter('month')" id="filterMonth">
+                    <i class="fas fa-calendar-alt"></i> This Month
+                </button>
+                <span id="activeFilterBadge" class="active-filter-badge" style="display: none;">Custom Range</span>
+            </div>
+
+            <!-- Custom Date Range -->
+            <div class="custom-date-range">
+                <input type="date" id="startDate" class="date-input" placeholder="Start Date">
+                <input type="date" id="endDate" class="date-input" placeholder="End Date">
+                <button class="apply-date-btn" onclick="applyCustomDateFilter()">
+                    <i class="fas fa-calendar-check"></i> Apply Range
+                </button>
+                <button class="clear-date-btn" onclick="clearCustomDateFilter()">
+                    <i class="fas fa-times"></i> Clear
+                </button>
+            </div>
         </div>
 
         <div class="balance-preview">
@@ -688,9 +943,25 @@
 
         <div class="section-title">
             <span><i class="fas fa-history" style="color: var(--admin-accent);"></i> Recent Activity</span>
+            <div class="export-buttons">
+                <button class="btn-export" onclick="exportToPDF()">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
+                <button class="btn-export" onclick="exportToExcel()">
+                    <i class="fas fa-file-excel"></i> Excel
+                </button>
+            </div>
         </div>
         
-        <div id="expenseList" class="history-list">
+        <!-- Improved Transaction Table -->
+        <div class="transactions-table" id="expenseList">
+            <div class="table-header">
+                <div>Date & Time</div>
+                <div>Type</div>
+                <div>Category</div>
+                <div>Amount</div>
+                <div>Actions</div>
+            </div>
             <div style="text-align:center; padding:30px; color:var(--text-dim);">
                 <div class="spinner" style="margin: 0 auto;"></div>
                 Loading records...
@@ -710,6 +981,12 @@
     let currentUser = null;
     let currentBranchId = null;
     let currentBranch = null;
+    let allBranches = [];
+    let allTransactions = [];
+    let filteredTransactions = [];
+    let currentFilter = 'lifetime';
+    let customStartDate = null;
+    let customEndDate = null;
 
     // ==================== SIDEBAR FUNCTIONS ====================
     window.toggleMenu = () => {
@@ -720,15 +997,318 @@
     window.confirmSwitchToCashier = (e) => {
         e.preventDefault();
         if(confirm("Switch to Cashier Mode?")) {
-            // You can add branch selection logic here if needed
             window.location.href = "cashier.html";
         }
     };
 
-    // ==================== BRANCH FUNCTIONS ====================
+    // ==================== FILTER FUNCTIONS ====================
+    window.setFilter = (filter) => {
+        currentFilter = filter;
+        customStartDate = null;
+        customEndDate = null;
+        
+        // Clear date inputs
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        
+        // Update active button styles
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`filter${filter.charAt(0).toUpperCase() + filter.slice(1)}`).classList.add('active');
+        
+        // Hide custom filter badge
+        document.getElementById('activeFilterBadge').style.display = 'none';
+        
+        applyFilter();
+    };
 
+    window.applyCustomDateFilter = () => {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        if (!startDate || !endDate) {
+            alert('Please select both start and end dates');
+            return;
+        }
+        
+        customStartDate = new Date(startDate);
+        customStartDate.setHours(0, 0, 0, 0);
+        
+        customEndDate = new Date(endDate);
+        customEndDate.setHours(23, 59, 59, 999);
+        
+        currentFilter = 'custom';
+        
+        // Remove active class from all quick filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        
+        // Show custom filter badge
+        const badge = document.getElementById('activeFilterBadge');
+        badge.style.display = 'inline-block';
+        badge.textContent = `${startDate} to ${endDate}`;
+        
+        applyFilter();
+    };
+
+    window.clearCustomDateFilter = () => {
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        setFilter('lifetime');
+    };
+
+    function applyFilter() {
+        const now = new Date();
+        let startDate = null;
+        let endDate = null;
+        
+        if (currentFilter === 'custom') {
+            startDate = customStartDate;
+            endDate = customEndDate;
+        } else {
+            switch(currentFilter) {
+                case 'today':
+                    startDate = new Date(now.setHours(0, 0, 0, 0));
+                    break;
+                case 'week':
+                    startDate = new Date(now);
+                    startDate.setDate(now.getDate() - now.getDay());
+                    startDate.setHours(0, 0, 0, 0);
+                    break;
+                case 'month':
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                    break;
+                case 'lifetime':
+                default:
+                    startDate = null;
+                    break;
+            }
+        }
+        
+        if (startDate || endDate) {
+            filteredTransactions = allTransactions.filter(t => {
+                const tDate = new Date(t.created_at);
+                if (startDate && tDate < startDate) return false;
+                if (endDate && tDate > endDate) return false;
+                return true;
+            });
+        } else {
+            filteredTransactions = allTransactions;
+        }
+        
+        loadHistory();
+    }
+
+    // ==================== BRANCH SELECTION WITH ALL BRANCHES ====================
+    async function loadAllBranches() {
+        try {
+            const { data: branches, error } = await supabase
+                .from('branches')
+                .select('id, name, code, location')
+                .order('name');
+
+            if (error) throw error;
+            
+            allBranches = branches || [];
+            
+            const mainSelect = document.getElementById('mainBranchSelect');
+            
+            if (branches && branches.length > 0) {
+                mainSelect.innerHTML = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>' + 
+                    branches.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+            } else {
+                mainSelect.innerHTML = '<option value="">No branches found</option>';
+            }
+            
+            return branches;
+        } catch (error) {
+            console.error("Error loading branches:", error);
+            return [];
+        }
+    }
+
+    window.handleBranchChange = async (branchId) => {
+        if (!branchId) return;
+        
+        if (branchId === 'all') {
+            currentBranchId = 'all';
+            currentBranch = { id: 'all', name: 'All Branches' };
+            document.getElementById('branchDisplay').innerHTML = '<i class="fas fa-store-alt"></i> ALL BRANCHES';
+            document.getElementById('branchDisplay').classList.add('all');
+        } else {
+            const selectedBranch = allBranches.find(b => b.id === branchId);
+            if (!selectedBranch) return;
+            
+            currentBranchId = branchId;
+            currentBranch = selectedBranch;
+            document.getElementById('branchDisplay').classList.remove('all');
+        }
+        
+        localStorage.setItem('selectedBranchId', branchId);
+        if (branchId !== 'all') {
+            localStorage.setItem('selectedBranch', JSON.stringify(currentBranch));
+        } else {
+            localStorage.removeItem('selectedBranch');
+        }
+        
+        const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
+        session.branch = currentBranch;
+        session.branch_id = branchId;
+        localStorage.setItem('pos_session', JSON.stringify(session));
+        
+        updateBranchDisplay();
+        await loadAllTransactions();
+        
+        showNotification(`Switched to ${currentBranch.name}`, 'success');
+    }
+
+    // ==================== LOAD ALL TRANSACTIONS ====================
+    async function loadAllTransactions() {
+        if (!currentBranchId) return;
+
+        try {
+            let query = supabase
+                .from('admin_expenses')
+                .select(`
+                    *,
+                    branches (
+                        name
+                    )
+                `)
+                .eq('payment_source', 'KCB Paybill')
+                .order('created_at', { ascending: false });
+            
+            if (currentBranchId !== 'all') {
+                query = query.eq('branch_id', currentBranchId);
+            }
+            
+            const { data, error } = await query;
+
+            if (error) throw error;
+            
+            allTransactions = data || [];
+            applyFilter();
+            await calculateTotals();
+            
+        } catch (error) {
+            console.error("Error loading transactions:", error);
+        }
+    }
+
+    // ==================== EXPORT FUNCTIONS ====================
+    window.exportToPDF = () => {
+        const transactions = filteredTransactions;
+        const branchName = currentBranch?.name || 'All Branches';
+        
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Paybill Transactions - ${branchName}</title>
+                    <style>
+                        body { font-family: Arial; padding: 20px; }
+                        h1 { color: #4f46e5; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th { background: #4f46e5; color: white; padding: 10px; text-align: left; }
+                        td { padding: 8px; border-bottom: 1px solid #ddd; }
+                        .funding { color: #10b981; }
+                        .expense { color: #ef4444; }
+                    </style>
+                </head>
+                <body>
+                    <h1>KCB Paybill Transactions - ${branchName}</h1>
+                    <p>Generated on: ${new Date().toLocaleString()}</p>
+                    <p>Filter: ${currentFilter === 'custom' ? 'Custom Range' : currentFilter}</p>
+                    <table>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                        </tr>
+                        ${transactions.map(t => `
+                            <tr>
+                                <td>${new Date(t.created_at).toLocaleString()}</td>
+                                <td class="${t.type}">${t.type === 'funding' ? 'Funding (+)' : 'Deduction (-)'}</td>
+                                <td>${t.category}</td>
+                                <td>${t.description || '-'}</td>
+                                <td>Ksh ${parseFloat(t.amount).toLocaleString()}</td>
+                            </tr>
+                        `).join('')}
+                    </table>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+    };
+
+    window.exportToExcel = () => {
+        const transactions = filteredTransactions;
+        const branchName = currentBranch?.name || 'All Branches';
+        
+        const headers = ['Date', 'Type', 'Category', 'Description', 'Amount'];
+        const csvData = transactions.map(t => [
+            new Date(t.created_at).toLocaleString(),
+            t.type === 'funding' ? 'Funding (+)' : 'Deduction (-)',
+            t.category,
+            t.description || '',
+            t.amount
+        ]);
+        
+        const csv = [headers, ...csvData].map(row => row.join(',')).join('\n');
+        
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `paybill_transactions_${branchName}_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        
+        showNotification('Excel file downloaded successfully', 'success');
+    };
+
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: ${type === 'success' ? '#10b981' : '#4f46e5'};
+            color: white;
+            border-radius: 8px;
+            font-weight: 600;
+            z-index: 9999;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
+    // ==================== USER PROFILE ====================
     async function loadUserProfile() {
         try {
+            const savedSession = localStorage.getItem('pos_session');
+            if (savedSession) {
+                const session = JSON.parse(savedSession);
+                if (session.branch) {
+                    currentBranch = session.branch;
+                    currentBranchId = session.branch_id || session.branch.id;
+                    currentUser = session.user;
+                    
+                    updateBranchDisplay();
+                    updateBranchSelector(currentBranchId);
+                    return session.profile;
+                }
+            }
+
             const { data: { user }, error } = await supabase.auth.getUser();
             if (error || !user) {
                 console.log("No authenticated user, redirecting to login");
@@ -754,32 +1334,58 @@
             
             if (profileError) throw profileError;
             
-            currentBranchId = profile.branch_id;
-            currentBranch = profile.branches;
+            const savedBranchId = localStorage.getItem('selectedBranchId');
+            if (savedBranchId) {
+                if (savedBranchId === 'all') {
+                    currentBranchId = 'all';
+                    currentBranch = { id: 'all', name: 'All Branches' };
+                } else if (allBranches.some(b => b.id === savedBranchId)) {
+                    currentBranchId = savedBranchId;
+                    currentBranch = allBranches.find(b => b.id === savedBranchId);
+                }
+            } else {
+                currentBranchId = profile.branch_id;
+                currentBranch = profile.branches;
+                localStorage.setItem('selectedBranchId', profile.branch_id);
+                localStorage.setItem('selectedBranch', JSON.stringify(profile.branches));
+            }
             
             const session = {
                 user: user,
                 profile: profile,
-                branch: profile.branches,
+                branch: currentBranch,
+                branch_id: currentBranchId,
                 role: profile.role
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
-            // Update branch displays
-            const branchDisplay = document.getElementById('branchDisplay');
-            const sidebarBranchName = document.querySelector('#sidebarBranchName span');
-            
-            if (branchDisplay && profile.branches) {
-                branchDisplay.innerHTML = `<i class="fas fa-store"></i> ${profile.branches.name}`;
-            }
-            if (sidebarBranchName && profile.branches) {
-                sidebarBranchName.textContent = profile.branches.name;
-            }
+            updateBranchDisplay();
+            updateBranchSelector(currentBranchId);
             
             return profile;
         } catch (error) {
             console.error("Error loading profile:", error);
             return null;
+        }
+    }
+
+    function updateBranchDisplay() {
+        const branchDisplay = document.getElementById('branchDisplay');
+        if (branchDisplay && currentBranch) {
+            if (currentBranchId === 'all') {
+                branchDisplay.innerHTML = `<i class="fas fa-store-alt"></i> ALL BRANCHES`;
+                branchDisplay.classList.add('all');
+            } else {
+                branchDisplay.innerHTML = `<i class="fas fa-store"></i> ${currentBranch.name}`;
+                branchDisplay.classList.remove('all');
+            }
+        }
+    }
+
+    function updateBranchSelector(selectedBranchId) {
+        const mainSelect = document.getElementById('mainBranchSelect');
+        if (mainSelect && selectedBranchId) {
+            mainSelect.value = selectedBranchId;
         }
     }
 
@@ -803,22 +1409,33 @@
         loadHistory();
     };
 
-    // Recalculate Totals Logic (Fixed Funding vs Expense Addition)
+    // Recalculate Totals
     async function calculateTotals() {
+        if (!currentBranchId) return;
+
         try {
-            const branchFilter = currentBranchId;
-            
-            const { data: sales } = await supabase
+            let salesQuery = supabase
                 .from('sales')
                 .select('total_amount')
-                .eq('payment_method', 'KCB Paybill')
-                .eq('branch_id', branchFilter);
-                
-            const { data: records } = await supabase
+                .eq('payment_method', 'KCB Paybill');
+            
+            let recordsQuery = supabase
                 .from('admin_expenses')
                 .select('amount, type')
-                .eq('payment_source', 'KCB Paybill')
-                .eq('branch_id', branchFilter);
+                .eq('payment_source', 'KCB Paybill');
+            
+            if (currentBranchId !== 'all') {
+                salesQuery = salesQuery.eq('branch_id', currentBranchId);
+                recordsQuery = recordsQuery.eq('branch_id', currentBranchId);
+            }
+
+            const [salesResult, recordsResult] = await Promise.all([
+                salesQuery,
+                recordsQuery
+            ]);
+
+            const sales = salesResult.data || [];
+            const records = recordsResult.data || [];
 
             const totalSales = sales?.reduce((sum, s) => sum + parseFloat(s.total_amount || 0), 0) || 0;
             
@@ -833,7 +1450,7 @@
 
             const finalBalance = totalSales + manualFunding - manualExpense;
             
-            document.getElementById('live-pb-total').innerText = `Ksh ${finalBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            document.getElementById('live-pb-total').innerText = `Ksh ${finalBalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
             document.getElementById('stat-funding').innerText = `Ksh ${manualFunding.toLocaleString()}`;
             document.getElementById('stat-expense').innerText = `Ksh ${manualExpense.toLocaleString()}`;
         } catch (error) {
@@ -841,58 +1458,90 @@
         }
     }
 
-    // Load History with Delete Feature
+    // Load History with improved table layout
     async function loadHistory() {
+        const list = document.getElementById('expenseList');
+        
         try {
-            const branchFilter = currentBranchId;
-            
-            const { data, error } = await supabase
-                .from('admin_expenses')
-                .select('*')
-                .eq('payment_source', 'KCB Paybill')
-                .eq('branch_id', branchFilter)
-                .order('created_at', { ascending: false })
-                .limit(displayLimit);
+            const displayTransactions = filteredTransactions.slice(0, displayLimit);
 
-            const list = document.getElementById('expenseList');
-            if (error || !data) throw error;
-
-            if (data.length === 0) {
-                list.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-dim);">
-                    <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                    No transactions found for ${currentBranch?.name || 'this branch'}
-                </div>`;
+            if (displayTransactions.length === 0) {
+                list.innerHTML = `
+                    <div class="table-header">
+                        <div>Date & Time</div>
+                        <div>Type</div>
+                        <div>Category</div>
+                        <div>Amount</div>
+                        <div>Actions</div>
+                    </div>
+                    <div style="text-align:center; padding:30px; color:var(--text-dim);">
+                        <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        No transactions found for ${currentBranch?.name || 'this branch'}
+                    </div>
+                `;
                 return;
             }
 
-            list.innerHTML = data.map(ex => {
-                const isFunding = ex.type === 'funding';
-                const formattedDate = new Date(ex.created_at).toLocaleDateString('en-GB', {
-                    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                });
+            list.innerHTML = `
+                <div class="table-header">
+                    <div>Date & Time</div>
+                    <div>Type</div>
+                    <div>Category</div>
+                    <div>Amount</div>
+                    <div>Actions</div>
+                </div>
+                ${displayTransactions.map(ex => {
+                    const isFunding = ex.type === 'funding';
+                    const date = new Date(ex.created_at);
+                    const formattedDate = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+                    const formattedTime = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
-                return `
-                    <div class="history-item">
-                        <div class="item-info">
-                            <div class="title">${ex.description || ex.category}</div>
-                            <div class="date">${formattedDate}</div>
-                        </div>
-                        <div class="item-right">
-                            <div class="item-amount-box">
-                                <div class="${isFunding ? 'amt-in' : 'amt-out'}">
-                                    ${isFunding ? '+' : '-'} Ksh ${parseFloat(ex.amount).toLocaleString()}
-                                </div>
-                                <div class="cat-tag">${ex.category}</div>
+                    return `
+                        <div class="transaction-row">
+                            <div>
+                                <div class="transaction-date">${formattedDate}</div>
+                                <div class="transaction-time">${formattedTime}</div>
+                                ${currentBranchId === 'all' && ex.branches ? 
+                                    `<div class="branch-tag"><i class="fas fa-store"></i> ${ex.branches.name}</div>` : ''}
                             </div>
-                            <button class="btn-delete" onclick="deleteTransaction('${ex.id}', ${ex.amount}, '${ex.type}')">
-                                <i class="fas fa-undo-alt"></i> UNDO
-                            </button>
+                            <div class="transaction-type">
+                                <span class="type-badge ${isFunding ? 'funding' : 'expense'}">
+                                    ${isFunding ? 'Funding' : 'Deduction'}
+                                </span>
+                            </div>
+                            <div>
+                                <div class="transaction-category">${ex.category}</div>
+                                ${ex.description ? `<div class="transaction-desc">${ex.description}</div>` : ''}
+                            </div>
+                            <div class="transaction-amount ${isFunding ? 'amount-positive' : 'amount-negative'}">
+                                ${isFunding ? '+' : '-'} Ksh ${parseFloat(ex.amount).toLocaleString()}
+                            </div>
+                            <div>
+                                <button class="delete-btn-table" onclick="deleteTransaction('${ex.id}', ${ex.amount}, '${ex.type}')" title="Delete">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
                         </div>
-                    </div>`;
-            }).join('');
+                    `;
+                }).join('')}
+            `;
+
+            const showMoreBtn = document.getElementById('showMoreBtn');
+            if (filteredTransactions.length <= displayLimit) {
+                showMoreBtn.style.display = 'none';
+            } else {
+                showMoreBtn.style.display = 'block';
+            }
         } catch (error) {
             console.error("Error loading history:", error);
-            document.getElementById('expenseList').innerHTML = `
+            list.innerHTML = `
+                <div class="table-header">
+                    <div>Date & Time</div>
+                    <div>Type</div>
+                    <div>Category</div>
+                    <div>Amount</div>
+                    <div>Actions</div>
+                </div>
                 <div style="text-align:center; padding:30px; color: var(--danger);">
                     <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
                     Error loading transactions: ${error.message}
@@ -901,13 +1550,13 @@
         }
     }
 
-    // New Delete Function
+    // Delete Function
     window.deleteTransaction = async (id, amount, type) => {
-        if (!confirm(`Are you sure you want to delete this ${type} of Ksh ${amount.toLocaleString()}? This will update your balance immediately.`)) return;
+        if (!confirm(`Are you sure you want to delete this ${type} of Ksh ${amount.toLocaleString()}?`)) return;
 
         const btn = event.target.closest('button');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="spinner"></span>';
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         btn.disabled = true;
 
         const { error } = await supabase
@@ -917,11 +1566,11 @@
 
         if (error) {
             alert("Error deleting: " + error.message);
-            btn.innerHTML = originalText;
+            btn.innerHTML = originalHTML;
             btn.disabled = false;
         } else {
-            await calculateTotals(); // Refresh Balance
-            await loadHistory();   // Refresh List
+            await loadAllTransactions();
+            showNotification('Transaction deleted successfully', 'success');
         }
     };
 
@@ -929,8 +1578,8 @@
     document.getElementById('expenseForm').onsubmit = async (e) => {
         e.preventDefault();
         
-        if (!currentBranchId) {
-            alert("Branch information not found");
+        if (!currentBranchId || currentBranchId === 'all') {
+            alert("Please select a specific branch (not 'All Branches') to record transactions");
             return;
         }
         
@@ -938,27 +1587,35 @@
         const type = document.querySelector('input[name="tx_type"]:checked').value;
         const amount = parseFloat(document.getElementById('amount').value);
         
+        if(!amount || amount <= 0) {
+            alert('Please enter a valid amount');
+            return;
+        }
+        
         if(!confirm(`Commit this ${type} of Ksh ${amount.toLocaleString()}?`)) return;
 
         btn.disabled = true; 
-        btn.innerHTML = '<span class="spinner"></span> SAVING...';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> SAVING...';
 
-        const { error } = await supabase.from('admin_expenses').insert([{
-            amount: amount,
-            description: document.getElementById('description').value || null,
-            category: document.getElementById('category').value,
-            type: type,
-            payment_source: 'KCB Paybill',
-            branch_id: currentBranchId
-        }]);
+        const { error } = await supabase
+            .from('admin_expenses')
+            .insert([{
+                amount: amount,
+                description: document.getElementById('description').value || null,
+                category: document.getElementById('category').value,
+                type: type,
+                payment_source: 'KCB Paybill',
+                branch_id: currentBranchId,
+                admin_id: currentUser?.id || null
+            }]);
 
         if (error) {
             alert("Error: " + error.message);
+            console.error("Insert error:", error);
         } else {
-            await calculateTotals();
-            await loadHistory();
+            await loadAllTransactions();
             document.getElementById('expenseForm').reset();
-            alert("✅ Transaction Recorded Successfully!");
+            showNotification('Transaction recorded successfully!', 'success');
         }
         btn.disabled = false; 
         btn.innerHTML = '<i class="fas fa-check-circle"></i> COMMIT TRANSACTION';
@@ -967,16 +1624,33 @@
     window.handleLogout = async () => {
         if(confirm("Logout?")) {
             localStorage.removeItem('pos_session');
+            localStorage.removeItem('selectedBranchId');
+            localStorage.removeItem('selectedBranch');
             await supabase.auth.signOut();
             window.location.href = 'index.html';
         }
     };
 
-    // Initial load
+    // Initialize
     async function init() {
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        await loadAllBranches();
         await loadUserProfile();
-        await calculateTotals();
-        await loadHistory();
+        if (currentBranchId) {
+            await loadAllTransactions();
+        }
     }
     
     init();
