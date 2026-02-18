@@ -87,8 +87,8 @@
             cursor: pointer; 
         }
 
-        /* Branch Info in Sidebar */
-        .branch-info {
+        /* Branch Selector in Sidebar */
+        .branch-selector-sidebar {
             padding: 10px;
             margin: 10px 0 20px;
             background: rgba(79, 70, 229, 0.2);
@@ -97,40 +97,44 @@
             white-space: nowrap;
         }
         
-        .branch-label {
+        .branch-selector-sidebar label {
             font-size: 0.6rem;
             text-transform: uppercase;
             color: #94a3b8;
             opacity: 0;
             transition: opacity 0.2s;
+            display: block;
+            margin-bottom: 5px;
         }
         
-        .sidebar:hover .branch-label, .sidebar.mobile-active .branch-label {
+        .sidebar:hover .branch-selector-sidebar label, 
+        .sidebar.mobile-active .branch-selector-sidebar label {
             opacity: 1;
         }
         
-        .branch-name {
-            font-weight: 800;
+        .branch-selector-sidebar select {
+            width: 100%;
+            padding: 8px 10px;
+            background: var(--admin-dark);
             color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
             font-size: 0.85rem;
-            margin-top: 3px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .branch-name i { 
-            color: var(--admin-accent); 
-            min-width: 20px;
-        }
-        
-        .branch-name span {
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
             opacity: 0;
             transition: opacity 0.2s;
         }
         
-        .sidebar:hover .branch-name span, .sidebar.mobile-active .branch-name span {
+        .sidebar:hover .branch-selector-sidebar select,
+        .sidebar.mobile-active .branch-selector-sidebar select {
             opacity: 1;
+        }
+        
+        .branch-selector-sidebar select option {
+            background: var(--admin-dark);
+            color: white;
         }
         
         .nav-list { 
@@ -565,13 +569,12 @@
         <button class="close-btn" onclick="toggleMenu()">×</button>
     </div>
     
-    <!-- Branch Info Display -->
-    <div class="branch-info" id="sidebarBranchInfo">
-        <div class="branch-label">Your Assigned Branch</div>
-        <div class="branch-name" id="sidebarBranchName">
-            <i class="fas fa-store"></i>
-            <span>Loading...</span>
-        </div>
+    <!-- Branch Selector in Sidebar -->
+    <div class="branch-selector-sidebar" id="sidebarBranchSelector">
+        <label for="sidebarBranchSelect"><i class="fas fa-store"></i> SELECT BRANCH</label>
+        <select id="sidebarBranchSelect" onchange="handleBranchChange(this.value)">
+            <option value="">Loading branches...</option>
+        </select>
     </div>
     
     <nav class="nav-list">
@@ -710,6 +713,7 @@
     let currentUser = null;
     let currentBranchId = null;
     let currentBranch = null;
+    let allBranches = [];
 
     // ==================== SIDEBAR FUNCTIONS ====================
     window.toggleMenu = () => {
@@ -724,7 +728,92 @@
         }
     };
 
-    // ==================== BRANCH FUNCTIONS ====================
+    // ==================== BRANCH SELECTION ====================
+    async function loadAllBranches() {
+        try {
+            const { data: branches, error } = await supabase
+                .from('branches')
+                .select('id, name, code, location')
+                .order('name');
+
+            if (error) throw error;
+            
+            allBranches = branches || [];
+            
+            const sidebarSelect = document.getElementById('sidebarBranchSelect');
+            
+            if (branches && branches.length > 0) {
+                sidebarSelect.innerHTML = '<option value="">Select Branch</option>' + 
+                    branches.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+            } else {
+                sidebarSelect.innerHTML = '<option value="">No branches found</option>';
+            }
+            
+            return branches;
+        } catch (error) {
+            console.error("Error loading branches:", error);
+            return [];
+        }
+    }
+
+    window.handleBranchChange = async (branchId) => {
+        if (!branchId) return;
+        
+        // Find the selected branch
+        const selectedBranch = allBranches.find(b => b.id === branchId);
+        if (!selectedBranch) return;
+        
+        // Update current branch
+        currentBranchId = branchId;
+        currentBranch = selectedBranch;
+        
+        // Save to localStorage
+        localStorage.setItem('selectedBranchId', branchId);
+        localStorage.setItem('selectedBranch', JSON.stringify(selectedBranch));
+        
+        // Update session
+        const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
+        session.branch = selectedBranch;
+        session.branch_id = branchId;
+        localStorage.setItem('pos_session', JSON.stringify(session));
+        
+        // Update displays
+        updateBranchDisplay();
+        
+        // Reload data
+        await calculateTotals();
+        await loadHistory();
+        
+        // Show confirmation
+        showNotification(`Switched to ${selectedBranch.name}`, 'success');
+    }
+
+    function showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: ${type === 'success' ? '#10b981' : '#4f46e5'};
+            color: white;
+            border-radius: 8px;
+            font-weight: 600;
+            z-index: 9999;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
+    // ==================== USER PROFILE ====================
     async function loadUserProfile() {
         try {
             // Try to load from session first
@@ -738,6 +827,7 @@
                     
                     // Update displays
                     updateBranchDisplay();
+                    updateBranchSelector(currentBranchId);
                     return session.profile;
                 }
             }
@@ -768,20 +858,32 @@
             
             if (profileError) throw profileError;
             
-            currentBranchId = profile.branch_id;
-            currentBranch = profile.branches;
+            // Check if there's a saved branch selection
+            const savedBranchId = localStorage.getItem('selectedBranchId');
+            if (savedBranchId && allBranches.some(b => b.id === savedBranchId)) {
+                const savedBranch = allBranches.find(b => b.id === savedBranchId);
+                currentBranchId = savedBranchId;
+                currentBranch = savedBranch;
+            } else {
+                currentBranchId = profile.branch_id;
+                currentBranch = profile.branches;
+                localStorage.setItem('selectedBranchId', profile.branch_id);
+                localStorage.setItem('selectedBranch', JSON.stringify(profile.branches));
+            }
             
             // Save session
             const session = {
                 user: user,
                 profile: profile,
-                branch: profile.branches,
+                branch: currentBranch,
+                branch_id: currentBranchId,
                 role: profile.role
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
             // Update displays
             updateBranchDisplay();
+            updateBranchSelector(currentBranchId);
             
             return profile;
         } catch (error) {
@@ -792,13 +894,15 @@
 
     function updateBranchDisplay() {
         const branchDisplay = document.getElementById('branchDisplay');
-        const sidebarBranchName = document.querySelector('#sidebarBranchName span');
-        
         if (branchDisplay && currentBranch) {
             branchDisplay.innerHTML = `<i class="fas fa-store"></i> ${currentBranch.name}`;
         }
-        if (sidebarBranchName && currentBranch) {
-            sidebarBranchName.textContent = currentBranch.name;
+    }
+
+    function updateBranchSelector(selectedBranchId) {
+        const sidebarSelect = document.getElementById('sidebarBranchSelect');
+        if (sidebarSelect && selectedBranchId) {
+            sidebarSelect.value = selectedBranchId;
         }
     }
 
@@ -962,7 +1066,7 @@
         e.preventDefault();
         
         if (!currentBranchId) {
-            alert("Branch information not found");
+            alert("Please select a branch first");
             return;
         }
         
@@ -1008,6 +1112,8 @@
     window.handleLogout = async () => {
         if(confirm("Logout?")) {
             localStorage.removeItem('pos_session');
+            localStorage.removeItem('selectedBranchId');
+            localStorage.removeItem('selectedBranch');
             await supabase.auth.signOut();
             window.location.href = 'index.html';
         }
@@ -1015,6 +1121,21 @@
 
     // Initialize
     async function init() {
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        await loadAllBranches();
         await loadUserProfile();
         if (currentBranchId) {
             await calculateTotals();
