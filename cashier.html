@@ -2199,7 +2199,7 @@
     };
 
     // ============================================
-    // FIXED GAS CYLINDER EXCHANGE HANDLING
+    // FIXED GAS CYLINDER EXCHANGE HANDLING (Based on Gas Hub)
     // ============================================
     async function processGasTransaction(productId, quantity, transactionType) {
         try {
@@ -2218,15 +2218,18 @@
             console.log("Current product state:", product);
             console.log("Processing gas transaction:", { quantity, transactionType });
             
+            // IMPORTANT: Ensure we're working with numbers
+            const currentStock = Number(product.stock_quantity) || 0;
+            const currentEmpty = Number(product.empty_quantity) || 0;
+            
             const updateData = {};
             
             if (transactionType === 'refill') {
                 // Refill: Customer brings empty, gets full
                 // - Decrease stock_quantity by quantity (full cylinders sold)
                 // - Increase empty_quantity by quantity (empties collected)
-                // This is 1:1 - one full sold, one empty received
-                updateData.stock_quantity = (product.stock_quantity || 0) - quantity;
-                updateData.empty_quantity = (product.empty_quantity || 0) + quantity;
+                updateData.stock_quantity = currentStock - quantity;
+                updateData.empty_quantity = currentEmpty + quantity;
                 
                 console.log(`Refill: Selling ${quantity} full, receiving ${quantity} empty`);
                 console.log(`New stock: ${updateData.stock_quantity}, New empty: ${updateData.empty_quantity}`);
@@ -2234,10 +2237,15 @@
                 // Complete purchase: Customer buys new cylinder
                 // - Decrease stock_quantity by quantity (full cylinders sold)
                 // - empty_quantity unchanged
-                updateData.stock_quantity = (product.stock_quantity || 0) - quantity;
+                updateData.stock_quantity = currentStock - quantity;
                 
                 console.log(`Complete: Selling ${quantity} full, empty unchanged`);
                 console.log(`New stock: ${updateData.stock_quantity}`);
+            }
+            
+            // Validate that we're not going negative
+            if (updateData.stock_quantity < 0) {
+                throw new Error(`Insufficient stock! Only ${currentStock} available.`);
             }
             
             // Update the product
