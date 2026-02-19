@@ -40,7 +40,6 @@
 
     .container { max-width: 1450px; margin: auto; width: 100%; }
     
-    /* Compact Header */
     .compact-header {
         display: flex;
         justify-content: space-between;
@@ -104,22 +103,21 @@
         border: 2px solid white !important;
     }
     
-    /* Branch badge */
-    .branch-badge {
+    .branch-name-display {
         background: var(--primary);
         color: white;
-        padding: 6px 12px;
-        border-radius: 20px;
-        font-size: 0.8rem;
+        padding: 6px 14px;
+        border-radius: 30px;
+        font-size: 0.85rem;
         font-weight: 700;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         border: 2px solid white;
-        box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+        box-shadow: 0 2px 10px rgba(79, 70, 229, 0.3);
+        margin-right: 10px;
     }
     
-    /* Gas badge */
     .gas-badge {
         background: var(--gas);
         color: white;
@@ -130,7 +128,6 @@
         font-weight: 700;
     }
     
-    /* Start button with larger font */
     .start-btn-large {
         font-size: 0.9rem !important;
         padding: 10px 18px !important;
@@ -150,14 +147,12 @@
         box-shadow: 0 4px 6px rgba(0,0,0,0.02);
     }
     
-    /* Low float warning */
     .low-float-warning {
         background: #fee2e2 !important;
         color: #b91c1c !important;
         border-color: #fecaca !important;
     }
     
-    /* Danger alert for very low floats */
     .danger-alert {
         border: 2px solid #ef4444 !important;
         background: #fff1f2 !important;
@@ -949,7 +944,6 @@
         flex: 1;
     }
     
-    /* Mobile Slide Indicator - Hidden on mobile */
     .slide-indicator { 
         background: #0f172a; 
         color: white; 
@@ -1185,7 +1179,6 @@
         }
     }
     
-    /* Exchange note for gas sales */
     .exchange-note {
         background: #fffbeb;
         border-left: 4px solid var(--gas);
@@ -1195,27 +1188,6 @@
         font-size: 0.85rem;
     }
     
-    /* Branch name display in header */
-    .branch-name-display {
-        background: var(--primary);
-        color: white;
-        padding: 6px 14px;
-        border-radius: 30px;
-        font-size: 0.85rem;
-        font-weight: 700;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        border: 2px solid white;
-        box-shadow: 0 2px 10px rgba(79, 70, 229, 0.3);
-        margin-right: 10px;
-    }
-    
-    .branch-name-display i {
-        font-size: 0.9rem;
-    }
-    
-    /* Gas transaction type selector */
     .gas-type-selector {
         display: flex;
         gap: 15px;
@@ -1263,7 +1235,6 @@
         color: var(--primary);
     }
     
-    /* Success notification */
     .success-notification {
         position: fixed;
         top: 20px;
@@ -1296,7 +1267,6 @@
         to { opacity: 0; transform: translateX(100%); }
     }
     
-    /* Loading spinner */
     .spinner {
         display: inline-block;
         width: 16px;
@@ -1308,13 +1278,6 @@
     }
     
     @keyframes spin { to { transform: rotate(360deg); } }
-    
-    /* Cache indicator */
-    .cache-indicator {
-        font-size: 0.6rem;
-        color: var(--text-dim);
-        margin-left: 5px;
-    }
 </style>
 </head>
 <body>
@@ -1383,8 +1346,8 @@
         <a href="sale edit cashier.html" class="nav-card"><span>✏️</span><small>Edit sales</small></a>
         <a href="gas_delivery.html" class="nav-card"><span>🏍️</span><small>Delivery</small></a>
         <a href="cashier_report.html" class="nav-card"><span>📝</span><small>Today's Report</small></a>
-          <a href="pos.html" class="nav-card"><span>🛒</span><small>Cart Shop</small></a>
-         <a href="cashierprofile.html" class="nav-card"><span>👤</span><small>Settings</small></a>
+        <a href="pos.html" class="nav-card"><span>🛒</span><small>Cart Shop</small></a>
+        <a href="cashierprofile.html" class="nav-card"><span>👤</span><small>Settings</small></a>
         <a href="cashier.html" class="nav-card"><span>🏠</span><small>HOME</small></a>
         <button onclick="logoutUser()" style="grid-column: span 2; margin-top:20px; background:var(--danger); color:white; border:none; padding:18px; border-radius:15px; font-weight:800;">🚪 LOGOUT SYSTEM</button>
     </div>
@@ -1774,6 +1737,7 @@
     // ============================================
     function showSuccessNotification(message, details = '') {
         const container = document.getElementById('success-notification-container');
+        if (!container) return;
         const notification = document.createElement('div');
         notification.className = 'success-notification';
         notification.innerHTML = `
@@ -1792,11 +1756,17 @@
     // ============================================
     window.selectGasType = function(type) {
         gasTransactionType = type;
-        document.getElementById('gas-refill-option').classList.toggle('selected', type === 'refill');
-        document.getElementById('gas-complete-option').classList.toggle('selected', type === 'complete');
-        document.getElementById('gas-refill-note').style.display = type === 'refill' ? 'block' : 'none';
-        document.getElementById('gas-complete-note').style.display = type === 'complete' ? 'block' : 'none';
-        document.getElementById(type === 'refill' ? 'gas-refill' : 'gas-complete').checked = true;
+        const refillOption = document.getElementById('gas-refill-option');
+        const completeOption = document.getElementById('gas-complete-option');
+        const refillNote = document.getElementById('gas-refill-note');
+        const completeNote = document.getElementById('gas-complete-note');
+        
+        if (refillOption) refillOption.classList.toggle('selected', type === 'refill');
+        if (completeOption) completeOption.classList.toggle('selected', type === 'complete');
+        if (refillNote) refillNote.style.display = type === 'refill' ? 'block' : 'none';
+        if (completeNote) completeNote.style.display = type === 'complete' ? 'block' : 'none';
+        const radio = document.getElementById(type === 'refill' ? 'gas-refill' : 'gas-complete');
+        if (radio) radio.checked = true;
     };
 
     // ============================================
@@ -1841,7 +1811,7 @@
     // ============================================
     // START SHIFT
     // ============================================
-    document.getElementById('confirm-open').addEventListener('click', async function() {
+    document.getElementById('confirm-open')?.addEventListener('click', async function() {
         const branchId = getCurrentBranchId();
         if (!branchId) return alert("Branch ID not found");
         
@@ -1851,10 +1821,10 @@
             return;
         }
         
-        const cash = parseFloat(document.getElementById('o-cash').value) || 0;
-        const mpesa = parseFloat(document.getElementById('o-mpesa').value) || 0;
-        const kcb = parseFloat(document.getElementById('o-kcb').value) || 0;
-        const equity = parseFloat(document.getElementById('o-equity').value) || 0;
+        const cash = parseFloat(document.getElementById('o-cash')?.value) || 0;
+        const mpesa = parseFloat(document.getElementById('o-mpesa')?.value) || 0;
+        const kcb = parseFloat(document.getElementById('o-kcb')?.value) || 0;
+        const equity = parseFloat(document.getElementById('o-equity')?.value) || 0;
         
         if (!confirm(`Confirm opening floats:\nCash: ${cash}\nMpesa: ${mpesa}\nKCB: ${kcb}\nEquity: ${equity}`)) return;
         
@@ -1881,15 +1851,21 @@
     // ============================================
     // CLOSE SHIFT
     // ============================================
-    window.showCloseModal = () => currentShift ? document.getElementById('close-modal').style.display = 'flex' : alert("No active shift");
+    window.showCloseModal = () => {
+        if (currentShift) {
+            document.getElementById('close-modal').style.display = 'flex';
+        } else {
+            alert("No active shift");
+        }
+    };
 
-    document.getElementById('confirm-close').addEventListener('click', function() {
+    document.getElementById('confirm-close')?.addEventListener('click', function() {
         if (!currentShift) return alert("No active shift");
         
-        const m = parseFloat(document.getElementById('c-mpesa').value) || 0;
-        const k = parseFloat(document.getElementById('c-kcb').value) || 0;
-        const e = parseFloat(document.getElementById('c-equity').value) || 0;
-        const c = parseFloat(document.getElementById('c-cash').value) || 0;
+        const m = parseFloat(document.getElementById('c-mpesa')?.value) || 0;
+        const k = parseFloat(document.getElementById('c-kcb')?.value) || 0;
+        const e = parseFloat(document.getElementById('c-equity')?.value) || 0;
+        const c = parseFloat(document.getElementById('c-cash')?.value) || 0;
         
         if (m === 0 && k === 0 && e === 0 && c === 0) {
             return alert("Please enter closing amounts");
@@ -1926,15 +1902,17 @@
         if (!card) return;
         card.remove();
         
-        const m = parseFloat(document.getElementById('c-mpesa').value) || 0;
-        const k = parseFloat(document.getElementById('c-kcb').value) || 0;
-        const e = parseFloat(document.getElementById('c-equity').value) || 0;
-        const c = parseFloat(document.getElementById('c-cash').value) || 0;
+        const m = parseFloat(document.getElementById('c-mpesa')?.value) || 0;
+        const k = parseFloat(document.getElementById('c-kcb')?.value) || 0;
+        const e = parseFloat(document.getElementById('c-equity')?.value) || 0;
+        const c = parseFloat(document.getElementById('c-cash')?.value) || 0;
         const b = currentKcbSalesTotal;
         
         const btn = document.getElementById('confirm-close');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> FINALIZING...';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> FINALIZING...';
+        }
         
         try {
             const { data: sales } = await supabase.from('sales')
@@ -1948,9 +1926,9 @@
                 .select('amount, type')
                 .eq('shift_id', currentShift.id);
             
-            const totalSales = (sales || []).reduce((a,b) => a + b.total_amount, 0);
-            const moneyIn = (trans || []).filter(t => t.type === 'Money In').reduce((a,b) => a + b.amount, 0);
-            const moneyOut = (trans || []).filter(t => t.type === 'Money Out').reduce((a,b) => a + b.amount, 0);
+            const totalSales = (sales || []).reduce((a,b) => a + (b.total_amount || 0), 0);
+            const moneyIn = (trans || []).filter(t => t.type === 'Money In').reduce((a,b) => a + (b.amount || 0), 0);
+            const moneyOut = (trans || []).filter(t => t.type === 'Money Out').reduce((a,b) => a + (b.amount || 0), 0);
             
             const expected = (currentShift.open_cash + currentShift.open_mpesa + currentShift.open_kcb + currentShift.open_equity + totalSales + moneyIn) - moneyOut;
             const actual = m + k + e + b + c;
@@ -1961,8 +1939,10 @@
                 const sign = variance > 0 ? '+' : '-';
                 note = prompt(`Variance: ${sign}${Math.abs(variance).toFixed(2)}. Reason:`);
                 if (!note) {
-                    btn.disabled = false;
-                    btn.innerHTML = 'FINALIZE & CLOSE';
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = 'FINALIZE & CLOSE';
+                    }
                     return;
                 }
                 note = `${sign}${Math.abs(variance).toFixed(2)} - ${note}`;
@@ -1980,13 +1960,15 @@
             
         } catch (error) {
             alert("Error: " + error.message);
-            btn.disabled = false;
-            btn.innerHTML = 'FINALIZE & CLOSE';
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = 'FINALIZE & CLOSE';
+            }
         }
     };
 
     // ============================================
-    // FIXED GAS TRANSACTION (SINGLE UPDATE - LIKE GAS HUB)
+    // FIXED GAS TRANSACTION - SINGLE UPDATE ONLY!
     // ============================================
     async function processGasTransaction(productId, quantity, transactionType) {
         // Get current product data
@@ -1999,9 +1981,9 @@
         if (error || !product) throw new Error("Could not fetch product");
         if (product.stock_quantity < quantity) throw new Error(`Only ${product.stock_quantity} available`);
         
-        console.log("Before:", product);
+        console.log("Before update - Stock:", product.stock_quantity, "Empty:", product.empty_quantity);
         
-        // SINGLE UPDATE - both fields at once
+        // SINGLE UPDATE - both fields at once (THIS IS THE KEY FIX)
         const updateData = transactionType === 'refill' 
             ? { 
                 stock_quantity: product.stock_quantity - quantity,
@@ -2018,23 +2000,24 @@
         
         if (updateError) throw updateError;
         
-        console.log("After:", updateData);
+        console.log("After update - New stock:", updateData.stock_quantity, 
+                    transactionType === 'refill' ? `New empty: ${updateData.empty_quantity}` : 'Empty unchanged');
         console.log(`Transaction: ${transactionType}, -${quantity} full, ${transactionType === 'refill' ? '+' + quantity + ' empty' : 'empty unchanged'}`);
     }
 
     // ============================================
     // SALE SUBMISSION
     // ============================================
-    document.getElementById('sale-form').addEventListener('submit', async (e) => {
+    document.getElementById('sale-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         if (!currentShift) return alert("Open a shift first");
         if (!selectedItem) return alert("Select an item");
         
-        const price = parseFloat(document.getElementById('pPrice').value);
-        const qty = parseInt(document.getElementById('pQty').value);
+        const price = parseFloat(document.getElementById('pPrice')?.value) || 0;
+        const qty = parseInt(document.getElementById('pQty')?.value) || 0;
         const total = price * qty;
-        const method = document.getElementById('pMethod').value;
+        const method = document.getElementById('pMethod')?.value || 'Cash';
         const isGas = selectedItem.category === 'Gas';
         const gasType = isGas ? gasTransactionType : null;
         
@@ -2051,8 +2034,10 @@
         }
         
         const btn = document.getElementById('submit-sale-btn');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> RECORDING...';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> RECORDING...';
+        }
         
         try {
             // Build sale records
@@ -2075,7 +2060,7 @@
             
             let salesToInsert = [];
             if (method === 'Split') {
-                const cash = parseFloat(document.getElementById('split-cash').value) || 0;
+                const cash = parseFloat(document.getElementById('split-cash')?.value) || 0;
                 salesToInsert.push(
                     { ...baseSale, item_name: itemName + ' (Cash)', total_amount: cash, payment_method: 'Cash' },
                     { ...baseSale, item_name: itemName + ' (Paybill)', quantity: 0, total_amount: total - cash, payment_method: 'KCB Paybill' }
@@ -2088,7 +2073,7 @@
             const { error: saleErr } = await supabase.from('sales').insert(salesToInsert);
             if (saleErr) throw saleErr;
             
-            // Update stock
+            // Update stock - USE THE FIXED FUNCTION
             if (isGas) {
                 await processGasTransaction(selectedItem.id, qty, gasType);
             } else {
@@ -2104,7 +2089,6 @@
                 if (name) {
                     await supabase.from('debtors').insert([{
                         customer_name: name, amount_owed: total,
-                        sale_id: salesResult?.data[0]?.id,
                         shift_id: currentShift.id, branch_id: getCurrentBranchId()
                     }]);
                 }
@@ -2114,12 +2098,19 @@
             await Promise.all([fetchInventory(), loadShiftData()]);
             
             // Reset form
-            document.getElementById('sale-form').reset();
-            document.getElementById('pSearch').value = '';
-            document.getElementById('hint-stock').style.display = 'none';
-            document.getElementById('hint-min').style.display = 'none';
-            document.getElementById('total-text').innerText = '0';
-            document.getElementById('gas-type-container').style.display = 'none';
+            document.getElementById('sale-form')?.reset();
+            const searchInput = document.getElementById('pSearch');
+            if (searchInput) searchInput.value = '';
+            
+            const hintStock = document.getElementById('hint-stock');
+            const hintMin = document.getElementById('hint-min');
+            const totalText = document.getElementById('total-text');
+            const gasContainer = document.getElementById('gas-type-container');
+            
+            if (hintStock) hintStock.style.display = 'none';
+            if (hintMin) hintMin.style.display = 'none';
+            if (totalText) totalText.innerText = '0';
+            if (gasContainer) gasContainer.style.display = 'none';
             selectedItem = null;
             
             // Notify
@@ -2132,8 +2123,10 @@
             console.error(error);
             alert("Error: " + error.message);
         } finally {
-            btn.disabled = false;
-            btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
+            }
         }
     });
 
@@ -2173,53 +2166,62 @@
         }
     }
 
-    document.getElementById('pSearch').addEventListener('input', (e) => {
+    document.getElementById('pSearch')?.addEventListener('input', (e) => {
         selectedItem = inventory.find(p => formatItemName(p) === e.target.value);
         if (!selectedItem) {
-            document.getElementById('gas-type-container').style.display = 'none';
+            const gasContainer = document.getElementById('gas-type-container');
+            if (gasContainer) gasContainer.style.display = 'none';
             return;
         }
         
-        document.getElementById('pPrice').value = selectedItem.selling_price;
+        const priceInput = document.getElementById('pPrice');
+        if (priceInput) priceInput.value = selectedItem.selling_price;
         
         const minHint = document.getElementById('hint-min');
         const minPrice = selectedItem.category === 'Gas' 
             ? (selectedItem.min_selling_price || 0) 
             : (selectedItem.min_price || 0);
-        minHint.innerText = `Min: ${minPrice}`;
-        minHint.style.display = 'inline-block';
+        if (minHint) {
+            minHint.innerText = `Min: ${minPrice}`;
+            minHint.style.display = 'inline-block';
+        }
         
         updateStockDisplay(selectedItem);
         updateTotal();
         
+        const gasContainer = document.getElementById('gas-type-container');
         if (selectedItem.category === 'Gas') {
-            document.getElementById('gas-type-container').style.display = 'block';
+            if (gasContainer) gasContainer.style.display = 'block';
             selectGasType('refill');
         } else {
-            document.getElementById('gas-type-container').style.display = 'none';
+            if (gasContainer) gasContainer.style.display = 'none';
         }
     });
 
     function updateTotal() {
-        const price = parseFloat(document.getElementById('pPrice').value) || 0;
-        const qty = parseInt(document.getElementById('pQty').value) || 0;
-        document.getElementById('total-text').innerText = (price * qty).toLocaleString();
-        if (document.getElementById('pMethod').value === 'Split') calculateSplit();
+        const price = parseFloat(document.getElementById('pPrice')?.value) || 0;
+        const qty = parseInt(document.getElementById('pQty')?.value) || 0;
+        const totalText = document.getElementById('total-text');
+        if (totalText) totalText.innerText = (price * qty).toLocaleString();
+        if (document.getElementById('pMethod')?.value === 'Split') calculateSplit();
     }
 
-    document.getElementById('pPrice').addEventListener('input', updateTotal);
-    document.getElementById('pQty').addEventListener('input', updateTotal);
+    document.getElementById('pPrice')?.addEventListener('input', updateTotal);
+    document.getElementById('pQty')?.addEventListener('input', updateTotal);
 
     window.toggleSplitFields = () => {
         const split = document.getElementById('split-fields');
-        split.style.display = document.getElementById('pMethod').value === 'Split' ? 'grid' : 'none';
-        if (split.style.display === 'grid') calculateSplit();
+        if (split) {
+            split.style.display = document.getElementById('pMethod')?.value === 'Split' ? 'grid' : 'none';
+            if (split.style.display === 'grid') calculateSplit();
+        }
     };
 
     window.calculateSplit = () => {
-        const total = (parseFloat(document.getElementById('pPrice').value) || 0) * (parseInt(document.getElementById('pQty').value) || 0);
-        const cash = parseFloat(document.getElementById('split-cash').value) || 0;
-        document.getElementById('split-online').value = (total - cash).toFixed(2);
+        const total = (parseFloat(document.getElementById('pPrice')?.value) || 0) * (parseInt(document.getElementById('pQty')?.value) || 0);
+        const cash = parseFloat(document.getElementById('split-cash')?.value) || 0;
+        const splitOnline = document.getElementById('split-online');
+        if (splitOnline) splitOnline.value = (total - cash).toFixed(2);
     };
 
     // ============================================
@@ -2239,39 +2241,51 @@
         
         currentKcbSalesTotal = salesData
             .filter(s => s.payment_method === 'KCB Paybill' && !s.refunded && s.total_amount > 0)
-            .reduce((a, b) => a + b.total_amount, 0);
+            .reduce((a, b) => a + (b.total_amount || 0), 0);
         
-        document.getElementById('live-kcb-box').innerText = currentKcbSalesTotal.toLocaleString();
-        document.getElementById('c-bank').value = currentKcbSalesTotal;
+        const liveKcb = document.getElementById('live-kcb-box');
+        if (liveKcb) liveKcb.innerText = currentKcbSalesTotal.toLocaleString();
+        
+        const bankInput = document.getElementById('c-bank');
+        if (bankInput) bankInput.value = currentKcbSalesTotal;
         
         // Sales table
-        document.getElementById('live-sales-body').innerHTML = salesData.map(s => `
-            <tr class="${s.refunded ? 'refunded-row' : ''}">
-                <td data-label="Time">${new Date(s.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
-                <td data-label="Item"><b>${s.item_name}</b>${s.refunded ? '<span class="refunded-badge">REFUNDED</span>' : ''}${s.total_amount < 0 ? '<span class="refunded-badge" style="background:#b91c1c">REFUND</span>' : ''}${s.category === 'Gas' ? '<span class="gas-badge">GAS</span>' : ''}</td>
-                <td data-label="Qty" class="${s.quantity < 0 ? 'text-danger' : ''}">${s.quantity < 0 ? `-${Math.abs(s.quantity)}` : s.quantity}</td>
-                <td data-label="Total" class="${s.total_amount < 0 ? 'text-danger' : ''}">Ksh ${s.total_amount.toLocaleString()}</td>
-                <td data-label="Method">${s.refunded ? 'Refund via ' : ''}${s.payment_method}</td>
-                <td data-label="Action">${!s.refunded && s.quantity > 0 && s.total_amount > 0 ? `<button class="btn-refund" onclick='openRefundModal(${JSON.stringify(s).replace(/'/g, "\\'")})'><i class="fas fa-undo-alt"></i> Refund</button>` : ''}</td>
-            </tr>
-        `).join('');
+        const salesBody = document.getElementById('live-sales-body');
+        if (salesBody) {
+            salesBody.innerHTML = salesData.map(s => `
+                <tr class="${s.refunded ? 'refunded-row' : ''}">
+                    <td data-label="Time">${new Date(s.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
+                    <td data-label="Item"><b>${s.item_name}</b>${s.refunded ? '<span class="refunded-badge">REFUNDED</span>' : ''}${s.total_amount < 0 ? '<span class="refunded-badge" style="background:#b91c1c">REFUND</span>' : ''}${s.category === 'Gas' ? '<span class="gas-badge">GAS</span>' : ''}</td>
+                    <td data-label="Qty" class="${s.quantity < 0 ? 'text-danger' : ''}">${s.quantity < 0 ? `-${Math.abs(s.quantity)}` : s.quantity}</td>
+                    <td data-label="Total" class="${s.total_amount < 0 ? 'text-danger' : ''}">Ksh ${(s.total_amount || 0).toLocaleString()}</td>
+                    <td data-label="Method">${s.refunded ? 'Refund via ' : ''}${s.payment_method}</td>
+                    <td data-label="Action">${!s.refunded && s.quantity > 0 && s.total_amount > 0 ? `<button class="btn-refund" onclick='openRefundModal(${JSON.stringify(s).replace(/'/g, "\\'")})'><i class="fas fa-undo-alt"></i> Refund</button>` : ''}</td>
+                </tr>
+            `).join('');
+        }
         
         // Money summary
-        const moneyIn = transData.filter(t => t.type === 'Money In').reduce((a, b) => a + b.amount, 0);
-        const moneyOut = transData.filter(t => t.type === 'Money Out').reduce((a, b) => a + b.amount, 0);
-        document.getElementById('total-money-in-full').textContent = `Ksh ${moneyIn.toLocaleString()}`;
-        document.getElementById('total-money-out-full').textContent = `Ksh ${moneyOut.toLocaleString()}`;
+        const moneyIn = transData.filter(t => t.type === 'Money In').reduce((a, b) => a + (b.amount || 0), 0);
+        const moneyOut = transData.filter(t => t.type === 'Money Out').reduce((a, b) => a + (b.amount || 0), 0);
+        
+        const moneyInEl = document.getElementById('total-money-in-full');
+        const moneyOutEl = document.getElementById('total-money-out-full');
+        if (moneyInEl) moneyInEl.textContent = `Ksh ${moneyIn.toLocaleString()}`;
+        if (moneyOutEl) moneyOutEl.textContent = `Ksh ${moneyOut.toLocaleString()}`;
         
         // Transactions table
-        document.getElementById('live-trans-body').innerHTML = transData.map(t => `
-            <tr class="${t.type === 'Money In' ? 'money-in-row' : 'money-out-row'}">
-                <td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
-                <td data-label="Reason">${t.description}</td>
-                <td data-label="Amount">Ksh ${t.amount.toLocaleString()}</td>
-                <td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">${t.type}</td>
-                <td data-label="Wallet">${t.category}</td>
-            </tr>
-        `).join('');
+        const transBody = document.getElementById('live-trans-body');
+        if (transBody) {
+            transBody.innerHTML = transData.map(t => `
+                <tr class="${t.type === 'Money In' ? 'money-in-row' : 'money-out-row'}">
+                    <td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
+                    <td data-label="Reason">${t.description}</td>
+                    <td data-label="Amount">Ksh ${(t.amount || 0).toLocaleString()}</td>
+                    <td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">${t.type}</td>
+                    <td data-label="Wallet">${t.category}</td>
+                </tr>
+            `).join('');
+        }
         
         checkLowFloats();
     }
@@ -2281,11 +2295,18 @@
     // ============================================
     window.openRefundModal = (sale) => {
         refundingSale = sale;
-        document.getElementById('refund-item-name').textContent = sale.item_name;
-        document.getElementById('refund-original-amount').textContent = sale.total_amount.toLocaleString();
-        document.getElementById('refund-quantity').textContent = sale.quantity;
-        document.getElementById('refund-amount').value = sale.total_amount;
-        document.getElementById('refund-reason').value = '';
+        const nameEl = document.getElementById('refund-item-name');
+        const amountEl = document.getElementById('refund-original-amount');
+        const qtyEl = document.getElementById('refund-quantity');
+        const refundAmount = document.getElementById('refund-amount');
+        const reasonEl = document.getElementById('refund-reason');
+        
+        if (nameEl) nameEl.textContent = sale.item_name || 'Unknown';
+        if (amountEl) amountEl.textContent = (sale.total_amount || 0).toLocaleString();
+        if (qtyEl) qtyEl.textContent = sale.quantity || 0;
+        if (refundAmount) refundAmount.value = sale.total_amount || 0;
+        if (reasonEl) reasonEl.value = '';
+        
         document.getElementById('refund-modal').style.display = 'flex';
     };
 
@@ -2297,9 +2318,9 @@
     window.processRefund = async () => {
         if (!refundingSale || !currentShift) return;
         
-        const method = document.getElementById('refund-method').value;
-        const amount = parseFloat(document.getElementById('refund-amount').value);
-        const reason = document.getElementById('refund-reason').value || 'Item return';
+        const method = document.getElementById('refund-method')?.value || 'Cash';
+        const amount = parseFloat(document.getElementById('refund-amount')?.value) || 0;
+        const reason = document.getElementById('refund-reason')?.value || 'Item return';
         
         if (!amount || amount <= 0) return alert("Enter valid amount");
         if (amount > refundingSale.total_amount) return alert("Amount exceeds original");
@@ -2307,8 +2328,10 @@
         if (!confirm(`Refund ${amount} via ${method}?`)) return;
         
         const btn = document.querySelector('#refund-modal .btn-danger');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> PROCESSING...';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> PROCESSING...';
+        }
         
         try {
             // Insert refund sale
@@ -2372,8 +2395,10 @@
         } catch (error) {
             alert("Error: " + error.message);
         } finally {
-            btn.disabled = false;
-            btn.innerHTML = 'Process Refund';
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = 'Process Refund';
+            }
         }
     };
 
@@ -2382,13 +2407,15 @@
     // ============================================
     window.toggleProfileDropdown = () => {
         const d = document.getElementById('profileDropdown');
-        d.style.display = d.style.display === 'block' ? 'none' : 'block';
+        if (d) d.style.display = d.style.display === 'block' ? 'none' : 'block';
     };
 
     document.addEventListener('click', (e) => {
         const d = document.getElementById('profileDropdown');
         const b = document.getElementById('profileBtn');
-        if (b && !b.contains(e.target) && d && !d.contains(e.target)) d.style.display = 'none';
+        if (b && !b.contains(e.target) && d && !d.contains(e.target) && d.style.display === 'block') {
+            d.style.display = 'none';
+        }
     });
 
     // ============================================
@@ -2398,7 +2425,9 @@
         ['cash','mpesa','kcb','equity'].forEach(type => {
             const el = document.getElementById(`float-${type}-item`);
             if (!el) return;
-            const val = parseFloat(document.getElementById(`float-${type}`)?.innerText.replace(/,/g, '')) || 0;
+            const span = document.getElementById(`float-${type}`);
+            if (!span) return;
+            const val = parseFloat(span.innerText.replace(/,/g, '')) || 0;
             el.classList.remove('low-float-warning', 'danger-alert');
             if (val < 2000 && val > 0) el.classList.add('danger-alert');
             else if (val < 5000 && val > 0) el.classList.add('low-float-warning');
@@ -2409,13 +2438,17 @@
     // REFRESH
     // ============================================
     window.refreshData = async function() {
-        const btn = event.target.closest('button');
-        const text = btn.innerHTML;
-        btn.innerHTML = '<span class="spinner"></span>';
-        btn.disabled = true;
+        const btn = event?.target?.closest('button');
+        const text = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.innerHTML = '<span class="spinner"></span>';
+            btn.disabled = true;
+        }
         await Promise.all([fetchInventory(), loadShiftData(), loadHistory()]);
-        btn.disabled = false;
-        btn.innerHTML = text;
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = text;
+        }
         showSuccessNotification('✅ Data refreshed');
     };
 
@@ -2494,15 +2527,15 @@
         }).join('') || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records</td></tr>';
     }
 
-    document.getElementById('load-more-btn').addEventListener('click', () => { historyLimit += 10; loadHistory(); });
-    document.getElementById('history-search').addEventListener('input', (e) => loadHistory(e.target.value));
+    document.getElementById('load-more-btn')?.addEventListener('click', () => { historyLimit += 10; loadHistory(); });
+    document.getElementById('history-search')?.addEventListener('input', (e) => loadHistory(e.target.value));
 
     // ============================================
     // MONEY RECORD
     // ============================================
-    document.getElementById('record-expense-btn').addEventListener('click', async function() {
-        const amt = parseFloat(document.getElementById('exp-amt').value);
-        const desc = document.getElementById('exp-desc').value;
+    document.getElementById('record-expense-btn')?.addEventListener('click', async function() {
+        const amt = parseFloat(document.getElementById('exp-amt')?.value) || 0;
+        const desc = document.getElementById('exp-desc')?.value;
         if (!amt || !desc || !currentShift) return alert("Fill all fields");
         
         this.disabled = true;
@@ -2510,8 +2543,8 @@
         
         const { error } = await supabase.from('cash_transactions').insert([{
             shift_id: currentShift.id,
-            type: document.getElementById('exp-type').value,
-            category: document.getElementById('exp-method').value,
+            type: document.getElementById('exp-type')?.value || 'Money Out',
+            category: document.getElementById('exp-method')?.value || 'Cash',
             amount: amt,
             description: desc,
             branch_id: getCurrentBranchId(),
@@ -2519,8 +2552,10 @@
         }]);
         
         if (!error) {
-            document.getElementById('exp-amt').value = '';
-            document.getElementById('exp-desc').value = '';
+            const amtInput = document.getElementById('exp-amt');
+            const descInput = document.getElementById('exp-desc');
+            if (amtInput) amtInput.value = '';
+            if (descInput) descInput.value = '';
             await loadShiftData();
             showSuccessNotification('💰 Transaction recorded', `Ksh ${amt} - ${desc}`);
         } else {
@@ -2535,9 +2570,12 @@
     // NAVIGATION
     // ============================================
     window.toggleNav = () => {
-        document.getElementById('navBanner').classList.toggle('active');
-        document.getElementById('onboardingHand').style.display = 'none';
-        document.getElementById('profileDropdown').style.display = 'none';
+        const nav = document.getElementById('navBanner');
+        const hand = document.getElementById('onboardingHand');
+        const dropdown = document.getElementById('profileDropdown');
+        if (nav) nav.classList.toggle('active');
+        if (hand) hand.style.display = 'none';
+        if (dropdown) dropdown.style.display = 'none';
     };
 
     window.logoutUser = async () => {
@@ -2552,11 +2590,17 @@
     function updateGreeting() {
         const hour = new Date().getHours();
         const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
-        document.getElementById('greeting-title').textContent = greeting + '!';
-        document.getElementById('greeting-subtitle').textContent = currentShift ? 'Shift active' : 'Ready to start?';
-        document.getElementById('greeting-time').textContent = new Date().toLocaleString('en-GB', { 
-            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' 
-        });
+        const titleEl = document.getElementById('greeting-title');
+        const subtitleEl = document.getElementById('greeting-subtitle');
+        const timeEl = document.getElementById('greeting-time');
+        
+        if (titleEl) titleEl.textContent = greeting + '!';
+        if (subtitleEl) subtitleEl.textContent = currentShift ? 'Shift active' : 'Ready to start?';
+        if (timeEl) {
+            timeEl.textContent = new Date().toLocaleString('en-GB', { 
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+            });
+        }
     }
 
     // ============================================
@@ -2569,8 +2613,9 @@
         
         const branchId = getCurrentBranchId();
         const branch = branches[branchId];
-        if (branch) {
-            document.getElementById('branch-name-header').innerHTML = `<i class="fas fa-store"></i> ${branch.name}`;
+        const branchHeader = document.getElementById('branch-name-header');
+        if (branchHeader && branch) {
+            branchHeader.innerHTML = `<i class="fas fa-store"></i> ${branch.name}`;
         }
         
         updateGreeting();
@@ -2583,23 +2628,36 @@
         
         if (openShift) {
             currentShift = openShift;
-            container.innerHTML = `
-                <button class="btn btn-danger special-action-btn" onclick="showCloseModal()">🔴 CLOSE DAY</button>
-                <button class="btn" onclick="refreshData()" style="background:#e2e8f0; padding:8px 12px"><i class="fas fa-sync-alt"></i> Refresh</button>
-            `;
-            document.getElementById('float-cash').innerText = (openShift.open_cash || 0).toLocaleString();
-            document.getElementById('float-mpesa').innerText = (openShift.open_mpesa || 0).toLocaleString();
-            document.getElementById('float-kcb').innerText = (openShift.open_kcb || 0).toLocaleString();
-            document.getElementById('float-equity').innerText = (openShift.open_equity || 0).toLocaleString();
+            if (container) {
+                container.innerHTML = `
+                    <button class="btn btn-danger special-action-btn" onclick="showCloseModal()">🔴 CLOSE DAY</button>
+                    <button class="btn" onclick="refreshData()" style="background:#e2e8f0; padding:8px 12px"><i class="fas fa-sync-alt"></i> Refresh</button>
+                `;
+            }
+            const cashEl = document.getElementById('float-cash');
+            const mpesaEl = document.getElementById('float-mpesa');
+            const kcbEl = document.getElementById('float-kcb');
+            const equityEl = document.getElementById('float-equity');
+            
+            if (cashEl) cashEl.innerText = (openShift.open_cash || 0).toLocaleString();
+            if (mpesaEl) mpesaEl.innerText = (openShift.open_mpesa || 0).toLocaleString();
+            if (kcbEl) kcbEl.innerText = (openShift.open_kcb || 0).toLocaleString();
+            if (equityEl) equityEl.innerText = (openShift.open_equity || 0).toLocaleString();
+            
             await loadShiftData();
             setTimeout(checkLowFloats, 500);
         } else {
             currentShift = null;
-            container.innerHTML = `
-                <button class="btn btn-primary special-action-btn start-btn-large" onclick="document.getElementById('open-modal').style.display='flex'">🚀 START DAY</button>
-                <button class="btn" onclick="refreshData()" style="background:#e2e8f0; padding:8px 12px"><i class="fas fa-sync-alt"></i> Refresh</button>
-            `;
-            ['cash','mpesa','kcb','equity'].forEach(t => document.getElementById(`float-${t}`).innerText = '0');
+            if (container) {
+                container.innerHTML = `
+                    <button class="btn btn-primary special-action-btn start-btn-large" onclick="document.getElementById('open-modal').style.display='flex'">🚀 START DAY</button>
+                    <button class="btn" onclick="refreshData()" style="background:#e2e8f0; padding:8px 12px"><i class="fas fa-sync-alt"></i> Refresh</button>
+                `;
+            }
+            ['cash','mpesa','kcb','equity'].forEach(t => {
+                const el = document.getElementById(`float-${t}`);
+                if (el) el.innerText = '0';
+            });
         }
         
         await loadHistory();
