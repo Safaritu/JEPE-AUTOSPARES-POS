@@ -1215,29 +1215,85 @@
         font-size: 0.9rem;
     }
     
-    /* Empty cylinder toggle */
-    .empty-toggle {
+    /* Gas transaction type selector */
+    .gas-type-selector {
         display: flex;
-        align-items: center;
+        gap: 15px;
         margin: 10px 0;
-        padding: 8px 12px;
+        padding: 12px;
         background: #f8fafc;
-        border-radius: 8px;
+        border-radius: 10px;
         border: 1px solid var(--border);
     }
     
-    .empty-toggle input[type="checkbox"] {
-        width: 20px;
-        height: 20px;
-        margin-right: 10px;
+    .gas-option {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        background: white;
+        border: 2px solid var(--border);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .gas-option input[type="radio"] {
+        width: 18px;
+        height: 18px;
+        margin: 0;
         accent-color: var(--primary);
     }
     
-    .empty-toggle label {
-        font-size: 0.8rem;
-        font-weight: 600;
+    .gas-option label {
+        font-size: 0.85rem;
+        font-weight: 700;
+        margin: 0;
+        cursor: pointer;
         color: var(--text-main);
-        margin-bottom: 0;
+    }
+    
+    .gas-option.selected {
+        border-color: var(--primary);
+        background: #f5f3ff;
+    }
+    
+    .gas-option.selected label {
+        color: var(--primary);
+    }
+    
+    /* Success notification */
+    .success-notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--success);
+        color: white;
+        padding: 15px 25px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        z-index: 9999;
+        animation: slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+        border-left: 5px solid #0f5c3e;
+        max-width: 350px;
+    }
+    
+    .success-notification i {
+        font-size: 1.5rem;
+    }
+    
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes fadeOut {
+        to { opacity: 0; transform: translateX(100%); }
     }
     
     /* Loading spinner */
@@ -1355,6 +1411,9 @@
 
 <button class="fab-menu" onclick="toggleNav()">☰</button>
 
+<!-- Success Notification Container -->
+<div id="success-notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+
 <div id="congrats-banner" class="congrats-msg">🎉 Perfect Shift!</div>
 
 <div class="container">
@@ -1440,18 +1499,34 @@
                 </div>
             </div>
 
-            <!-- Exchange note for gas sales (initially hidden) -->
-            <div id="gas-exchange-note" class="exchange-note" style="display:none;">
-                <i class="fas fa-info-circle"></i> <strong>Gas Sale:</strong> Please ensure you collect empty cylinder from customer.
-            </div>
-            
-            <!-- Empty cylinder exchange toggle (shown only for gas) -->
-            <div id="empty-toggle-container" class="empty-toggle" style="display:none;">
-                <input type="checkbox" id="collect-empty" checked>
-                <label for="collect-empty">
-                    <i class="fas fa-gas-pump" style="color: var(--gas); margin-right:5px;"></i>
-                    Customer returned empty cylinder (will increase empty stock)
-                </label>
+            <!-- Gas transaction type selector (shown only for gas) -->
+            <div id="gas-type-container" style="display:none;">
+                <div class="gas-type-selector">
+                    <div class="gas-option" id="gas-refill-option" onclick="selectGasType('refill')">
+                        <input type="radio" name="gasType" id="gas-refill" value="refill" checked>
+                        <label for="gas-refill">
+                            <i class="fas fa-fill-drip" style="color: var(--primary);"></i>
+                            Refill (Customer brings empty)
+                        </label>
+                    </div>
+                    <div class="gas-option" id="gas-complete-option" onclick="selectGasType('complete')">
+                        <input type="radio" name="gasType" id="gas-complete" value="complete">
+                        <label for="gas-complete">
+                            <i class="fas fa-fire" style="color: var(--orange);"></i>
+                            Complete (Buy new cylinder)
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Exchange note for refill (shown when refill selected) -->
+                <div id="gas-refill-note" class="exchange-note">
+                    <i class="fas fa-info-circle"></i> <strong>Refill:</strong> Customer returns empty cylinder. Empty stock will increase by 1 per cylinder.
+                </div>
+                
+                <!-- Complete purchase note (shown when complete selected) -->
+                <div id="gas-complete-note" class="exchange-note" style="display:none; background: #e0f2fe; border-left-color: #0284c7;">
+                    <i class="fas fa-shopping-cart"></i> <strong>Complete Purchase:</strong> Customer buys new cylinder. Empty stock not affected.
+                </div>
             </div>
 
             <div id="split-fields" style="display: none; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; padding: 10px; background: #f8fafc; border-radius: 8px; border: 1px dashed var(--primary);">
@@ -1627,6 +1702,9 @@
     let branches = {};
     let refundingSale = null;
     
+    // Gas transaction type (refill or complete)
+    let gasTransactionType = 'refill'; // Default to refill
+    
     // Cache for faster lookups
     let inventoryMap = new Map();
     let inventoryCacheTime = 0;
@@ -1738,6 +1816,73 @@
             return null;
         }
     }
+
+    // ============================================
+    // SUCCESS NOTIFICATION FUNCTION
+    // ============================================
+    function showSuccessNotification(message, details = '') {
+        const container = document.getElementById('success-notification-container');
+        const notification = document.createElement('div');
+        notification.className = 'success-notification';
+        
+        let icon = '✅';
+        let detailText = '';
+        
+        if (details) {
+            detailText = `<div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">${details}</div>`;
+        }
+        
+        // Customize icon based on message content
+        if (message.includes('Gas')) {
+            icon = '⛽';
+        } else if (message.includes('Refund')) {
+            icon = '🔄';
+        } else if (message.includes('Money')) {
+            icon = '💰';
+        }
+        
+        notification.innerHTML = `
+            <i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
+            <div style="flex: 1;">
+                <div style="font-weight: 800;">${message}</div>
+                ${detailText}
+            </div>
+        `;
+        
+        container.appendChild(notification);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    // ============================================
+    // GAS TRANSACTION TYPE SELECTOR
+    // ============================================
+    window.selectGasType = function(type) {
+        gasTransactionType = type;
+        
+        // Update UI
+        const refillOption = document.getElementById('gas-refill-option');
+        const completeOption = document.getElementById('gas-complete-option');
+        const refillNote = document.getElementById('gas-refill-note');
+        const completeNote = document.getElementById('gas-complete-note');
+        
+        if (type === 'refill') {
+            refillOption.classList.add('selected');
+            completeOption.classList.remove('selected');
+            document.getElementById('gas-refill').checked = true;
+            if (refillNote) refillNote.style.display = 'block';
+            if (completeNote) completeNote.style.display = 'none';
+        } else {
+            completeOption.classList.add('selected');
+            refillOption.classList.remove('selected');
+            document.getElementById('gas-complete').checked = true;
+            if (refillNote) refillNote.style.display = 'none';
+            if (completeNote) completeNote.style.display = 'block';
+        }
+    };
 
     // ============================================
     // OPTIMIZED INVENTORY FETCH WITH CACHING
@@ -1863,7 +2008,7 @@
             const { error } = await supabase.from('daily_shifts').insert([openData]);
             if (error) throw error;
             
-            showMessage('✅ Shift started successfully!');
+            showSuccessNotification('✅ Shift started successfully!', 'Ready to make sales');
             setTimeout(() => location.reload(), 1000);
             
         } catch (error) {
@@ -2042,7 +2187,7 @@
             
             if (error) throw error;
             
-            showMessage('✅ Shift closed successfully!');
+            showSuccessNotification('✅ Shift closed successfully!', 'Have a great day');
             setTimeout(() => location.reload(), 1000);
             
         } catch (error) {
@@ -2054,30 +2199,50 @@
     };
 
     // ============================================
-    // GAS CYLINDER EXCHANGE HANDLING
+    // GAS CYLINDER EXCHANGE HANDLING (Based on Gas Hub Logic)
     // ============================================
-    async function processGasExchange(productId, quantity, collectEmpty) {
-        if (!collectEmpty) return;
-        
+    async function processGasTransaction(productId, quantity, transactionType) {
         try {
-            // Find the corresponding empty cylinder product
-            // Empty cylinders are typically the same product but with different tracking
-            // We'll increment the empty_quantity field on the same product
+            // Get current product data
             const { data: product } = await supabase
                 .from('products')
-                .select('empty_quantity')
+                .select('stock_quantity, empty_quantity')
                 .eq('id', productId)
                 .single();
             
-            if (product) {
-                const newEmptyQty = (product.empty_quantity || 0) + quantity;
-                await supabase
-                    .from('products')
-                    .update({ empty_quantity: newEmptyQty })
-                    .eq('id', productId);
+            if (!product) return;
+            
+            const updateData = {};
+            
+            if (transactionType === 'refill') {
+                // Refill: Customer brings empty, gets full
+                // - Decrease stock_quantity by quantity (full cylinders sold)
+                // - Increase empty_quantity by quantity (empties collected)
+                updateData.stock_quantity = (product.stock_quantity || 0) - quantity;
+                updateData.empty_quantity = (product.empty_quantity || 0) + quantity;
+                
+                console.log(`Refill: -${quantity} full, +${quantity} empty`);
+            } else {
+                // Complete purchase: Customer buys new cylinder
+                // - Decrease stock_quantity by quantity (full cylinders sold)
+                // - empty_quantity unchanged
+                updateData.stock_quantity = (product.stock_quantity || 0) - quantity;
+                
+                console.log(`Complete: -${quantity} full, empty unchanged`);
             }
+            
+            // Update the product
+            const { error } = await supabase
+                .from('products')
+                .update(updateData)
+                .eq('id', productId);
+            
+            if (error) throw error;
+            
+            return updateData;
         } catch (error) {
-            console.error("Error processing gas exchange:", error);
+            console.error("Error processing gas transaction:", error);
+            throw error;
         }
     }
 
@@ -2103,7 +2268,10 @@
         const qty = parseInt(document.getElementById('pQty').value);
         const total = price * qty;
         const method = document.getElementById('pMethod').value;
-        const collectEmpty = selectedItem.category === 'Gas' && document.getElementById('collect-empty')?.checked;
+        
+        // For gas products, get transaction type
+        const isGas = selectedItem.category === 'Gas';
+        const gasType = isGas ? gasTransactionType : null;
 
         if (price < (selectedItem.min_price || 0)) {
             const discReason = prompt(`Price below Min. Reason:`);
@@ -2111,8 +2279,9 @@
             selectedItem.tempReason = discReason;
         }
 
+        // Check stock
         if (qty > selectedItem.stock_quantity) {
-            alert("Insufficient stock!");
+            alert(`Insufficient stock! Available: ${selectedItem.stock_quantity}`);
             return;
         }
 
@@ -2134,32 +2303,42 @@
             branch_id: branchId
         };
 
+        // Add gas transaction type to item name for tracking
+        let itemName = formatItemName(selectedItem);
+        if (isGas) {
+            itemName += gasType === 'refill' ? ' (Refill)' : ' (New Cylinder)';
+        }
+
         if (method === 'Split') {
             const cashAmt = parseFloat(document.getElementById('split-cash').value || 0);
             const onlineAmt = total - cashAmt;
-            salesToInsert.push({ ...baseSale, item_name: `${formatItemName(selectedItem)} (Split-C)`, total_amount: cashAmt, payment_method: 'Cash' });
-            salesToInsert.push({ ...baseSale, item_name: `${formatItemName(selectedItem)} (Split-O)`, quantity: 0, total_amount: onlineAmt, payment_method: 'KCB Paybill' });
+            salesToInsert.push({ ...baseSale, item_name: `${itemName} (Split-C)`, total_amount: cashAmt, payment_method: 'Cash' });
+            salesToInsert.push({ ...baseSale, item_name: `${itemName} (Split-O)`, quantity: 0, total_amount: onlineAmt, payment_method: 'KCB Paybill' });
         } else {
-            salesToInsert.push({ ...baseSale, item_name: formatItemName(selectedItem), total_amount: total, payment_method: method });
+            salesToInsert.push({ ...baseSale, item_name: itemName, total_amount: total, payment_method: method });
         }
 
         try {
-            // Use Promise.all for parallel operations
+            // Insert sales record
             const [salesResult] = await Promise.all([
-                supabase.from('sales').insert(salesToInsert).select(),
-                // Update stock
-                supabase.from('products')
-                    .update({ stock_quantity: selectedItem.stock_quantity - qty })
-                    .eq('id', selectedItem.id)
+                supabase.from('sales').insert(salesToInsert).select()
             ]);
 
             if (salesResult.error) throw salesResult.error;
 
-            // Process gas exchange if applicable (doesn't block response)
-            if (selectedItem.category === 'Gas' && collectEmpty) {
-                processGasExchange(selectedItem.id, qty, true).catch(console.error);
+            // Handle stock update based on product type
+            if (isGas) {
+                // Use gas-specific transaction logic
+                await processGasTransaction(selectedItem.id, qty, gasType);
+            } else {
+                // Regular product: just decrease stock
+                await supabase
+                    .from('products')
+                    .update({ stock_quantity: selectedItem.stock_quantity - qty })
+                    .eq('id', selectedItem.id);
             }
 
+            // Handle debt if applicable
             if(method === "Debt") {
                 const dName = prompt("Customer Name:");
                 if(dName) {
@@ -2189,21 +2368,29 @@
             const hintStock = document.getElementById('hint-stock');
             const hintMin = document.getElementById('hint-min');
             const totalText = document.getElementById('total-text');
-            const gasExchangeNote = document.getElementById('gas-exchange-note');
-            const emptyToggle = document.getElementById('empty-toggle-container');
+            const gasTypeContainer = document.getElementById('gas-type-container');
             
             if (hintStock) hintStock.style.display = 'none';
             if (hintMin) hintMin.style.display = 'none';
             if (totalText) totalText.innerText = '0';
-            if (gasExchangeNote) gasExchangeNote.style.display = 'none';
-            if (emptyToggle) emptyToggle.style.display = 'none';
+            if (gasTypeContainer) gasTypeContainer.style.display = 'none';
             
             selectedItem = null;
             
             btn.disabled = false;
             btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
             
-            showMessage('✅ Sale recorded successfully!');
+            // Show success notification with details
+            let successMsg = '✅ Item sold successfully!';
+            let successDetails = `Ksh ${total.toLocaleString()} - ${method}`;
+            
+            if (isGas) {
+                const gasTypeText = gasType === 'refill' ? 'Refill (Empty returned)' : 'New Cylinder';
+                successMsg = '⛽ Gas sold successfully!';
+                successDetails = `${gasTypeText} - Qty: ${qty} - Ksh ${total.toLocaleString()}`;
+            }
+            
+            showSuccessNotification(successMsg, successDetails);
             
         } catch (error) { 
             console.error("Sale Error:", error);
@@ -2244,11 +2431,15 @@
     function updateStockDisplay(item) {
         const hStock = document.getElementById('hint-stock');
         if (hStock) {
-            hStock.innerText = `Stock: ${item.stock_quantity} | Empty: ${item.empty_quantity || 0}`;
+            if (item.category === 'Gas') {
+                hStock.innerText = `Full: ${item.stock_quantity} | Empty: ${item.empty_quantity || 0}`;
+            } else {
+                hStock.innerText = `Stock: ${item.stock_quantity}`;
+            }
             hStock.style.display = 'inline-block';
 
             if (item.stock_quantity <= 0) {
-                hStock.innerText = "OUT OF STOCK";
+                hStock.innerText = item.category === 'Gas' ? "OUT OF FULL STOCK" : "OUT OF STOCK";
                 hStock.classList.add('low-stock-alert');
             } else if (item.stock_quantity < 5) {
                 hStock.classList.add('low-stock-alert');
@@ -2263,8 +2454,7 @@
         if (selectedItem) {
             const pPrice = document.getElementById('pPrice');
             const hintMin = document.getElementById('hint-min');
-            const gasExchangeNote = document.getElementById('gas-exchange-note');
-            const emptyToggle = document.getElementById('empty-toggle-container');
+            const gasTypeContainer = document.getElementById('gas-type-container');
             
             if (pPrice) pPrice.value = selectedItem.selling_price;
             if (hintMin) {
@@ -2275,17 +2465,16 @@
             updateStockDisplay(selectedItem);
             updateTotal();
             
-            // Show gas exchange UI for gas products
+            // Show gas transaction UI for gas products
             if (selectedItem.category === 'Gas') {
-                gasExchangeNote.style.display = 'block';
-                emptyToggle.style.display = 'flex';
+                gasTypeContainer.style.display = 'block';
+                // Reset to default refill
+                selectGasType('refill');
             } else {
-                gasExchangeNote.style.display = 'none';
-                emptyToggle.style.display = 'none';
+                gasTypeContainer.style.display = 'none';
             }
         } else {
-            document.getElementById('gas-exchange-note').style.display = 'none';
-            document.getElementById('empty-toggle-container').style.display = 'none';
+            document.getElementById('gas-type-container').style.display = 'none';
         }
     });
 
@@ -2532,9 +2721,13 @@
                 const newStock = product.stock_quantity + refundingSale.quantity;
                 const updateData = { stock_quantity: newStock };
                 
-                // If it was a gas sale, we need to decrement empty_quantity as well
+                // If it was a gas sale, handle empty_quantity based on transaction type
                 if (refundingSale.category === 'Gas') {
-                    updateData.empty_quantity = Math.max(0, (product.empty_quantity || 0) - refundingSale.quantity);
+                    // Check if it was a refill (contains 'Refill' in item name)
+                    if (refundingSale.item_name.includes('Refill')) {
+                        // For refill: decrease empty_quantity by refunded quantity
+                        updateData.empty_quantity = Math.max(0, (product.empty_quantity || 0) - refundingSale.quantity);
+                    }
                 }
                 
                 const { error: stockError } = await supabase.from('products')
@@ -2552,6 +2745,8 @@
                 fetchInventory(true),
                 loadShiftData()
             ]);
+            
+            showSuccessNotification('🔄 Refund processed', `Ksh ${refundAmount.toLocaleString()} refunded`);
             
         } catch (error) {
             console.error("Refund error:", error);
@@ -2625,7 +2820,7 @@
         btn.disabled = false;
         btn.innerHTML = originalText;
         
-        showMessage('✅ Data refreshed successfully!');
+        showSuccessNotification('✅ Data refreshed', 'Latest updates loaded');
     };
 
     // ============================================
@@ -2919,7 +3114,7 @@
                 document.getElementById('exp-amt').value = '';
                 document.getElementById('exp-desc').value = '';
                 await loadShiftData();
-                showMessage('✅ Transaction recorded!');
+                showSuccessNotification('💰 Transaction recorded', `Ksh ${amt.toLocaleString()} - ${desc}`);
             } else {
                 throw error;
             }
