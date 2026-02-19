@@ -40,6 +40,7 @@
 
     .container { max-width: 1450px; margin: auto; width: 100%; }
     
+    /* Compact Header */
     .compact-header {
         display: flex;
         justify-content: space-between;
@@ -103,21 +104,22 @@
         border: 2px solid white !important;
     }
     
-    .branch-name-display {
+    /* Branch badge */
+    .branch-badge {
         background: var(--primary);
         color: white;
-        padding: 6px 14px;
-        border-radius: 30px;
-        font-size: 0.85rem;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
         font-weight: 700;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         border: 2px solid white;
-        box-shadow: 0 2px 10px rgba(79, 70, 229, 0.3);
-        margin-right: 10px;
+        box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
     }
     
+    /* Gas badge */
     .gas-badge {
         background: var(--gas);
         color: white;
@@ -128,6 +130,7 @@
         font-weight: 700;
     }
     
+    /* Start button with larger font */
     .start-btn-large {
         font-size: 0.9rem !important;
         padding: 10px 18px !important;
@@ -147,12 +150,14 @@
         box-shadow: 0 4px 6px rgba(0,0,0,0.02);
     }
     
+    /* Low float warning */
     .low-float-warning {
         background: #fee2e2 !important;
         color: #b91c1c !important;
         border-color: #fecaca !important;
     }
     
+    /* Danger alert for very low floats */
     .danger-alert {
         border: 2px solid #ef4444 !important;
         background: #fff1f2 !important;
@@ -944,6 +949,7 @@
         flex: 1;
     }
     
+    /* Mobile Slide Indicator - Hidden on mobile */
     .slide-indicator { 
         background: #0f172a; 
         color: white; 
@@ -1179,6 +1185,7 @@
         }
     }
     
+    /* Exchange note for gas sales */
     .exchange-note {
         background: #fffbeb;
         border-left: 4px solid var(--gas);
@@ -1188,53 +1195,69 @@
         font-size: 0.85rem;
     }
     
-    .gas-type-selector {
-        display: flex;
-        gap: 15px;
-        margin: 10px 0;
-        padding: 12px;
-        background: #f8fafc;
-        border-radius: 10px;
-        border: 1px solid var(--border);
-    }
-    
-    .gas-option {
-        flex: 1;
-        display: flex;
+    /* Branch name display in header */
+    .branch-name-display {
+        background: var(--primary);
+        color: white;
+        padding: 6px 14px;
+        border-radius: 30px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        display: inline-flex;
         align-items: center;
         gap: 8px;
-        padding: 8px 12px;
+        border: 2px solid white;
+        box-shadow: 0 2px 10px rgba(79, 70, 229, 0.3);
+        margin-right: 10px;
+    }
+    
+    .branch-name-display i {
+        font-size: 0.9rem;
+    }
+    
+    /* Gas redirect notice */
+    .gas-redirect-notice {
+        background: #fef3c7;
+        border-left: 4px solid var(--warning);
+        padding: 15px;
+        margin: 15px 0;
         border-radius: 8px;
-        background: white;
-        border: 2px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 600;
+        animation: pulse 2s infinite;
+    }
+    
+    .gas-redirect-notice i {
+        font-size: 1.5rem;
+        color: var(--warning);
+    }
+    
+    .gas-redirect-notice button {
+        background: var(--warning);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 30px;
+        font-weight: 700;
         cursor: pointer;
+        margin-left: auto;
         transition: all 0.2s;
     }
     
-    .gas-option input[type="radio"] {
-        width: 18px;
-        height: 18px;
-        margin: 0;
-        accent-color: var(--primary);
+    .gas-redirect-notice button:hover {
+        background: #d97706;
+        transform: scale(1.05);
     }
     
-    .gas-option label {
-        font-size: 0.85rem;
-        font-weight: 700;
-        margin: 0;
-        cursor: pointer;
-        color: var(--text-main);
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.9; }
+        100% { opacity: 1; }
     }
     
-    .gas-option.selected {
-        border-color: var(--primary);
-        background: #f5f3ff;
-    }
-    
-    .gas-option.selected label {
-        color: var(--primary);
-    }
-    
+    /* Success notification */
     .success-notification {
         position: fixed;
         top: 20px;
@@ -1267,6 +1290,7 @@
         to { opacity: 0; transform: translateX(100%); }
     }
     
+    /* Loading spinner */
     .spinner {
         display: inline-block;
         width: 16px;
@@ -1278,6 +1302,13 @@
     }
     
     @keyframes spin { to { transform: rotate(360deg); } }
+    
+    /* Cache indicator */
+    .cache-indicator {
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        margin-left: 5px;
+    }
 </style>
 </head>
 <body>
@@ -1346,8 +1377,8 @@
         <a href="sale edit cashier.html" class="nav-card"><span>✏️</span><small>Edit sales</small></a>
         <a href="gas_delivery.html" class="nav-card"><span>🏍️</span><small>Delivery</small></a>
         <a href="cashier_report.html" class="nav-card"><span>📝</span><small>Today's Report</small></a>
-        <a href="pos.html" class="nav-card"><span>🛒</span><small>Cart Shop</small></a>
-        <a href="cashierprofile.html" class="nav-card"><span>👤</span><small>Settings</small></a>
+          <a href="pos.html" class="nav-card"><span>🛒</span><small>Cart Shop</small></a>
+         <a href="cashierprofile.html" class="nav-card"><span>👤</span><small>Settings</small></a>
         <a href="cashier.html" class="nav-card"><span>🏠</span><small>HOME</small></a>
         <button onclick="logoutUser()" style="grid-column: span 2; margin-top:20px; background:var(--danger); color:white; border:none; padding:18px; border-radius:15px; font-weight:800;">🚪 LOGOUT SYSTEM</button>
     </div>
@@ -1436,6 +1467,17 @@
         </div>
     </div>
 
+    <!-- Gas Redirect Notice (hidden by default) -->
+    <div id="gas-redirect-notice" class="gas-redirect-notice" style="display: none;">
+        <i class="fas fa-fire"></i>
+        <div style="flex: 1;">
+            <strong>Gas item detected!</strong> Gas sales are handled in the dedicated Gas Hub for accurate cylinder tracking.
+        </div>
+        <button onclick="redirectToGasHub()">
+            <i class="fas fa-arrow-right"></i> Go to Gas Hub
+        </button>
+    </div>
+
     <div class="card">
         <div class="section-label">Sale Item</div>
         <form id="sale-form">
@@ -1459,36 +1501,6 @@
                         <option value="Split">Split: Cash + KCB Paybill</option>
                         <option value="Debt">Debtor (Owed)</option>
                     </select>
-                </div>
-            </div>
-
-            <!-- Gas transaction type selector (shown only for gas) -->
-            <div id="gas-type-container" style="display:none;">
-                <div class="gas-type-selector">
-                    <div class="gas-option" id="gas-refill-option" onclick="selectGasType('refill')">
-                        <input type="radio" name="gasType" id="gas-refill" value="refill" checked>
-                        <label for="gas-refill">
-                            <i class="fas fa-fill-drip" style="color: var(--primary);"></i>
-                            Refill (Customer brings empty)
-                        </label>
-                    </div>
-                    <div class="gas-option" id="gas-complete-option" onclick="selectGasType('complete')">
-                        <input type="radio" name="gasType" id="gas-complete" value="complete">
-                        <label for="gas-complete">
-                            <i class="fas fa-fire" style="color: var(--orange);"></i>
-                            Complete (Buy new cylinder)
-                        </label>
-                    </div>
-                </div>
-                
-                <!-- Exchange note for refill (shown when refill selected) -->
-                <div id="gas-refill-note" class="exchange-note">
-                    <i class="fas fa-info-circle"></i> <strong>Refill:</strong> Customer returns empty cylinder. Empty stock will increase by 1 per cylinder.
-                </div>
-                
-                <!-- Complete purchase note (shown when complete selected) -->
-                <div id="gas-complete-note" class="exchange-note" style="display:none; background: #e0f2fe; border-left-color: #0284c7;">
-                    <i class="fas fa-shopping-cart"></i> <strong>Complete Purchase:</strong> Customer buys new cylinder. Empty stock not affected.
                 </div>
             </div>
 
@@ -1664,9 +1676,6 @@
     let currentBranchId = null;
     let branches = {};
     let refundingSale = null;
-    
-    // Gas transaction type (refill or complete)
-    let gasTransactionType = 'refill';
 
     // ============================================
     // GET BRANCH ID FROM URL PARAMETER
@@ -1752,21 +1761,15 @@
     }
 
     // ============================================
-    // GAS TYPE SELECTOR
+    // REDIRECT TO GAS HUB
     // ============================================
-    window.selectGasType = function(type) {
-        gasTransactionType = type;
-        const refillOption = document.getElementById('gas-refill-option');
-        const completeOption = document.getElementById('gas-complete-option');
-        const refillNote = document.getElementById('gas-refill-note');
-        const completeNote = document.getElementById('gas-complete-note');
-        
-        if (refillOption) refillOption.classList.toggle('selected', type === 'refill');
-        if (completeOption) completeOption.classList.toggle('selected', type === 'complete');
-        if (refillNote) refillNote.style.display = type === 'refill' ? 'block' : 'none';
-        if (completeNote) completeNote.style.display = type === 'complete' ? 'block' : 'none';
-        const radio = document.getElementById(type === 'refill' ? 'gas-refill' : 'gas-complete');
-        if (radio) radio.checked = true;
+    window.redirectToGasHub = function() {
+        const branchId = getCurrentBranchId();
+        if (branchId) {
+            window.location.href = `cashiergashub.html?branch=${branchId}`;
+        } else {
+            window.location.href = 'cashiergashub.html';
+        }
     };
 
     // ============================================
@@ -1784,18 +1787,11 @@
         if (data) {
             inventory = data;
             refreshProductDatalist();
-            if (selectedItem) {
-                const updated = inventory.find(p => p.id === selectedItem.id);
-                if (updated) {
-                    selectedItem = updated;
-                    updateStockDisplay(updated);
-                }
-            }
         }
     }
 
     // ============================================
-    // SHIFT CHECKS
+    // CHECK FOR OPEN SHIFT
     // ============================================
     async function checkForOpenShift(branchId) {
         if (!branchId) return null;
@@ -1849,7 +1845,7 @@
     });
 
     // ============================================
-    // CLOSE SHIFT
+    // CLOSE SHIFT FUNCTIONS
     // ============================================
     window.showCloseModal = () => {
         if (currentShift) {
@@ -1968,45 +1964,7 @@
     };
 
     // ============================================
-    // FIXED GAS TRANSACTION - SINGLE UPDATE ONLY!
-    // ============================================
-    async function processGasTransaction(productId, quantity, transactionType) {
-        // Get current product data
-        const { data: product, error } = await supabase
-            .from('products')
-            .select('stock_quantity, empty_quantity')
-            .eq('id', productId)
-            .single();
-        
-        if (error || !product) throw new Error("Could not fetch product");
-        if (product.stock_quantity < quantity) throw new Error(`Only ${product.stock_quantity} available`);
-        
-        console.log("Before update - Stock:", product.stock_quantity, "Empty:", product.empty_quantity);
-        
-        // SINGLE UPDATE - both fields at once (THIS IS THE KEY FIX)
-        const updateData = transactionType === 'refill' 
-            ? { 
-                stock_quantity: product.stock_quantity - quantity,
-                empty_quantity: (product.empty_quantity || 0) + quantity
-              }
-            : { 
-                stock_quantity: product.stock_quantity - quantity 
-              };
-        
-        const { error: updateError } = await supabase
-            .from('products')
-            .update(updateData)
-            .eq('id', productId);
-        
-        if (updateError) throw updateError;
-        
-        console.log("After update - New stock:", updateData.stock_quantity, 
-                    transactionType === 'refill' ? `New empty: ${updateData.empty_quantity}` : 'Empty unchanged');
-        console.log(`Transaction: ${transactionType}, -${quantity} full, ${transactionType === 'refill' ? '+' + quantity + ' empty' : 'empty unchanged'}`);
-    }
-
-    // ============================================
-    // SALE SUBMISSION
+    // SALE SUBMISSION HANDLER - WITH GAS REDIRECT
     // ============================================
     document.getElementById('sale-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -2014,17 +1972,27 @@
         if (!currentShift) return alert("Open a shift first");
         if (!selectedItem) return alert("Select an item");
         
+        // GAS ITEM DETECTED - REDIRECT TO GAS HUB
+        if (selectedItem.category === 'Gas') {
+            const notice = document.getElementById('gas-redirect-notice');
+            if (notice) notice.style.display = 'flex';
+            
+            // Auto-redirect after 2 seconds
+            setTimeout(() => {
+                redirectToGasHub();
+            }, 2000);
+            
+            return;
+        }
+        
+        // NON-GAS ITEM - PROCESS NORMALLY
         const price = parseFloat(document.getElementById('pPrice')?.value) || 0;
         const qty = parseInt(document.getElementById('pQty')?.value) || 0;
         const total = price * qty;
         const method = document.getElementById('pMethod')?.value || 'Cash';
-        const isGas = selectedItem.category === 'Gas';
-        const gasType = isGas ? gasTransactionType : null;
         
-        // Use correct min price field
-        const minPrice = isGas ? (selectedItem.min_selling_price || 0) : (selectedItem.min_price || 0);
-        if (price < minPrice) {
-            const reason = prompt(`Price below minimum (${minPrice}). Reason:`);
+        if (price < (selectedItem.min_price || 0)) {
+            const reason = prompt(`Price below minimum (${selectedItem.min_price}). Reason:`);
             if (!reason) return;
             selectedItem.tempReason = reason;
         }
@@ -2056,7 +2024,6 @@
             };
             
             let itemName = formatItemName(selectedItem);
-            if (isGas) itemName += gasType === 'refill' ? ' (Refill)' : ' (New Cylinder)';
             
             let salesToInsert = [];
             if (method === 'Split') {
@@ -2073,15 +2040,11 @@
             const { error: saleErr } = await supabase.from('sales').insert(salesToInsert);
             if (saleErr) throw saleErr;
             
-            // Update stock - USE THE FIXED FUNCTION
-            if (isGas) {
-                await processGasTransaction(selectedItem.id, qty, gasType);
-            } else {
-                await supabase
-                    .from('products')
-                    .update({ stock_quantity: selectedItem.stock_quantity - qty })
-                    .eq('id', selectedItem.id);
-            }
+            // Update stock for non-gas items
+            await supabase
+                .from('products')
+                .update({ stock_quantity: selectedItem.stock_quantity - qty })
+                .eq('id', selectedItem.id);
             
             // Handle debt
             if (method === 'Debt') {
@@ -2105,19 +2068,13 @@
             const hintStock = document.getElementById('hint-stock');
             const hintMin = document.getElementById('hint-min');
             const totalText = document.getElementById('total-text');
-            const gasContainer = document.getElementById('gas-type-container');
             
             if (hintStock) hintStock.style.display = 'none';
             if (hintMin) hintMin.style.display = 'none';
             if (totalText) totalText.innerText = '0';
-            if (gasContainer) gasContainer.style.display = 'none';
             selectedItem = null;
             
-            // Notify
-            const details = isGas 
-                ? `${gasType === 'refill' ? 'Refill' : 'New Cylinder'} - Qty:${qty} - Ksh ${total}`
-                : `Ksh ${total} - ${method}`;
-            showSuccessNotification(isGas ? '⛽ Gas sold' : '✅ Item sold', details);
+            showSuccessNotification('✅ Item sold', `Ksh ${total} - ${method}`);
             
         } catch (error) {
             console.error(error);
@@ -2131,11 +2088,13 @@
     });
 
     // ============================================
-    // UI HELPERS
+    // UI HELPER FUNCTIONS
     // ============================================
     function refreshProductDatalist() {
         const list = document.getElementById('pList');
-        if (list) list.innerHTML = inventory.map(p => `<option value="${formatItemName(p)}">`).join('');
+        if (list) {
+            list.innerHTML = inventory.map(p => `<option value="${formatItemName(p)}">`).join('');
+        }
     }
 
     function formatItemName(p) {
@@ -2168,33 +2127,30 @@
 
     document.getElementById('pSearch')?.addEventListener('input', (e) => {
         selectedItem = inventory.find(p => formatItemName(p) === e.target.value);
-        if (!selectedItem) {
-            const gasContainer = document.getElementById('gas-type-container');
-            if (gasContainer) gasContainer.style.display = 'none';
-            return;
-        }
+        
+        // Hide gas redirect notice when searching
+        const notice = document.getElementById('gas-redirect-notice');
+        if (notice) notice.style.display = 'none';
+        
+        if (!selectedItem) return;
         
         const priceInput = document.getElementById('pPrice');
         if (priceInput) priceInput.value = selectedItem.selling_price;
         
         const minHint = document.getElementById('hint-min');
-        const minPrice = selectedItem.category === 'Gas' 
-            ? (selectedItem.min_selling_price || 0) 
-            : (selectedItem.min_price || 0);
         if (minHint) {
-            minHint.innerText = `Min: ${minPrice}`;
+            minHint.innerText = `Min: ${selectedItem.min_price || 0}`;
             minHint.style.display = 'inline-block';
         }
         
         updateStockDisplay(selectedItem);
         updateTotal();
         
-        const gasContainer = document.getElementById('gas-type-container');
+        // Show gas redirect notice if gas item selected
         if (selectedItem.category === 'Gas') {
-            if (gasContainer) gasContainer.style.display = 'block';
-            selectGasType('refill');
+            if (notice) notice.style.display = 'flex';
         } else {
-            if (gasContainer) gasContainer.style.display = 'none';
+            if (notice) notice.style.display = 'none';
         }
     });
 
@@ -2291,7 +2247,7 @@
     }
 
     // ============================================
-    // REFUND
+    // REFUND FUNCTIONS
     // ============================================
     window.openRefundModal = (sale) => {
         refundingSale = sale;
@@ -2372,19 +2328,21 @@
                 user_id: currentUser.id
             }]);
             
-            // Restore stock
-            const { data: product } = await supabase
-                .from('products')
-                .select('stock_quantity, empty_quantity')
-                .eq('id', refundingSale.product_id)
-                .single();
-            
-            if (product) {
-                const update = { stock_quantity: (product.stock_quantity || 0) + refundingSale.quantity };
-                if (refundingSale.category === 'Gas' && refundingSale.item_name.includes('Refill')) {
-                    update.empty_quantity = Math.max(0, (product.empty_quantity || 0) - refundingSale.quantity);
+            // Restore stock for non-gas items only
+            if (refundingSale.category !== 'Gas') {
+                const { data: product } = await supabase
+                    .from('products')
+                    .select('stock_quantity')
+                    .eq('id', refundingSale.product_id)
+                    .single();
+                
+                if (product) {
+                    await supabase.from('products')
+                        .update({ stock_quantity: (product.stock_quantity || 0) + refundingSale.quantity })
+                        .eq('id', refundingSale.product_id);
                 }
-                await supabase.from('products').update(update).eq('id', refundingSale.product_id);
+            } else {
+                alert("Note: Gas refunds must be processed in the Gas Hub for proper cylinder tracking.");
             }
             
             alert("Refund processed");
@@ -2435,7 +2393,7 @@
     }
 
     // ============================================
-    // REFRESH
+    // REFRESH DATA
     // ============================================
     window.refreshData = async function() {
         const btn = event?.target?.closest('button');
@@ -2453,7 +2411,7 @@
     };
 
     // ============================================
-    // HISTORY
+    // LOAD HISTORY
     // ============================================
     async function loadHistory(query = "") {
         const branchId = getCurrentBranchId();
