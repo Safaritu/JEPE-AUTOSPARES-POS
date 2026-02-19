@@ -1686,7 +1686,7 @@
     import { supabase } from './auth.js';
 
     // ============================================
-    // OPTIMIZED STATE MANAGEMENT WITH CACHING
+    // STATE MANAGEMENT
     // ============================================
     let inventory = [];
     let currentShift = null;
@@ -2222,6 +2222,11 @@
             const currentStock = Number(product.stock_quantity) || 0;
             const currentEmpty = Number(product.empty_quantity) || 0;
             
+            // Validate stock
+            if (currentStock < quantity) {
+                throw new Error(`Insufficient stock! Only ${currentStock} available.`);
+            }
+            
             const updateData = {};
             
             if (transactionType === 'refill') {
@@ -2241,11 +2246,6 @@
                 
                 console.log(`Complete: Selling ${quantity} full, empty unchanged`);
                 console.log(`New stock: ${updateData.stock_quantity}`);
-            }
-            
-            // Validate that we're not going negative
-            if (updateData.stock_quantity < 0) {
-                throw new Error(`Insufficient stock! Only ${currentStock} available.`);
             }
             
             // Update the product
@@ -2268,7 +2268,7 @@
     }
 
     // ============================================
-    // SALE SUBMISSION HANDLER (OPTIMIZED)
+    // SALE SUBMISSION HANDLER (FIXED)
     // ============================================
     document.getElementById('sale-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -2377,10 +2377,10 @@
             inventoryCacheTime = 0;
             
             // Refresh data in background
-            Promise.all([
+            await Promise.all([
                 fetchInventory(true),
                 loadShiftData()
-            ]).catch(console.error);
+            ]);
             
             // Reset form
             document.getElementById('sale-form').reset();
