@@ -1704,11 +1704,6 @@
     
     // Gas transaction type (refill or complete)
     let gasTransactionType = 'refill'; // Default to refill
-    
-    // Cache for faster lookups
-    let inventoryMap = new Map();
-    let inventoryCacheTime = 0;
-    const CACHE_DURATION = 30000; // 30 seconds cache
 
     // ============================================
     // GET BRANCH ID FROM URL PARAMETER
@@ -1730,11 +1725,6 @@
         return session.branch?.id || currentBranchId;
     }
 
-    function isAdmin() {
-        const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
-        return session.role === 'admin';
-    }
-
     // Load branches for name lookup
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
@@ -1750,8 +1740,6 @@
             const { data: { user }, error } = await supabase.auth.getUser();
             
             if (error || !user) {
-                console.log("No authenticated user found, but checking for existing session");
-                
                 const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
                 if (session.user && session.profile) {
                     currentUser = session.user;
@@ -1801,18 +1789,6 @@
             return profile;
         } catch (error) {
             console.error("Error loading profile:", error);
-            
-            const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
-            if (session.user && session.profile) {
-                currentUser = session.user;
-                currentUserProfile = session.profile;
-                
-                const urlBranchId = getBranchIdFromUrl();
-                currentBranchId = urlBranchId || session.branch?.id || session.profile.branch_id;
-                
-                return session.profile;
-            }
-            
             return null;
         }
     }
@@ -1825,21 +1801,7 @@
         const notification = document.createElement('div');
         notification.className = 'success-notification';
         
-        let icon = '✅';
-        let detailText = '';
-        
-        if (details) {
-            detailText = `<div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">${details}</div>`;
-        }
-        
-        // Customize icon based on message content
-        if (message.includes('Gas')) {
-            icon = '⛽';
-        } else if (message.includes('Refund')) {
-            icon = '🔄';
-        } else if (message.includes('Money')) {
-            icon = '💰';
-        }
+        let detailText = details ? `<div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">${details}</div>` : '';
         
         notification.innerHTML = `
             <i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
@@ -1851,7 +1813,6 @@
         
         container.appendChild(notification);
         
-        // Remove after 3 seconds
         setTimeout(() => {
             notification.remove();
         }, 3000);
@@ -1863,7 +1824,6 @@
     window.selectGasType = function(type) {
         gasTransactionType = type;
         
-        // Update UI
         const refillOption = document.getElementById('gas-refill-option');
         const completeOption = document.getElementById('gas-complete-option');
         const refillNote = document.getElementById('gas-refill-note');
@@ -1885,21 +1845,12 @@
     };
 
     // ============================================
-    // OPTIMIZED INVENTORY FETCH WITH CACHING
+    // FETCH INVENTORY
     // ============================================
-    async function fetchInventory(force = false) {
+    async function fetchInventory() {
         try {
             const branchId = getCurrentBranchId();
-            if (!branchId) {
-                console.error("No branch ID found");
-                return;
-            }
-            
-            // Use cache if available and not forced
-            const now = Date.now();
-            if (!force && inventoryCacheTime > 0 && (now - inventoryCacheTime) < CACHE_DURATION) {
-                return; // Use cached inventory
-            }
+            if (!branchId) return;
             
             const { data } = await supabase
                 .from('products')
@@ -1908,16 +1859,6 @@
                 
             if (data) {
                 inventory = data;
-                
-                // Build lookup map for faster access
-                inventoryMap.clear();
-                data.forEach(p => {
-                    inventoryMap.set(p.id, p);
-                    const searchKey = formatItemName(p).toLowerCase();
-                    inventoryMap.set(searchKey, p);
-                });
-                
-                inventoryCacheTime = now;
                 refreshProductDatalist();
                 
                 if (selectedItem) {
@@ -2199,68 +2140,49 @@
     };
 
     // ============================================
-    // FIXED GAS CYLINDER EXCHANGE HANDLING (Based on Gas Hub)
+    // GAS CYLINDER EXCHANGE HANDLING (EXACTLY LIKE GAS HUB)
     // ============================================
-    async function processGasTransaction(productId, quantity, transactionType) {
+    async function processGasTransaction(outgoingId, quantity, transactionType) {
         try {
-            // Get current product data
-            const { data: product, error: fetchError } = await supabase
+            // Get outgoing product data
+            const { data: outgoingItem, error: fetchError } = await supabase
                 .from('products')
                 .select('stock_quantity, empty_quantity')
-                .eq('id', productId)
+                .eq('id', outgoingId)
                 .single();
             
-            if (fetchError || !product) {
-                console.error("Error fetching product:", fetchError);
+            if (fetchError || !outgoingItem) {
                 throw new Error("Could not fetch product data");
             }
             
-            console.log("Current product state:", product);
+            console.log("Current product state:", outgoingItem);
             console.log("Processing gas transaction:", { quantity, transactionType });
             
-            // IMPORTANT: Ensure we're working with numbers
-            const currentStock = Number(product.stock_quantity) || 0;
-            const currentEmpty = Number(product.empty_quantity) || 0;
-            
             // Validate stock
-            if (currentStock < quantity) {
-                throw new Error(`Insufficient stock! Only ${currentStock} available.`);
+            if (outgoingItem.stock_quantity < quantity) {
+                throw new Error(`Insufficient stock! Only ${outgoingItem.stock_quantity} available.`);
             }
             
-            const updateData = {};
-            
-            if (transactionType === 'refill') {
-                // Refill: Customer brings empty, gets full
-                // - Decrease stock_quantity by quantity (full cylinders sold)
-                // - Increase empty_quantity by quantity (empties collected)
-                updateData.stock_quantity = currentStock - quantity;
-                updateData.empty_quantity = currentEmpty + quantity;
-                
-                console.log(`Refill: Selling ${quantity} full, receiving ${quantity} empty`);
-                console.log(`New stock: ${updateData.stock_quantity}, New empty: ${updateData.empty_quantity}`);
-            } else {
-                // Complete purchase: Customer buys new cylinder
-                // - Decrease stock_quantity by quantity (full cylinders sold)
-                // - empty_quantity unchanged
-                updateData.stock_quantity = currentStock - quantity;
-                
-                console.log(`Complete: Selling ${quantity} full, empty unchanged`);
-                console.log(`New stock: ${updateData.stock_quantity}`);
-            }
-            
-            // Update the product
-            const { error: updateError } = await supabase
+            // Update outgoing stock (full -> -quantity)
+            const { error: stockError } = await supabase
                 .from('products')
-                .update(updateData)
-                .eq('id', productId);
+                .update({ stock_quantity: outgoingItem.stock_quantity - quantity })
+                .eq('id', outgoingId);
             
-            if (updateError) {
-                console.error("Error updating product:", updateError);
-                throw updateError;
+            if (stockError) throw stockError;
+            
+            // For refill: update empty stock (+quantity)
+            if (transactionType === 'refill') {
+                const { error: emptyError } = await supabase
+                    .from('products')
+                    .update({ empty_quantity: (outgoingItem.empty_quantity || 0) + quantity })
+                    .eq('id', outgoingId);
+                
+                if (emptyError) throw emptyError;
             }
             
-            console.log("Product updated successfully:", updateData);
-            return updateData;
+            console.log(`Gas transaction completed: -${quantity} full, ${transactionType === 'refill' ? '+' + quantity + ' empty' : 'empty unchanged'}`);
+            
         } catch (error) {
             console.error("Error processing gas transaction:", error);
             throw error;
@@ -2268,7 +2190,7 @@
     }
 
     // ============================================
-    // SALE SUBMISSION HANDLER (FIXED)
+    // SALE SUBMISSION HANDLER
     // ============================================
     document.getElementById('sale-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -2294,8 +2216,11 @@
         const isGas = selectedItem.category === 'Gas';
         const gasType = isGas ? gasTransactionType : null;
 
-        if (price < (selectedItem.min_price || 0)) {
-            const discReason = prompt(`Price below Min. Reason:`);
+        // Use the correct min price field based on category
+        const minPriceToUse = isGas ? (selectedItem.min_selling_price || selectedItem.min_price || 0) : (selectedItem.min_price || 0);
+        
+        if (price < minPriceToUse) {
+            const discReason = prompt(`Price below minimum (Ksh ${minPriceToUse}). Reason:`);
             if (!discReason) return;
             selectedItem.tempReason = discReason;
         }
@@ -2309,43 +2234,41 @@
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner"></span> RECORDING...';
 
-        let salesToInsert = [];
-        const baseSale = {
-            shift_id: currentShift.id,
-            product_id: selectedItem.id,
-            quantity: qty, 
-            unit_price: price, 
-            cost_price: selectedItem.cost_price || 0,
-            part_type: selectedItem.part_type || 'N/A', 
-            discount_reason: selectedItem.tempReason || "",
-            user_id: currentUser.id,
-            category: selectedItem.category,
-            weight_category: selectedItem.weight_category,
-            branch_id: branchId
-        };
-
-        // Add gas transaction type to item name for tracking
-        let itemName = formatItemName(selectedItem);
-        if (isGas) {
-            itemName += gasType === 'refill' ? ' (Refill)' : ' (New Cylinder)';
-        }
-
-        if (method === 'Split') {
-            const cashAmt = parseFloat(document.getElementById('split-cash').value || 0);
-            const onlineAmt = total - cashAmt;
-            salesToInsert.push({ ...baseSale, item_name: `${itemName} (Split-C)`, total_amount: cashAmt, payment_method: 'Cash' });
-            salesToInsert.push({ ...baseSale, item_name: `${itemName} (Split-O)`, quantity: 0, total_amount: onlineAmt, payment_method: 'KCB Paybill' });
-        } else {
-            salesToInsert.push({ ...baseSale, item_name: itemName, total_amount: total, payment_method: method });
-        }
-
         try {
-            // Insert sales record
-            const [salesResult] = await Promise.all([
-                supabase.from('sales').insert(salesToInsert).select()
-            ]);
+            // Build sales records
+            const baseSale = {
+                shift_id: currentShift.id,
+                product_id: selectedItem.id,
+                quantity: qty, 
+                unit_price: price, 
+                cost_price: selectedItem.cost_price || 0,
+                part_type: selectedItem.part_type || 'N/A', 
+                discount_reason: selectedItem.tempReason || "",
+                user_id: currentUser.id,
+                category: selectedItem.category,
+                weight_category: selectedItem.weight_category,
+                branch_id: branchId
+            };
 
-            if (salesResult.error) throw salesResult.error;
+            // Add transaction type to item name for gas
+            let itemName = formatItemName(selectedItem);
+            if (isGas) {
+                itemName += gasType === 'refill' ? ' (Refill)' : ' (New Cylinder)';
+            }
+
+            let salesToInsert = [];
+            if (method === 'Split') {
+                const cashAmt = parseFloat(document.getElementById('split-cash').value || 0);
+                const onlineAmt = total - cashAmt;
+                salesToInsert.push({ ...baseSale, item_name: `${itemName} (Split-C)`, total_amount: cashAmt, payment_method: 'Cash' });
+                salesToInsert.push({ ...baseSale, item_name: `${itemName} (Split-O)`, quantity: 0, total_amount: onlineAmt, payment_method: 'KCB Paybill' });
+            } else {
+                salesToInsert.push({ ...baseSale, item_name: itemName, total_amount: total, payment_method: method });
+            }
+
+            // Insert sales record
+            const { error: saleErr } = await supabase.from('sales').insert(salesToInsert);
+            if (saleErr) throw saleErr;
 
             // Handle stock update based on product type
             if (isGas) {
@@ -2360,9 +2283,9 @@
             }
 
             // Handle debt if applicable
-            if(method === "Debt") {
+            if (method === "Debt") {
                 const dName = prompt("Customer Name:");
-                if(dName) {
+                if (dName) {
                     await supabase.from('debtors').insert([{ 
                         customer_name: dName, 
                         amount_owed: total, 
@@ -2373,12 +2296,9 @@
                 }
             }
 
-            // Invalidate cache
-            inventoryCacheTime = 0;
-            
-            // Refresh data in background
+            // Refresh data
             await Promise.all([
-                fetchInventory(true),
+                fetchInventory(),
                 loadShiftData()
             ]);
             
@@ -2398,10 +2318,7 @@
             
             selectedItem = null;
             
-            btn.disabled = false;
-            btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
-            
-            // Show success notification with details
+            // Show success notification
             let successMsg = '✅ Item sold successfully!';
             let successDetails = `Ksh ${total.toLocaleString()} - ${method}`;
             
@@ -2416,6 +2333,7 @@
         } catch (error) { 
             console.error("Sale Error:", error);
             alert("❌ Error: " + error.message); 
+        } finally {
             btn.disabled = false;
             btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
         }
@@ -2424,17 +2342,6 @@
     // ============================================
     // UI HELPER FUNCTIONS
     // ============================================
-    function showMessage(msg) {
-        const banner = document.getElementById('congrats-banner');
-        if (banner) {
-            banner.textContent = msg;
-            banner.style.display = 'block';
-            setTimeout(() => {
-                banner.style.display = 'none';
-            }, 2000);
-        }
-    }
-
     function refreshProductDatalist() {
         const pList = document.getElementById('pList');
         if (pList) {
@@ -2479,7 +2386,11 @@
             
             if (pPrice) pPrice.value = selectedItem.selling_price;
             if (hintMin) {
-                hintMin.innerText = `Min: ${selectedItem.min_price || 0}`;
+                // Use correct min price field based on category
+                const minPriceToShow = selectedItem.category === 'Gas' ? 
+                    (selectedItem.min_selling_price || selectedItem.min_price || 0) : 
+                    (selectedItem.min_price || 0);
+                hintMin.innerText = `Min: ${minPriceToShow}`;
                 hintMin.style.display = 'inline-block';
             }
             
@@ -2489,7 +2400,6 @@
             // Show gas transaction UI for gas products
             if (selectedItem.category === 'Gas') {
                 gasTypeContainer.style.display = 'block';
-                // Reset to default refill
                 selectGasType('refill');
             } else {
                 gasTypeContainer.style.display = 'none';
@@ -2531,7 +2441,7 @@
     };
 
     // ============================================
-    // LOAD SHIFT DATA (OPTIMIZED)
+    // LOAD SHIFT DATA
     // ============================================
     async function loadShiftData() {
         try {
@@ -2635,7 +2545,7 @@
     }
 
     // ============================================
-    // FIXED REFUND FUNCTIONS
+    // REFUND FUNCTIONS
     // ============================================
     window.openRefundModal = function(sale) {
         refundingSale = sale;
@@ -2745,16 +2655,8 @@
                 const updateData = { stock_quantity: newStock };
                 
                 // If it was a gas sale, handle empty_quantity based on transaction type
-                if (refundingSale.category === 'Gas') {
-                    // Check if it was a refill (contains 'Refill' in item name)
-                    if (refundingSale.item_name.includes('Refill')) {
-                        // For refill: decrease empty_quantity by refunded quantity (1:1)
-                        updateData.empty_quantity = Math.max(0, (product.empty_quantity || 0) - refundingSale.quantity);
-                        console.log(`Refund refill: +${refundingSale.quantity} full, -${refundingSale.quantity} empty`);
-                    } else {
-                        // For complete purchase: only restore full stock
-                        console.log(`Refund complete: +${refundingSale.quantity} full, empty unchanged`);
-                    }
+                if (refundingSale.category === 'Gas' && refundingSale.item_name.includes('Refill')) {
+                    updateData.empty_quantity = Math.max(0, (product.empty_quantity || 0) - refundingSale.quantity);
                 }
                 
                 const { error: stockError } = await supabase.from('products')
@@ -2764,12 +2666,11 @@
                 if (stockError) throw stockError;
             }
             
-            alert(`✅ Refund processed successfully!\n\nRefund of Ksh ${refundAmount.toLocaleString()} processed via ${refundMethod}. Stock has been restored.`);
+            alert(`✅ Refund processed successfully!`);
             
             closeRefundModal();
-            inventoryCacheTime = 0;
             await Promise.all([
-                fetchInventory(true),
+                fetchInventory(),
                 loadShiftData()
             ]);
             
@@ -2806,18 +2707,16 @@
     // ============================================
     function checkLowFloats() {
         const floatItems = [
-            { id: 'float-cash-item', element: document.getElementById('float-cash'), value: parseFloat(document.getElementById('float-cash')?.innerText.replace(/,/g, '')) || 0 },
-            { id: 'float-mpesa-item', element: document.getElementById('float-mpesa'), value: parseFloat(document.getElementById('float-mpesa')?.innerText.replace(/,/g, '')) || 0 },
-            { id: 'float-kcb-item', element: document.getElementById('float-kcb'), value: parseFloat(document.getElementById('float-kcb')?.innerText.replace(/,/g, '')) || 0 },
-            { id: 'float-equity-item', element: document.getElementById('float-equity'), value: parseFloat(document.getElementById('float-equity')?.innerText.replace(/,/g, '')) || 0 }
+            { id: 'float-cash-item', value: parseFloat(document.getElementById('float-cash')?.innerText.replace(/,/g, '')) || 0 },
+            { id: 'float-mpesa-item', value: parseFloat(document.getElementById('float-mpesa')?.innerText.replace(/,/g, '')) || 0 },
+            { id: 'float-kcb-item', value: parseFloat(document.getElementById('float-kcb')?.innerText.replace(/,/g, '')) || 0 },
+            { id: 'float-equity-item', value: parseFloat(document.getElementById('float-equity')?.innerText.replace(/,/g, '')) || 0 }
         ];
 
         floatItems.forEach(item => {
             const floatItemElement = document.getElementById(item.id);
-            
             if (floatItemElement) {
                 floatItemElement.classList.remove('low-float-warning', 'danger-alert');
-                
                 if (item.value < 2000 && item.value > 0) {
                     floatItemElement.classList.add('danger-alert');
                 } else if (item.value < 5000 && item.value > 0) {
@@ -2836,10 +2735,8 @@
         btn.innerHTML = '<span class="spinner"></span>';
         btn.disabled = true;
         
-        inventoryCacheTime = 0; // Invalidate cache
-        
         await Promise.all([
-            fetchInventory(true),
+            fetchInventory(),
             loadShiftData(),
             loadHistory()
         ]);
@@ -2879,20 +2776,6 @@
             allShifts = shifts || [];
             allTransactions = transactions || [];
             allSales = sales || [];
-            
-            const lastClosed = allShifts.find(s => s.status === 'Closed');
-            if (lastClosed) {
-                const clT = (lastClosed.close_cash||0) + (lastClosed.close_mpesa||0) + (lastClosed.close_kcb||0) + (lastClosed.close_equity||0) + (lastClosed.close_kcb_bank || 0);
-                if (Math.abs(clT - (lastClosed.system_expected_total || 0)) < 1) {
-                    const banner = document.getElementById('congrats-banner');
-                    if(banner) {
-                        banner.style.display = 'block';
-                        setTimeout(() => {
-                            banner.style.display = 'none';
-                        }, 5000);
-                    }
-                }
-            }
             
             if (window.innerWidth <= 768) {
                 renderMobileHistory(allShifts, allTransactions, allSales, searchQuery);
@@ -3193,11 +3076,7 @@
         
         if (greetingTitle) greetingTitle.textContent = greeting + '!';
         if (greetingSubtitle) {
-            if (currentShift) {
-                greetingSubtitle.textContent = 'Your shift is active. Keep up the great work!';
-            } else {
-                greetingSubtitle.textContent = 'Ready to start your shift?';
-            }
+            greetingSubtitle.textContent = currentShift ? 'Your shift is active. Keep up the great work!' : 'Ready to start your shift?';
         }
         if (greetingTime) {
             greetingTime.textContent = new Date().toLocaleString('en-GB', { 
@@ -3219,13 +3098,11 @@
             await loadBranches();
             
             const profile = await loadUserProfile();
-            if (!profile) {
-                return;
-            }
+            if (!profile) return;
             
             const branchId = getCurrentBranchId();
 
-            // Update branch name display in header
+            // Update branch name display
             const branchNameHeader = document.getElementById('branch-name-header');
             if (branchNameHeader && branchId && branches[branchId]) {
                 branchNameHeader.innerHTML = `<i class="fas fa-store"></i> ${branches[branchId].name}`;
@@ -3234,60 +3111,48 @@
             updateGreeting();
             setInterval(updateGreeting, 60000);
 
-            try {
-                // Fetch inventory
-                await fetchInventory(true);
+            // Fetch inventory
+            await fetchInventory();
 
-                // Check for open shift
-                const openShift = await checkForOpenShift(branchId);
+            // Check for open shift
+            const openShift = await checkForOpenShift(branchId);
+            
+            const actionBtnContainer = document.getElementById('shift-action-container');
+            if (openShift) {
+                currentShift = openShift;
                 
-                const actionBtnContainer = document.getElementById('shift-action-container');
-                if (openShift) {
-                    currentShift = openShift;
-                    
-                    actionBtnContainer.innerHTML = `
-                        <button class="btn btn-danger special-action-btn" onclick="showCloseModal()">🔴 CLOSE DAY</button>
-                        <button class="btn" onclick="refreshData()" style="background: #e2e8f0; padding: 8px 12px; font-size: 0.8rem;">
-                            <i class="fas fa-sync-alt"></i> Refresh
-                        </button>
-                    `;
-                    
-                    // Update float displays
-                    const floatCash = document.getElementById('float-cash');
-                    const floatMpesa = document.getElementById('float-mpesa');
-                    const floatKcb = document.getElementById('float-kcb');
-                    const floatEquity = document.getElementById('float-equity');
-                    
-                    if (floatCash) floatCash.innerText = (currentShift.open_cash || 0).toLocaleString();
-                    if (floatMpesa) floatMpesa.innerText = (currentShift.open_mpesa || 0).toLocaleString();
-                    if (floatKcb) floatKcb.innerText = (currentShift.open_kcb || 0).toLocaleString();
-                    if (floatEquity) floatEquity.innerText = (currentShift.open_equity || 0).toLocaleString();
-                    
-                    await loadShiftData();
-                    updateGreeting();
-                    
-                    setTimeout(checkLowFloats, 500);
-                } else {
-                    currentShift = null;
-                    
-                    actionBtnContainer.innerHTML = `
-                        <button class="btn btn-primary special-action-btn start-btn-large" onclick="document.getElementById('open-modal').style.display='flex'">🚀 START DAY</button>
-                        <button class="btn" onclick="refreshData()" style="background: #e2e8f0; padding: 8px 12px; font-size: 0.8rem;">
-                            <i class="fas fa-sync-alt"></i> Refresh
-                        </button>
-                    `;
-                    
-                    // Clear float displays
-                    document.getElementById('float-cash').innerText = '0';
-                    document.getElementById('float-mpesa').innerText = '0';
-                    document.getElementById('float-kcb').innerText = '0';
-                    document.getElementById('float-equity').innerText = '0';
-                }
+                actionBtnContainer.innerHTML = `
+                    <button class="btn btn-danger special-action-btn" onclick="showCloseModal()">🔴 CLOSE DAY</button>
+                    <button class="btn" onclick="refreshData()" style="background: #e2e8f0; padding: 8px 12px; font-size: 0.8rem;">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                `;
                 
-                await loadHistory();
-            } catch (error) {
-                console.error("Error initializing:", error);
+                document.getElementById('float-cash').innerText = (currentShift.open_cash || 0).toLocaleString();
+                document.getElementById('float-mpesa').innerText = (currentShift.open_mpesa || 0).toLocaleString();
+                document.getElementById('float-kcb').innerText = (currentShift.open_kcb || 0).toLocaleString();
+                document.getElementById('float-equity').innerText = (currentShift.open_equity || 0).toLocaleString();
+                
+                await loadShiftData();
+                setTimeout(checkLowFloats, 500);
+            } else {
+                currentShift = null;
+                
+                actionBtnContainer.innerHTML = `
+                    <button class="btn btn-primary special-action-btn start-btn-large" onclick="document.getElementById('open-modal').style.display='flex'">🚀 START DAY</button>
+                    <button class="btn" onclick="refreshData()" style="background: #e2e8f0; padding: 8px 12px; font-size: 0.8rem;">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                `;
+                
+                document.getElementById('float-cash').innerText = '0';
+                document.getElementById('float-mpesa').innerText = '0';
+                document.getElementById('float-kcb').innerText = '0';
+                document.getElementById('float-equity').innerText = '0';
             }
+            
+            await loadHistory();
+            
         } catch (error) {
             console.error("Error in init:", error);
         }
@@ -3342,12 +3207,8 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         init();
-        setInterval(() => checkLowFloats(), 30000);
-        setInterval(() => fetchInventory(), 60000); // Refresh inventory every minute
-        
-        window.addEventListener('beforeunload', function() {
-            // Clean up any intervals
-        });
+        setInterval(checkLowFloats, 30000);
+        setInterval(fetchInventory, 60000);
     });
 </script>
 </body>
