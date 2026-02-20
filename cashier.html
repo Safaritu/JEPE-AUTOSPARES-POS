@@ -1226,6 +1226,101 @@
     .branch-name-display i {
         font-size: 0.9rem;
     }
+    
+    /* Gas redirect notice */
+    .gas-redirect-notice {
+        background: #fef3c7;
+        border-left: 4px solid var(--warning);
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 600;
+        animation: pulse 2s infinite;
+    }
+    
+    .gas-redirect-notice i {
+        font-size: 1.5rem;
+        color: var(--warning);
+    }
+    
+    .gas-redirect-notice button {
+        background: var(--warning);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 30px;
+        font-weight: 700;
+        cursor: pointer;
+        margin-left: auto;
+        transition: all 0.2s;
+    }
+    
+    .gas-redirect-notice button:hover {
+        background: #d97706;
+        transform: scale(1.05);
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.8; }
+        100% { opacity: 1; }
+    }
+    
+    /* Success notification */
+    .success-notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--success);
+        color: white;
+        padding: 15px 25px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        z-index: 9999;
+        animation: slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+        border-left: 5px solid #0f5c3e;
+        max-width: 350px;
+    }
+    
+    .success-notification i {
+        font-size: 1.5rem;
+    }
+    
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes fadeOut {
+        to { opacity: 0; transform: translateX(100%); }
+    }
+    
+    /* Loading spinner */
+    .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 3px solid rgba(255,255,255,.3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    /* Cache indicator */
+    .cache-indicator {
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        margin-left: 5px;
+    }
 </style>
 </head>
 <body>
@@ -1322,6 +1417,9 @@
 
 <button class="fab-menu" onclick="toggleNav()">☰</button>
 
+<!-- Success Notification Container -->
+<div id="success-notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+
 <div id="congrats-banner" class="congrats-msg">🎉 Perfect Shift!</div>
 
 <div class="container">
@@ -1379,6 +1477,17 @@
             <label>Live KCB Paybill</label>
             <span id="live-kcb-box">0</span>
         </div>
+    </div>
+
+    <!-- Gas Redirect Notice (hidden by default) -->
+    <div id="gas-redirect-notice" class="gas-redirect-notice" style="display: none;">
+        <i class="fas fa-fire"></i>
+        <div style="flex: 1;">
+            <strong>Gas item detected!</strong> Gas sales must be processed in the dedicated Gas Hub for accurate cylinder tracking.
+        </div>
+        <button onclick="redirectToGasHub()">
+            <i class="fas fa-arrow-right"></i> Go to Gas Hub
+        </button>
     </div>
 
     <div class="card">
@@ -1716,6 +1825,48 @@
         }
     }
 
+    // ============================================
+    // SUCCESS NOTIFICATION FUNCTION
+    // ============================================
+    function showSuccessNotification(message, details = '') {
+        const container = document.getElementById('success-notification-container');
+        if (!container) return;
+        
+        const notification = document.createElement('div');
+        notification.className = 'success-notification';
+        
+        let icon = '✅';
+        if (message.includes('Shift started')) icon = '🚀';
+        else if (message.includes('Shift closed')) icon = '🔒';
+        else if (message.includes('Gas')) icon = '⛽';
+        else if (message.includes('Money')) icon = '💰';
+        else if (message.includes('Refund')) icon = '🔄';
+        else if (message.includes('refreshed')) icon = '🔄';
+        
+        notification.innerHTML = `
+            <i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
+            <div style="flex: 1;">
+                <div style="font-weight: 800;">${icon} ${message}</div>
+                ${details ? `<div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">${details}</div>` : ''}
+            </div>
+        `;
+        
+        container.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    }
+
+    // ============================================
+    // REDIRECT TO GAS HUB
+    // ============================================
+    window.redirectToGasHub = function() {
+        const branchId = getCurrentBranchId();
+        if (branchId) {
+            window.location.href = `cashiergashub.html?branch=${branchId}`;
+        } else {
+            window.location.href = 'cashiergashub.html';
+        }
+    };
+
     window.openRefundModal = function(sale) {
         refundingSale = sale;
         document.getElementById('refund-item-name').textContent = sale.item_name || 'Unknown Item';
@@ -1826,11 +1977,11 @@
                 if (stockError) throw stockError;
             }
             
-            alert(`✅ Refund processed successfully!\n\nRefund of Ksh ${refundAmount.toLocaleString()} processed via ${refundMethod}. Stock has been restored.`);
-            
             closeRefundModal();
             await fetchInventory();
             await loadShiftData();
+            
+            showSuccessNotification('Refund processed successfully!', `Ksh ${refundAmount.toLocaleString()} refunded via ${refundMethod}`);
             
         } catch (error) {
             console.error("Refund error:", error);
@@ -1892,7 +2043,7 @@
         
         btn.disabled = false;
         btn.innerHTML = originalText;
-        alert('Data refreshed successfully!');
+        showSuccessNotification('Data refreshed successfully!');
     };
 
     const productSubscription = supabase
@@ -1943,11 +2094,15 @@
     function updateStockDisplay(item) {
         const hStock = document.getElementById('hint-stock');
         if (hStock) {
-            hStock.innerText = `Stock: ${item.stock_quantity}`;
+            if (item.category === 'Gas') {
+                hStock.innerText = `Full: ${item.stock_quantity} | Empty: ${item.empty_quantity || 0}`;
+            } else {
+                hStock.innerText = `Stock: ${item.stock_quantity}`;
+            }
             hStock.style.display = 'inline-block';
 
             if (item.stock_quantity <= 0) {
-                hStock.innerText = "OUT OF STOCK";
+                hStock.innerText = item.category === 'Gas' ? "OUT OF FULL STOCK" : "OUT OF STOCK";
                 hStock.classList.add('low-stock-alert');
             } else if (item.stock_quantity < 5) {
                 hStock.classList.add('low-stock-alert');
@@ -2135,6 +2290,11 @@
 
     document.getElementById('pSearch').addEventListener('input', (e) => {
         selectedItem = inventory.find(p => formatItemName(p) === e.target.value);
+        
+        // Hide gas redirect notice when searching
+        const notice = document.getElementById('gas-redirect-notice');
+        if (notice) notice.style.display = 'none';
+        
         if (selectedItem) {
             const pPrice = document.getElementById('pPrice');
             const hintMin = document.getElementById('hint-min');
@@ -2149,9 +2309,10 @@
             updateStockDisplay(selectedItem);
             updateTotal();
             
-            // Show gas exchange note for gas products (gas sales now allowed directly)
+            // Show gas exchange note for gas products
             if (selectedItem.category === 'Gas') {
                 gasExchangeNote.style.display = 'block';
+                if (notice) notice.style.display = 'flex';
             } else {
                 gasExchangeNote.style.display = 'none';
             }
@@ -2188,7 +2349,20 @@
             return;
         }
 
-        // Gas sales are now allowed directly - removed redirect
+        // GAS ITEM DETECTED - SHOW REDIRECT NOTICE AND STOP
+        if (selectedItem.category === 'Gas') {
+            const notice = document.getElementById('gas-redirect-notice');
+            if (notice) {
+                notice.style.display = 'flex';
+                // Auto-hide after 5 seconds if not clicked
+                setTimeout(() => {
+                    if (notice.style.display === 'flex') {
+                        notice.style.display = 'none';
+                    }
+                }, 5000);
+            }
+            return;
+        }
 
         const price = parseFloat(document.getElementById('pPrice').value);
         const qty = parseInt(document.getElementById('pQty').value);
@@ -2249,9 +2423,6 @@
             
             if (updateError) throw updateError;
 
-            // For gas sales, update empty_quantity if it's a refill? 
-            // This is handled in gas hub for exchange, but for complete sales we don't track empty
-
             if(method === "Debt") {
                 const dName = prompt("Customer Name:");
                 if(dName) {
@@ -2286,7 +2457,7 @@
             btn.disabled = false;
             btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
             
-            alert("✅ Sale Saved Successfully!");
+            showSuccessNotification('Sale recorded successfully!', `Ksh ${total.toLocaleString()} - ${method}`);
         } catch (error) { 
             console.error("Sale Error:", error);
             alert("❌ Error: " + error.message); 
@@ -2445,7 +2616,9 @@
         try {
             const { error } = await supabase.from('daily_shifts').insert([openData]);
             if (error) throw error;
-            location.reload();
+            
+            showSuccessNotification('Shift started successfully!', `Cash: Ksh ${cash} | Mpesa: Ksh ${mpesa}`);
+            setTimeout(() => location.reload(), 1500);
         } catch (error) {
             alert("Error starting shift: " + error.message);
             this.disabled = false;
@@ -2594,7 +2767,8 @@
                     btn.innerHTML = 'FINALIZE & CLOSE';
                     return;
                 }
-                note = `${sign}${Math.abs(variance).toFixed(2)} - ${note}`;
+                // Store only the reason without the amount
+                note = note;
             }
 
             await supabase.from('daily_shifts').update({
@@ -2609,7 +2783,8 @@
                 system_expected_total: expected
             }).eq('id', currentShift.id);
             
-            location.reload();
+            showSuccessNotification('Shift closed successfully!', `Variance: ${variance === 0 ? 'Balanced' : variance.toFixed(2)}`);
+            setTimeout(() => location.reload(), 1500);
         } catch (error) {
             alert("Error closing shift: " + error.message);
             btn.disabled = false;
@@ -2704,13 +2879,13 @@
                 varianceClass = 'active-shift';
             } else {
                 if (varianceVal > 0) {
-                    varianceDisplay = 'VAR: +' + varianceVal.toLocaleString();
+                    varianceDisplay = '+' + varianceVal.toLocaleString();
                     varianceClass = 'var-positive';
                 } else if (varianceVal < 0) {
-                    varianceDisplay = 'VAR: ' + varianceVal.toLocaleString();
+                    varianceDisplay = varianceVal.toLocaleString();
                     varianceClass = 'var-negative';
                 } else {
-                    varianceDisplay = 'VAR: 0';
+                    varianceDisplay = '0';
                     varianceClass = 'var-balanced';
                 }
             }
@@ -2761,7 +2936,7 @@
                             Expected: ${expected.toLocaleString()}
                         </div>
                     </td>
-                    <td><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim); font-style: italic;">${sh.variance_note || 'No notes added.'}</div></td>
+                    <td><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim); font-style: italic;">${sh.variance_note && sh.variance_note !== 'Balanced' ? sh.variance_note.split(' - ')[1] || sh.variance_note : sh.variance_note || 'No notes added.'}</div></td>
                 </tr>`;
         });
 
@@ -2814,6 +2989,9 @@
                 varianceClass = 'var-balanced';
             }
             
+            const varianceNote = sh.variance_note && sh.variance_note !== 'Balanced' ? 
+                (sh.variance_note.split(' - ')[1] || sh.variance_note) : sh.variance_note;
+            
             mobileHtml += `
                 <div class="shift-mobile-card">
                     <div class="shift-mobile-header">
@@ -2865,7 +3043,7 @@
                     
                     <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 10px;">
                         <div>Expected: ${expected.toLocaleString()}</div>
-                        <div>Variance Note: ${sh.variance_note || 'No notes'}</div>
+                        <div>Variance Note: ${varianceNote || 'No notes'}</div>
                     </div>
                 </div>
             `;
@@ -2934,7 +3112,7 @@
                 await loadShiftData();
                 this.disabled = false;
                 this.innerHTML = 'RECORD MONEY';
-                alert("✅ Transaction recorded successfully!");
+                showSuccessNotification('Transaction recorded successfully!', `${document.getElementById('exp-type').value}: Ksh ${amt.toLocaleString()} - ${desc}`);
             } else {
                 throw error;
             }
