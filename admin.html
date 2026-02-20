@@ -22,6 +22,10 @@
             --warning: #f59e0b;
             --blue: #2563eb;
             --switch-btn: #0ea5e9;
+            --gas: #10b981;
+            --spare: #4f46e5;
+            --moto: #f59e0b;
+            --tuktuk: #8b5cf6;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
@@ -450,6 +454,39 @@
             background: #fee2e2;
         }
 
+        /* --- SUCCESS NOTIFICATION --- */
+        .success-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+            z-index: 9999;
+            animation: slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            border-left: 5px solid #0f5c3e;
+            max-width: 350px;
+        }
+
+        .success-notification i {
+            font-size: 1.5rem;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; transform: translateX(100%); }
+        }
+
         /* --- MAIN CONTAINER --- */
         .container { 
             padding: 25px 30px; 
@@ -726,10 +763,10 @@
         .in-bg { background: linear-gradient(135deg, #f59e0b, #d97706); }
         .exp-bg { background: linear-gradient(135deg, #ef4444, #b91c1c); }
 
-        /* --- SEGMENT CARDS - SPARE PARTS PERFORMANCE --- */
+        /* --- SEGMENT CARDS - EXPANDED TO ALL CATEGORIES --- */
         .segment-grid { 
             display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
+            grid-template-columns: repeat(4, 1fr); 
             gap: 18px; 
             margin-bottom: 25px; 
         }
@@ -740,11 +777,17 @@
             border: 1px solid var(--border); 
             padding: 20px; 
             transition: all 0.2s;
+            border-left: 6px solid;
         }
         .segment-card:hover {
-            border-color: var(--admin-accent);
+            transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(79, 70, 229, 0.1);
         }
+        
+        .segment-card.gas { border-left-color: var(--gas); }
+        .segment-card.spare { border-left-color: var(--spare); }
+        .segment-card.moto { border-left-color: var(--moto); }
+        .segment-card.tuktuk { border-left-color: var(--tuktuk); }
         
         .segment-header { 
             display: flex; 
@@ -759,6 +802,10 @@
             font-weight: 800; 
             font-size: 1rem;
         }
+        .segment-card.gas .segment-header span:first-child { color: var(--gas); }
+        .segment-card.spare .segment-header span:first-child { color: var(--spare); }
+        .segment-card.moto .segment-header span:first-child { color: var(--moto); }
+        .segment-card.tuktuk .segment-header span:first-child { color: var(--tuktuk); }
         
         .segment-row { 
             display: flex; 
@@ -777,6 +824,10 @@
             font-size: 0.75rem; 
             font-weight: 800; 
         }
+        .badge-gas { background: #dcfce7; color: #166534; }
+        .badge-spare { background: #eef2ff; color: #4338ca; }
+        .badge-moto { background: #fffbeb; color: #92400e; }
+        .badge-tuktuk { background: #f5f3ff; color: #6d28d9; }
         .badge-original { background: #dcfce7; color: #166534; }
         .badge-copy { background: #fee2e2; color: #991b1b; }
         .badge-general { background: #f1f5f9; color: #475569; }
@@ -1134,6 +1185,9 @@
                 height: 40px;
                 font-size: 1.1rem;
             }
+            .segment-grid { 
+                grid-template-columns: 1fr; 
+            }
         }
 
         @media (max-width: 1024px) {
@@ -1141,7 +1195,7 @@
                 grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
             }
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
-            .segment-grid { grid-template-columns: 1fr; }
+            .segment-grid { grid-template-columns: repeat(2, 1fr); }
             .dual-grid { grid-template-columns: 1fr; }
             .paybill-grid { grid-template-columns: 1fr; }
             .branch-selector-card { flex-direction: column; align-items: flex-start; }
@@ -1200,6 +1254,9 @@
 </div>
 
 <button class="fab-menu" onclick="toggleNav()">☰</button>
+
+<!-- Success Notification Container -->
+<div id="success-notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
 
 <header>
     <div class="brand-info">
@@ -1293,34 +1350,72 @@
         </div>
     </div>
 
-    <!-- Spare Parts Performance Cards -->
+    <!-- Category Performance Cards - Expanded to all categories -->
     <div class="segment-grid">
-        <div class="segment-card">
+        <!-- GAS Card -->
+        <div class="segment-card gas">
             <div class="segment-header">
-                <span style="color:var(--success)"><i class="fas fa-check-circle"></i> ORIGINAL-SPARE PARTS</span>
-                <span id="count-original" class="badge badge-original">0</span>
+                <span><i class="fas fa-fire"></i> GAS</span>
+                <span id="count-gas" class="badge badge-gas">0 cylinders</span>
+            </div>
+            <div class="segment-row"><span>Stock Cost:</span> <span id="cost-gas">Ksh 0</span></div>
+            <div class="segment-row"><span>Total Sales:</span> <span id="sales-gas">Ksh 0</span></div>
+            <div class="segment-row"><span>Total Profit:</span> <span id="profit-gas" style="color:var(--success)">Ksh 0</span></div>
+        </div>
+
+        <!-- SPARE PARTS Card - Original -->
+        <div class="segment-card spare">
+            <div class="segment-header">
+                <span><i class="fas fa-cogs"></i> ORIGINAL SPARES</span>
+                <span id="count-original" class="badge badge-original">0 items</span>
             </div>
             <div class="segment-row"><span>Stock Cost:</span> <span id="cost-original">Ksh 0</span></div>
             <div class="segment-row"><span>Total Sales:</span> <span id="sales-original">Ksh 0</span></div>
             <div class="segment-row"><span>Total Profit:</span> <span id="profit-original" style="color:var(--success)">Ksh 0</span></div>
         </div>
-        <div class="segment-card">
+
+        <!-- SPARE PARTS Card - Copy -->
+        <div class="segment-card spare">
             <div class="segment-header">
-                <span style="color:var(--danger)"><i class="fas fa-exclamation-triangle"></i> COPY-SPARE PARTS</span>
-                <span id="count-copy" class="badge badge-copy">0</span>
+                <span><i class="fas fa-copy"></i> COPY SPARES</span>
+                <span id="count-copy" class="badge badge-copy">0 items</span>
             </div>
             <div class="segment-row"><span>Stock Cost:</span> <span id="cost-copy">Ksh 0</span></div>
             <div class="segment-row"><span>Total Sales:</span> <span id="sales-copy">Ksh 0</span></div>
             <div class="segment-row"><span>Total Profit:</span> <span id="profit-copy" style="color:var(--success)">Ksh 0</span></div>
         </div>
-        <div class="segment-card">
+
+        <!-- SPARE PARTS Card - General -->
+        <div class="segment-card spare">
             <div class="segment-header">
-                <span style="color:var(--text)"><i class="fas fa-folder"></i> GENERAL-SPARE PARTS</span>
-                <span id="count-general" class="badge badge-general">0</span>
+                <span><i class="fas fa-folder"></i> GENERAL SPARES</span>
+                <span id="count-general" class="badge badge-general">0 items</span>
             </div>
             <div class="segment-row"><span>Stock Cost:</span> <span id="cost-general">Ksh 0</span></div>
             <div class="segment-row"><span>Total Sales:</span> <span id="sales-general">Ksh 0</span></div>
             <div class="segment-row"><span>Total Profit:</span> <span id="profit-general" style="color:var(--success)">Ksh 0</span></div>
+        </div>
+
+        <!-- MOTORBIKE Card -->
+        <div class="segment-card moto">
+            <div class="segment-header">
+                <span><i class="fas fa-motorcycle"></i> MOTORBIKE</span>
+                <span id="count-moto" class="badge badge-moto">0 units</span>
+            </div>
+            <div class="segment-row"><span>Stock Cost:</span> <span id="cost-moto">Ksh 0</span></div>
+            <div class="segment-row"><span>Total Sales:</span> <span id="sales-moto">Ksh 0</span></div>
+            <div class="segment-row"><span>Total Profit:</span> <span id="profit-moto" style="color:var(--success)">Ksh 0</span></div>
+        </div>
+
+        <!-- TUKTUK Card -->
+        <div class="segment-card tuktuk">
+            <div class="segment-header">
+                <span><i class="fas fa-car-side"></i> TUKTUK</span>
+                <span id="count-tuktuk" class="badge badge-tuktuk">0 units</span>
+            </div>
+            <div class="segment-row"><span>Stock Cost:</span> <span id="cost-tuktuk">Ksh 0</span></div>
+            <div class="segment-row"><span>Total Sales:</span> <span id="sales-tuktuk">Ksh 0</span></div>
+            <div class="segment-row"><span>Total Profit:</span> <span id="profit-tuktuk" style="color:var(--success)">Ksh 0</span></div>
         </div>
     </div>
 
@@ -1331,7 +1426,7 @@
             <canvas id="profitChart"></canvas>
         </div>
         <div class="chart-card">
-            <h4><i class="fas fa-chart-bar" style="color: var(--admin-accent);"></i> Inventory Value Distribution</h4>
+            <h4><i class="fas fa-chart-bar" style="color: var(--admin-accent);"></i> Inventory Value by Type</h4>
             <canvas id="invChart"></canvas>
         </div>
     </div>
@@ -1418,6 +1513,31 @@
     let invChart = null;
     let selectedCashierBranch = null;
 
+    // ==================== NOTIFICATION FUNCTION ====================
+    function showSuccessNotification(message, details = '') {
+        const container = document.getElementById('success-notification-container');
+        if (!container) return;
+        
+        const notification = document.createElement('div');
+        notification.className = 'success-notification';
+        
+        let icon = '✅';
+        if (message.includes('Branch')) icon = '🏢';
+        else if (message.includes('Data')) icon = '🔄';
+        else if (message.includes('Cashier')) icon = '🔄';
+        
+        notification.innerHTML = `
+            <i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
+            <div style="flex: 1;">
+                <div style="font-weight: 800;">${icon} ${message}</div>
+                ${details ? `<div style="font-size: 0.75rem; opacity: 0.9;">${details}</div>` : ''}
+            </div>
+        `;
+        
+        container.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    }
+
     // ==================== NAVIGATION FUNCTIONS ====================
     window.toggleNav = () => {
         document.getElementById('navBanner').classList.toggle('active');
@@ -1464,9 +1584,13 @@
             alert("Please select a branch");
             return;
         }
+        const branchName = branches[selectedCashierBranch]?.name || 'Selected Branch';
+        showSuccessNotification('Switching to Cashier Mode', `Branch: ${branchName}`);
         // Redirect to cashier page with selected branch ID
         console.log("Switching to cashier with branch ID:", selectedCashierBranch);
-        window.location.href = `cashier.html?branch=${selectedCashierBranch}`;
+        setTimeout(() => {
+            window.location.href = `cashier.html?branch=${selectedCashierBranch}`;
+        }, 1500);
     };
 
     window.closeBranchModal = () => {
@@ -1559,19 +1683,23 @@
         const selectedCode = selector.value;
         
         const branchDisplay = document.getElementById('currentBranchDisplay');
+        let branchName = 'ALL BRANCHES';
         
         if (selectedCode === 'all') {
             branchDisplay.textContent = 'ALL BRANCHES';
             selectedBranchId = null;
+            branchName = 'All Branches';
         } else {
             const branchId = getBranchIdFromCode(selectedCode);
             if (branchId) {
                 selectedBranchId = branchId;
-                branchDisplay.textContent = branches[branchId].name;
+                branchName = branches[branchId].name;
+                branchDisplay.textContent = branchName;
             }
         }
         
         console.log("Branch changed - selectedBranchId:", selectedBranchId);
+        showSuccessNotification('Branch Changed', `Viewing: ${branchName}`);
         await loadDashboardData();
     };
 
@@ -1911,12 +2039,62 @@
         allProducts = productsRes.data || [];
         allSales = salesRes.data || [];
 
-        // ========== 6. PROCESS SPARE PARTS DATA ==========
+        // ========== 6. PROCESS CATEGORY DATA (Expanded to all categories) ==========
+        const gasProducts = allProducts.filter(p => p.category === 'Gas');
         const spareProducts = allProducts.filter(p => p.category === 'Spare Part');
+        const motoProducts = allProducts.filter(p => p.category === 'Motorbike');
+        const tuktukProducts = allProducts.filter(p => p.category === 'Tuktuk');
+        
+        const gasSales = allSales.filter(s => s.category === 'Gas');
         const spareSales = allSales.filter(s => s.category === 'Spare Part');
+        const motoSales = allSales.filter(s => s.category === 'Motorbike');
+        const tuktukSales = allSales.filter(s => s.category === 'Tuktuk');
 
+        // Gas stats
+        let gasStockCost = 0, gasRevenue = 0, gasProfit = 0;
+        gasProducts.forEach(p => {
+            gasStockCost += (p.stock_quantity || 0) * (p.cost_price || 0);
+        });
+        gasSales.forEach(s => {
+            gasRevenue += s.total_amount || 0;
+            gasProfit += ((s.unit_price || 0) - (s.cost_price || 0)) * (s.quantity || 0);
+        });
+        document.getElementById('count-gas').innerText = `${gasProducts.length} cylinders`;
+        document.getElementById('cost-gas').innerText = `Ksh ${gasStockCost.toLocaleString()}`;
+        document.getElementById('sales-gas').innerText = `Ksh ${gasRevenue.toLocaleString()}`;
+        document.getElementById('profit-gas').innerText = `Ksh ${gasProfit.toLocaleString()}`;
+
+        // Motorbike stats
+        let motoStockCost = 0, motoRevenue = 0, motoProfit = 0;
+        motoProducts.forEach(p => {
+            motoStockCost += (p.stock_quantity || 0) * (p.cost_price || 0);
+        });
+        motoSales.forEach(s => {
+            motoRevenue += s.total_amount || 0;
+            motoProfit += ((s.unit_price || 0) - (s.cost_price || 0)) * (s.quantity || 0);
+        });
+        document.getElementById('count-moto').innerText = `${motoProducts.length} units`;
+        document.getElementById('cost-moto').innerText = `Ksh ${motoStockCost.toLocaleString()}`;
+        document.getElementById('sales-moto').innerText = `Ksh ${motoRevenue.toLocaleString()}`;
+        document.getElementById('profit-moto').innerText = `Ksh ${motoProfit.toLocaleString()}`;
+
+        // Tuktuk stats
+        let tuktukStockCost = 0, tuktukRevenue = 0, tuktukProfit = 0;
+        tuktukProducts.forEach(p => {
+            tuktukStockCost += (p.stock_quantity || 0) * (p.cost_price || 0);
+        });
+        tuktukSales.forEach(s => {
+            tuktukRevenue += s.total_amount || 0;
+            tuktukProfit += ((s.unit_price || 0) - (s.cost_price || 0)) * (s.quantity || 0);
+        });
+        document.getElementById('count-tuktuk').innerText = `${tuktukProducts.length} units`;
+        document.getElementById('cost-tuktuk').innerText = `Ksh ${tuktukStockCost.toLocaleString()}`;
+        document.getElementById('sales-tuktuk').innerText = `Ksh ${tuktukRevenue.toLocaleString()}`;
+        document.getElementById('profit-tuktuk').innerText = `Ksh ${tuktukProfit.toLocaleString()}`;
+
+        // Spare parts by type (Original, Copy, General)
         const productTypeMap = {};
-        const stats = {
+        const spareStats = {
             Original: { cost: 0, sales: 0, profit: 0, count: 0 },
             Copy: { cost: 0, sales: 0, profit: 0, count: 0 },
             General: { cost: 0, sales: 0, profit: 0, count: 0 }
@@ -1926,8 +2104,8 @@
             const type = p.part_type === 'N/A' || !p.part_type ? 'General' : p.part_type;
             productTypeMap[p.id] = type;
             const stockVal = (p.stock_quantity || 0) * (p.cost_price || 0);
-            stats[type].cost += stockVal;
-            stats[type].count++;
+            spareStats[type].cost += stockVal;
+            spareStats[type].count++;
         });
 
         spareSales.forEach(s => {
@@ -1935,18 +2113,18 @@
                 const type = productTypeMap[s.product_id] || 'General';
                 const amt = s.total_amount || 0;
                 const profit = amt - ((s.cost_price || 0) * (s.quantity || 0));
-                stats[type].sales += amt;
-                stats[type].profit += profit;
+                spareStats[type].sales += amt;
+                spareStats[type].profit += profit;
             }
         });
 
         // Update spare parts stats
         ['Original', 'Copy', 'General'].forEach(t => {
             const low = t.toLowerCase();
-            document.getElementById(`count-${low}`).innerText = `${stats[t].count} Items`;
-            document.getElementById(`cost-${low}`).innerText = `Ksh ${stats[t].cost.toLocaleString()}`;
-            document.getElementById(`sales-${low}`).innerText = `Ksh ${stats[t].sales.toLocaleString()}`;
-            document.getElementById(`profit-${low}`).innerText = `Ksh ${stats[t].profit.toLocaleString()}`;
+            document.getElementById(`count-${low}`).innerText = `${spareStats[t].count} items`;
+            document.getElementById(`cost-${low}`).innerText = `Ksh ${spareStats[t].cost.toLocaleString()}`;
+            document.getElementById(`sales-${low}`).innerText = `Ksh ${spareStats[t].sales.toLocaleString()}`;
+            document.getElementById(`profit-${low}`).innerText = `Ksh ${spareStats[t].profit.toLocaleString()}`;
         });
 
         // ========== 7. CALCULATE CATEGORY BREAKDOWN ==========
@@ -1954,20 +2132,23 @@
             Gas: { profit: 0, revenue: 0 }, 
             Spare: { profit: 0, revenue: 0 }, 
             Motorbike: { profit: 0, revenue: 0 },
-            Other: { profit: 0, revenue: 0 } 
+            Tuktuk: { profit: 0, revenue: 0 } 
         };
 
         allSales.forEach(s => {
             const p = allProducts.find(prod => prod.id === s.product_id) || { cost_price: 0, category: 'Other' };
-            const itemProfit = (s.unit_price - p.cost_price) * s.quantity;
+            const itemProfit = ((s.unit_price || 0) - (s.cost_price || p.cost_price || 0)) * (s.quantity || 0);
             
             let catKey = 'Other';
             if (p.category === 'Gas') catKey = 'Gas';
             else if (p.category === 'Spare Part') catKey = 'Spare';
             else if (p.category === 'Motorbike') catKey = 'Motorbike';
+            else if (p.category === 'Tuktuk') catKey = 'Tuktuk';
             
-            categories[catKey].profit += itemProfit;
-            categories[catKey].revenue += s.total_amount;
+            if (categories[catKey]) {
+                categories[catKey].profit += itemProfit;
+                categories[catKey].revenue += s.total_amount || 0;
+            }
         });
 
         // Update category breakdown table
@@ -1982,7 +2163,7 @@
         }).join('');
 
         // ========== 8. UPDATE CHARTS ==========
-        updateCharts(categories, stats);
+        updateCharts(categories, spareStats);
 
         // ========== 9. RENDER SPARE PARTS LIST ==========
         renderSpareParts();
@@ -2013,7 +2194,7 @@
                     <div class="transaction-item">
                         <div class="transaction-info">
                             <div class="transaction-icon">
-                                <i class="fas ${s.category === 'Gas' ? 'fa-fire' : s.category === 'Motorbike' ? 'fa-motorcycle' : 'fa-cog'}"></i>
+                                <i class="fas ${s.category === 'Gas' ? 'fa-fire' : s.category === 'Motorbike' ? 'fa-motorcycle' : s.category === 'Tuktuk' ? 'fa-car-side' : 'fa-cog'}"></i>
                             </div>
                             <div class="transaction-details">
                                 <div class="item-name">${s.item_name}</div>
@@ -2030,9 +2211,11 @@
         } else {
             transactionList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-dim);">No recent transactions</div>';
         }
+
+        showSuccessNotification('Data loaded successfully', `Viewing: ${selectedBranchId ? branches[selectedBranchId]?.name : 'All Branches'}`);
     }
 
-    function updateCharts(categories, stats) {
+    function updateCharts(categories, spareStats) {
         // Destroy existing charts
         if (profitChart) profitChart.destroy();
         if (invChart) invChart.destroy();
@@ -2042,15 +2225,15 @@
         profitChart = new Chart(profitCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Gas', 'Spares', 'Motorbike', 'Others'],
+                labels: ['Gas', 'Spares', 'Motorbike', 'Tuktuk'],
                 datasets: [{
                     data: [
                         categories.Gas.profit, 
                         categories.Spare.profit, 
                         categories.Motorbike.profit,
-                        categories.Other.profit
+                        categories.Tuktuk.profit
                     ],
-                    backgroundColor: ['#10b981', '#4f46e5', '#f59e0b', '#64748b'],
+                    backgroundColor: ['#10b981', '#4f46e5', '#f59e0b', '#8b5cf6'],
                     borderWidth: 0
                 }]
             },
@@ -2069,7 +2252,7 @@
             }
         });
 
-        // Inventory Chart (bar chart)
+        // Inventory Chart (bar chart) - Now showing Original, Copy, General
         const invCtx = document.getElementById('invChart').getContext('2d');
         invChart = new Chart(invCtx, {
             type: 'bar',
@@ -2077,7 +2260,7 @@
                 labels: ['Original', 'Copy', 'General'],
                 datasets: [{
                     label: 'Inventory Value (Ksh)',
-                    data: [stats.Original.cost, stats.Copy.cost, stats.General.cost],
+                    data: [spareStats.Original.cost, spareStats.Copy.cost, spareStats.General.cost],
                     backgroundColor: ['#10b981', '#ef4444', '#64748b'],
                     borderRadius: 6,
                     barPercentage: 0.7
@@ -2153,9 +2336,12 @@
 
     window.handleLogout = async () => {
         if(confirm("Exit Admin Mode?")) {
+            showSuccessNotification('Logging out', 'See you soon!');
             localStorage.removeItem('pos_session');
             await supabase.auth.signOut();
-            window.location.href = 'index.html';
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1500);
         }
     };
 
@@ -2167,12 +2353,10 @@
         await loadBranches();
         await loadUserProfile();
         
-        // Set default branch selector to user's branch
-        if (currentBranch) {
-            document.getElementById('branchSelector').value = currentBranch.code;
-            selectedBranchId = currentBranch.id;
-            document.getElementById('currentBranchDisplay').textContent = currentBranch.name;
-        }
+        // Set default branch selector to 'all' (all branches)
+        document.getElementById('branchSelector').value = 'all';
+        selectedBranchId = null;
+        document.getElementById('currentBranchDisplay').textContent = 'ALL BRANCHES';
         
         await loadDashboardData();
         
