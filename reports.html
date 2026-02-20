@@ -489,6 +489,10 @@
             color: var(--warning);
         }
         
+        .metric-value.inventory-cost {
+            color: var(--info);
+        }
+        
         .cat-footer {
             display: flex;
             justify-content: space-between;
@@ -920,10 +924,10 @@
         <div class="filter-bar">
             <span class="metric-label">Timeframe:</span>
             <select id="dateFilter" onchange="applyFilter()">
-                <option value="all"selected>Lifetime</option>
+                <option value="all" selected>Lifetime</option>
                 <option value="today">Today</option>
                 <option value="week">Past 7 Days</option>
-                <option value="month" >This Month</option>
+                <option value="month">This Month</option>
                 <option value="custom">Custom Range</option>
             </select>
             <div id="customDateRange" style="display:none; gap:8px;">
@@ -956,11 +960,15 @@
             </div>
         </div>
 
-        <!-- Category Summary Cards with clear labels -->
+        <!-- Category Summary Cards with clear labels and inventory cost -->
         <div class="category-metrics" id="categorySummaryCards">
             <!-- TUKTUK Card -->
             <div class="cat-card tuktuk">
                 <div class="cat-title"><i class="fas fa-car-side"></i> TUKTUK</div>
+                <div class="metric-row">
+                    <span class="metric-label-small">Inventory Cost:</span>
+                    <span class="metric-value inventory-cost" id="tuktuk-inv-cost">Ksh 0</span>
+                </div>
                 <div class="metric-row">
                     <span class="metric-label-small">Revenue:</span>
                     <span class="metric-value revenue" id="tuktuk-rev">Ksh 0</span>
@@ -982,6 +990,10 @@
             <div class="cat-card gas">
                 <div class="cat-title"><i class="fas fa-fire"></i> GAS</div>
                 <div class="metric-row">
+                    <span class="metric-label-small">Inventory Cost:</span>
+                    <span class="metric-value inventory-cost" id="gas-inv-cost">Ksh 0</span>
+                </div>
+                <div class="metric-row">
                     <span class="metric-label-small">Revenue:</span>
                     <span class="metric-value revenue" id="gas-rev">Ksh 0</span>
                 </div>
@@ -1002,6 +1014,10 @@
             <div class="cat-card moto">
                 <div class="cat-title"><i class="fas fa-motorcycle"></i> MOTORBIKE</div>
                 <div class="metric-row">
+                    <span class="metric-label-small">Inventory Cost:</span>
+                    <span class="metric-value inventory-cost" id="moto-inv-cost">Ksh 0</span>
+                </div>
+                <div class="metric-row">
                     <span class="metric-label-small">Revenue:</span>
                     <span class="metric-value revenue" id="moto-rev">Ksh 0</span>
                 </div>
@@ -1021,6 +1037,10 @@
             <!-- SPARE PARTS Card -->
             <div class="cat-card spare">
                 <div class="cat-title"><i class="fas fa-cogs"></i> SPARE PARTS</div>
+                <div class="metric-row">
+                    <span class="metric-label-small">Inventory Cost:</span>
+                    <span class="metric-value inventory-cost" id="spare-inv-cost">Ksh 0</span>
+                </div>
                 <div class="metric-row">
                     <span class="metric-label-small">Revenue:</span>
                     <span class="metric-value revenue" id="spare-rev">Ksh 0</span>
@@ -1416,13 +1436,6 @@
             const uniqueCategories = [...new Set(allSales.map(s => s.category))];
             console.log("Unique category values:", uniqueCategories);
             
-            // Set default branch selector to user's branch if available
-            if (currentBranch && document.getElementById('branchSelector').value === 'all') {
-                document.getElementById('branchSelector').value = currentBranch.code;
-                selectedBranchId = currentBranch.id;
-                document.getElementById('currentBranchDisplay').textContent = currentBranch.name;
-            }
-            
             applyFilter();
         } catch (error) {
             console.error("Error loading data:", error);
@@ -1505,11 +1518,11 @@
 
         // Category specific containers - Use exact category names from database
         const categories = { 
-            'Gas': { profit: 0, revenue: 0, cost: 0, items: 0, units: 0, count: 0 }, 
-            'Spare Part': { profit: 0, revenue: 0, cost: 0, items: 0, units: 0, count: 0 },
-            'Motorbike': { profit: 0, revenue: 0, cost: 0, items: 0, units: 0, count: 0 },
-            'Tuktuk': { profit: 0, revenue: 0, cost: 0, items: 0, units: 0, count: 0 },
-            'Other': { profit: 0, revenue: 0, cost: 0, items: 0, units: 0, count: 0 } 
+            'Gas': { profit: 0, revenue: 0, cost: 0, items: 0, units: 0, count: 0, invCost: 0 }, 
+            'Spare Part': { profit: 0, revenue: 0, cost: 0, items: 0, units: 0, count: 0, invCost: 0 },
+            'Motorbike': { profit: 0, revenue: 0, cost: 0, items: 0, units: 0, count: 0, invCost: 0 },
+            'Tuktuk': { profit: 0, revenue: 0, cost: 0, items: 0, units: 0, count: 0, invCost: 0 },
+            'Other': { profit: 0, revenue: 0, cost: 0, items: 0, units: 0, count: 0, invCost: 0 } 
         };
         
         // Track top items per category
@@ -1527,6 +1540,16 @@
         const productsMap = {};
         allProducts.forEach(p => {
             productsMap[p.id] = p;
+            
+            // Calculate inventory cost per product and aggregate by category
+            const invCost = (p.stock_quantity || 0) * (p.cost_price || 0);
+            
+            // Add to category inventory cost
+            if (p.category === 'Gas') categories['Gas'].invCost += invCost;
+            else if (p.category === 'Spare Part') categories['Spare Part'].invCost += invCost;
+            else if (p.category === 'Motorbike') categories['Motorbike'].invCost += invCost;
+            else if (p.category === 'Tuktuk') categories['Tuktuk'].invCost += invCost;
+            else categories['Other'].invCost += invCost;
         });
 
         // Inventory Stats
@@ -1665,12 +1688,13 @@
         // Category metrics calculation
         const categoryMetrics = {};
         Object.entries(categories).forEach(([name, val]) => {
-            if (val.revenue > 0 || val.cost > 0 || val.units > 0) {
+            if (val.revenue > 0 || val.cost > 0 || val.units > 0 || val.invCost > 0) {
                 const margin = val.revenue > 0 ? (val.profit / val.revenue * 100).toFixed(1) : 0;
                 categoryMetrics[name] = {
                     revenue: val.revenue,
                     profit: val.profit,
                     cost: val.cost,
+                    invCost: val.invCost,
                     margin: margin,
                     units: val.units,
                     items: val.count
@@ -1699,22 +1723,26 @@
         });
         document.getElementById('margin-details').innerHTML = `Best: ${bestMargin.toFixed(1)}% | Worst: ${worstMargin.toFixed(1)}%`;
 
-        // Update category summary cards with clear labels
+        // Update category summary cards with inventory cost
+        document.getElementById('tuktuk-inv-cost').innerText = `Ksh ${(categoryMetrics.Tuktuk?.invCost || 0).toLocaleString()}`;
         document.getElementById('tuktuk-rev').innerText = `Ksh ${(categoryMetrics.Tuktuk?.revenue || 0).toLocaleString()}`;
         document.getElementById('tuktuk-profit').innerText = `Ksh ${(categoryMetrics.Tuktuk?.profit || 0).toLocaleString()}`;
         document.getElementById('tuktuk-cost').innerText = `Ksh ${(categoryMetrics.Tuktuk?.cost || 0).toLocaleString()}`;
         document.getElementById('tuktuk-units').innerText = `${categoryMetrics.Tuktuk?.units || 0} units sold`;
 
+        document.getElementById('gas-inv-cost').innerText = `Ksh ${(categoryMetrics.Gas?.invCost || 0).toLocaleString()}`;
         document.getElementById('gas-rev').innerText = `Ksh ${(categoryMetrics.Gas?.revenue || 0).toLocaleString()}`;
         document.getElementById('gas-profit').innerText = `Ksh ${(categoryMetrics.Gas?.profit || 0).toLocaleString()}`;
         document.getElementById('gas-cost').innerText = `Ksh ${(categoryMetrics.Gas?.cost || 0).toLocaleString()}`;
         document.getElementById('gas-units').innerText = `${categoryMetrics.Gas?.units || 0} cylinders sold`;
 
+        document.getElementById('moto-inv-cost').innerText = `Ksh ${(categoryMetrics.Motorbike?.invCost || 0).toLocaleString()}`;
         document.getElementById('moto-rev').innerText = `Ksh ${(categoryMetrics.Motorbike?.revenue || 0).toLocaleString()}`;
         document.getElementById('moto-profit').innerText = `Ksh ${(categoryMetrics.Motorbike?.profit || 0).toLocaleString()}`;
         document.getElementById('moto-cost').innerText = `Ksh ${(categoryMetrics.Motorbike?.cost || 0).toLocaleString()}`;
         document.getElementById('moto-units').innerText = `${categoryMetrics.Motorbike?.units || 0} units sold`;
 
+        document.getElementById('spare-inv-cost').innerText = `Ksh ${(categoryMetrics['Spare Part']?.invCost || 0).toLocaleString()}`;
         document.getElementById('spare-rev').innerText = `Ksh ${(categoryMetrics['Spare Part']?.revenue || 0).toLocaleString()}`;
         document.getElementById('spare-profit').innerText = `Ksh ${(categoryMetrics['Spare Part']?.profit || 0).toLocaleString()}`;
         document.getElementById('spare-cost').innerText = `Ksh ${(categoryMetrics['Spare Part']?.cost || 0).toLocaleString()}`;
@@ -2018,9 +2046,10 @@
             day: 'numeric', month: 'long', year: 'numeric' 
         });
         
-        // Set default branch selector
+        // Set default branch selector to 'all' (all branches)
         document.getElementById('branchSelector').value = 'all';
         selectedBranchId = null;
+        document.getElementById('currentBranchDisplay').textContent = 'ALL BRANCHES';
         
         await loadData();
     }
