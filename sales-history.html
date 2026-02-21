@@ -22,6 +22,7 @@
             --sidebar-width: 260px;
             --sidebar-collapsed: 70px;
             --primary: #4f46e5;
+            --gas: #f59e0b;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
@@ -547,6 +548,8 @@
         .badge-kcb { background: #e0e7ff; color: #4338ca; }
         .badge-bank { background: #fef3c7; color: #92400e; }
         .badge-debt { background: #f1f5f9; color: #475569; }
+        .badge-gas-refill { background: #ffedd5; color: #9a3412; }
+        .badge-gas-complete { background: #fed7aa; color: #7b341e; }
         
         .profit-text { 
             color: var(--success); 
@@ -595,6 +598,16 @@
             text-align: center;
             padding: 40px;
             color: var(--text-dim);
+        }
+
+        .gas-badge {
+            background: var(--gas);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            margin-left: 5px;
         }
     </style>
 </head>
@@ -770,6 +783,7 @@
                         <th>Item Details</th>
                         <th>Qty</th>
                         <th>Total Amount</th>
+                        <th>Cost</th>
                         <th>Profit</th>
                         <th>Method</th>
                         <th>Branch</th>
@@ -777,7 +791,7 @@
                 </thead>
                 <tbody id="data-body">
                     <tr>
-                        <td colspan="7" style="text-align: center; padding: 40px;">
+                        <td colspan="8" style="text-align: center; padding: 40px;">
                             <div class="spinner" style="margin: 0 auto;"></div>
                             Loading transactions...
                         </td>
@@ -801,6 +815,7 @@
     let selectedBranchId = null;
     let branches = {};
     let branchIdMap = {};
+    let productsMap = {};
 
     // Filter states
     let paymentFilter = 'all';
@@ -911,11 +926,26 @@
         await fetchSales();
     };
 
+    async function fetchProducts() {
+        try {
+            const { data } = await supabase
+                .from('products')
+                .select('id, cost_price, cylinder_price, category');
+            
+            productsMap = {};
+            data?.forEach(p => {
+                productsMap[p.id] = p;
+            });
+        } catch (error) {
+            console.error("Error fetching products:", error);
+        }
+    }
+
     async function fetchSales() {
         // Show loading state
         document.getElementById('data-body').innerHTML = `
             <tr>
-                <td colspan="7" style="text-align: center; padding: 40px;">
+                <td colspan="8" style="text-align: center; padding: 40px;">
                     <div class="spinner" style="margin: 0 auto;"></div>
                     Loading transactions...
                 </td>
@@ -923,6 +953,9 @@
         `;
 
         try {
+            // Load products first for cost reference
+            await fetchProducts();
+
             // Build query
             let query = supabase
                 .from('sales')
@@ -949,12 +982,38 @@
             console.error("Error fetching sales:", error);
             document.getElementById('data-body').innerHTML = `
                 <tr>
-                    <td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">
+                    <td colspan="8" style="text-align: center; padding: 40px; color: var(--danger);">
                         <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
                         Error loading transactions: ${error.message}
                     </td>
                 </tr>
             `;
+        }
+    }
+
+    function calculateProfit(sale) {
+        const revenue = Number(sale.total_amount || 0);
+        
+        // For gas sales, check if it's a complete purchase (contains cylinder)
+        if (sale.category === 'Gas') {
+            const product = productsMap[sale.product_id];
+            
+            // Check if it's a complete sale (contains cylinder)
+            if (sale.item_name && sale.item_name.includes('New Cylinder')) {
+                // Complete sale: cost = (gas cost price + cylinder cost) * quantity
+                const gasCost = Number(sale.cost_price || 0);
+                const cylinderCost = Number(product?.cylinder_price || 0);
+                const totalCost = (gasCost + cylinderCost) * sale.quantity;
+                return revenue - totalCost;
+            } else {
+                // Refill sale: cost = gas cost price * quantity
+                const cost = Number(sale.cost_price || 0) * sale.quantity;
+                return revenue - cost;
+            }
+        } else {
+            // Non-gas items
+            const cost = Number(sale.cost_price || 0) * sale.quantity;
+            return revenue - cost;
         }
     }
 
@@ -971,8 +1030,7 @@
 
         allSales.forEach(sale => {
             const amount = Number(sale.total_amount || 0);
-            const cost = Number(sale.cost_price || 0) * sale.quantity;
-            const profit = amount - cost;
+            const profit = calculateProfit(sale);
             
             totalAmount += amount;
             totalProfit += profit;
@@ -1073,6 +1131,16 @@
         }
     }
 
+    function getGasTypeBadge(itemName) {
+        if (!itemName) return '';
+        if (itemName.includes('Refill')) {
+            return '<span class="badge badge-gas-refill" style="margin-left:5px;">Refill</span>';
+        } else if (itemName.includes('New Cylinder')) {
+            return '<span class="badge badge-gas-complete" style="margin-left:5px;">New Cylinder</span>';
+        }
+        return '';
+    }
+
     function renderSales(data) {
         const tbody = document.getElementById('data-body');
         
@@ -1080,7 +1148,7 @@
             const branchName = selectedBranchId ? branches[selectedBranchId]?.name : 'All Branches';
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-dim);">
+                    <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-dim);">
                         <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
                         No sales found for ${branchName}
                     </td>
@@ -1091,15 +1159,29 @@
         }
 
         tbody.innerHTML = data.map(s => {
-            const cost = Number(s.cost_price || 0) * s.quantity;
             const revenue = s.total_amount || 0;
-            const profit = revenue - cost;
+            const profit = calculateProfit(s);
             const date = new Date(s.created_at);
             
             // Get branch info
             const branch = branches[s.branch_id] || { code: '--', name: 'Unknown' };
             
             const paymentClass = getPaymentBadgeClass(s.payment_method);
+            const gasTypeBadge = getGasTypeBadge(s.item_name);
+            
+            // Calculate cost breakdown for display
+            let costDisplay = '';
+            if (s.category === 'Gas') {
+                const product = productsMap[s.product_id];
+                const gasCost = Number(s.cost_price || 0);
+                const cylinderCost = Number(product?.cylinder_price || 0);
+                
+                if (s.item_name && s.item_name.includes('New Cylinder')) {
+                    costDisplay = `<small style="color: var(--text-dim); display:block;">Gas: Ksh ${gasCost} + Cyl: Ksh ${cylinderCost}</small>`;
+                } else {
+                    costDisplay = `<small style="color: var(--text-dim); display:block;">Gas: Ksh ${gasCost}</small>`;
+                }
+            }
             
             return `
                 <tr>
@@ -1108,15 +1190,26 @@
                         <small style="color:var(--text-dim); display:block;">${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
                     </td>
                     <td data-label="Item Details">
-                        <div style="font-weight:700; color:var(--admin-dark);">${s.item_name}</div>
+                        <div style="font-weight:700; color:var(--admin-dark);">
+                            ${s.item_name}
+                            ${gasTypeBadge}
+                            ${s.category === 'Gas' ? '<span class="gas-badge">GAS</span>' : ''}
+                        </div>
                         <div style="font-size:0.7rem; color:var(--text-dim)">
                             <i class="fas fa-tag"></i> ${s.category || 'General'}
                         </div>
                     </td>
                     <td data-label="Quantity" style="font-weight:700;">${s.quantity}</td>
                     <td data-label="Total Amount" style="font-weight:800;">Ksh ${revenue.toLocaleString()}</td>
+                    <td data-label="Cost" style="font-size:0.8rem;">
+                        Ksh ${(Number(s.cost_price || 0) * s.quantity).toLocaleString()}
+                        ${costDisplay}
+                    </td>
                     <td data-label="Est. Profit">
                         <span class="profit-text">+Ksh ${profit.toLocaleString()}</span>
+                        <div style="font-size:0.65rem; color:var(--text-dim);">
+                            ${((profit / revenue) * 100).toFixed(1)}% margin
+                        </div>
                     </td>
                     <td data-label="Method">
                         <span class="badge ${paymentClass}">${s.payment_method}</span>
