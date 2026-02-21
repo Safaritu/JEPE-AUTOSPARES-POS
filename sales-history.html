@@ -3,40 +3,42 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales History | JEPE ADMIN - Multi-Branch</title>
+    <title>Inventory Control | JEPE CASHIER</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { 
-            --admin-dark: #0f172a; 
-            --admin-accent: #4f46e5; 
-            --bg: #f8fafc;
-            --white: #ffffff; 
-            --text: #1e293b; 
-            --text-dim: #64748b;
+            --admin-dark: #0f172a;
+            --primary: #4f46e5; 
+            --bg: #f8fafc; 
+            --card: #ffffff; 
             --border: #e2e8f0; 
+            --text-main: #1e293b; 
+            --text-dim: #64748b;
             --success: #10b981; 
-            --danger: #ef4444;
+            --danger: #ef4444; 
             --warning: #f59e0b;
+            --tuktuk: #8b5cf6;
+            --gas: #f59e0b;
             --sidebar-width: 260px;
             --sidebar-collapsed: 70px;
-            --primary: #4f46e5;
-            --gas: #f59e0b;
+            --header-height: 70px;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
             background: var(--bg); 
+            color: var(--text-main); 
             margin: 0; 
-            color: var(--text); 
             display: flex; 
-            min-height: 100vh; 
-            overflow-x: hidden; 
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        /* --- SIDEBAR - Collapsible like other admin pages --- */
+        /* --- SIDEBAR - Collapsible like admin --- */
         .sidebar { 
             width: var(--sidebar-collapsed); 
             height: 100vh; 
@@ -46,6 +48,7 @@
             top: 0; 
             z-index: 3000; 
             overflow-x: hidden; 
+            overflow-y: auto;
             transition: width 0.3s ease;
             padding: 20px 10px; 
             display: flex;
@@ -73,6 +76,7 @@
             opacity: 0; 
             transition: opacity 0.2s; 
             color: white;
+            font-weight: 800;
         }
         
         .sidebar:hover h2, .sidebar.mobile-active h2 { 
@@ -139,6 +143,7 @@
             list-style: none; 
             padding: 0; 
             margin: 0; 
+            overflow-y: auto;
         }
         
         .nav-link { 
@@ -152,6 +157,7 @@
             transition: 0.3s; 
             white-space: nowrap;
             font-weight: 600;
+            cursor: pointer;
         }
         
         .nav-link i { 
@@ -187,12 +193,12 @@
             background: var(--admin-dark); 
             color: white; 
             border: none; 
-            padding: 10px 15px;
-            border-radius: 8px; 
+            padding: 12px 18px;
+            border-radius: 12px; 
             cursor: pointer; 
             font-size: 0.9rem; 
             font-weight: 700;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
         /* --- MAIN LAYOUT --- */
@@ -201,6 +207,7 @@
             margin-left: var(--sidebar-collapsed); 
             transition: margin-left 0.3s ease;
             min-height: 100vh;
+            background: linear-gradient(135deg, var(--bg) 0%, #ffffff 100%);
         }
         
         @media (min-width: 1024px) {
@@ -224,9 +231,9 @@
         }
 
         .container { 
-            padding: 40px 30px; 
+            padding: 30px; 
             max-width: 1400px; 
-            margin: auto; 
+            margin: 0 auto; 
         }
 
         @media (max-width: 1024px) {
@@ -255,116 +262,92 @@
             }
         }
 
-        /* --- BRANCH SELECTOR --- */
-        .branch-selector-container {
+        /* --- HEADER SECTION --- */
+        .page-header {
             background: white;
             border: 1px solid var(--border);
             border-radius: 16px;
-            padding: 15px 20px;
+            padding: 20px 25px;
             margin-bottom: 25px;
             display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: center;
             flex-wrap: wrap;
-            gap: 15px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            gap: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
         }
-        
-        .branch-filter {
+
+        .page-title {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .page-title h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--admin-dark);
             display: flex;
             align-items: center;
             gap: 10px;
-            flex-wrap: wrap;
         }
-        
-        .branch-select {
-            padding: 10px 20px;
-            border-radius: 30px;
-            border: 2px solid var(--primary);
-            background: white;
-            font-weight: 600;
-            font-size: 0.9rem;
-            color: var(--text);
-            cursor: pointer;
-            min-width: 220px;
-            outline: none;
+
+        .page-title h1 i {
+            color: var(--primary);
+            background: #eef2ff;
+            padding: 8px;
+            border-radius: 12px;
+            font-size: 1.2rem;
         }
-        
+
+        .page-title p {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            margin-left: 45px;
+        }
+
         .branch-badge {
             background: var(--primary);
             color: white;
-            padding: 6px 16px;
-            border-radius: 30px;
-            font-size: 0.8rem;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 0.85rem;
             font-weight: 700;
             display: inline-flex;
             align-items: center;
             gap: 8px;
-        }
-        
-        .date-range {
-            color: var(--text-dim);
-            font-size: 0.8rem;
-            font-weight: 500;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
         }
 
-        /* --- SUMMARY CARDS --- */
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .summary-card {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        }
-
-        .summary-label {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            color: var(--text-dim);
+        .action-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 40px;
             font-weight: 700;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
         }
 
-        .summary-value {
-            font-size: 1.4rem;
-            font-weight: 800;
-            color: var(--text);
+        .action-btn:hover {
+            background: #6366f1;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
         }
 
-        .summary-value.success {
-            color: var(--success);
+        .action-btn i {
+            font-size: 1rem;
         }
 
-        .summary-value.primary {
-            color: var(--primary);
-        }
-
-        .summary-value.warning {
-            color: var(--warning);
-        }
-
-        .summary-value.danger {
-            color: var(--danger);
-        }
-
-        .summary-detail {
-            font-size: 0.7rem;
-            color: var(--text-dim);
-            margin-top: 5px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        /* --- FILTER BAR --- */
-        .filter-bar {
+        /* --- SEARCH SECTION --- */
+        .search-section {
             background: white;
             border: 1px solid var(--border);
             border-radius: 12px;
@@ -376,213 +359,444 @@
             align-items: center;
         }
 
-        .filter-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .search-wrapper {
             flex: 1;
-            min-width: 200px;
+            min-width: 280px;
+            position: relative;
         }
 
-        .filter-group i {
+        .search-wrapper i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
             color: var(--text-dim);
-            width: 20px;
+            font-size: 0.9rem;
         }
 
-        .filter-select, .filter-input {
-            padding: 10px 15px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 0.85rem;
-            background: white;
+        .search-wrapper input {
             width: 100%;
+            padding: 14px 20px 14px 45px;
+            border: 1px solid var(--border);
+            border-radius: 40px;
+            font-size: 0.9rem;
             outline: none;
-            transition: border-color 0.2s;
+            transition: all 0.2s;
         }
 
-        .filter-select:focus, .filter-input:focus {
+        .search-wrapper input:focus {
             border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
 
-        .reset-btn {
-            background: #f1f5f9;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            padding: 8px 16px;
+            border-radius: 30px;
+            border: 1px solid var(--border);
+            background: white;
             font-weight: 600;
             font-size: 0.8rem;
             cursor: pointer;
-            color: var(--text);
+            transition: all 0.2s;
             display: flex;
             align-items: center;
-            gap: 8px;
-            transition: 0.2s;
-            white-space: nowrap;
-        }
-        .reset-btn:hover {
-            background: #e2e8f0;
+            gap: 6px;
         }
 
-        /* --- SEARCH --- */
-        .search-input {
-            width: 100%; 
-            padding: 16px; 
-            border-radius: 14px; 
-            border: 1px solid var(--border);
-            font-size: 16px; 
-            margin-bottom: 20px; 
-            outline: none; 
-            background: white;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        .filter-tab:hover {
+            background: #f1f5f9;
         }
-        .search-input:focus {
+
+        .filter-tab.active {
+            background: var(--primary);
+            color: white;
             border-color: var(--primary);
         }
 
-        /* --- DATA PRESENTATION --- */
-        .data-card-container { 
-            width: 100%; 
+        .filter-tab i {
+            font-size: 0.8rem;
+        }
+
+        /* --- STATS CARDS --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .stat-header i {
+            font-size: 1.5rem;
+            color: var(--primary);
+            background: #eef2ff;
+            padding: 8px;
+            border-radius: 12px;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            font-weight: 700;
+        }
+
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--admin-dark);
+        }
+
+        .stat-detail {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 8px;
+        }
+
+        /* --- TABLE STYLES --- */
+        .table-container { 
+            background: white; 
+            border-radius: 16px; 
+            border: 1px solid var(--border); 
+            overflow: hidden; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
         
         table { 
             width: 100%; 
             border-collapse: collapse; 
-            background: white; 
-            border-radius: 16px; 
-            overflow: hidden; 
-            border: 1px solid var(--border);
-            min-width: 900px;
+            min-width: 900px; 
         }
         
         th { 
             text-align: left; 
-            padding: 15px; 
+            padding: 16px; 
             background: #f8fafc; 
-            font-size: 0.7rem; 
             color: var(--text-dim); 
+            font-size: 0.7rem; 
             text-transform: uppercase; 
             font-weight: 800;
+            border-bottom: 1px solid var(--border);
         }
         
         td { 
-            padding: 15px; 
+            padding: 16px; 
             border-bottom: 1px solid #f1f5f9; 
             font-size: 0.85rem; 
             vertical-align: middle;
+            transition: background 0.2s;
         }
 
-        .branch-pill {
-            background: #f1f5f9;
+        tr:hover td {
+            background: #fafaff;
+        }
+
+        .product-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .product-icon {
+            width: 40px;
+            height: 40px;
+            background: #eef2ff;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .product-details h4 {
+            font-weight: 800;
+            margin: 0 0 4px 0;
+            font-size: 0.9rem;
+        }
+
+        .product-details small {
             color: var(--text-dim);
-            padding: 4px 10px;
-            border-radius: 6px;
             font-size: 0.7rem;
-            font-weight: 700;
-            display: inline-block;
-            margin-left: 5px;
-        }
-
-        @media (max-width: 1024px) {
-            .container { 
-                padding-top: 20px; 
-            }
-            table, thead, tbody, th, td, tr { 
-                display: block; 
-            }
-            thead { 
-                display: none; 
-            }
-            tr { 
-                background: white; 
-                border: 1px solid var(--border); 
-                border-radius: 16px; 
-                margin-bottom: 15px; 
-                padding: 15px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            }
-            td { 
-                display: flex; 
-                justify-content: space-between; 
-                align-items: center; 
-                padding: 8px 0; 
-                border: none; 
-                text-align: right;
-            }
-            td::before { 
-                content: attr(data-label); 
-                font-weight: 800; 
-                color: var(--text-dim); 
-                font-size: 0.7rem; 
-                text-transform: uppercase; 
-                text-align: left;
-            }
-            td[data-label="Item Details"] { 
-                flex-direction: column; 
-                align-items: flex-start; 
-                border-bottom: 1px solid #f1f5f9; 
-                margin-bottom: 8px; 
-                padding-bottom: 12px;
-            }
-            td[data-label="Item Details"]::before { 
-                margin-bottom: 5px; 
-            }
-            td[data-label="Item Details"] div { 
-                text-align: left; 
-                width: 100%; 
-                font-size: 1.1rem; 
-            }
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         .badge { 
-            padding: 5px 10px; 
-            border-radius: 8px; 
-            font-size: 0.65rem; 
-            font-weight: 800; 
-            background: #e0e7ff; 
-            color: #3730a3; 
+            padding: 4px 10px; 
+            border-radius: 30px; 
+            font-size: 0.7rem; 
+            font-weight: 700; 
             display: inline-block;
         }
         
-        .badge-cash { background: #dcfce7; color: #166534; }
-        .badge-mpesa { background: #fee2e2; color: #991b1b; }
-        .badge-kcb { background: #e0e7ff; color: #4338ca; }
-        .badge-bank { background: #fef3c7; color: #92400e; }
-        .badge-debt { background: #f1f5f9; color: #475569; }
-        .badge-gas-refill { background: #ffedd5; color: #9a3412; }
-        .badge-gas-complete { background: #fed7aa; color: #7b341e; }
-        
-        .profit-text { 
-            color: var(--success); 
-            font-weight: 700; 
+        .badge-gas { 
+            background: #fee2e2; 
+            color: #b91c1c; 
+        }
+        .badge-spare { 
+            background: #dcfce7; 
+            color: #15803d; 
+        }
+        .badge-bike { 
+            background: #e0e7ff; 
+            color: #4338ca; 
+        }
+        .badge-tuktuk { 
+            background: #ede9fe; 
+            color: #6d28d9; 
+        }
+
+        .stock-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stock-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .stock-dot.high { background: var(--success); }
+        .stock-dot.medium { background: var(--warning); }
+        .stock-dot.low { background: var(--danger); }
+
+        .price-tag {
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .cost-tag {
+            color: var(--text-dim);
+            font-size: 0.7rem;
+        }
+
+        .btn-edit {
+            background: #eef2ff;
+            color: var(--primary);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-edit:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* --- MODAL --- */
+        #productModal { 
+            display: none; 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(15, 23, 42, 0.6); 
+            backdrop-filter: blur(8px);
+            justify-content: center; 
+            align-items: center; 
+            z-index: 4000; 
+            padding: 20px;
         }
         
+        .modal-content { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 24px; 
+            width: 100%; 
+            max-width: 600px; 
+            max-height: 90vh; 
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--admin-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-header h2 i {
+            color: var(--primary);
+        }
+
+        .modal-close {
+            background: #f1f5f9;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .grid-form { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 15px; 
+        }
+        
+        .full { 
+            grid-column: span 2; 
+        }
+        
+        label { 
+            font-size: 0.7rem; 
+            color: var(--text-dim); 
+            font-weight: 700; 
+            margin-bottom: 5px; 
+            display: block;
+            text-transform: uppercase;
+        }
+        
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid var(--border); 
+            border-radius: 10px; 
+            font-size: 0.9rem; 
+            font-family: inherit; 
+            outline: none;
+            transition: all 0.2s;
+        }
+        
+        input:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .gas-price-info {
+            background: #fef3c7;
+            border-left: 4px solid var(--gas);
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-size: 0.8rem;
+        }
+
+        .gas-price-info i {
+            color: var(--gas);
+            margin-right: 5px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .btn-save {
+            flex: 2;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-save:hover {
+            background: #6366f1;
+            transform: translateY(-2px);
+        }
+
+        .btn-cancel {
+            flex: 1;
+            background: #f1f5f9;
+            color: var(--text-dim);
+            border: none;
+            padding: 14px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel:hover {
+            background: #e2e8f0;
+        }
+
         .overlay { 
             position: fixed; 
             inset: 0; 
-            background: rgba(0,0,0,0.5); 
+            background: rgba(15, 23, 42, 0.6); 
+            backdrop-filter: blur(4px); 
             display: none; 
             z-index: 2500; 
-            backdrop-filter: blur(4px); 
         }
         .overlay.active { display: block; }
-        
-        .btn-load { 
-            width: 100%; 
-            margin-top: 20px; 
-            background: white; 
-            border: 2px solid var(--primary); 
-            color: var(--primary); 
-            padding: 15px; 
-            border-radius: 14px; 
-            font-weight: 800; 
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .btn-load:hover { 
-            background: var(--primary); 
-            color: white; 
-        }
-        
+
         .spinner {
             display: inline-block;
             width: 16px;
@@ -593,21 +807,53 @@
             animation: spin 1s ease-in-out infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        
+
         .loading-spinner {
             text-align: center;
             padding: 40px;
             color: var(--text-dim);
         }
 
-        .gas-badge {
-            background: var(--gas);
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-dim);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: #cbd5e1;
+            margin-bottom: 15px;
+        }
+
+        .empty-state p {
+            font-size: 0.9rem;
+        }
+
+        /* --- TOOLTIP --- */
+        [data-tooltip] {
+            position: relative;
+            cursor: help;
+        }
+
+        [data-tooltip]:before {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 4px 8px;
+            background: var(--admin-dark);
             color: white;
-            padding: 2px 6px;
+            font-size: 0.65rem;
             border-radius: 4px;
-            font-size: 0.6rem;
-            font-weight: 700;
-            margin-left: 5px;
+            white-space: nowrap;
+            display: none;
+            z-index: 100;
+        }
+
+        [data-tooltip]:hover:before {
+            display: block;
         }
     </style>
 </head>
@@ -618,7 +864,7 @@
 
 <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <h2>JEPE ADMIN</h2>
+        <h2 id="role-title">JEPE CASHIER</h2>
         <button class="close-btn" onclick="toggleMenu()">×</button>
     </div>
     
@@ -631,174 +877,218 @@
         </div>
     </div>
     
-    <nav class="nav-list">
-        <a href="admin.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
-        <a href="gas_hub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
-        <a href="spares_hub.html" class="nav-link"><i class="fas fa-cogs"></i> <span>Spare Parts Hub</span></a>
-        <a href="motorbike_hub.html" class="nav-link"><i class="fas fa-motorcycle"></i> <span>Motorbike Hub</span></a>
-        <a href="tuktuk_hub.html" class="nav-link"><i class="fas fa-car-side"></i> <span>TUKTUK Hub</span></a>
+    <nav class="nav-list" id="nav-container">
+        <!-- Cashier Navigation -->
+        <a href="cashier.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+        <a href="cashiergashub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
+        <a href="moneyinout.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
+        <a href="shift history cashier.html" class="nav-link"><i class="fas fa-history"></i> <span>Shift History</span></a>
+        <a href="sales_reports.html" class="nav-link"><i class="fas fa-chart-line"></i> <span>Sales History</span></a>
+        <a href="cashier_inventory.html" class="nav-link"><i class="fas fa-plus-circle"></i> <span>Add Stock</span></a>
+        <a href="sales_editor.html" class="nav-link active"><i class="fas fa-edit"></i> <span>Edit Stock</span></a>
 
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
 
-        <a href="shift-history.html" class="nav-link"><i class="fas fa-history"></i> <span>Daily Shifts</span></a>
-        <a href="money-history.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
-        <a href="sales-history.html" class="nav-link active"><i class="fas fa-chart-line"></i> <span>Sales History</span></a>
+        <a href="low-stock-cashier.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
+        <a href="debtors.html" class="nav-link"><i class="fas fa-users"></i> <span>Debtors</span></a>
+        <a href="supplierscashier.html" class="nav-link"><i class="fas fa-handshake"></i> <span>Suppliers</span></a>
+        <a href="gas_delivery.html" class="nav-link"><i class="fas fa-truck"></i> <span>Delivery</span></a>
 
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
 
-        <a href="inventory.html" class="nav-link"><i class="fas fa-plus-circle"></i> <span>Add Stock</span></a>
-        <a href="sales_editor.html" class="nav-link"><i class="fas fa-edit"></i> <span>Edit Stock</span></a>
-        <a href="admin-debtors.html" class="nav-link"><i class="fas fa-users"></i> <span>Debtors</span></a>
-        <a href="low_stock.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
-        <a href="audit_trail.html" class="nav-link"><i class="fas fa-search"></i> <span>Inventory Track</span></a>
-
-        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
-
-        <a href="reports.html" class="nav-link"><i class="fas fa-file-alt"></i> <span>Reports</span></a>
-        <a href="price_audits.html" class="nav-link"><i class="fas fa-tags"></i> <span>Underpriced</span></a>
-        <a href="suppliers.html" class="nav-link"><i class="fas fa-handshake"></i> <span>Suppliers</span></a>
-        <a href="admin.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
-        
-        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <a href="#" onclick="handleLogout()" class="nav-link" style="color: var(--danger);">
-                <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
-            </a>
-        </div>
+        <a href="cashier_report.html" class="nav-link"><i class="fas fa-file-alt"></i> <span>Today's Report</span></a>
+        <a href="pos.html" class="nav-link"><i class="fas fa-shopping-cart"></i> <span>Cart Shop</span></a>
+        <a href="cashierprofile.html" class="nav-link"><i class="fas fa-user"></i> <span>Settings</span></a>
+        <a href="cashier.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
     </nav>
+    
+    <!-- Logout Button -->
+    <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+        <button onclick="logoutUser()" style="width:100%; background:var(--danger); color:white; border:none; padding:12px; border-radius:10px; font-weight:700; cursor:pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
+            <i class="fas fa-sign-out-alt"></i> <span>Logout System</span>
+        </button>
+    </div>
 </div>
 
 <div class="main-wrapper">
     <div class="mobile-header">
         <button onclick="toggleMenu()" style="background:none; border:none; color:white; font-size:1.5rem;">☰</button>
-        <div style="font-weight:800;">SALES HISTORY</div>
+        <div style="font-weight:800;">INVENTORY CONTROL</div>
         <div style="width:24px;"></div>
     </div>
 
     <div class="container">
-        <div style="margin-bottom: 25px;">
-            <h2 style="margin:0; font-weight:800; font-size: 1.5rem; letter-spacing: -1px;">Sales Transactions</h2>
-            <p style="color:var(--text-dim); margin-top:5px;">Complete history of all sales across all branches</p>
-        </div>
-
-        <!-- Branch Selector -->
-        <div class="branch-selector-container">
-            <div class="branch-filter">
-                <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
-                <select id="branchSelector" class="branch-select" onchange="handleBranchChange()">
-                    <option value="all">🏢 ALL BRANCHES (Consolidated)</option>
-                </select>
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <h1>
+                    <i class="fas fa-boxes"></i>
+                    <span>Inventory Control</span>
+                </h1>
+                <p>Manage stock levels and pricing</p>
             </div>
-            <div class="branch-badge" id="currentBranchBadge">
-                <i class="fas fa-store"></i>
-                <span id="currentBranchDisplay">ALL BRANCHES</span>
-            </div>
-            <span class="date-range" id="dateRange"></span>
-        </div>
-
-        <!-- Summary Cards -->
-        <div class="summary-grid">
-            <div class="summary-card">
-                <div class="summary-label">Total Sales</div>
-                <div class="summary-value primary" id="totalSales">Ksh 0</div>
-                <div class="summary-detail">
-                    <span>All transactions</span>
-                    <span id="totalTransactions">0</span>
-                </div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-label">Total Profit</div>
-                <div class="summary-value success" id="totalProfit">Ksh 0</div>
-                <div class="summary-detail">
-                    <span>Average margin</span>
-                    <span id="avgMargin">0%</span>
-                </div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-label">Cash Sales</div>
-                <div class="summary-value" id="cashSales">Ksh 0</div>
-                <div class="summary-detail">
-                    <span>Transactions</span>
-                    <span id="cashCount">0</span>
-                </div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-label">KCB Paybill</div>
-                <div class="summary-value" id="kcbSales">Ksh 0</div>
-                <div class="summary-detail">
-                    <span>Transactions</span>
-                    <span id="kcbCount">0</span>
-                </div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-label">M-Pesa</div>
-                <div class="summary-value" id="mpesaSales">Ksh 0</div>
-                <div class="summary-detail">
-                    <span>Transactions</span>
-                    <span id="mpesaCount">0</span>
-                </div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-label">Items Sold</div>
-                <div class="summary-value warning" id="totalItems">0</div>
-                <div class="summary-detail">
-                    <span>Avg per sale</span>
-                    <span id="avgItems">0</span>
-                </div>
+            <div class="branch-badge" id="branchDisplay">
+                <i class="fas fa-store"></i> <span id="branchName">Loading...</span>
             </div>
         </div>
 
-        <!-- Filter Bar -->
-        <div class="filter-bar">
-            <div class="filter-group">
-                <i class="fas fa-calendar"></i>
-                <input type="text" id="dateSearch" class="filter-input" placeholder="Search by date (e.g. 16 Feb 2026)">
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <i class="fas fa-cubes"></i>
+                    <span class="stat-label">Total Products</span>
+                </div>
+                <div class="stat-value" id="totalProducts">0</div>
+                <div class="stat-detail">Across all categories</div>
             </div>
-            <div class="filter-group">
-                <i class="fas fa-filter"></i>
-                <select id="paymentFilter" class="filter-select">
-                    <option value="all">All Payment Methods</option>
-                    <option value="Cash">Cash</option>
-                    <option value="KCB Paybill">KCB Paybill</option>
-                    <option value="Mpesa">M-Pesa</option>
-                    <option value="Bank">Bank</option>
-                    <option value="Debt">Debt</option>
-                </select>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <i class="fas fa-boxes"></i>
+                    <span class="stat-label">Total Stock</span>
+                </div>
+                <div class="stat-value" id="totalStock">0</div>
+                <div class="stat-detail">Units in inventory</div>
             </div>
-            <div class="filter-group">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <i class="fas fa-fire"></i>
+                    <span class="stat-label">Gas Cylinders</span>
+                </div>
+                <div class="stat-value" id="gasCount">0</div>
+                <div class="stat-detail">Full / Empty</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
+                    <i class="fas fa-exclamation-triangle" style="color: var(--warning);"></i>
+                    <span class="stat-label">Low Stock</span>
+                </div>
+                <div class="stat-value" id="lowStockCount">0</div>
+                <div class="stat-detail">Items below 5 units</div>
+            </div>
+        </div>
+
+        <!-- Search & Filter Section -->
+        <div class="search-section">
+            <div class="search-wrapper">
                 <i class="fas fa-search"></i>
-                <input type="text" id="itemSearch" class="filter-input" placeholder="Search by item name...">
+                <input type="text" id="searchBar" placeholder="Search products by name, category, or supplier...">
             </div>
-            <button id="resetFilters" class="reset-btn">
-                <i class="fas fa-undo"></i> Reset
+            <div class="filter-tabs">
+                <button class="filter-tab active" onclick="filterCategory('all')">
+                    <i class="fas fa-border-all"></i> All
+                </button>
+                <button class="filter-tab" onclick="filterCategory('Spare Part')">
+                    <i class="fas fa-cogs"></i> Spare Parts
+                </button>
+                <button class="filter-tab" onclick="filterCategory('Motorbike')">
+                    <i class="fas fa-motorcycle"></i> Motorbikes
+                </button>
+                <button class="filter-tab" onclick="filterCategory('Gas')">
+                    <i class="fas fa-fire"></i> Gas
+                </button>
+                <button class="filter-tab" onclick="filterCategory('Tuktuk')">
+                    <i class="fas fa-car-side"></i> TUKTUK
+                </button>
+            </div>
+            <button class="action-btn" onclick="openModal()">
+                <i class="fas fa-plus"></i> Add Product
             </button>
         </div>
 
-        <input type="text" id="salesSearch" class="search-input" placeholder="🔍 Quick search by item, category, or payment method...">
+        <!-- Products Table -->
+        <div class="table-container">
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product Details</th>
+                            <th>Supplier</th>
+                            <th>Stock Level</th>
+                            <th>Pricing</th>
+                            <th>Category</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="product-list-body">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 40px;">
+                                <div class="spinner" style="margin: 0 auto;"></div>
+                                Loading products...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
-        <div class="data-card-container">
-            <table id="sales-table">
-                <thead>
-                    <tr>
-                        <th>Date & Time</th>
-                        <th>Item Details</th>
-                        <th>Qty</th>
-                        <th>Total Amount</th>
-                        <th>Cost</th>
-                        <th>Profit</th>
-                        <th>Method</th>
-                        <th>Branch</th>
-                    </tr>
-                </thead>
-                <tbody id="data-body">
-                    <tr>
-                        <td colspan="8" style="text-align: center; padding: 40px;">
-                            <div class="spinner" style="margin: 0 auto;"></div>
-                            Loading transactions...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-            <button id="loadMore" class="btn-load">LOAD MORE TRANSACTIONS</button>
+<!-- Product Modal -->
+<div id="productModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="fas fa-edit"></i> <span id="modalTitle">Edit Product</span></h2>
+            <button class="modal-close" onclick="closeModal()">×</button>
+        </div>
+        <input type="hidden" id="prod-id">
+        <div class="grid-form">
+            <div class="full"><label><i class="fas fa-tag"></i> Product Name</label><input type="text" id="prod-name" placeholder="Enter product name"></div>
+            <div class="full"><label><i class="fas fa-truck"></i> Supplier</label><select id="prod-supplier"></select></div>
+            
+            <div><label><i class="fas fa-layer-group"></i> Category</label>
+                <select id="prod-category" onchange="toggleFields()">
+                    <option value="Spare Part">Spare Part</option>
+                    <option value="Gas">Gas</option>
+                    <option value="Motorbike">Motorbike</option>
+                    <option value="Tuktuk">🚖 TUKTUK</option>
+                </select>
+            </div>
+
+            <div id="type-container">
+                <label><i class="fas fa-cog"></i> Part Type</label>
+                <select id="prod-type">
+                    <option value="Original">Original</option>
+                    <option value="Copy">Copy</option>
+                    <option value="N/A">N/A</option>
+                </select>
+            </div>
+
+            <div id="weight-container" style="display:none;">
+                <label><i class="fas fa-weight-scale"></i> Weight (Gas)</label>
+                <input type="text" id="prod-weight" placeholder="e.g. 6kg">
+            </div>
+
+            <div id="cylinder-price-container" style="display:none;">
+                <label><i class="fas fa-gas-pump"></i> Cylinder Price (Ksh)</label>
+                <input type="number" id="prod-cylinder-price" placeholder="0" min="0">
+                <div class="gas-price-info" style="margin-top:5px;">
+                    <i class="fas fa-info-circle"></i> This is the price for new cylinder (complete sale)
+                </div>
+            </div>
+
+            <div id="min-selling-price-container" style="display:none;">
+                <label><i class="fas fa-coins"></i> Min Selling Price</label>
+                <input type="number" id="prod-min-sell" placeholder="Minimum allowed price" step="0.01" min="0">
+            </div>
+
+            <div id="tuktuk-container" style="display:none;">
+                <label><i class="fas fa-car-side"></i> TUKTUK Type</label>
+                <select id="tuktuk-type">
+                    <option value="Passenger">Passenger</option>
+                    <option value="Cargo">Cargo</option>
+                    <option value="Spare Part">Spare Part</option>
+                </select>
+            </div>
+
+            <div><label><i class="fas fa-coins"></i> Cost Price</label><input type="number" id="prod-cost" placeholder="0" step="0.01" min="0"></div>
+            <div><label><i class="fas fa-tag"></i> Selling Price</label><input type="number" id="prod-sell" placeholder="0" step="0.01" min="0"></div>
+            <div><label><i class="fas fa-box"></i> Stock Qty</label><input type="number" id="prod-stock" placeholder="0" min="0"></div>
+            <div id="empty-container" style="display:none;"><label><i class="fas fa-gas-pump"></i> Empty Qty</label><input type="number" id="prod-empty" placeholder="0" min="0"></div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-save" onclick="saveProduct()"><i class="fas fa-save"></i> Save Changes</button>
+            <button class="btn-cancel" onclick="closeModal()"><i class="fas fa-times"></i> Cancel</button>
         </div>
     </div>
 </div>
@@ -806,51 +1096,23 @@
 <script type="module">
     import { supabase } from './auth.js';
     
-    let limit = 50;
-    let allSales = [];
-    let filteredSales = [];
+    let allProducts = [];
     let currentUser = null;
     let currentBranchId = null;
     let currentBranch = null;
-    let selectedBranchId = null;
-    let branches = {};
-    let branchIdMap = {};
-    let productsMap = {};
+    let currentCategoryFilter = 'all';
 
-    // Filter states
-    let paymentFilter = 'all';
-    let dateSearchTerm = '';
-    let itemSearchTerm = '';
-    let quickSearchTerm = '';
-
-    // ==================== SIDEBAR FUNCTION ====================
-    window.toggleMenu = function() {
+    // ==================== SIDEBAR FUNCTIONS ====================
+    window.toggleMenu = () => {
         document.getElementById('sidebar').classList.toggle('mobile-active');
         document.getElementById('overlay').classList.toggle('active');
     };
 
     // ==================== BRANCH FUNCTIONS ====================
 
-    async function loadBranches() {
-        const { data } = await supabase.from('branches').select('*');
-        branches = {};
-        branchIdMap = {};
-        
-        // Populate branch selector
-        const selector = document.getElementById('branchSelector');
-        let options = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>';
-        data?.forEach(b => {
-            branches[b.id] = b;
-            branchIdMap[b.code] = b.id;
-            options += `<option value="${b.code}">🏪 ${b.name}</option>`;
-        });
-        selector.innerHTML = options;
-        
-        return branches;
-    }
-
-    function getBranchIdFromCode(code) {
-        return branchIdMap[code] || null;
+    function getCurrentBranchId() {
+        const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
+        return session.branch?.id || currentBranchId;
     }
 
     async function loadUserProfile() {
@@ -878,6 +1140,10 @@
                 .maybeSingle();
             
             if (error) throw error;
+            if (!profile) {
+                console.error("No profile found");
+                return null;
+            }
             
             currentBranchId = profile.branch_id;
             currentBranch = profile.branches;
@@ -896,401 +1162,394 @@
                 sidebarBranchName.textContent = profile.branches.name;
             }
             
+            // Update branch display
+            const branchNameSpan = document.getElementById('branchName');
+            if (branchNameSpan && profile.branches) {
+                branchNameSpan.textContent = profile.branches.name;
+            }
+            
             return profile;
         } catch (error) {
-            console.error("❌ Error loading profile:", error);
+            console.error("Error loading profile:", error);
             return null;
         }
     }
 
-    window.handleBranchChange = async function() {
-        const selector = document.getElementById('branchSelector');
-        const selectedCode = selector.value;
-        
-        const branchDisplay = document.getElementById('currentBranchDisplay');
-        const dateRange = document.getElementById('dateRange');
-        
-        if (selectedCode === 'all') {
-            branchDisplay.textContent = 'ALL BRANCHES';
-            selectedBranchId = null;
-            dateRange.textContent = 'Showing all branches';
-        } else {
-            const branchId = getBranchIdFromCode(selectedCode);
-            if (branchId) {
-                selectedBranchId = branchId;
-                branchDisplay.textContent = branches[branchId].name;
-                dateRange.textContent = `Showing ${branches[branchId].name} only`;
-            }
-        }
-        
-        await fetchSales();
+    window.logoutUser = async () => { 
+        localStorage.removeItem('pos_session');
+        await supabase.auth.signOut(); 
+        location.href = 'index.html'; 
     };
+
+    // ==================== PRODUCT FUNCTIONS ====================
 
     async function fetchProducts() {
         try {
-            const { data } = await supabase
-                .from('products')
-                .select('id, cost_price, cylinder_price, category');
+            const branchId = getCurrentBranchId();
             
-            productsMap = {};
-            data?.forEach(p => {
-                productsMap[p.id] = p;
-            });
+            let query = supabase
+                .from('products')
+                .select('*, suppliers(name)')
+                .order('name');
+
+            if (branchId) {
+                query = query.eq('branch_id', branchId);
+            }
+
+            const { data, error } = await query;
+            
+            if (error) throw error;
+            
+            allProducts = data || [];
+            console.log(`Loaded ${allProducts.length} products`);
+            
+            updateStats();
+            renderTable(allProducts);
+            
         } catch (error) {
             console.error("Error fetching products:", error);
         }
     }
 
-    async function fetchSales() {
-        // Show loading state
-        document.getElementById('data-body').innerHTML = `
-            <tr>
-                <td colspan="8" style="text-align: center; padding: 40px;">
-                    <div class="spinner" style="margin: 0 auto;"></div>
-                    Loading transactions...
-                </td>
-            </tr>
-        `;
-
+    async function loadSuppliers() {
         try {
-            // Load products first for cost reference
-            await fetchProducts();
-
-            // Build query
-            let query = supabase
-                .from('sales')
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            // Apply branch filter if a specific branch is selected
-            if (selectedBranchId) {
-                query = query.eq('branch_id', selectedBranchId);
+            const branchId = getCurrentBranchId();
+            let query = supabase.from('suppliers').select('id, name').order('name');
+            
+            if (branchId) {
+                query = query.eq('branch_id', branchId);
             }
-
-            const { data, error } = await query;
-
-            if (error) throw error;
-
-            allSales = data || [];
-            filteredSales = [...allSales];
-            console.log(`Loaded ${allSales.length} sales transactions`);
             
-            updateSummary();
-            applyFilters();
-            
+            const { data } = await query;
+            document.getElementById('prod-supplier').innerHTML = '<option value="">-- No Supplier --</option>' + 
+                (data || []).map(s => `<option value="${s.id}">${s.name}</option>`).join('');
         } catch (error) {
-            console.error("Error fetching sales:", error);
-            document.getElementById('data-body').innerHTML = `
-                <tr>
-                    <td colspan="8" style="text-align: center; padding: 40px; color: var(--danger);">
-                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                        Error loading transactions: ${error.message}
-                    </td>
-                </tr>
-            `;
+            console.error("Error loading suppliers:", error);
         }
     }
 
-    function calculateProfit(sale) {
-        const revenue = Number(sale.total_amount || 0);
-        
-        // For gas sales, check if it's a complete purchase (contains cylinder)
-        if (sale.category === 'Gas') {
-            const product = productsMap[sale.product_id];
+    function updateStats() {
+        let totalProducts = allProducts.length;
+        let totalStock = 0;
+        let gasFull = 0;
+        let gasEmpty = 0;
+        let lowStock = 0;
+
+        allProducts.forEach(p => {
+            totalStock += p.stock_quantity || 0;
             
-            // Check if it's a complete sale (contains cylinder)
-            if (sale.item_name && sale.item_name.includes('New Cylinder')) {
-                // Complete sale: cost = (gas cost price + cylinder cost) * quantity
-                const gasCost = Number(sale.cost_price || 0);
-                const cylinderCost = Number(product?.cylinder_price || 0);
-                const totalCost = (gasCost + cylinderCost) * sale.quantity;
-                return revenue - totalCost;
-            } else {
-                // Refill sale: cost = gas cost price * quantity
-                const cost = Number(sale.cost_price || 0) * sale.quantity;
-                return revenue - cost;
+            if (p.category === 'Gas') {
+                gasFull += p.stock_quantity || 0;
+                gasEmpty += p.empty_quantity || 0;
             }
-        } else {
-            // Non-gas items
-            const cost = Number(sale.cost_price || 0) * sale.quantity;
-            return revenue - cost;
-        }
-    }
-
-    function updateSummary() {
-        let totalAmount = 0;
-        let totalProfit = 0;
-        let cashTotal = 0;
-        let kcbTotal = 0;
-        let mpesaTotal = 0;
-        let totalItems = 0;
-        let cashCount = 0;
-        let kcbCount = 0;
-        let mpesaCount = 0;
-
-        allSales.forEach(sale => {
-            const amount = Number(sale.total_amount || 0);
-            const profit = calculateProfit(sale);
             
-            totalAmount += amount;
-            totalProfit += profit;
-            totalItems += sale.quantity || 0;
-
-            switch(sale.payment_method) {
-                case 'Cash':
-                    cashTotal += amount;
-                    cashCount++;
-                    break;
-                case 'KCB Paybill':
-                    kcbTotal += amount;
-                    kcbCount++;
-                    break;
-                case 'Mpesa':
-                    mpesaTotal += amount;
-                    mpesaCount++;
-                    break;
+            if ((p.stock_quantity || 0) < 5) {
+                lowStock++;
             }
         });
 
-        const avgMargin = totalAmount > 0 ? ((totalProfit / totalAmount) * 100).toFixed(1) : 0;
-        const avgItems = allSales.length > 0 ? (totalItems / allSales.length).toFixed(1) : 0;
-
-        document.getElementById('totalSales').textContent = `Ksh ${totalAmount.toLocaleString()}`;
-        document.getElementById('totalProfit').textContent = `Ksh ${totalProfit.toLocaleString()}`;
-        document.getElementById('avgMargin').textContent = `${avgMargin}%`;
-        document.getElementById('totalTransactions').textContent = allSales.length;
-        
-        document.getElementById('cashSales').textContent = `Ksh ${cashTotal.toLocaleString()}`;
-        document.getElementById('cashCount').textContent = cashCount;
-        
-        document.getElementById('kcbSales').textContent = `Ksh ${kcbTotal.toLocaleString()}`;
-        document.getElementById('kcbCount').textContent = kcbCount;
-        
-        document.getElementById('mpesaSales').textContent = `Ksh ${mpesaTotal.toLocaleString()}`;
-        document.getElementById('mpesaCount').textContent = mpesaCount;
-        
-        document.getElementById('totalItems').textContent = totalItems;
-        document.getElementById('avgItems').textContent = avgItems;
+        document.getElementById('totalProducts').textContent = totalProducts;
+        document.getElementById('totalStock').textContent = totalStock;
+        document.getElementById('gasCount').innerHTML = `${gasFull} <span style="font-size:0.7rem;">/ ${gasEmpty}</span>`;
+        document.getElementById('lowStockCount').textContent = lowStock;
     }
 
+    function getCategoryIcon(category) {
+        switch(category) {
+            case 'Gas': return 'fa-fire';
+            case 'Spare Part': return 'fa-cogs';
+            case 'Motorbike': return 'fa-motorcycle';
+            case 'Tuktuk': return 'fa-car-side';
+            default: return 'fa-box';
+        }
+    }
+
+    function getCategoryBadgeClass(category) {
+        switch(category) {
+            case 'Gas': return 'badge-gas';
+            case 'Spare Part': return 'badge-spare';
+            case 'Motorbike': return 'badge-bike';
+            case 'Tuktuk': return 'badge-tuktuk';
+            default: return '';
+        }
+    }
+
+    function getStockLevel(stock) {
+        if (stock >= 10) return { class: 'high', text: 'High' };
+        if (stock >= 5) return { class: 'medium', text: 'Medium' };
+        return { class: 'low', text: 'Low' };
+    }
+
+    window.filterCategory = (category) => {
+        currentCategoryFilter = category;
+        
+        // Update active tab
+        document.querySelectorAll('.filter-tab').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        applyFilters();
+    };
+
     function applyFilters() {
-        filteredSales = allSales.filter(sale => {
-            // Payment filter
-            if (paymentFilter !== 'all' && sale.payment_method !== paymentFilter) {
+        const searchTerm = document.getElementById('searchBar').value.toLowerCase();
+        
+        let filtered = allProducts.filter(p => {
+            // Category filter
+            if (currentCategoryFilter !== 'all' && p.category !== currentCategoryFilter) {
                 return false;
             }
             
-            // Date search
-            if (dateSearchTerm) {
-                const saleDate = new Date(sale.created_at).toLocaleDateString('en-GB', { 
-                    day: '2-digit', 
-                    month: 'short', 
-                    year: 'numeric' 
-                }).toLowerCase();
-                if (!saleDate.includes(dateSearchTerm.toLowerCase())) {
-                    return false;
-                }
-            }
-            
-            // Item search
-            if (itemSearchTerm) {
-                const itemName = (sale.item_name || '').toLowerCase();
-                if (!itemName.includes(itemSearchTerm.toLowerCase())) {
-                    return false;
-                }
-            }
-            
-            // Quick search
-            if (quickSearchTerm) {
-                const itemName = (sale.item_name || '').toLowerCase();
-                const category = (sale.category || '').toLowerCase();
-                const payment = (sale.payment_method || '').toLowerCase();
-                const searchTerm = quickSearchTerm.toLowerCase();
-                
-                if (!itemName.includes(searchTerm) && 
-                    !category.includes(searchTerm) && 
-                    !payment.includes(searchTerm)) {
-                    return false;
-                }
+            // Search filter
+            if (searchTerm) {
+                return p.name.toLowerCase().includes(searchTerm) || 
+                       p.category.toLowerCase().includes(searchTerm) ||
+                       (p.suppliers?.name && p.suppliers.name.toLowerCase().includes(searchTerm));
             }
             
             return true;
         });
         
-        renderSales(filteredSales.slice(0, limit));
+        renderTable(filtered);
     }
 
-    function getPaymentBadgeClass(method) {
-        switch(method) {
-            case 'Cash': return 'badge-cash';
-            case 'Mpesa': return 'badge-mpesa';
-            case 'KCB Paybill': return 'badge-kcb';
-            case 'Bank': return 'badge-bank';
-            case 'Debt': return 'badge-debt';
-            default: return '';
-        }
-    }
-
-    function getGasTypeBadge(itemName) {
-        if (!itemName) return '';
-        if (itemName.includes('Refill')) {
-            return '<span class="badge badge-gas-refill" style="margin-left:5px;">Refill</span>';
-        } else if (itemName.includes('New Cylinder')) {
-            return '<span class="badge badge-gas-complete" style="margin-left:5px;">New Cylinder</span>';
-        }
-        return '';
-    }
-
-    function renderSales(data) {
-        const tbody = document.getElementById('data-body');
+    function renderTable(data) {
+        const tbody = document.getElementById('product-list-body');
         
         if (data.length === 0) {
-            const branchName = selectedBranchId ? branches[selectedBranchId]?.name : 'All Branches';
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-dim);">
-                        <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                        No sales found for ${branchName}
+                    <td colspan="6" class="empty-state">
+                        <i class="fas fa-box-open"></i>
+                        <p>No products found</p>
                     </td>
                 </tr>
             `;
-            document.getElementById('loadMore').style.display = 'none';
             return;
         }
 
-        tbody.innerHTML = data.map(s => {
-            const revenue = s.total_amount || 0;
-            const profit = calculateProfit(s);
-            const date = new Date(s.created_at);
-            
-            // Get branch info
-            const branch = branches[s.branch_id] || { code: '--', name: 'Unknown' };
-            
-            const paymentClass = getPaymentBadgeClass(s.payment_method);
-            const gasTypeBadge = getGasTypeBadge(s.item_name);
-            
-            // Calculate cost breakdown for display
-            let costDisplay = '';
-            if (s.category === 'Gas') {
-                const product = productsMap[s.product_id];
-                const gasCost = Number(s.cost_price || 0);
-                const cylinderCost = Number(product?.cylinder_price || 0);
-                
-                if (s.item_name && s.item_name.includes('New Cylinder')) {
-                    costDisplay = `<small style="color: var(--text-dim); display:block;">Gas: Ksh ${gasCost} + Cyl: Ksh ${cylinderCost}</small>`;
-                } else {
-                    costDisplay = `<small style="color: var(--text-dim); display:block;">Gas: Ksh ${gasCost}</small>`;
-                }
-            }
+        tbody.innerHTML = data.map(p => {
+            const isGas = p.category === 'Gas';
+            const stockLevel = getStockLevel(p.stock_quantity);
+            const categoryIcon = getCategoryIcon(p.category);
+            const badgeClass = getCategoryBadgeClass(p.category);
             
             return `
                 <tr>
-                    <td data-label="Date & Time">
-                        <span style="font-weight:700;">${date.toLocaleDateString()}</span>
-                        <small style="color:var(--text-dim); display:block;">${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
-                    </td>
-                    <td data-label="Item Details">
-                        <div style="font-weight:700; color:var(--admin-dark);">
-                            ${s.item_name}
-                            ${gasTypeBadge}
-                            ${s.category === 'Gas' ? '<span class="gas-badge">GAS</span>' : ''}
-                        </div>
-                        <div style="font-size:0.7rem; color:var(--text-dim)">
-                            <i class="fas fa-tag"></i> ${s.category || 'General'}
-                        </div>
-                    </td>
-                    <td data-label="Quantity" style="font-weight:700;">${s.quantity}</td>
-                    <td data-label="Total Amount" style="font-weight:800;">Ksh ${revenue.toLocaleString()}</td>
-                    <td data-label="Cost" style="font-size:0.8rem;">
-                        Ksh ${(Number(s.cost_price || 0) * s.quantity).toLocaleString()}
-                        ${costDisplay}
-                    </td>
-                    <td data-label="Est. Profit">
-                        <span class="profit-text">+Ksh ${profit.toLocaleString()}</span>
-                        <div style="font-size:0.65rem; color:var(--text-dim);">
-                            ${((profit / revenue) * 100).toFixed(1)}% margin
+                    <td>
+                        <div class="product-info">
+                            <div class="product-icon">
+                                <i class="fas ${categoryIcon}"></i>
+                            </div>
+                            <div class="product-details">
+                                <h4>${p.name}</h4>
+                                <small>
+                                    <i class="fas fa-box"></i> ${p.category}
+                                    ${isGas && p.weight_category ? ` • ${p.weight_category}` : ''}
+                                    ${isGas && p.cylinder_price ? ` • Cyl: Ksh ${p.cylinder_price}` : ''}
+                                </small>
+                            </div>
                         </div>
                     </td>
-                    <td data-label="Method">
-                        <span class="badge ${paymentClass}">${s.payment_method}</span>
+                    <td>
+                        <span class="badge" style="background:#f1f5f9;">${p.suppliers?.name || 'No Supplier'}</span>
                     </td>
-                    <td data-label="Branch">
-                        <span class="branch-pill" title="${branch.name}">
-                            <i class="fas fa-store"></i> ${branch.code}
+                    <td>
+                        <div class="stock-indicator">
+                            <span class="stock-dot ${stockLevel.class}" data-tooltip="${stockLevel.text} Stock"></span>
+                            <span style="font-weight:700; ${p.stock_quantity < 5 ? 'color:var(--danger)' : ''}">
+                                ${p.stock_quantity || 0} Full
+                            </span>
+                        </div>
+                        ${isGas ? `
+                            <div style="font-size:0.7rem; color:var(--text-dim); margin-top:4px;">
+                                <i class="fas fa-gas-pump"></i> ${p.empty_quantity || 0} Empty
+                            </div>
+                        ` : ''}
+                    </td>
+                    <td>
+                        <div class="price-tag">Ksh ${(p.selling_price || 0).toLocaleString()}</div>
+                        <div class="cost-tag">Cost: Ksh ${(p.cost_price || 0).toLocaleString()}</div>
+                        ${isGas && p.cylinder_price ? `
+                            <div class="cost-tag">Cylinder: Ksh ${p.cylinder_price.toLocaleString()}</div>
+                        ` : ''}
+                    </td>
+                    <td>
+                        <span class="badge ${badgeClass}">
+                            <i class="fas ${categoryIcon}"></i> ${p.category}
                         </span>
+                        ${p.part_type && p.part_type !== 'N/A' ? `
+                            <div style="font-size:0.7rem; color:var(--text-dim); margin-top:4px;">
+                                ${p.part_type}
+                            </div>
+                        ` : ''}
+                    </td>
+                    <td>
+                        <button class="btn-edit" onclick="editProduct('${p.id}')">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
                     </td>
                 </tr>
             `;
         }).join('');
-        
-        document.getElementById('loadMore').style.display = data.length < filteredSales.length ? 'block' : 'none';
     }
 
-    // Event listeners for filters
-    document.getElementById('paymentFilter').addEventListener('change', (e) => {
-        paymentFilter = e.target.value;
-        applyFilters();
-    });
-
-    document.getElementById('dateSearch').addEventListener('input', (e) => {
-        dateSearchTerm = e.target.value;
-        applyFilters();
-    });
-
-    document.getElementById('itemSearch').addEventListener('input', (e) => {
-        itemSearchTerm = e.target.value;
-        applyFilters();
-    });
-
-    document.getElementById('salesSearch').addEventListener('input', (e) => {
-        quickSearchTerm = e.target.value;
-        applyFilters();
-    });
-
-    document.getElementById('resetFilters').addEventListener('click', () => {
-        paymentFilter = 'all';
-        dateSearchTerm = '';
-        itemSearchTerm = '';
-        quickSearchTerm = '';
+    window.toggleFields = () => {
+        const cat = document.getElementById('prod-category').value;
+        const typeSelect = document.getElementById('prod-type');
         
-        document.getElementById('paymentFilter').value = 'all';
-        document.getElementById('dateSearch').value = '';
-        document.getElementById('itemSearch').value = '';
-        document.getElementById('salesSearch').value = '';
+        // Hide all conditional fields first
+        document.getElementById('type-container').style.display = 'none';
+        document.getElementById('weight-container').style.display = 'none';
+        document.getElementById('cylinder-price-container').style.display = 'none';
+        document.getElementById('min-selling-price-container').style.display = 'none';
+        document.getElementById('tuktuk-container').style.display = 'none';
+        document.getElementById('empty-container').style.display = 'none';
         
-        applyFilters();
-    });
-
-    document.getElementById('loadMore').addEventListener('click', () => { 
-        limit += 50;
-        renderSales(filteredSales.slice(0, limit));
-    });
-
-    window.handleLogout = async () => {
-        if(confirm("Are you sure you want to logout?")) {
-            localStorage.removeItem('pos_session');
-            await supabase.auth.signOut();
-            window.location.href = 'index.html';
+        if (cat === 'Gas') {
+            document.getElementById('weight-container').style.display = 'block';
+            document.getElementById('cylinder-price-container').style.display = 'block';
+            document.getElementById('min-selling-price-container').style.display = 'block';
+            document.getElementById('empty-container').style.display = 'block';
+            document.getElementById('type-container').style.display = 'block';
+            typeSelect.innerHTML = `
+                <option value="Original">Original</option>
+                <option value="Copy">Copy</option>
+                <option value="N/A">N/A</option>
+            `;
+        } else if (cat === 'Tuktuk') {
+            document.getElementById('tuktuk-container').style.display = 'block';
+            document.getElementById('type-container').style.display = 'block';
+            typeSelect.innerHTML = `
+                <option value="Passenger">Passenger</option>
+                <option value="Cargo">Cargo</option>
+                <option value="Spare Part">Spare Part</option>
+            `;
+        } else {
+            document.getElementById('type-container').style.display = 'block';
+            typeSelect.innerHTML = `
+                <option value="Original">Original</option>
+                <option value="Copy">Copy</option>
+                <option value="N/A">N/A</option>
+            `;
         }
     };
 
-    // Initialize on load
-    document.addEventListener('DOMContentLoaded', async function() {
-        await loadBranches();
-        await loadUserProfile();
+    window.openModal = () => {
+        document.getElementById('modalTitle').textContent = 'Add New Product';
+        document.getElementById('prod-id').value = '';
+        document.getElementById('prod-name').value = '';
+        document.getElementById('prod-category').value = 'Spare Part';
+        document.getElementById('prod-stock').value = '';
+        document.getElementById('prod-cost').value = '';
+        document.getElementById('prod-sell').value = '';
+        document.getElementById('prod-empty').value = '';
+        document.getElementById('prod-weight').value = '';
+        document.getElementById('prod-cylinder-price').value = '';
+        document.getElementById('prod-min-sell').value = '';
+        document.getElementById('productModal').style.display = 'flex';
+        toggleFields();
+    };
+
+    window.closeModal = () => {
+        document.getElementById('productModal').style.display = 'none';
+    };
+
+    window.editProduct = (id) => {
+        const p = allProducts.find(x => x.id === id);
+        if (!p) return;
         
-        // Set today's date
-        const today = new Date();
-        document.getElementById('dateRange').textContent = today.toLocaleDateString('en-GB', { 
-            day: 'numeric', month: 'long', year: 'numeric' 
-        });
+        document.getElementById('modalTitle').textContent = 'Edit Product';
+        document.getElementById('prod-id').value = p.id;
+        document.getElementById('prod-name').value = p.name;
+        document.getElementById('prod-category').value = p.category;
+        document.getElementById('prod-stock').value = p.stock_quantity;
+        document.getElementById('prod-cost').value = p.cost_price;
+        document.getElementById('prod-sell').value = p.selling_price;
+        document.getElementById('prod-empty').value = p.empty_quantity || 0;
+        document.getElementById('prod-weight').value = p.weight_category || '';
+        document.getElementById('prod-cylinder-price').value = p.cylinder_price || '';
+        document.getElementById('prod-min-sell').value = p.min_selling_price || '';
         
-        // Set default branch selector
-        document.getElementById('branchSelector').value = 'all';
-        selectedBranchId = null;
+        // Set the type field based on category
+        if (p.category === 'Tuktuk') {
+            document.getElementById('prod-type').value = p.part_type || 'Passenger';
+        } else {
+            document.getElementById('prod-type').value = p.part_type || 'Original';
+        }
         
-        await fetchSales();
-    });
+        // Set TUKTUK type if exists
+        if (p.tuktuk_type) {
+            document.getElementById('tuktuk-type').value = p.tuktuk_type;
+        }
+        
+        document.getElementById('productModal').style.display = 'flex';
+        toggleFields();
+    };
+
+    window.saveProduct = async () => {
+        const id = document.getElementById('prod-id').value;
+        const category = document.getElementById('prod-category').value;
+        const branchId = getCurrentBranchId();
+        
+        if (!branchId) {
+            alert("Branch information not found. Please log out and log in again.");
+            return;
+        }
+        
+        const data = {
+            name: document.getElementById('prod-name').value,
+            category: category,
+            part_type: document.getElementById('prod-type').value,
+            supplier_id: document.getElementById('prod-supplier').value || null,
+            weight_category: category === 'Gas' ? document.getElementById('prod-weight').value : null,
+            stock_quantity: parseInt(document.getElementById('prod-stock').value) || 0,
+            cost_price: parseFloat(document.getElementById('prod-cost').value) || 0,
+            selling_price: parseFloat(document.getElementById('prod-sell').value) || 0,
+            empty_quantity: category === 'Gas' ? (parseInt(document.getElementById('prod-empty').value) || 0) : 0,
+            branch_id: branchId
+        };
+
+        // Add gas-specific fields
+        if (category === 'Gas') {
+            data.cylinder_price = parseInt(document.getElementById('prod-cylinder-price').value) || 0;
+            data.min_selling_price = parseFloat(document.getElementById('prod-min-sell').value) || 0;
+        }
+
+        // Add TUKTUK type if category is Tuktuk
+        if (category === 'Tuktuk') {
+            data.tuktuk_type = document.getElementById('tuktuk-type').value;
+        }
+
+        const { error } = id 
+            ? await supabase.from('products').update(data).eq('id', id)
+            : await supabase.from('products').insert([data]);
+
+        if (error) {
+            alert("Error: " + error.message);
+        } else {
+            closeModal();
+            await fetchProducts();
+            alert(id ? "✅ Product updated successfully!" : "✅ Product added successfully!");
+        }
+    };
+
+    // ==================== EVENT LISTENERS ====================
+
+    document.getElementById('searchBar').addEventListener('input', applyFilters);
+
+    // ==================== INITIALIZATION ====================
+
+    async function init() {
+        const profile = await loadUserProfile();
+        if (profile) {
+            await loadSuppliers();
+            await fetchProducts();
+        }
+    }
+
+    init();
 </script>
 </body>
 </html>
