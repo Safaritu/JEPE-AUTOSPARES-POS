@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="robots" content="noindex, nofollow">
+    <title>JEPE AUTOSPARES | Internal Portal</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { 
+            --primary: #4f46e5; 
+            --accent: #818cf8;
+            --bg: #0b1120; 
+            --glass: rgba(30, 41, 59, 0.75); 
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: radial-gradient(circle at top left, #1e1b4b, #0b1120); 
+            color: white; 
+            margin: 0; 
+            display: flex;
+            justify-content: center;
+            align-items: center; 
+            min-height: 100vh; 
+            width: 100vw;
+            overflow-x: hidden; 
+            position: relative;
+            padding: 15px;
+        }
+
+        #welcome-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #0b1120;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            text-align: center;
+            transition: opacity 0.5s ease;
+        }
+
+        .welcome-content h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #ffffff, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 20px 15px 10px;
+            text-transform: uppercase;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(99, 102, 241, 0.2);
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .bg-decor {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; pointer-events: none;
+        }
+
+        .bg-img {
+            position: absolute;
+            filter: brightness(0.4) contrast(1.2);
+            border-radius: 20px;
+            animation: float 8s ease-in-out infinite;
+            opacity: 0.15;
+        }
+
+        .img-bike { top: 5%; left: -10%; width: 200px; --rot: -10deg; }
+        .img-exhaust { bottom: 10%; right: -5%; width: 150px; --rot: 20deg; animation-delay: 3s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(var(--rot)); }
+            50% { transform: translateY(-20px) rotate(calc(var(--rot) + 5deg)); }
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 420px;
+            z-index: 10;
+        }
+
+        .auth-card { 
+            background: var(--glass); 
+            padding: 30px 25px;
+            border-radius: 28px; 
+            width: 100%; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); 
+            backdrop-filter: blur(15px); 
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .logo-container {
+            width: 80px; height: 80px;
+            margin: 0 auto 15px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .logo-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.5)); }
+
+        .brand-name {
+            font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; margin: 0 0 5px;
+            background: linear-gradient(to right, #ffffff, #818cf8, #ffffff);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+
+        h2 { font-weight: 600; margin: 5px 0 2px; font-size: 1rem; color: #f8fafc; }
+        .tagline { color: #94a3b8; font-size: 0.75rem; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+
+        input, select, button { 
+            width: 100%; padding: 14px; margin: 8px 0; 
+            border-radius: 12px; border: 1px solid var(--border); 
+            box-sizing: border-box; font-size: 0.95rem; transition: all 0.3s;
+        }
+
+        input, select { 
+            background: rgba(15, 23, 42, 0.8); 
+            color: white; 
+            outline: none; 
+        }
+        
+        input:focus, select:focus { 
+            border-color: var(--primary); 
+            background: rgba(15, 23, 42, 1); 
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+        
+        select option { 
+            background: #1e293b; 
+            color: white; 
+            padding: 10px;
+        }
+
+        button { 
+            background: linear-gradient(135deg, var(--primary), #4f46e5); 
+            color: white; 
+            font-weight: 800; 
+            cursor: pointer; 
+            border: none; 
+            margin-top: 15px; 
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+        }
+        
+        button:disabled { 
+            opacity: 0.6; 
+            cursor: not-allowed; 
+            transform: none;
+        }
+
+        .reset-link-container { 
+            display: flex; 
+            justify-content: flex-end; 
+            width: 100%; 
+            margin: 5px 0 10px; 
+        }
+        
+        .forgot-btn { 
+            background: none; 
+            border: none; 
+            color: #94a3b8; 
+            font-size: 0.8rem; 
+            cursor: pointer; 
+            width: auto; 
+            padding: 5px; 
+            text-transform: none;
+            margin: 0;
+        }
+        
+        .forgot-btn:hover {
+            color: var(--primary);
+            background: none;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .forgot-btn b { color: var(--accent); }
+
+        .banking-section { 
+            margin-top: 20px; 
+            padding-top: 15px; 
+            border-top: 1px solid var(--border); 
+        }
+        
+        .banking-label { 
+            font-size: 0.65rem; 
+            color: #64748b; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            margin-bottom: 6px; 
+        }
+        
+        .bank-text { 
+            font-size: 0.8rem; 
+            font-weight: 700; 
+            color: var(--accent); 
+        }
+
+        .toggle-link { 
+            text-align: center; 
+            font-size: 0.9rem; 
+            margin-top: 15px; 
+            cursor: pointer; 
+            color: #94a3b8; 
+            transition: color 0.2s;
+        }
+        
+        .toggle-link:hover {
+            color: white;
+        }
+        
+        .toggle-link b { 
+            color: var(--primary); 
+            font-weight: 800;
+        }
+
+        .saftech-footer {
+            margin-top: 20px; 
+            text-align: center; 
+            padding: 15px;
+            border-radius: 20px; 
+            background: rgba(255, 255, 255, 0.03);
+            width: 100%; 
+            border: 1px solid var(--border);
+        }
+        
+        .saftech-footer h4 { 
+            font-size: 0.65rem; 
+            text-transform: uppercase; 
+            color: var(--primary); 
+            margin: 0 0 5px; 
+            letter-spacing: 1px;
+        }
+        
+        .contact-info { 
+            font-weight: 700; 
+            color: #ffffff; 
+            margin-top: 5px; 
+            font-size: 0.9rem; 
+        }
+
+        .hidden { display: none !important; }
+        
+        /* Branch selection styling */
+        .branch-note {
+            background: rgba(79, 70, 229, 0.15);
+            border-left: 4px solid var(--primary);
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin: 15px 0 10px;
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            text-align: left;
+        }
+        
+        .branch-note i {
+            margin-right: 8px;
+            color: var(--primary);
+        }
+        
+        .form-hint {
+            font-size: 0.7rem;
+            color: #64748b;
+            text-align: left;
+            margin: 5px 0 10px;
+            padding-left: 5px;
+        }
+        
+        .success-message {
+            background: rgba(16, 185, 129, 0.15);
+            border-left: 4px solid var(--success);
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            color: #d1fae5;
+            text-align: left;
+        }
+        
+        .success-message i {
+            color: var(--success);
+            margin-right: 8px;
+        }
+        
+        .error-message {
+            background: rgba(239, 68, 68, 0.15);
+            border-left: 4px solid var(--danger);
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            color: #fee2e2;
+            text-align: left;
+        }
+        
+        .required {
+            color: var(--danger);
+            margin-left: 2px;
+        }
+
+        /* ===== SUBSCRIPTION MODAL STYLES ===== */
+        .subscription-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        }
+
+        .subscription-prompt {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            color: #333;
+        }
+
+        .plan-highlight {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 20px;
+            border: 2px solid var(--primary);
+        }
+
+        .price {
+            font-size: 48px;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 20px 0;
+        }
+
+        .price span {
+            font-size: 18px;
+            color: #666;
+        }
+
+        .features {
+            text-align: left;
+            margin: 20px 0;
+            list-style: none;
+            padding: 0;
+        }
+
+        .features li {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            color: #555;
+        }
+
+        .btn-trial {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 20px 0;
+            transition: background 0.3s;
+            width: 100%;
+            font-weight: bold;
+        }
+
+        .btn-trial:hover {
+            background: var(--accent);
+        }
+
+        .trial-note {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .subscription-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            color: #333;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            background: none;
+            border: none;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .close-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .plans-container {
+            display: flex;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .plan-card {
+            flex: 1;
+            padding: 30px;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            position: relative;
+            transition: transform 0.3s;
+        }
+
+        .plan-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .plan-card.recommended {
+            border: 2px solid var(--primary);
+            background: #f9fff9;
+        }
+
+        .badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            color: #555;
+        }
+
+        .btn-select {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-select:hover {
+            background: var(--accent);
+        }
+
+        .btn-manage {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+
+        .secure-note {
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 11000;
+            backdrop-filter: blur(5px);
+        }
+
+        .loader-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            color: #333;
+        }
+
+        .spinner-small {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        .subscription-badge {
+            background: var(--warning);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            margin-left: 10px;
+            display: inline-block;
+        }
+
+        .subscription-badge.active {
+            background: var(--success);
+        }
+
+        @media (max-width: 768px) {
+            .plans-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="welcome-overlay" class="hidden">
+    <div class="welcome-content">
+        <div class="spinner"></div>
+        <h1 id="welcome-name">WELCOME</h1>
+        <p id="welcome-role">Initializing Workspace...</p>
+    </div>
+</div>
+
+<div class="bg-decor">
+    <img src="https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=600" class="bg-img img-bike" alt="Decor">
+    <img src="https://images.unsplash.com/photo-1591637333184-19aa84b3e01f?q=80&w=400" class="bg-img img-exhaust" alt="Decor">
+</div>
+
+<div class="container">
+    <div class="auth-card">
+        <div class="logo-container">
+            <svg class="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="45" stroke="#1e293b" stroke-width="8" fill="none"/>
+                <path d="M60 30H45V60C45 68 52 70 55 70C60 70 65 65 65 60V55" stroke="url(#logo-grad)" stroke-width="10" stroke-linecap="round" fill="none"/>
+                <defs>
+                    <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#4f46e5;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#818cf8;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+
+        <h1 class="brand-name">JEPE AUTOSPARES</h1>
+        <h2 id="auth-title">Staff Sign In</h2>
+        <p class="tagline" id="auth-subtitle">Premium Parts Management</p>
+        
+        <div id="message-container"></div>
+        
+        <input type="email" id="email" placeholder="Your Email" autocomplete="email">
+        <input type="password" id="password" placeholder="Password" autocomplete="current-password">
+        
+        <div id="forgot-link" class="reset-link-container">
+            <button type="button" class="forgot-btn" onclick="handleForgotPassword()">
+                <i class="fas fa-key"></i> Forgot Password? <b>Reset</b>
+            </button>
+        </div>
+
+        <div id="register-fields" class="hidden">
+            <select id="role" class="branch-selector">
+                <option value="" disabled selected>Select Role *</option>
+                <option value="cashier">👤 Cashier</option>
+                <option value="admin">👑 Administrator</option>
+            </select>
+            
+            <select id="branch" class="branch-selector">
+                <option value="" disabled selected>Select Branch *</option>
+                <option value="5326e4c6-6d0d-4500-83d9-f322c859b9fb">🏪 MUTOMO BRANCH</option>
+                <option value="ea91a65e-7c6e-43fd-b71e-3f2cc4f714a9">🏪 KITUI BRANCH</option>
+            </select>
+            <div class="form-hint" id="branch-hint">
+                <i class="fas fa-info-circle"></i> You will be assigned to this branch
+            </div>
+            
+            <div class="branch-note" id="branch-note">
+                <i class="fas fa-store"></i> 
+                <span id="branch-note-text">Cashiers must select their branch. You will only have access to this branch.</span>
+            </div>
+        </div>
+
+        <button id="main-btn" onclick="handleAuth()">
+            <i class="fas fa-sign-in-alt"></i> <span>Sign In</span>
+        </button>
+        
+        <div class="toggle-link" onclick="toggleMode()" id="toggle-text">
+            New staff? <b>Create Account</b>
+        </div>
+
+        <div class="banking-section">
+            <div class="banking-label">Accepted Payment Channels</div>
+            <div class="bank-text">💳 M-PESA | CASH | KCB | EQUITY</div>
+        </div>
+    </div>
+
+    <div class="saftech-footer">
+        <h4>⚡ System by SAFTECH SOLUTIONS</h4>
+        <p style="font-size: 0.75rem; margin:5px 0; color: #94a3b8;">Engineered by <b>ALEX SAFARI</b></p>
+        <p class="contact-info"><i class="fas fa-phone"></i> 0794963537 | 0707441702</p>
+    </div>
+</div>
+
+<script type="module">
+    // 🔴 PASTE YOUR SUPABASE CONFIGURATION HERE
+    // These should match what's in your auth.js
+    const SUPABASE_URL = 'https://hoqenpnkmnsfyqsvfvab.supabase.co'; // Your Supabase URL
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhvcWVucG5rbW5zZnlxc3ZmdmFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzk5MTUsImV4cCI6MjA4MjUxNTkxNX0.qKqv6NEyCU5ZMNj6Z34kpCiY7NoUzzBggiPSRJdTz0Y'; // Your Supabase anon key
+    
+    // 🔴 PASTE YOUR SUBSCRIPTION CONFIGURATION HERE
+    const WORKER_URL = 'https://pos-subscription-worker.safarialex64.workers.dev'; // Your Cloudflare Worker URL
+    const PRICE_ID = 'price_1T3i7oHWkyRrSzCDqsXociXy'; // 🔴 REPLACE WITH YOUR STRIPE PRICE ID
+    const ADMIN_EMAIL = 'safarialex64@gmail.com'; // 🔴 REPLACE WITH YOUR EMAIL
+
+    import { supabase, BRANCHES } from './auth.js';
+
+    let isLogin = true;
+
+    function showMessage(text, type = 'error') {
+        const container = document.getElementById('message-container');
+        const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
+        const bgClass = type === 'success' ? 'success-message' : 'error-message';
+        
+        container.innerHTML = `
+            <div class="${bgClass}">
+                <i class="fas fa-${icon}"></i> ${text}
+            </div>
+        `;
+        
+        setTimeout(() => {
+            container.innerHTML = '';
+        }, 5000);
+    }
+
+    window.toggleMode = () => {
+        isLogin = !isLogin;
+        document.getElementById('auth-title').innerText = isLogin ? "Staff Sign In" : "Staff Registration";
+        document.getElementById('register-fields').classList.toggle('hidden', isLogin);
+        document.getElementById('forgot-link').classList.toggle('hidden', !isLogin);
+        
+        const btnIcon = document.getElementById('main-btn').querySelector('i');
+        const btnSpan = document.getElementById('main-btn').querySelector('span');
+        
+        if (isLogin) {
+            btnIcon.className = 'fas fa-sign-in-alt';
+            btnSpan.innerText = 'Sign In';
+        } else {
+            btnIcon.className = 'fas fa-user-plus';
+            btnSpan.innerText = 'Register Now';
+        }
+        
+        document.getElementById('toggle-text').innerHTML = isLogin 
+            ? 'New staff? <b>Create Account</b>' 
+            : 'Already have an account? <b>Sign In</b>';
+    };
+
+    // Update branch note based on role selection
+    document.getElementById('role').addEventListener('change', (e) => {
+        const role = e.target.value;
+        const noteText = document.getElementById('branch-note-text');
+        const branchHint = document.getElementById('branch-hint');
+        
+        if (role === 'admin') {
+            noteText.innerText = 'Administrators can access all branches. Branch selection is for reference only.';
+            branchHint.innerHTML = '<i class="fas fa-globe"></i> Branch is for reference - you will have access to all branches';
+        } else {
+            noteText.innerText = 'Cashiers must select their branch. You will only have access to this branch.';
+            branchHint.innerHTML = '<i class="fas fa-store"></i> You will be assigned to this branch';
+        }
+    });
+
+    window.handleAuth = async () => {
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const role = document.getElementById('role')?.value;
+        const branchId = document.getElementById('branch')?.value;
+        const btn = document.getElementById('main-btn');
+
+        if (!email || !password) {
+            showMessage("Please fill all fields", 'error');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> PROCESSING...';
+
+        try {
+            if (isLogin) {
+                // LOGIN
+                const { data, error } = await supabase.auth.signInWithPassword({ 
+                    email, 
+                    password 
+                });
+                
+                if (error) throw error;
+                
+                // Check if user has profile
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select(`
+                        *,
+                        branches (
+                            name,
+                            code
+                        )
+                    `)
+                    .eq('id', data.user.id)
+                    .single();
+                
+                if (profileError || !profile) {
+                    showMessage("Profile not found. Please contact admin.", 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+                    return;
+                }
+                
+                await checkRoleAndRedirect(data.user.id);
+                
+            } else {
+                // SIGN UP
+                if (!role) {
+                    showMessage("Please select your role", 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-user-plus"></i> Register Now';
+                    return;
+                }
+                
+                if (!branchId) {
+                    showMessage("Please select your branch", 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-user-plus"></i> Register Now';
+                    return;
+                }
+
+                // Sign up the user - profile will be created by database trigger
+                const { data, error } = await supabase.auth.signUp({ 
+                    email, 
+                    password,
+                    options: {
+                        data: { 
+                            role: role, 
+                            branch_id: branchId 
+                        },
+                        emailRedirectTo: window.location.origin + '/cashier.html'
+                    }
+                });
+                
+                if (error) throw error;
+
+                if (data.user) {
+                    // Don't try to create profile here - the database trigger will handle it
+                    showMessage(
+                        '✅ Registration successful! Please check your email to confirm your account. You will be redirected after confirmation.', 
+                        'success'
+                    );
+                    
+                    // Clear form
+                    document.getElementById('email').value = '';
+                    document.getElementById('password').value = '';
+                    
+                    // Switch back to login mode after 3 seconds
+                    setTimeout(() => {
+                        window.toggleMode();
+                    }, 3000);
+                }
+            }
+        } catch (err) {
+            showMessage(err.message, 'error');
+        } finally {
+            if (!isLogin) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-user-plus"></i> Register Now';
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+            }
+        }
+    };
+
+    // ===== SUBSCRIPTION MANAGER =====
+    class SubscriptionManager {
+        constructor() {
+            this.workerUrl = WORKER_URL;
+            this.plans = [
+                {
+                    id: PRICE_ID,
+                    name: 'Pro POS - Multi-Branch',
+                    price: 79,
+                    interval: 'month',
+                    features: [
+                        '2 branches included',
+                        'Unlimited cashiers',
+                        'Sales analytics',
+                        'Inventory management',
+                        'Multi-branch reporting',
+                        'Email support'
+                    ],
+                    recommended: true
+                }
+            ];
+        }
+
+        async checkAdminSubscription(userId) {
+            try {
+                const response = await fetch(`${this.workerUrl}/check-subscription?userId=${userId}`);
+                const data = await response.json();
+                return data.hasActiveSubscription || false;
+            } catch (error) {
+                console.error('Subscription check failed:', error);
+                return false;
+            }
+        }
+
+        showSubscriptionPrompt() {
+            // Don't show if already shown
+            if (document.querySelector('.subscription-overlay')) return;
+
+            const overlay = document.createElement('div');
+            overlay.className = 'subscription-overlay';
+            overlay.innerHTML = `
+                <div class="subscription-prompt">
+                    <h2>🚀 Start Your 14-Day Free Trial</h2>
+                    <p>You're just one step away from managing your branches professionally!</p>
+                    
+                    <div class="plan-highlight">
+                        <h3>${this.plans[0].name}</h3>
+                        <div class="price">$${this.plans[0].price}<span>/${this.plans[0].interval}</span></div>
+                        <ul class="features">
+                            ${this.plans[0].features.map(f => `<li>✓ ${f}</li>`).join('')}
+                        </ul>
+                        <button onclick="subscriptionManager.startCheckout('${this.plans[0].id}')" class="btn-trial">
+                            Start Free Trial
+                        </button>
+                        <p class="trial-note">No credit card required for trial</p>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(overlay);
+        }
+
+        async startCheckout(priceId) {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                if (!user) {
+                    showMessage('Please log in first', 'error');
+                    return;
+                }
+
+                this.showLoading('Redirecting to secure payment...');
+
+                const response = await fetch(`${this.workerUrl}/create-checkout`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        priceId,
+                        userId: user.id,
+                    }),
+                });
+
+                const data = await response.json();
+                
+                if (data.url) {
+                    window.location.href = data.url;
+                } else {
+                    throw new Error('No checkout URL received');
+                }
+            } catch (error) {
+                console.error('Checkout error:', error);
+                showMessage('Failed to start checkout. Please try again.', 'error');
+                this.hideLoading();
+            }
+        }
+
+        showLoading(message) {
+            const loader = document.createElement('div');
+            loader.className = 'loading-overlay';
+            loader.id = 'payment-loader';
+            loader.innerHTML = `
+                <div class="loader-content">
+                    <div class="spinner-small"></div>
+                    <p>${message}</p>
+                </div>
+            `;
+            document.body.appendChild(loader);
+        }
+
+        hideLoading() {
+            const loader = document.getElementById('payment-loader');
+            if (loader) loader.remove();
+        }
+    }
+
+    const subscriptionManager = new SubscriptionManager();
+    window.subscriptionManager = subscriptionManager;
+
+    async function checkRoleAndRedirect(userId) {
+        const { data: profile, error } = await supabase
+            .from('profiles')
+            .select(`
+                role, 
+                branch_id,
+                branches (
+                    name,
+                    code
+                )
+            `)
+            .eq('id', userId)
+            .single();
+        
+        if (error) {
+            console.error("Error fetching profile:", error);
+            showMessage("Profile not found. Please contact admin.", 'error');
+            return;
+        }
+        
+        if (profile) {
+            // Check if user is admin and has subscription
+            if (profile.role === 'admin') {
+                const hasSubscription = await subscriptionManager.checkAdminSubscription(userId);
+                
+                if (!hasSubscription) {
+                    // Show subscription prompt for admin
+                    setTimeout(() => {
+                        subscriptionManager.showSubscriptionPrompt();
+                    }, 1000);
+                    return; // Don't redirect yet
+                }
+            }
+
+            const overlay = document.getElementById('welcome-overlay');
+            overlay.classList.remove('hidden');
+            
+            const branchName = profile.branches?.name || '';
+            const roleUpper = profile.role.toUpperCase();
+            
+            document.getElementById('welcome-name').innerText = `WELCOME ${roleUpper}!`;
+            document.getElementById('welcome-role').innerText = profile.role === 'admin' 
+                ? 'Administrator Access - All Branches' 
+                : (branchName ? `Assigned to ${branchName}` : 'Loading workspace...');
+            
+            // Store session in localStorage for cross-page access
+            const session = {
+                user: { id: userId },
+                profile: profile,
+                branch: profile.branches,
+                role: profile.role
+            };
+            localStorage.setItem('pos_session', JSON.stringify(session));
+            
+            setTimeout(() => {
+                window.location.href = (profile.role === 'admin') ? 'admin.html' : 'cashier.html';
+            }, 2000);
+        }
+    }
+
+    window.handleForgotPassword = async () => {
+        const email = prompt("Enter your registered email address:");
+        if (!email) return;
+
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin + '/reset-password.html',
+        });
+
+        if (error) {
+            showMessage(error.message, 'error');
+        } else {
+            showMessage("✅ Password reset link has been sent to your email!", 'success');
+        }
+    };
+
+    // Check if user is already logged in
+    async function checkExistingSession() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            await checkRoleAndRedirect(user.id);
+        }
+    }
+    
+    // Check for email confirmation redirect
+    async function handleEmailConfirmation() {
+        const hash = window.location.hash;
+        if (hash && hash.includes('access_token')) {
+            // User just confirmed email, show success message
+            showMessage('✅ Email confirmed! You can now sign in.', 'success');
+            // Clear the hash
+            window.location.hash = '';
+        }
+    }
+    
+    handleEmailConfirmation();
+    checkExistingSession();
+</script>
+</body>
+</html>
