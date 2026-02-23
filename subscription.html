@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JEPE AUTOSPARES | Subscription Plans</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -20,7 +19,6 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 40px 20px;
-            color: #333;
         }
 
         .container {
@@ -56,7 +54,7 @@
             border-radius: 20px;
             padding: 30px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            transition: transform 0.3s, box-shadow 0.3s;
+            transition: transform 0.3s;
             position: relative;
             display: flex;
             flex-direction: column;
@@ -214,6 +212,14 @@
             background: rgba(255,255,255,0.3);
         }
 
+        .loading {
+            text-align: center;
+            color: white;
+            padding: 50px;
+            font-size: 1.2rem;
+            grid-column: 1 / -1;
+        }
+
         .error-message {
             background: #fee2e2;
             border-left: 4px solid #ef4444;
@@ -276,15 +282,15 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚀 Choose Your Subscription Plan</h1>
+            <h1>Choose Your Subscription Plan</h1>
             <p>Select the perfect plan for your business needs</p>
         </div>
 
         <div id="subscription-status"></div>
         <div id="message-container"></div>
 
-        <div class="plans-grid" id="plans-container">
-            <!-- Plans will be loaded here -->
+        <div id="plans-container" class="plans-grid">
+            <div class="loading">Loading plans...</div>
         </div>
 
         <div style="text-align: center;">
@@ -294,22 +300,21 @@
         </div>
     </div>
 
-    <script type="module">
-        // 🔴 YOUR SUPABASE CONFIGURATION
+    <script>
+        // Your Supabase configuration
         const SUPABASE_URL = 'https://hoqenpnkmnsfyqsvfvab.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhvcWVucG5rbW5zZnlxc3ZmdmFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzk5MTUsImV4cCI6MjA4MjUxNTkxNX0.qKqv6NEyCU5ZMNj6Z34kpCiY7NoUzzBggiPSRJdTz0Y';
-        
-        // 🔴 YOUR SUBSCRIPTION CONFIGURATION
         const WORKER_URL = 'https://pos-subscription-worker.safarialex64.workers.dev';
-        
-        // 🔴 REPLACE WITH YOUR ACTUAL PRICE IDs FROM STRIPE
+
+        // 🔴 REPLACE THESE WITH YOUR ACTUAL PRICE IDs FROM STRIPE
         const PRICE_IDS = {
-            simple: 'price_1T3vLWHWkyRrSzCDQUq9XJue',        // $1/month plan
-            pro: 'price_1T3vG8HWkyRrSzCD85cEsVVc',              // $2/month plan
-            business: 'price_1T3vH0HWkyRrSzCDMRHjJlIY',          // $3/month plan
-            enterprise: 'price_1T3vHsHWkyRrSzCDtzfENKav'       // $4/month plan
+            simple: 'price_1T3vLWHWkyRrSzCDQUq9XJue',        // Your $1 plan Price ID
+            pro: 'price_1T3vG8HWkyRrSzCD85cEsVVc',              // Your $2 plan Price ID
+            business: 'price_1T3vH0HWkyRrSzCDMRHjJlIs',          // Your $3 plan Price ID
+            enterprise: 'price_1T3vHsHWkyRrSzCDtzfENKav'       // Your $4 plan Price ID
         };
 
+        // Initialize Supabase
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // Plan details
@@ -461,7 +466,7 @@
                     <ul class="features">
                         ${plan.features.map(f => `<li><i class="fas fa-check-circle"></i> ${f}</li>`).join('')}
                     </ul>
-                    <button class="btn-subscribe" onclick="window.startCheckout('${plan.id}')">
+                    <button class="btn-subscribe" onclick="startCheckout('${plan.id}')">
                         Subscribe Now
                     </button>
                 </div>
@@ -486,9 +491,6 @@
                 `;
             }
         }
-
-        // Make startCheckout available globally
-        window.startCheckout = startCheckout;
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', async () => {
