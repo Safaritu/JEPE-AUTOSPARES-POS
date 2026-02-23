@@ -212,14 +212,6 @@
             background: rgba(255,255,255,0.3);
         }
 
-        .loading {
-            text-align: center;
-            color: white;
-            padding: 50px;
-            font-size: 1.2rem;
-            grid-column: 1 / -1;
-        }
-
         .error-message {
             background: #fee2e2;
             border-left: 4px solid #ef4444;
@@ -289,9 +281,7 @@
         <div id="subscription-status"></div>
         <div id="message-container"></div>
 
-        <div id="plans-container" class="plans-grid">
-            <div class="loading">Loading plans...</div>
-        </div>
+        <div id="plans-container" class="plans-grid"></div>
 
         <div style="text-align: center;">
             <a href="admin.html" class="back-link">
@@ -301,21 +291,21 @@
     </div>
 
     <script>
-        // Your Supabase configuration
+        // 🔴 YOUR SUPABASE CONFIGURATION
         const SUPABASE_URL = 'https://hoqenpnkmnsfyqsvfvab.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhvcWVucG5rbW5zZnlxc3ZmdmFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzk5MTUsImV4cCI6MjA4MjUxNTkxNX0.qKqv6NEyCU5ZMNj6Z34kpCiY7NoUzzBggiPSRJdTz0Y';
         const WORKER_URL = 'https://pos-subscription-worker.safarialex64.workers.dev';
 
-        // 🔴 REPLACE THESE WITH YOUR ACTUAL PRICE IDs FROM STRIPE
+        // 🔴 REPLACE WITH YOUR ACTUAL PRICE IDs FROM STRIPE
         const PRICE_IDS = {
-            simple: 'price_1T3vLWHWkyRrSzCDQUq9XJue',        // Your $1 plan Price ID
-            pro: 'price_1T3vG8HWkyRrSzCD85cEsVVc',              // Your $2 plan Price ID
-            business: 'price_1T3vH0HWkyRrSzCDMRHjJlIs',          // Your $3 plan Price ID
-            enterprise: 'price_1T3vHsHWkyRrSzCDtzfENKav'       // Your $4 plan Price ID
+            simple: 'price_1T3vLWHWkyRrSzCDQUq9XJue',  // Your $1 plan Price ID
+            pro: 'price_1T3vG8HWkyRrSzCD85cEsVVc',     // Your $2 plan Price ID
+            business: 'price_1T3vH0HWkyRrSzCDMRHjJlIY', // Your $3 plan Price ID
+            enterprise: 'price_1T3vHsHWkyRrSzCDtzfENKav' // Your $4 plan Price ID
         };
 
-        // Initialize Supabase
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Initialize Supabase - USING A DIFFERENT VARIABLE NAME to avoid conflict
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // Plan details
         const plans = [
@@ -406,10 +396,10 @@
         }
 
         async function checkCurrentSubscription() {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return null;
-
             try {
+                const { data: { user } } = await supabaseClient.auth.getUser();
+                if (!user) return null;
+
                 const response = await fetch(`${WORKER_URL}/check-subscription?userId=${user.id}`);
                 const data = await response.json();
                 return data.subscription;
@@ -421,7 +411,7 @@
 
         async function startCheckout(priceId) {
             try {
-                const { data: { user } } = await supabase.auth.getUser();
+                const { data: { user } } = await supabaseClient.auth.getUser();
                 
                 if (!user) {
                     showMessage('Please log in first', 'error');
@@ -457,20 +447,32 @@
         function renderPlans() {
             const container = document.getElementById('plans-container');
             
-            container.innerHTML = plans.map(plan => `
-                <div class="plan-card ${plan.recommended ? 'recommended' : ''}">
-                    ${plan.recommended ? '<div class="badge">RECOMMENDED</div>' : ''}
-                    <div class="plan-name">${plan.name}</div>
-                    <div class="plan-price">$${plan.price}<span>/month</span></div>
-                    <div class="plan-description">${plan.description}</div>
-                    <ul class="features">
-                        ${plan.features.map(f => `<li><i class="fas fa-check-circle"></i> ${f}</li>`).join('')}
-                    </ul>
-                    <button class="btn-subscribe" onclick="startCheckout('${plan.id}')">
-                        Subscribe Now
-                    </button>
-                </div>
-            `).join('');
+            let html = '';
+            
+            plans.forEach(plan => {
+                html += `
+                    <div class="plan-card ${plan.recommended ? 'recommended' : ''}">
+                        ${plan.recommended ? '<div class="badge">RECOMMENDED</div>' : ''}
+                        <div class="plan-name">${plan.name}</div>
+                        <div class="plan-price">$${plan.price}<span>/month</span></div>
+                        <div class="plan-description">${plan.description}</div>
+                        <ul class="features">
+                `;
+                
+                plan.features.forEach(feature => {
+                    html += `<li><i class="fas fa-check-circle"></i> ${feature}</li>`;
+                });
+                
+                html += `
+                        </ul>
+                        <button class="btn-subscribe" onclick="startCheckout('${plan.id}')">
+                            Subscribe Now
+                        </button>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
         }
 
         async function displayCurrentSubscription() {
@@ -492,10 +494,22 @@
             }
         }
 
+        // Make startCheckout available globally
+        window.startCheckout = startCheckout;
+
         // Initialize the page
         document.addEventListener('DOMContentLoaded', async () => {
             renderPlans();
             await displayCurrentSubscription();
+
+            // Check for payment success from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('payment') === 'success') {
+                showMessage('Payment successful! Your subscription is now active.', 'success');
+                setTimeout(() => {
+                    window.location.href = 'admin.html';
+                }, 3000);
+            }
         });
     </script>
 </body>
