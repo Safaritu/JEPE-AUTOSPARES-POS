@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <!-- ✅ CONTENT SECURITY POLICY -->
+  <meta http-equiv="Content-Security-Policy"
+  content="
+  default-src 'self';
+  script-src 'self' https://cdn.jsdelivr.net https://js.paystack.co 'unsafe-inline';
+  style-src 'self' 'unsafe-inline';
+  connect-src 'self' https://*.supabase.co https://api.paystack.co http://127.0.0.1:* http://localhost:*;
+  frame-src https://js.paystack.co;
+  object-src 'none';
+  base-uri 'self';
+  form-action 'self';
+  ">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Subscription Plans</title>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Paystack -->
+  <script src="https://js.paystack.co/v1/inline.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      text-align: center;
+      padding: 40px;
+    }
+
+    h2 {
+      margin-bottom: 30px;
+    }
+
+    .plans {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      width: 220px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    button {
+      background: #16a34a;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+      width: 100%;
+    }
+
+    button:hover {
+      background: #15803d;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Choose Your Subscription Plan</h2>
+
+<div class="plans">
+
+  <div class="card">
+    <h3>Basic</h3>
+    <p>$1 / month</p>
+    <button onclick="subscribe('PLN_zaa1ln19c1kujn2','Basic',1)">Subscribe</button>
+  </div>
+
+  <div class="card">
+    <h3>Standard</h3>
+    <p>$2 / month</p>
+    <button onclick="subscribe('PLN_oa398ckpfg8xylm','Standard',2)">Subscribe</button>
+  </div>
+
+  <div class="card">
+    <h3>Pro</h3>
+    <p>$3 / month</p>
+    <button onclick="subscribe('PLN_68pz4jq59bnh46t','Pro',3)">Subscribe</button>
+  </div>
+
+  <div class="card">
+    <h3>Premium</h3>
+    <p>$4 / month</p>
+    <button onclick="subscribe('PLN_bl3x0ydyoaldca9','Premium',4)">Subscribe</button>
+  </div>
+
+</div>
+
+<script>
+  // ===============================
+  // CONFIG
+  // ===============================
+
+  const SUPABASE_URL = "https://hoqenpnkmnsfyqsvfvab.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhvcWVucG5rbW5zZnlxc3ZmdmFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5Mzk5MTUsImV4cCI6MjA4MjUxNTkxNX0.qKqv6NEyCU5ZMNj6Z34kpCiY7NoUzzBggiPSRJdTz0Y"; // keep your real one
+  const PAYSTACK_PUBLIC_KEY = "pk_test_5b177b2e99efec5a3a6df34adb8c47f82ed8eaa5";
+
+  const supabaseClient = supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+
+  // ===============================
+  // CHECK LOGIN
+  // ===============================
+
+  async function checkLogin() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) {
+      window.location.href = "index.html";
+    }
+  }
+
+  checkLogin();
+
+  // ===============================
+  // SUBSCRIBE FUNCTION
+  // ===============================
+
+  async function subscribe(planCode, planName, amount) {
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+
+    if (!user) {
+      window.location.href = "index.html";
+      return;
+    }
+
+    const reference = "SUB_" + Date.now();
+
+    // Save pending subscription
+    const { error } = await supabaseClient
+      .from("subscriptions")
+      .insert({
+        user_id: user.id,
+        plan_code: planCode,
+        plan_name: planName,
+        amount: amount,
+        payment_reference: reference,
+        payment_status: "pending"
+      });
+
+    if (error) {
+      alert("Error saving subscription.");
+      console.error(error);
+      return;
+    }
+
+    // Open Paystack
+    const handler = PaystackPop.setup({
+      key: PAYSTACK_PUBLIC_KEY,
+      email: user.email,
+      amount: amount * 100,
+      currency: "USD",
+      ref: reference,
+      metadata: {
+        user_id: user.id,
+        plan_code: planCode
+      },
+      callback: function(response) {
+        alert("Payment initiated. Awaiting verification...");
+      },
+      onClose: function() {
+        alert("Transaction cancelled.");
+      }
+    });
+
+    handler.openIframe();
+  }
+</script>
+
+</body>
+</html>
