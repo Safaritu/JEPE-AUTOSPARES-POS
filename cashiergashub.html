@@ -806,7 +806,7 @@
         <button class="close-btn" onclick="toggleMenu()">×</button>
     </div>
     
-    <!-- Branch Info Display -->
+    <!-- Branch Info in Sidebar -->
     <div class="branch-info" id="sidebarBranchInfo">
         <div class="branch-label">Your Assigned Branch</div>
         <div class="branch-name" id="sidebarBranchName">
@@ -1344,8 +1344,7 @@
         if(document.getElementById(`pMethod-${type}`).value === 'Split') updateSplitBalance(type);
     };
 
-    // ==================== SALE PROCESSING ====================
-
+    // ==================== FIXED SALE PROCESSING - NO MORE DUPLICATES ====================
     async function processSale(btnId, type) {
         // Check if shift is active
         await checkShift();
@@ -1381,7 +1380,6 @@
 
         try {
             const total = price * qty;
-            const salesToInsert = [];
             
             // Handle exchange logic for refill
             let exchangeInfo = "";
@@ -1396,7 +1394,8 @@
                 }
             }
 
-            const baseSale = {
+            // Create a single sale record - FIXED: No more splitting into two records
+            const saleRecord = {
                 shift_id: activeShift.id,
                 product_id: outgoingItem.id,
                 item_name: `${outgoingItem.name} (${outgoingItem.weight_category}) ${type.toUpperCase()}${exchangeInfo}`,
@@ -1409,38 +1408,30 @@
                 category: 'Gas',
                 weight_category: outgoingItem.weight_category,
                 branch_id: currentBranchId,
-                user_id: currentUser.id
+                user_id: currentUser.id,
+                payment_method: method
             };
 
+            // Add split payment details if applicable - store in a single record
             if (method === 'Split') {
                 const cashPart = parseFloat(document.getElementById(`split-cash-${type}`).value) || 0;
                 const paybillPart = total - cashPart;
 
                 if (cashPart <= 0 || cashPart >= total) throw new Error("Invalid split amounts.");
-
-                salesToInsert.push(
-                    { 
-                        ...baseSale, 
-                        quantity: qty, 
-                        amount: cashPart, 
-                        total_amount: cashPart, 
-                        payment_method: 'Cash', 
-                        item_name: baseSale.item_name + ' (Split-Cash)' 
-                    },
-                    { 
-                        ...baseSale, 
-                        quantity: 0, 
-                        amount: paybillPart, 
-                        total_amount: paybillPart, 
-                        payment_method: 'KCB Paybill', 
-                        item_name: baseSale.item_name + ' (Split-Paybill)' 
-                    }
-                );
-            } else {
-                salesToInsert.push({ ...baseSale, payment_method: method });
+                
+                // Store split details in a JSON field or notes
+                // You can add these fields to your sales table if needed
+                saleRecord.split_cash = cashPart;
+                saleRecord.split_paybill = paybillPart;
+                saleRecord.notes = `Split payment: Cash Ksh ${cashPart}, Paybill Ksh ${paybillPart}`;
             }
 
-            const { error: saleErr } = await supabase.from('sales').insert(salesToInsert);
+            // Insert SINGLE sale record - FIXED: Only one insert
+            const { error: saleErr, data: insertedSale } = await supabase
+                .from('sales')
+                .insert([saleRecord])
+                .select();
+
             if (saleErr) throw saleErr;
 
             // Update Outgoing Stock (Full -> -qty)
@@ -1464,16 +1455,17 @@
                     .eq('branch_id', currentBranchId);
             }
 
-            // Handle Debt recording if applicable
+            // Handle Debt recording if applicable - link to the sale
             if (method === 'Debt') {
                 const customerName = prompt("Enter customer name for debt:");
-                if (customerName) {
+                if (customerName && insertedSale && insertedSale[0]) {
                     await supabase.from('debtors').insert([{
                         customer_name: customerName,
                         product_id: outgoingItem.id,
                         amount_owed: total,
                         status: 'Unpaid',
-                        branch_id: currentBranchId
+                        branch_id: currentBranchId,
+                        sale_id: insertedSale[0].id
                     }]);
                 }
             }
