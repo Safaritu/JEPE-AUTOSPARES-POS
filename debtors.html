@@ -885,7 +885,7 @@
 
                 <div class="info-note">
                     <i class="fas fa-info-circle"></i>
-                    <span>Debts are automatically linked to your current branch</span>
+                    <span>Debts are automatically linked to your current branch and will appear in sales history</span>
                 </div>
             </div>
 
@@ -936,6 +936,30 @@
     </div>
 </div>
 
+<!-- Settle Modal -->
+<div id="settle-modal" class="overlay" style="display: none;">
+    <div class="modal" style="max-width: 400px;">
+        <h3 style="margin-top:0;"><i class="fas fa-hand-holding-usd" style="color: var(--success);"></i> Settle Debt</h3>
+        <p id="modal-info" style="color: var(--text-dim); margin-bottom: 20px;"></p>
+        
+        <div class="form-group">
+            <label>Payment Method</label>
+            <select id="settle-method">
+                <option value="Cash">Cash</option>
+                <option value="Mpesa">Mpesa</option>
+                <option value="KCB Paybill">KCB Paybill</option>
+            </select>
+        </div>
+        
+        <button class="btn btn-success" id="confirm-settle-btn" style="width: 100%; margin-top: 10px;">
+            <i class="fas fa-check-circle"></i> SETTLE DEBT
+        </button>
+        <button onclick="closeModal()" style="width:100%; background:none; border:none; color:var(--text-dim); font-weight:700; margin-top:15px; cursor:pointer;">
+            Cancel
+        </button>
+    </div>
+</div>
+
 <script type="module">
     import { supabase } from './auth.js';
 
@@ -946,6 +970,8 @@
     let currentUser = null;
     let currentBranchId = null;
     let currentBranch = null;
+    let currentShift = null;
+    let selectedDebt = null;
 
     // ==================== SIDEBAR FUNCTIONS ====================
     window.toggleMenu = () => {
@@ -1015,6 +1041,16 @@
                 branchNameSpan.textContent = profile.branches.name;
             }
             
+            // Check for open shift
+            const { data: shift } = await supabase
+                .from('daily_shifts')
+                .select('*')
+                .eq('branch_id', currentBranchId)
+                .eq('status', 'Open')
+                .maybeSingle();
+            
+            currentShift = shift;
+            
             return profile;
         } catch (error) {
             console.error("Error loading profile:", error);
@@ -1052,7 +1088,7 @@
             const dList = document.getElementById('prod-list');
             dList.innerHTML = allProducts.map(p => {
                 const label = `${p.name} ${p.weight_category || ''}`.trim();
-                return `<option value="${label}" data-id="${p.id}" data-price="${p.selling_price}" data-stock="${p.stock_quantity}" data-min="${p.min_price || 0}">`;
+                return `<option value="${label}" data-id="${p.id}" data-price="${p.selling_price}" data-stock="${p.stock_quantity}" data-cost="${p.cost_price || 0}" data-min="${p.min_price || 0}">`;
             }).join('');
 
         } catch (error) {
@@ -1164,7 +1200,7 @@
                     </td>
                     <td data-label="Action">
                         ${isUnpaid ? 
-                            `<button onclick="confirmSettle('${d.id}', ${d.amount_owed})" 
+                            `<button onclick="openSettleModal('${d.id}', ${d.amount_owed}, '${d.customer_name.replace(/'/g, "\\'")}', '${prodName.replace(/'/g, "\\'")}')" 
                                 class="btn-success">
                                 <i class="fas fa-hand-holding-usd"></i> SETTLE
                             </button>` 
@@ -1174,6 +1210,79 @@
             `;
         }).join('');
     }
+
+    // ==================== SETTLE MODAL FUNCTIONS ====================
+    window.openSettleModal = (id, amt, name, item) => {
+        if (!currentShift) {
+            alert("❌ You must have an open shift to settle debts!");
+            return;
+        }
+        
+        selectedDebt = { id, amt, name, item };
+        document.getElementById('modal-info').innerHTML = `Settling <b>Ksh ${amt.toLocaleString()}</b> for <b>${name}</b>`;
+        document.getElementById('settle-modal').style.display = 'flex';
+    };
+
+    window.closeModal = () => {
+        document.getElementById('settle-modal').style.display = 'none';
+        selectedDebt = null;
+    };
+
+    document.getElementById('confirm-settle-btn').addEventListener('click', async () => {
+        const method = document.getElementById('settle-method').value;
+        const btn = document.getElementById('confirm-settle-btn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner"></span> PROCESSING...';
+        btn.disabled = true;
+
+        try {
+            const branchId = getCurrentBranchId();
+
+            // 1. Update Debt Status
+            const { error: debtError } = await supabase
+                .from('debtors')
+                .update({ status: 'Paid' })
+                .eq('id', selectedDebt.id);
+            
+            if (debtError) throw debtError;
+
+            // 2. Record to cash transactions
+            const { error: transError } = await supabase
+                .from('cash_transactions')
+                .insert([{
+                    shift_id: currentShift.id,
+                    type: 'Money In',
+                    category: method === 'Cash' ? 'Cash' : method,
+                    amount: selectedDebt.amt,
+                    description: `Debt settlement: ${selectedDebt.name} - ${selectedDebt.item}`,
+                    branch_id: branchId,
+                    user_id: currentUser.id
+                }]);
+            
+            if (transError) throw transError;
+
+            // 3. Update sales record if needed
+            await supabase
+                .from('sales')
+                .update({ 
+                    payment_method: method,
+                    discount_reason: `Debt settled: ${selectedDebt.name}`
+                })
+                .eq('payment_method', 'Debt')
+                .eq('discount_reason', `Debt for ${selectedDebt.name} [UNPAID]`);
+
+            alert('✅ Debt settled successfully!');
+            closeModal();
+            await loadDebts();
+            
+        } catch (err) {
+            console.error("Error settling debt:", err);
+            alert('Error: ' + err.message);
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
 
     // ==================== EVENT HANDLERS ====================
 
@@ -1198,33 +1307,14 @@
         renderTable();
     });
 
-    window.confirmSettle = async (id, amt) => {
-        if (!confirm(`Confirm settling Ksh ${amt.toLocaleString()}?`)) return;
-        
-        try {
-            const branchId = getCurrentBranchId();
-            console.log("Settling debt:", id, "for branch:", branchId);
-            
-            const { error } = await supabase
-                .from('debtors')
-                .update({ status: 'Paid' })
-                .eq('id', id)
-                .eq('branch_id', branchId);
-                
-            if (!error) {
-                alert('✅ Debt settled successfully!');
-                await loadDebts();
-            } else {
-                throw error;
-            }
-        } catch (err) {
-            console.error("Error settling debt:", err);
-            alert('Error: ' + err.message);
-        }
-    };
-
+    // ==================== DEBT FORM SUBMISSION - UPDATED ====================
     document.getElementById('debt-form').onsubmit = async (e) => {
         e.preventDefault();
+        
+        if (!currentShift) {
+            alert("❌ You must have an open shift to record debts!");
+            return;
+        }
         
         const searchVal = document.getElementById('prod-search').value;
         const opt = document.querySelector(`#prod-list option[value="${searchVal}"]`);
@@ -1251,20 +1341,60 @@
         }
 
         try {
-            console.log("Inserting debt for branch:", branchId);
+            console.log("Recording debt for branch:", branchId);
             
-            const { error } = await supabase.from('debtors').insert([{
-                customer_name: customerName,
-                customer_phone: customerPhone || null,
-                product_id: opt.dataset.id,
-                amount_owed: amount,
-                status: 'Unpaid',
-                branch_id: branchId
-            }]);
+            // ============================================
+            // 1. INSERT INTO DEBTORS TABLE
+            // ============================================
+            const { data: debtData, error: debtError } = await supabase
+                .from('debtors')
+                .insert([{
+                    customer_name: customerName,
+                    customer_phone: customerPhone || null,
+                    product_id: opt.dataset.id,
+                    amount_owed: amount,
+                    status: 'Unpaid',
+                    branch_id: branchId
+                }])
+                .select();
 
-            if(error) throw error;
+            if(debtError) throw debtError;
 
-            alert('✅ Debt recorded successfully!');
+            // ============================================
+            // 2. ALSO INSERT INTO SALES TABLE FOR HISTORY
+            // ============================================
+            const { error: saleError } = await supabase
+                .from('sales')
+                .insert([{
+                    product_id: opt.dataset.id,
+                    item_name: searchVal,
+                    quantity: 1,
+                    unit_price: amount,
+                    total_amount: amount,
+                    amount: amount,
+                    payment_method: 'Debt',
+                    cost_price: parseFloat(opt.dataset.cost || 0),
+                    shift_id: currentShift.id,
+                    branch_id: branchId,
+                    discount_reason: `Debt for ${customerName} [UNPAID]`,
+                    user_id: currentUser.id,
+                    category: 'Debt'
+                }]);
+
+            if (saleError) throw saleError;
+
+            // ============================================
+            // 3. UPDATE INVENTORY (reduce stock)
+            // ============================================
+            const newStock = parseInt(opt.dataset.stock) - 1;
+            const { error: stockError } = await supabase
+                .from('products')
+                .update({ stock_quantity: newStock })
+                .eq('id', opt.dataset.id);
+            
+            if (stockError) throw stockError;
+
+            alert('✅ Debt recorded successfully! It will appear in Sales History.');
             document.getElementById('debt-form').reset();
             document.getElementById('live-stock').innerText = '-';
             document.getElementById('live-price').innerText = '-';
