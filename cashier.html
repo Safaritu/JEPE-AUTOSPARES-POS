@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Keep all your existing styles exactly as they were */
+        /* ALL YOUR EXISTING STYLES - KEEP THEM EXACTLY AS THEY WERE */
         :root { 
             --primary: #4f46e5; 
             --primary-dark: #3730a3;
@@ -2410,6 +2410,9 @@
         }
 
         try {
+            // ============================================
+            // 1. INSERT INTO SALES TABLE
+            // ============================================
             const { data: sData, error } = await supabase
                 .from('sales')
                 .insert(salesToInsert)
@@ -2417,6 +2420,9 @@
             
             if (error) throw error;
 
+            // ============================================
+            // 2. UPDATE PRODUCT STOCK
+            // ============================================
             const newStock = selectedItem.stock_quantity - qty;
             const { error: updateError } = await supabase
                 .from('products')
@@ -2426,7 +2432,7 @@
             if (updateError) throw updateError;
 
             // ============================================
-            // FIXED: DEBT HANDLING - Records to debtors table
+            // 3. DEBT HANDLING - RECORD TO DEBTORS TABLE
             // ============================================
             if(method === "Debt") {
                 // Prompt for customer name (required)
@@ -2447,8 +2453,6 @@
                     customer_phone: customerPhone || null,
                     product_id: selectedItem.id,
                     amount_owed: total,
-                    sale_id: sData[0]?.id,
-                    shift_id: currentShift.id,
                     branch_id: branchId,
                     status: 'Unpaid'
                 }]);
