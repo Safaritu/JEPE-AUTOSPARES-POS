@@ -808,6 +808,16 @@
                 sidebarBranchName.textContent = profile.branches.name;
             }
             
+            // Check for open shift
+            const { data: shift } = await supabase
+                .from('daily_shifts')
+                .select('*')
+                .eq('branch_id', currentBranchId)
+                .eq('status', 'Open')
+                .maybeSingle();
+            
+            currentShift = shift;
+            
             return profile;
         } catch (error) {
             console.error("Error loading profile:", error);
@@ -979,27 +989,42 @@
         btn.disabled = true;
 
         try {
-            // 1. Update Debt Status
-            await supabase.from('debtors').update({ status: 'Paid' }).eq('id', selectedDebt.id);
+            const branchId = selectedBranchId || currentBranchId;
 
-            // 2. Update Sales Record for specifically this unpaid entry
-            await supabase.from('sales')
+            // 1. Update Debt Status
+            const { error: debtError } = await supabase
+                .from('debtors')
+                .update({ status: 'Paid' })
+                .eq('id', selectedDebt.id);
+            
+            if (debtError) throw debtError;
+
+            // 2. Update Sales Record for this debt
+            const { error: saleUpdateError } = await supabase
+                .from('sales')
                 .update({ 
                     payment_method: method,
-                    discount_reason: `Debt for ${selectedDebt.name} [SOLVED]` 
+                    discount_reason: `Debt settled: ${selectedDebt.name}`
                 })
                 .eq('payment_method', 'Debt')
                 .eq('discount_reason', `Debt for ${selectedDebt.name} [UNPAID]`);
+            
+            if (saleUpdateError) throw saleUpdateError;
 
             // 3. Log recovery into Cash transactions
-            await supabase.from('cash_transactions').insert([{
-                shift_id: currentShift.id,
-                type: 'Money In',
-                category: (method === 'Cash') ? 'Cash' : 'Mpesa',
-                amount: selectedDebt.amt,
-                description: `Debt recovery: ${selectedDebt.name}`,
-                branch_id: selectedBranchId || currentBranchId
-            }]);
+            const { error: transError } = await supabase
+                .from('cash_transactions')
+                .insert([{
+                    shift_id: currentShift.id,
+                    type: 'Money In',
+                    category: method === 'Cash' ? 'Cash' : method,
+                    amount: selectedDebt.amt,
+                    description: `Debt recovery: ${selectedDebt.name} - ${selectedDebt.item}`,
+                    branch_id: branchId,
+                    user_id: currentUser.id
+                }]);
+            
+            if (transError) throw transError;
 
             generateReceipt(selectedDebt, method);
             alert("✅ Debt cleared successfully!");
@@ -1085,35 +1110,48 @@
 
         try {
             // 1. Save to Debtors
-            await supabase.from('debtors').insert([{
-                customer_name: customer,
-                customer_phone: document.getElementById('cust-phone').value,
-                product_id: opt.dataset.id,
-                amount_owed: amount,
-                status: 'Unpaid',
-                branch_id: branchToUse
-            }]);
+            const { error: debtError } = await supabase
+                .from('debtors')
+                .insert([{
+                    customer_name: customer,
+                    customer_phone: document.getElementById('cust-phone').value,
+                    product_id: opt.dataset.id,
+                    amount_owed: amount,
+                    status: 'Unpaid',
+                    branch_id: branchToUse
+                }]);
+
+            if (debtError) throw debtError;
 
             // 2. Save to Sales (Marked as Debt/Unpaid)
-            await supabase.from('sales').insert([{
-                product_id: opt.dataset.id,
-                item_name: searchVal,
-                quantity: 1,
-                unit_price: amount,
-                total_amount: amount,
-                amount: amount,
-                payment_method: 'Debt',
-                cost_price: parseFloat(opt.dataset.cost),
-                shift_id: currentShift.id,
-                branch_id: branchToUse,
-                discount_reason: `Debt for ${customer} [UNPAID]`
-            }]);
+            const { error: saleError } = await supabase
+                .from('sales')
+                .insert([{
+                    product_id: opt.dataset.id,
+                    item_name: searchVal,
+                    quantity: 1,
+                    unit_price: amount,
+                    total_amount: amount,
+                    amount: amount,
+                    payment_method: 'Debt',
+                    cost_price: parseFloat(opt.dataset.cost),
+                    shift_id: currentShift.id,
+                    branch_id: branchToUse,
+                    discount_reason: `Debt for ${customer} [UNPAID]`,
+                    user_id: currentUser.id,
+                    category: 'Debt'
+                }]);
+
+            if (saleError) throw saleError;
 
             // 3. Update Inventory
             const newStock = parseInt(opt.dataset.stock) - 1;
-            await supabase.from('products').update({ stock_quantity: newStock }).eq('id', opt.dataset.id);
+            await supabase
+                .from('products')
+                .update({ stock_quantity: newStock })
+                .eq('id', opt.dataset.id);
 
-            alert("✅ Debt Recorded & Stock Updated!");
+            alert("✅ Debt Recorded & Stock Updated! It will appear in Sales History.");
             document.getElementById('debt-form').reset();
             await init();
         } catch (err) {
