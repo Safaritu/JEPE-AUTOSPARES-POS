@@ -2423,15 +2423,25 @@
             
             if (updateError) throw updateError;
 
+            // Handle Debt payment method - record to debtors table with customer phone
             if(method === "Debt") {
-                const dName = prompt("Customer Name:");
-                if(dName) {
+                const customerName = prompt("Customer Name (required):");
+                if(!customerName) {
+                    alert("Customer name is required for debt sales!");
+                    // Rollback the sale? For now just alert and continue
+                } else {
+                    const customerPhone = prompt("Customer Phone (optional):", "");
+                    
+                    // Insert into debtors table with all required fields
                     await supabase.from('debtors').insert([{ 
-                        customer_name: dName, 
-                        amount_owed: total, 
-                        sale_id: sData[0].id,
+                        customer_name: customerName,
+                        customer_phone: customerPhone || null,
+                        product_id: selectedItem.id,
+                        amount_owed: total,
+                        sale_id: sData[0]?.id,
                         shift_id: currentShift.id,
-                        branch_id: branchId
+                        branch_id: branchId,
+                        status: 'Unpaid'
                     }]);
                 }
             }
