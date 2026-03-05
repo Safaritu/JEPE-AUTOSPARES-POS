@@ -36,7 +36,6 @@
             overflow-x: hidden; 
         }
 
-        /* --- SIDEBAR - Collapsible like other admin pages --- */
         .sidebar { 
             width: var(--sidebar-collapsed); 
             height: 100vh; 
@@ -88,7 +87,6 @@
             cursor: pointer; 
         }
 
-        /* Branch Info in Sidebar */
         .branch-info {
             padding: 10px;
             margin: 10px 0 20px;
@@ -177,7 +175,6 @@
             color: white; 
         }
 
-        /* --- MENU TRIGGER --- */
         .menu-trigger {
             display: none; 
             position: fixed; 
@@ -195,7 +192,6 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
-        /* --- MAIN LAYOUT --- */
         .main-wrapper { 
             width: 100%; 
             margin-left: var(--sidebar-collapsed); 
@@ -255,7 +251,6 @@
             }
         }
 
-        /* --- BRANCH SELECTOR --- */
         .branch-selector-container {
             background: white;
             border: 1px solid var(--border);
@@ -308,7 +303,6 @@
             font-weight: 500;
         }
 
-        /* --- SUMMARY CARDS --- */
         .summary-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -363,7 +357,6 @@
             justify-content: space-between;
         }
 
-        /* --- FILTER BAR --- */
         .filter-bar {
             background: white;
             border: 1px solid var(--border);
@@ -423,7 +416,6 @@
             background: #e2e8f0;
         }
 
-        /* --- SEARCH --- */
         .search-input {
             width: 100%; 
             padding: 16px; 
@@ -439,7 +431,6 @@
             border-color: var(--primary);
         }
 
-        /* --- DATA PRESENTATION --- */
         .data-card-container { 
             width: 100%; 
         }
@@ -551,11 +542,6 @@
         .badge-gas-refill { background: #ffedd5; color: #9a3412; }
         .badge-gas-complete { background: #fed7aa; color: #7b341e; }
         
-        .profit-text { 
-            color: var(--success); 
-            font-weight: 700; 
-        }
-        
         .profit-positive {
             color: var(--success);
             font-weight: 700;
@@ -650,7 +636,6 @@
         <button class="close-btn" onclick="toggleMenu()">×</button>
     </div>
     
-    <!-- Branch Info Display -->
     <div class="branch-info" id="sidebarBranchInfo">
         <div class="branch-label">Your Assigned Branch</div>
         <div class="branch-name" id="sidebarBranchName">
@@ -708,7 +693,6 @@
             <p style="color:var(--text-dim); margin-top:5px;">Complete history of all sales across all branches</p>
         </div>
 
-        <!-- Branch Selector -->
         <div class="branch-selector-container">
             <div class="branch-filter">
                 <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
@@ -723,7 +707,6 @@
             <span class="date-range" id="dateRange"></span>
         </div>
 
-        <!-- Summary Cards -->
         <div class="summary-grid">
             <div class="summary-card">
                 <div class="summary-label">Total Sales</div>
@@ -775,7 +758,6 @@
             </div>
         </div>
 
-        <!-- Filter Bar -->
         <div class="filter-bar">
             <div class="filter-group">
                 <i class="fas fa-calendar"></i>
@@ -851,20 +833,16 @@
     let itemSearchTerm = '';
     let quickSearchTerm = '';
 
-    // ==================== SIDEBAR FUNCTION ====================
     window.toggleMenu = function() {
         document.getElementById('sidebar').classList.toggle('mobile-active');
         document.getElementById('overlay').classList.toggle('active');
     };
-
-    // ==================== BRANCH FUNCTIONS ====================
 
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
         branches = {};
         branchIdMap = {};
         
-        // Populate branch selector
         const selector = document.getElementById('branchSelector');
         let options = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>';
         data?.forEach(b => {
@@ -918,7 +896,6 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
-            // Update sidebar with user's assigned branch
             const sidebarBranchName = document.querySelector('#sidebarBranchName span');
             if (profile.branches && sidebarBranchName) {
                 sidebarBranchName.textContent = profile.branches.name;
@@ -954,7 +931,6 @@
         await fetchSales();
     };
 
-    // ==================== UPDATED PRODUCT FETCHING WITH COMPLETE_COST ====================
     async function fetchProducts() {
         try {
             const { data } = await supabase
@@ -972,7 +948,6 @@
     }
 
     async function fetchSales() {
-        // Show loading state
         document.getElementById('data-body').innerHTML = `
             <tr>
                 <td colspan="8" style="text-align: center; padding: 40px;">
@@ -983,16 +958,13 @@
         `;
 
         try {
-            // Load products first for cost reference
             await fetchProducts();
 
-            // Build query
             let query = supabase
                 .from('sales')
                 .select('*')
                 .order('created_at', { ascending: false });
 
-            // Apply branch filter if a specific branch is selected
             if (selectedBranchId) {
                 query = query.eq('branch_id', selectedBranchId);
             }
@@ -1003,7 +975,6 @@
 
             allSales = data || [];
             filteredSales = [...allSales];
-            console.log(`Loaded ${allSales.length} sales transactions`);
             
             updateSummary();
             applyFilters();
@@ -1021,12 +992,12 @@
         }
     }
 
-    // ==================== UPDATED PROFIT CALCULATION WITH COMPLETE_COST ====================
+    // ==================== FIXED PROFIT CALCULATION FOR GAS ====================
     function calculateProfit(sale) {
         const revenue = Number(sale.total_amount || 0);
         const quantity = sale.quantity || 1;
         
-        // For gas sales, check if it's a complete purchase (new cylinder)
+        // For gas sales
         if (sale.category === 'Gas') {
             const product = productsMap[sale.product_id];
             
@@ -1107,12 +1078,10 @@
 
     function applyFilters() {
         filteredSales = allSales.filter(sale => {
-            // Payment filter
             if (paymentFilter !== 'all' && sale.payment_method !== paymentFilter) {
                 return false;
             }
             
-            // Date search
             if (dateSearchTerm) {
                 const saleDate = new Date(sale.created_at).toLocaleDateString('en-GB', { 
                     day: '2-digit', 
@@ -1124,7 +1093,6 @@
                 }
             }
             
-            // Item search
             if (itemSearchTerm) {
                 const itemName = (sale.item_name || '').toLowerCase();
                 if (!itemName.includes(itemSearchTerm.toLowerCase())) {
@@ -1132,7 +1100,6 @@
                 }
             }
             
-            // Quick search
             if (quickSearchTerm) {
                 const itemName = (sale.item_name || '').toLowerCase();
                 const category = (sale.category || '').toLowerCase();
@@ -1190,17 +1157,74 @@
             return;
         }
 
-        tbody.innerHTML = data.map(s => {
+        // Group sales by timestamp to identify split payments
+        const splitGroups = {};
+        const regularSales = [];
+        
+        data.forEach(sale => {
+            if (sale.item_name && sale.item_name.includes('(Split-')) {
+                const baseName = sale.item_name.replace(/\s*\(Split-[^)]+\)/g, '');
+                const key = sale.created_at + '-' + baseName;
+                if (!splitGroups[key]) {
+                    splitGroups[key] = [];
+                }
+                splitGroups[key].push(sale);
+            } else {
+                regularSales.push(sale);
+            }
+        });
+
+        // Process split groups to combine them
+        const processedSales = [];
+        
+        // Add regular sales
+        regularSales.forEach(s => processedSales.push(s));
+        
+        // Add combined split groups
+        Object.values(splitGroups).forEach(group => {
+            if (group.length >= 2) {
+                // Find the one with quantity > 0 (the actual item)
+                const mainSale = group.find(s => s.quantity > 0) || group[0];
+                const otherSales = group.filter(s => s !== mainSale);
+                
+                // Calculate total revenue and cost
+                const totalRevenue = group.reduce((sum, s) => sum + Number(s.total_amount || 0), 0);
+                const totalQuantity = group.reduce((sum, s) => sum + (s.quantity || 0), 0);
+                
+                // Create combined sale record
+                const combinedSale = {
+                    ...mainSale,
+                    quantity: totalQuantity,
+                    total_amount: totalRevenue,
+                    payment_method: 'Split',
+                    split_details: otherSales.map(s => ({
+                        method: s.payment_method,
+                        amount: s.total_amount
+                    }))
+                };
+                processedSales.push(combinedSale);
+            } else {
+                // If only one split record found, add it as is
+                group.forEach(s => processedSales.push(s));
+            }
+        });
+
+        // Sort by date
+        processedSales.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        tbody.innerHTML = processedSales.map(s => {
             const revenue = s.total_amount || 0;
             const profit = calculateProfit(s);
             const profitClass = profit >= 0 ? 'profit-positive' : 'profit-negative';
             const date = new Date(s.created_at);
-            
-            // Get branch info
             const branch = branches[s.branch_id] || { code: '--', name: 'Unknown' };
-            
-            const paymentClass = getPaymentBadgeClass(s.payment_method);
+            const paymentClass = s.payment_method === 'Split' ? 'badge-split' : getPaymentBadgeClass(s.payment_method);
             const saleTypeBadge = getSaleTypeBadge(s.item_name);
+            
+            let methodDisplay = s.payment_method;
+            if (s.split_details) {
+                methodDisplay = 'Split';
+            }
             
             // Calculate cost breakdown for display
             let costDisplay = '';
@@ -1216,6 +1240,17 @@
                 }
             }
             
+            // Create split details display if applicable
+            let splitDetailsHtml = '';
+            if (s.split_details) {
+                splitDetailsHtml = '<div style="font-size:0.7rem; margin-top:4px;">';
+                s.split_details.forEach(detail => {
+                    const detailClass = getPaymentBadgeClass(detail.method);
+                    splitDetailsHtml += `<span class="badge ${detailClass}" style="margin-right:4px;">${detail.method}: Ksh ${detail.amount.toLocaleString()}</span>`;
+                });
+                splitDetailsHtml += '</div>';
+            }
+            
             return `
                 <tr>
                     <td data-label="Date & Time">
@@ -1224,13 +1259,15 @@
                     </td>
                     <td data-label="Item Details">
                         <div style="font-weight:700; color:var(--admin-dark); display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
-                            ${s.item_name}
+                            ${s.item_name ? s.item_name.replace(/\s*\(Split-[^)]+\)/g, '') : 'Unknown'}
                             ${saleTypeBadge}
                             ${s.category === 'Gas' ? '<span class="gas-badge">GAS</span>' : ''}
+                            ${s.payment_method === 'Split' ? '<span class="badge badge-split" style="margin-left:4px;">SPLIT</span>' : ''}
                         </div>
                         <div style="font-size:0.7rem; color:var(--text-dim)">
                             <i class="fas fa-tag"></i> ${s.category || 'General'}
                         </div>
+                        ${splitDetailsHtml}
                     </td>
                     <td data-label="Quantity" style="font-weight:700;">${s.quantity}</td>
                     <td data-label="Total Amount" style="font-weight:800;">Ksh ${revenue.toLocaleString()}</td>
@@ -1245,7 +1282,7 @@
                         </div>
                     </td>
                     <td data-label="Method">
-                        <span class="badge ${paymentClass}">${s.payment_method}</span>
+                        <span class="badge ${paymentClass}">${methodDisplay}</span>
                     </td>
                     <td data-label="Branch">
                         <span class="branch-pill" title="${branch.name}">
@@ -1259,7 +1296,6 @@
         document.getElementById('loadMore').style.display = data.length < filteredSales.length ? 'block' : 'none';
     }
 
-    // Event listeners for filters
     document.getElementById('paymentFilter').addEventListener('change', (e) => {
         paymentFilter = e.target.value;
         applyFilters();
@@ -1307,18 +1343,15 @@
         }
     };
 
-    // Initialize on load
     document.addEventListener('DOMContentLoaded', async function() {
         await loadBranches();
         await loadUserProfile();
         
-        // Set today's date
         const today = new Date();
         document.getElementById('dateRange').textContent = today.toLocaleDateString('en-GB', { 
             day: 'numeric', month: 'long', year: 'numeric' 
         });
         
-        // Set default branch selector
         document.getElementById('branchSelector').value = 'all';
         selectedBranchId = null;
         
