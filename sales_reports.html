@@ -22,6 +22,7 @@
             --sidebar-width: 260px;
             --sidebar-collapsed: 70px;
             --header-height: 70px;
+            --gas: #f59e0b;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
@@ -36,7 +37,6 @@
             overflow-x: hidden;
         }
 
-        /* --- SIDEBAR - Collapsible like admin --- */
         .sidebar { 
             width: var(--sidebar-collapsed); 
             height: 100vh; 
@@ -90,7 +90,6 @@
             cursor: pointer; 
         }
 
-        /* Branch Info in Sidebar */
         .branch-info {
             padding: 10px;
             margin: 10px 0 20px;
@@ -181,7 +180,6 @@
             color: white; 
         }
 
-        /* --- MENU TRIGGER --- */
         .menu-trigger {
             display: none; 
             position: fixed; 
@@ -199,7 +197,6 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
-        /* --- MAIN LAYOUT --- */
         .main-wrapper { 
             width: 100%; 
             margin-left: var(--sidebar-collapsed); 
@@ -260,7 +257,6 @@
             }
         }
 
-        /* --- PAGE HEADER --- */
         .page-header { 
             background: white; 
             padding: 20px; 
@@ -290,7 +286,60 @@
             margin-right: 8px;
         }
 
-        /* --- FILTER BAR --- */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .summary-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .summary-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .summary-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .summary-value.success {
+            color: var(--success);
+        }
+
+        .summary-value.primary {
+            color: var(--primary);
+        }
+
+        .summary-value.warning {
+            color: var(--warning);
+        }
+
+        .summary-value.danger {
+            color: var(--danger);
+        }
+
+        .summary-detail {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin-top: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
         .filter-bar {
             background: white;
             border: 1px solid var(--border);
@@ -351,7 +400,6 @@
             background: #e2e8f0;
         }
 
-        /* --- TABLE STYLES --- */
         .table-outer { 
             border-radius: 16px; 
             overflow: hidden; 
@@ -388,7 +436,6 @@
             vertical-align: middle; 
         }
 
-        /* --- BADGES --- */
         .payment-badge {
             padding: 4px 8px;
             border-radius: 6px;
@@ -405,6 +452,23 @@
             background: #e0e7ff;
             color: #4338ca;
         }
+        .payment-mpesa {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .payment-bank {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .payment-debt {
+            background: #f1f5f9;
+            color: #475569;
+        }
+        .payment-split {
+            background: #e2e8f0;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+        }
 
         .category-badge {
             background: #f1f5f9;
@@ -414,8 +478,52 @@
             font-size: 0.65rem;
             font-weight: 600;
         }
+        
+        .gas-badge {
+            background: var(--gas);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            margin-left: 5px;
+        }
+        
+        .sale-type-badge {
+            background: #e2e8f0;
+            color: #334155;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            margin-left: 5px;
+        }
+        .sale-type-refill {
+            background: #ffedd5;
+            color: #9a3412;
+        }
+        .sale-type-complete {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .profit-positive {
+            color: var(--success);
+            font-weight: 700;
+        }
+        
+        .profit-negative {
+            color: var(--danger);
+            font-weight: 700;
+        }
+        
+        .split-details-container {
+            margin-top: 5px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
 
-        /* --- MOBILE CARD STYLES --- */
         .mobile-sales-container {
             display: none;
         }
@@ -449,6 +557,10 @@
             .sale-mobile-title {
                 font-weight: 800;
                 font-size: 0.9rem;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                flex-wrap: wrap;
             }
             
             .sale-mobile-meta {
@@ -473,9 +585,16 @@
             .sale-mobile-value {
                 font-weight: 600;
             }
+            
+            .cost-breakdown {
+                background: #f8fafc;
+                padding: 8px;
+                border-radius: 6px;
+                margin-top: 8px;
+                font-size: 0.7rem;
+            }
         }
 
-        /* Loading Spinner */
         .loading-spinner {
             display: flex;
             justify-content: center;
@@ -497,7 +616,6 @@
             100% { transform: rotate(360deg); }
         }
         
-        /* No results message */
         .no-results {
             text-align: center;
             padding: 40px 20px;
@@ -510,7 +628,6 @@
             color: #cbd5e1;
         }
         
-        /* Refresh button */
         .refresh-btn {
             position: fixed;
             bottom: 20px;
@@ -558,7 +675,6 @@
         <button class="close-btn" onclick="toggleMenu()">×</button>
     </div>
     
-    <!-- Branch Info Display -->
     <div class="branch-info" id="sidebarBranchInfo">
         <div class="branch-label">Your Assigned Branch</div>
         <div class="branch-name" id="sidebarBranchName">
@@ -568,7 +684,6 @@
     </div>
     
     <nav class="nav-list">
-        <!-- Main Navigation -->
         <a href="cashier.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
         <a href="cashiergashub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
         <a href="moneyinout.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
@@ -579,7 +694,6 @@
 
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
 
-        <!-- Secondary Navigation -->
         <a href="low-stock-cashier.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
         <a href="debtors.html" class="nav-link"><i class="fas fa-users"></i> <span>Debtors</span></a>
         <a href="supplierscashier.html" class="nav-link"><i class="fas fa-handshake"></i> <span>Suppliers</span></a>
@@ -587,13 +701,11 @@
 
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
 
-        <!-- Tertiary Navigation -->
         <a href="cashier_report.html" class="nav-link"><i class="fas fa-file-alt"></i> <span>Today's Report</span></a>
         <a href="pos.html" class="nav-link"><i class="fas fa-shopping-cart"></i> <span>Cart Shop</span></a>
         <a href="cashierprofile.html" class="nav-link"><i class="fas fa-user"></i> <span>Settings</span></a>
         <a href="cashier.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
         
-        <!-- Logout Button -->
         <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
             <button onclick="logoutUser()" style="width:100%; background:var(--danger); color:white; border:none; padding:12px; border-radius:10px; font-weight:700; cursor:pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
                 <i class="fas fa-sign-out-alt"></i> <span>Logout System</span>
@@ -620,7 +732,65 @@
             </div>
         </div>
 
-        <!-- Filter Bar -->
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="summary-label">Total Sales</div>
+                <div class="summary-value primary" id="totalSales">Ksh 0</div>
+                <div class="summary-detail">
+                    <span>All transactions</span>
+                    <span id="totalTransactions">0</span>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Total Profit</div>
+                <div class="summary-value success" id="totalProfit">Ksh 0</div>
+                <div class="summary-detail">
+                    <span>Average margin</span>
+                    <span id="avgMargin">0%</span>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Cash Sales</div>
+                <div class="summary-value" id="cashSales">Ksh 0</div>
+                <div class="summary-detail">
+                    <span>Transactions</span>
+                    <span id="cashCount">0</span>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">KCB Paybill</div>
+                <div class="summary-value" id="kcbSales">Ksh 0</div>
+                <div class="summary-detail">
+                    <span>Transactions</span>
+                    <span id="kcbCount">0</span>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">M-Pesa</div>
+                <div class="summary-value" id="mpesaSales">Ksh 0</div>
+                <div class="summary-detail">
+                    <span>Transactions</span>
+                    <span id="mpesaCount">0</span>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Split Payments</div>
+                <div class="summary-value" id="splitSales">Ksh 0</div>
+                <div class="summary-detail">
+                    <span>Transactions</span>
+                    <span id="splitCount">0</span>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Items Sold</div>
+                <div class="summary-value warning" id="totalItems">0</div>
+                <div class="summary-detail">
+                    <span>Avg per sale</span>
+                    <span id="avgItems">0</span>
+                </div>
+            </div>
+        </div>
+
         <div class="filter-bar">
             <div class="filter-group">
                 <i class="fas fa-calendar"></i>
@@ -632,6 +802,9 @@
                     <option value="all">All Transactions</option>
                     <option value="Cash">Cash Only</option>
                     <option value="KCB Paybill">KCB Paybill Only</option>
+                    <option value="Mpesa">M-Pesa Only</option>
+                    <option value="Debt">Debt Only</option>
+                    <option value="Split">Split Only</option>
                 </select>
             </div>
             <div class="filter-group">
@@ -643,20 +816,19 @@
             </button>
         </div>
 
-        <!-- Desktop Table View -->
         <div class="table-outer">
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
                             <th>Date & Time</th>
-                            <th>Item</th>
+                            <th>Item Details</th>
                             <th>Category</th>
                             <th>Qty</th>
-                            <th>Unit Price</th>
                             <th>Total</th>
-                            <th>Payment</th>
+                            <th>Cost</th>
                             <th>Profit</th>
+                            <th>Method</th>
                         </tr>
                     </thead>
                     <tbody id="sales-body-desktop">
@@ -671,17 +843,12 @@
             </div>
         </div>
         
-        <!-- Mobile Card View -->
-        <div id="mobile-sales-container" class="mobile-sales-container">
-            <!-- Mobile cards will be inserted here -->
-        </div>
+        <div id="mobile-sales-container" class="mobile-sales-container"></div>
         
-        <!-- Loading Spinner -->
         <div id="loadingSpinner" class="loading-spinner" style="display: none;">
             <div class="spinner"></div>
         </div>
         
-        <!-- No Results Message -->
         <div id="noResults" class="no-results" style="display: none;">
             <i class="fas fa-search"></i>
             <p>No sales records found</p>
@@ -690,7 +857,6 @@
     </div>
 </div>
 
-<!-- Refresh Button -->
 <button class="refresh-btn" onclick="refreshData()" id="refreshBtn">
     <i class="fas fa-sync-alt"></i>
 </button>
@@ -703,20 +869,17 @@
     let currentUser = null;
     let currentBranchId = null;
     let currentBranch = null;
+    let productsMap = {};
     let isMobile = window.innerWidth <= 768;
 
-    // Filter states
     let paymentFilter = 'all';
     let dateSearchTerm = '';
     let itemSearchTerm = '';
 
-    // ==================== SIDEBAR FUNCTIONS ====================
     window.toggleMenu = () => {
         document.getElementById('sidebar').classList.toggle('mobile-active');
         document.getElementById('overlay').classList.toggle('active');
     };
-
-    // ==================== BRANCH FUNCTIONS ====================
 
     function getCurrentBranchId() {
         const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
@@ -764,13 +927,11 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
-            // Update sidebar with user's assigned branch
             const sidebarBranchName = document.querySelector('#sidebarBranchName span');
             if (profile.branches && sidebarBranchName) {
                 sidebarBranchName.textContent = profile.branches.name;
             }
             
-            // Update branch display
             const branchNameSpan = document.getElementById('branchName');
             if (branchNameSpan && profile.branches) {
                 branchNameSpan.textContent = profile.branches.name;
@@ -789,19 +950,74 @@
         location.href = 'index.html'; 
     };
 
-    // ==================== DATA FETCHING ====================
+    async function fetchProducts() {
+        try {
+            const branchId = getCurrentBranchId();
+            const { data } = await supabase
+                .from('products')
+                .select('id, cost_price, complete_cost, category, name, weight_category')
+                .eq('branch_id', branchId);
+            
+            productsMap = {};
+            data?.forEach(p => {
+                productsMap[p.id] = p;
+            });
+        } catch (error) {
+            console.error("Error fetching products:", error);
+        }
+    }
+
+    function groupSplitSales(sales) {
+        const groups = {};
+        const regularSales = [];
+        
+        sales.forEach(sale => {
+            if (sale.item_name && sale.item_name.includes('(Split-')) {
+                const baseName = sale.item_name.replace(/\s*\(Split-[^)]+\)/g, '');
+                const key = sale.created_at + '-' + baseName;
+                if (!groups[key]) {
+                    groups[key] = [];
+                }
+                groups[key].push(sale);
+            } else {
+                regularSales.push(sale);
+            }
+        });
+
+        return { groups, regularSales };
+    }
+
+    function calculateProfit(sale) {
+        const revenue = Number(sale.total_amount || 0);
+        const quantity = sale.quantity || 1;
+        
+        if (sale.category === 'Gas') {
+            const product = productsMap[sale.product_id];
+            
+            if (sale.item_name && (sale.item_name.includes('NEW CYLINDER') || sale.item_name.includes('COMPLETE'))) {
+                const completeCost = Number(product?.complete_cost || sale.cost_price || 0);
+                const totalCost = completeCost * quantity;
+                return revenue - totalCost;
+            } else {
+                const refillCost = Number(sale.cost_price || product?.cost_price || 0);
+                const totalCost = refillCost * quantity;
+                return revenue - totalCost;
+            }
+        } else {
+            const cost = Number(sale.cost_price || 0) * quantity;
+            return revenue - cost;
+        }
+    }
 
     async function fetchSales() {
         showLoading(true);
         
         try {
             const branchId = getCurrentBranchId();
-            if (!branchId) {
-                console.error("No branch ID found");
-                return;
-            }
+            if (!branchId) return;
 
-            // Fetch all sales for this branch
+            await fetchProducts();
+
             const { data, error } = await supabase
                 .from('sales')
                 .select('*')
@@ -811,9 +1027,8 @@
             if (error) throw error;
 
             allSales = data || [];
-            console.log(`Loaded ${allSales.length} sales records`);
             
-            // Apply initial filters
+            updateSummary();
             applyFilters();
             
         } catch (error) {
@@ -830,6 +1045,82 @@
         }
     }
 
+    function updateSummary() {
+        let totalAmount = 0;
+        let totalProfit = 0;
+        let cashTotal = 0;
+        let kcbTotal = 0;
+        let mpesaTotal = 0;
+        let splitTotal = 0;
+        let totalItems = 0;
+        let cashCount = 0;
+        let kcbCount = 0;
+        let mpesaCount = 0;
+        let splitCount = 0;
+
+        const { groups, regularSales } = groupSplitSales(allSales);
+        
+        Object.values(groups).forEach(group => {
+            const totalRevenue = group.reduce((sum, s) => sum + Number(s.total_amount || 0), 0);
+            const totalQuantity = group.reduce((sum, s) => sum + (s.quantity || 0), 0);
+            const mainSale = group.find(s => s.quantity > 0) || group[0];
+            const profit = calculateProfit({...mainSale, total_amount: totalRevenue, quantity: totalQuantity});
+            
+            totalAmount += totalRevenue;
+            totalProfit += profit;
+            totalItems += totalQuantity;
+            splitTotal += totalRevenue;
+            splitCount++;
+        });
+        
+        regularSales.forEach(sale => {
+            const amount = Number(sale.total_amount || 0);
+            const profit = calculateProfit(sale);
+            
+            totalAmount += amount;
+            totalProfit += profit;
+            totalItems += sale.quantity || 0;
+
+            switch(sale.payment_method) {
+                case 'Cash':
+                    cashTotal += amount;
+                    cashCount++;
+                    break;
+                case 'KCB Paybill':
+                    kcbTotal += amount;
+                    kcbCount++;
+                    break;
+                case 'Mpesa':
+                    mpesaTotal += amount;
+                    mpesaCount++;
+                    break;
+            }
+        });
+
+        const avgMargin = totalAmount > 0 ? ((totalProfit / totalAmount) * 100).toFixed(1) : 0;
+        const avgItems = allSales.length > 0 ? (totalItems / allSales.length).toFixed(1) : 0;
+
+        document.getElementById('totalSales').textContent = `Ksh ${totalAmount.toLocaleString()}`;
+        document.getElementById('totalProfit').textContent = `Ksh ${totalProfit.toLocaleString()}`;
+        document.getElementById('avgMargin').textContent = `${avgMargin}%`;
+        document.getElementById('totalTransactions').textContent = allSales.length;
+        
+        document.getElementById('cashSales').textContent = `Ksh ${cashTotal.toLocaleString()}`;
+        document.getElementById('cashCount').textContent = cashCount;
+        
+        document.getElementById('kcbSales').textContent = `Ksh ${kcbTotal.toLocaleString()}`;
+        document.getElementById('kcbCount').textContent = kcbCount;
+        
+        document.getElementById('mpesaSales').textContent = `Ksh ${mpesaTotal.toLocaleString()}`;
+        document.getElementById('mpesaCount').textContent = mpesaCount;
+        
+        document.getElementById('splitSales').textContent = `Ksh ${splitTotal.toLocaleString()}`;
+        document.getElementById('splitCount').textContent = splitCount;
+        
+        document.getElementById('totalItems').textContent = totalItems;
+        document.getElementById('avgItems').textContent = avgItems;
+    }
+
     function showLoading(show) {
         const loadingEl = document.getElementById('loadingSpinner');
         const refreshBtn = document.getElementById('refreshBtn');
@@ -838,18 +1129,48 @@
         if (refreshBtn) refreshBtn.disabled = show;
     }
 
-    // ==================== FILTER FUNCTIONS ====================
-
     function applyFilters() {
-        filteredSales = allSales.filter(sale => {
-            // Payment method filter (Cash or KCB Paybill only)
+        const { groups, regularSales } = groupSplitSales(allSales);
+        
+        const processedSales = [];
+        
+        regularSales.forEach(s => processedSales.push(s));
+        
+        Object.values(groups).forEach(group => {
+            if (group.length >= 2) {
+                const mainSale = group.find(s => s.quantity > 0) || group[0];
+                const otherSales = group.filter(s => s !== mainSale);
+                
+                const totalRevenue = group.reduce((sum, s) => sum + Number(s.total_amount || 0), 0);
+                const totalQuantity = group.reduce((sum, s) => sum + (s.quantity || 0), 0);
+                
+                const combinedSale = {
+                    ...mainSale,
+                    quantity: totalQuantity,
+                    total_amount: totalRevenue,
+                    payment_method: 'Split',
+                    split_details: otherSales.map(s => ({
+                        method: s.payment_method,
+                        amount: s.total_amount
+                    }))
+                };
+                processedSales.push(combinedSale);
+            } else {
+                group.forEach(s => processedSales.push(s));
+            }
+        });
+
+        filteredSales = processedSales.filter(sale => {
             if (paymentFilter !== 'all') {
-                if (sale.payment_method !== paymentFilter) {
+                if (paymentFilter === 'Split') {
+                    if (sale.payment_method !== 'Split') {
+                        return false;
+                    }
+                } else if (sale.payment_method !== paymentFilter) {
                     return false;
                 }
             }
             
-            // Date search
             if (dateSearchTerm) {
                 const saleDate = new Date(sale.created_at).toLocaleDateString('en-GB', { 
                     day: '2-digit', 
@@ -861,7 +1182,6 @@
                 }
             }
             
-            // Item name search
             if (itemSearchTerm) {
                 const itemName = (sale.item_name || '').toLowerCase();
                 if (!itemName.includes(itemSearchTerm.toLowerCase())) {
@@ -874,8 +1194,6 @@
         
         render();
     }
-
-    // ==================== RENDER FUNCTIONS ====================
 
     function render() {
         if (filteredSales.length === 0) {
@@ -897,8 +1215,22 @@
         switch(method) {
             case 'Cash': return 'payment-cash';
             case 'KCB Paybill': return 'payment-kcb';
+            case 'Mpesa': return 'payment-mpesa';
+            case 'Bank': return 'payment-bank';
+            case 'Debt': return 'payment-debt';
+            case 'Split': return 'payment-split';
             default: return '';
         }
+    }
+
+    function getSaleTypeBadge(itemName) {
+        if (!itemName) return '';
+        if (itemName.includes('REFILL')) {
+            return '<span class="sale-type-badge sale-type-refill">REFILL</span>';
+        } else if (itemName.includes('NEW CYLINDER') || itemName.includes('COMPLETE')) {
+            return '<span class="sale-type-badge sale-type-complete">NEW CYL</span>';
+        }
+        return '';
     }
 
     function renderDesktop() {
@@ -906,12 +1238,41 @@
         
         let html = '';
         filteredSales.forEach(sale => {
+            const revenue = sale.total_amount || 0;
+            const profit = calculateProfit(sale);
+            const profitClass = profit >= 0 ? 'profit-positive' : 'profit-negative';
             const date = new Date(sale.created_at);
             const formattedDate = date.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
             const formattedTime = date.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
             
-            const profit = (Number(sale.unit_price || 0) - Number(sale.cost_price || 0)) * (sale.quantity || 0);
             const paymentClass = getPaymentBadgeClass(sale.payment_method);
+            const saleTypeBadge = getSaleTypeBadge(sale.item_name);
+            
+            let methodDisplay = sale.payment_method;
+            let splitDetailsHtml = '';
+            
+            if (sale.split_details) {
+                methodDisplay = 'Split';
+                splitDetailsHtml = '<div class="split-details-container">';
+                sale.split_details.forEach(detail => {
+                    const detailClass = getPaymentBadgeClass(detail.method);
+                    splitDetailsHtml += `<span class="payment-badge ${detailClass}" style="margin-right:4px;">${detail.method}: Ksh ${detail.amount.toLocaleString()}</span>`;
+                });
+                splitDetailsHtml += '</div>';
+            }
+            
+            let costDisplay = '';
+            if (sale.category === 'Gas') {
+                const product = productsMap[sale.product_id];
+                const gasCost = Number(sale.cost_price || product?.cost_price || 0);
+                
+                if (sale.item_name && (sale.item_name.includes('NEW CYLINDER') || sale.item_name.includes('COMPLETE'))) {
+                    const completeCost = Number(product?.complete_cost || sale.cost_price || 0);
+                    costDisplay = `<small style="color: var(--text-dim); display:block;">Complete Cost: Ksh ${(completeCost * (sale.quantity || 1)).toLocaleString()}</small>`;
+                } else {
+                    costDisplay = `<small style="color: var(--text-dim); display:block;">Refill Cost: Ksh ${(gasCost * (sale.quantity || 1)).toLocaleString()}</small>`;
+                }
+            }
             
             html += `
                 <tr>
@@ -920,15 +1281,25 @@
                         <br><small style="color:var(--text-dim);">${formattedTime}</small>
                     </td>
                     <td>
-                        <b>${sale.item_name || 'Unknown'}</b>
-                        ${sale.part_type ? `<br><small style="color:var(--text-dim);">${sale.part_type}</small>` : ''}
+                        <div style="font-weight:700; display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+                            ${sale.item_name ? sale.item_name.replace(/\s*\(Split-[^)]+\)/g, '') : 'Unknown'}
+                            ${saleTypeBadge}
+                            ${sale.category === 'Gas' ? '<span class="gas-badge">GAS</span>' : ''}
+                            ${sale.payment_method === 'Split' ? '<span class="payment-badge payment-split">SPLIT</span>' : ''}
+                        </div>
+                        ${sale.part_type ? `<small style="color:var(--text-dim);">${sale.part_type}</small>` : ''}
+                        ${splitDetailsHtml}
+                        ${costDisplay}
                     </td>
                     <td><span class="category-badge">${sale.category || 'N/A'}</span></td>
                     <td>${sale.quantity || 0}</td>
-                    <td>Ksh ${Number(sale.unit_price || 0).toLocaleString()}</td>
-                    <td style="font-weight:700;">Ksh ${Number(sale.total_amount || 0).toLocaleString()}</td>
-                    <td><span class="payment-badge ${paymentClass}">${sale.payment_method || 'N/A'}</span></td>
-                    <td style="color:var(--success); font-weight:600;">Ksh ${profit.toLocaleString()}</td>
+                    <td style="font-weight:700;">Ksh ${revenue.toLocaleString()}</td>
+                    <td style="font-size:0.8rem;">Ksh ${(Number(sale.cost_price || 0) * (sale.quantity || 1)).toLocaleString()}</td>
+                    <td>
+                        <span class="${profitClass}">${profit >= 0 ? '+' : ''}Ksh ${profit.toLocaleString()}</span>
+                        <br><small style="color:var(--text-dim);">${((profit / revenue) * 100).toFixed(1)}% margin</small>
+                    </td>
+                    <td><span class="payment-badge ${paymentClass}">${methodDisplay}</span></td>
                 </tr>
             `;
         });
@@ -941,18 +1312,38 @@
         
         let html = '';
         filteredSales.forEach(sale => {
+            const revenue = sale.total_amount || 0;
+            const profit = calculateProfit(sale);
+            const profitClass = profit >= 0 ? 'profit-positive' : 'profit-negative';
             const date = new Date(sale.created_at);
             const formattedDate = date.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
             const formattedTime = date.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
             
-            const profit = (Number(sale.unit_price || 0) - Number(sale.cost_price || 0)) * (sale.quantity || 0);
             const paymentClass = getPaymentBadgeClass(sale.payment_method);
+            const saleTypeBadge = getSaleTypeBadge(sale.item_name);
+            
+            let methodDisplay = sale.payment_method;
+            let splitDetailsHtml = '';
+            
+            if (sale.split_details) {
+                methodDisplay = 'Split';
+                splitDetailsHtml = '<div style="margin-top:8px;">';
+                sale.split_details.forEach(detail => {
+                    const detailClass = getPaymentBadgeClass(detail.method);
+                    splitDetailsHtml += `<span class="payment-badge ${detailClass}" style="margin-right:4px;">${detail.method}: Ksh ${detail.amount.toLocaleString()}</span>`;
+                });
+                splitDetailsHtml += '</div>';
+            }
             
             html += `
                 <div class="sale-mobile-card">
                     <div class="sale-mobile-header">
-                        <span class="sale-mobile-title">${sale.item_name || 'Unknown'}</span>
-                        <span class="payment-badge ${paymentClass}">${sale.payment_method || 'N/A'}</span>
+                        <span class="sale-mobile-title">
+                            ${sale.item_name ? sale.item_name.replace(/\s*\(Split-[^)]+\)/g, '') : 'Unknown'}
+                            ${saleTypeBadge}
+                            ${sale.category === 'Gas' ? '<span class="gas-badge">GAS</span>' : ''}
+                        </span>
+                        <span class="payment-badge ${paymentClass}">${methodDisplay}</span>
                     </div>
                     
                     <div class="sale-mobile-meta">
@@ -971,27 +1362,27 @@
                     </div>
                     
                     <div class="sale-mobile-detail">
-                        <span class="sale-mobile-label">Unit Price</span>
-                        <span class="sale-mobile-value">Ksh ${Number(sale.unit_price || 0).toLocaleString()}</span>
+                        <span class="sale-mobile-label">Total</span>
+                        <span class="sale-mobile-value" style="font-weight:800;">Ksh ${revenue.toLocaleString()}</span>
                     </div>
                     
                     <div class="sale-mobile-detail">
-                        <span class="sale-mobile-label">Total</span>
-                        <span class="sale-mobile-value" style="font-weight:800;">Ksh ${Number(sale.total_amount || 0).toLocaleString()}</span>
+                        <span class="sale-mobile-label">Cost</span>
+                        <span class="sale-mobile-value">Ksh ${(Number(sale.cost_price || 0) * (sale.quantity || 1)).toLocaleString()}</span>
                     </div>
                     
                     <div class="sale-mobile-detail">
                         <span class="sale-mobile-label">Profit</span>
-                        <span class="sale-mobile-value" style="color:var(--success);">Ksh ${profit.toLocaleString()}</span>
+                        <span class="sale-mobile-value ${profitClass}">${profit >= 0 ? '+' : ''}Ksh ${profit.toLocaleString()} (${((profit / revenue) * 100).toFixed(1)}%)</span>
                     </div>
+                    
+                    ${splitDetailsHtml}
                 </div>
             `;
         });
 
         container.innerHTML = html;
     }
-
-    // ==================== EVENT LISTENERS ====================
 
     document.getElementById('paymentFilter').addEventListener('change', (e) => {
         paymentFilter = e.target.value;
@@ -1036,7 +1427,6 @@
         }, 1000);
     }
 
-    // Handle window resize
     window.addEventListener('resize', () => {
         const newIsMobile = window.innerWidth <= 768;
         if (newIsMobile !== isMobile) {
@@ -1045,7 +1435,6 @@
         }
     });
 
-    // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
         const profile = await loadUserProfile();
         if (profile) {
