@@ -36,6 +36,7 @@
             overflow-x: hidden; 
         }
 
+        /* --- SIDEBAR - Collapsible like other admin pages --- */
         .sidebar { 
             width: var(--sidebar-collapsed); 
             height: 100vh; 
@@ -87,6 +88,7 @@
             cursor: pointer; 
         }
 
+        /* Branch Info in Sidebar */
         .branch-info {
             padding: 10px;
             margin: 10px 0 20px;
@@ -175,6 +177,7 @@
             color: white; 
         }
 
+        /* --- MENU TRIGGER --- */
         .menu-trigger {
             display: none; 
             position: fixed; 
@@ -192,6 +195,7 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
+        /* --- MAIN LAYOUT --- */
         .main-wrapper { 
             width: 100%; 
             margin-left: var(--sidebar-collapsed); 
@@ -251,6 +255,7 @@
             }
         }
 
+        /* --- BRANCH SELECTOR --- */
         .branch-selector-container {
             background: white;
             border: 1px solid var(--border);
@@ -303,6 +308,7 @@
             font-weight: 500;
         }
 
+        /* --- SUMMARY CARDS --- */
         .summary-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -357,6 +363,7 @@
             justify-content: space-between;
         }
 
+        /* --- FILTER BAR --- */
         .filter-bar {
             background: white;
             border: 1px solid var(--border);
@@ -416,6 +423,7 @@
             background: #e2e8f0;
         }
 
+        /* --- SEARCH --- */
         .search-input {
             width: 100%; 
             padding: 16px; 
@@ -431,6 +439,7 @@
             border-color: var(--primary);
         }
 
+        /* --- DATA PRESENTATION --- */
         .data-card-container { 
             width: 100%; 
         }
@@ -541,7 +550,6 @@
         .badge-debt { background: #f1f5f9; color: #475569; }
         .badge-gas-refill { background: #ffedd5; color: #9a3412; }
         .badge-gas-complete { background: #fed7aa; color: #7b341e; }
-        .badge-split { background: #e2e8f0; color: #334155; }
         
         .profit-text { 
             color: var(--success); 
@@ -601,60 +609,6 @@
             font-weight: 700;
             margin-left: 5px;
         }
-        
-        .sale-type-badge {
-            background: #e2e8f0;
-            color: #334155;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.6rem;
-            font-weight: 700;
-            margin-left: 5px;
-        }
-        .sale-type-refill {
-            background: #ffedd5;
-            color: #9a3412;
-        }
-        .sale-type-complete {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-        
-        .profit-positive {
-            color: var(--success);
-            font-weight: 700;
-        }
-        
-        .profit-negative {
-            color: var(--danger);
-            font-weight: 700;
-        }
-        
-        .split-row {
-            background: #faf5ff;
-            border-left: 4px solid var(--primary);
-        }
-        
-        .split-detail {
-            font-size: 0.7rem;
-            color: var(--text-dim);
-            margin-top: 4px;
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        
-        .split-detail span {
-            background: #f1f5f9;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-        
-        .cost-breakdown {
-            font-size: 0.65rem;
-            color: var(--text-dim);
-            margin-top: 2px;
-        }
     </style>
 </head>
 <body>
@@ -668,6 +622,7 @@
         <button class="close-btn" onclick="toggleMenu()">×</button>
     </div>
     
+    <!-- Branch Info Display -->
     <div class="branch-info" id="sidebarBranchInfo">
         <div class="branch-label">Your Assigned Branch</div>
         <div class="branch-name" id="sidebarBranchName">
@@ -725,6 +680,7 @@
             <p style="color:var(--text-dim); margin-top:5px;">Complete history of all sales across all branches</p>
         </div>
 
+        <!-- Branch Selector -->
         <div class="branch-selector-container">
             <div class="branch-filter">
                 <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
@@ -739,6 +695,7 @@
             <span class="date-range" id="dateRange"></span>
         </div>
 
+        <!-- Summary Cards -->
         <div class="summary-grid">
             <div class="summary-card">
                 <div class="summary-label">Total Sales</div>
@@ -781,14 +738,6 @@
                 </div>
             </div>
             <div class="summary-card">
-                <div class="summary-label">Split Payments</div>
-                <div class="summary-value" id="splitSales">Ksh 0</div>
-                <div class="summary-detail">
-                    <span>Transactions</span>
-                    <span id="splitCount">0</span>
-                </div>
-            </div>
-            <div class="summary-card">
                 <div class="summary-label">Items Sold</div>
                 <div class="summary-value warning" id="totalItems">0</div>
                 <div class="summary-detail">
@@ -798,6 +747,7 @@
             </div>
         </div>
 
+        <!-- Filter Bar -->
         <div class="filter-bar">
             <div class="filter-group">
                 <i class="fas fa-calendar"></i>
@@ -812,7 +762,6 @@
                     <option value="Mpesa">M-Pesa</option>
                     <option value="Bank">Bank</option>
                     <option value="Debt">Debt</option>
-                    <option value="Split">Split</option>
                 </select>
             </div>
             <div class="filter-group">
@@ -868,21 +817,26 @@
     let branchIdMap = {};
     let productsMap = {};
 
+    // Filter states
     let paymentFilter = 'all';
     let dateSearchTerm = '';
     let itemSearchTerm = '';
     let quickSearchTerm = '';
 
+    // ==================== SIDEBAR FUNCTION ====================
     window.toggleMenu = function() {
         document.getElementById('sidebar').classList.toggle('mobile-active');
         document.getElementById('overlay').classList.toggle('active');
     };
+
+    // ==================== BRANCH FUNCTIONS ====================
 
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
         branches = {};
         branchIdMap = {};
         
+        // Populate branch selector
         const selector = document.getElementById('branchSelector');
         let options = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>';
         data?.forEach(b => {
@@ -936,6 +890,7 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
+            // Update sidebar with user's assigned branch
             const sidebarBranchName = document.querySelector('#sidebarBranchName span');
             if (profile.branches && sidebarBranchName) {
                 sidebarBranchName.textContent = profile.branches.name;
@@ -975,7 +930,7 @@
         try {
             const { data } = await supabase
                 .from('products')
-                .select('id, cost_price, complete_cost, category, name, weight_category');
+                .select('id, cost_price, cylinder_price, category');
             
             productsMap = {};
             data?.forEach(p => {
@@ -986,26 +941,8 @@
         }
     }
 
-    function groupSplitSales(sales) {
-        const groups = {};
-        const ungrouped = [];
-        
-        sales.forEach(sale => {
-            if (sale.payment_method === 'Split' || (sale.item_name && sale.item_name.includes('(Split-'))) {
-                const baseKey = sale.created_at.substring(0, 16) + '-' + (sale.product_id || '') + '-' + (sale.quantity || 0);
-                if (!groups[baseKey]) {
-                    groups[baseKey] = [];
-                }
-                groups[baseKey].push(sale);
-            } else {
-                ungrouped.push(sale);
-            }
-        });
-        
-        return { groups, ungrouped };
-    }
-
     async function fetchSales() {
+        // Show loading state
         document.getElementById('data-body').innerHTML = `
             <tr>
                 <td colspan="8" style="text-align: center; padding: 40px;">
@@ -1016,13 +953,16 @@
         `;
 
         try {
+            // Load products first for cost reference
             await fetchProducts();
 
+            // Build query
             let query = supabase
                 .from('sales')
                 .select('*')
                 .order('created_at', { ascending: false });
 
+            // Apply branch filter if a specific branch is selected
             if (selectedBranchId) {
                 query = query.eq('branch_id', selectedBranchId);
             }
@@ -1033,6 +973,7 @@
 
             allSales = data || [];
             filteredSales = [...allSales];
+            console.log(`Loaded ${allSales.length} sales transactions`);
             
             updateSummary();
             applyFilters();
@@ -1052,66 +993,28 @@
 
     function calculateProfit(sale) {
         const revenue = Number(sale.total_amount || 0);
-        const quantity = sale.quantity || 1;
         
+        // For gas sales, check if it's a complete purchase (contains cylinder)
         if (sale.category === 'Gas') {
             const product = productsMap[sale.product_id];
             
-            if (sale.item_name && (sale.item_name.includes('NEW CYLINDER') || sale.item_name.includes('COMPLETE'))) {
-                const completeCost = Number(product?.complete_cost || sale.cost_price || 0);
-                const totalCost = completeCost * quantity;
+            // Check if it's a complete sale (contains cylinder)
+            if (sale.item_name && sale.item_name.includes('New Cylinder')) {
+                // Complete sale: cost = (gas cost price + cylinder cost) * quantity
+                const gasCost = Number(sale.cost_price || 0);
+                const cylinderCost = Number(product?.cylinder_price || 0);
+                const totalCost = (gasCost + cylinderCost) * sale.quantity;
                 return revenue - totalCost;
             } else {
-                const refillCost = Number(sale.cost_price || product?.cost_price || 0);
-                const totalCost = refillCost * quantity;
-                return revenue - totalCost;
+                // Refill sale: cost = gas cost price * quantity
+                const cost = Number(sale.cost_price || 0) * sale.quantity;
+                return revenue - cost;
             }
         } else {
-            const cost = Number(sale.cost_price || 0) * quantity;
+            // Non-gas items
+            const cost = Number(sale.cost_price || 0) * sale.quantity;
             return revenue - cost;
         }
-    }
-
-    function calculateSplitGroupProfit(sales) {
-        if (sales.length === 0) return { totalRevenue: 0, totalCost: 0, profit: 0, quantity: 0, breakdown: [] };
-        
-        const totalRevenue = sales.reduce((sum, s) => sum + Number(s.total_amount || 0), 0);
-        
-        let totalCost = 0;
-        let quantity = 0;
-        const breakdown = [];
-        
-        sales.forEach(sale => {
-            let costPerUnit = 0;
-            if (sale.category === 'Gas') {
-                const product = productsMap[sale.product_id];
-                if (sale.item_name && (sale.item_name.includes('NEW CYLINDER') || sale.item_name.includes('COMPLETE'))) {
-                    costPerUnit = Number(product?.complete_cost || sale.cost_price || 0);
-                } else {
-                    costPerUnit = Number(sale.cost_price || product?.cost_price || 0);
-                }
-            } else {
-                costPerUnit = Number(sale.cost_price || 0);
-            }
-            
-            const saleCost = costPerUnit * (sale.quantity || 1);
-            totalCost += saleCost;
-            quantity += sale.quantity || 1;
-            
-            breakdown.push({
-                method: sale.payment_method,
-                amount: Number(sale.total_amount || 0),
-                cost: saleCost
-            });
-        });
-        
-        return {
-            totalRevenue,
-            totalCost,
-            profit: totalRevenue - totalCost,
-            quantity,
-            breakdown
-        };
     }
 
     function updateSummary() {
@@ -1120,25 +1023,12 @@
         let cashTotal = 0;
         let kcbTotal = 0;
         let mpesaTotal = 0;
-        let splitTotal = 0;
         let totalItems = 0;
         let cashCount = 0;
         let kcbCount = 0;
         let mpesaCount = 0;
-        let splitCount = 0;
 
-        const { groups, ungrouped } = groupSplitSales(allSales);
-        
-        Object.values(groups).forEach(group => {
-            const { totalRevenue, profit, quantity } = calculateSplitGroupProfit(group);
-            totalAmount += totalRevenue;
-            totalProfit += profit;
-            totalItems += quantity;
-            splitTotal += totalRevenue;
-            splitCount++;
-        });
-        
-        ungrouped.forEach(sale => {
+        allSales.forEach(sale => {
             const amount = Number(sale.total_amount || 0);
             const profit = calculateProfit(sale);
             
@@ -1179,25 +1069,18 @@
         document.getElementById('mpesaSales').textContent = `Ksh ${mpesaTotal.toLocaleString()}`;
         document.getElementById('mpesaCount').textContent = mpesaCount;
         
-        document.getElementById('splitSales').textContent = `Ksh ${splitTotal.toLocaleString()}`;
-        document.getElementById('splitCount').textContent = splitCount;
-        
         document.getElementById('totalItems').textContent = totalItems;
         document.getElementById('avgItems').textContent = avgItems;
     }
 
     function applyFilters() {
         filteredSales = allSales.filter(sale => {
-            if (paymentFilter !== 'all') {
-                if (paymentFilter === 'Split') {
-                    if (sale.payment_method !== 'Split' && !(sale.item_name && sale.item_name.includes('(Split-'))) {
-                        return false;
-                    }
-                } else if (sale.payment_method !== paymentFilter) {
-                    return false;
-                }
+            // Payment filter
+            if (paymentFilter !== 'all' && sale.payment_method !== paymentFilter) {
+                return false;
             }
             
+            // Date search
             if (dateSearchTerm) {
                 const saleDate = new Date(sale.created_at).toLocaleDateString('en-GB', { 
                     day: '2-digit', 
@@ -1209,6 +1092,7 @@
                 }
             }
             
+            // Item search
             if (itemSearchTerm) {
                 const itemName = (sale.item_name || '').toLowerCase();
                 if (!itemName.includes(itemSearchTerm.toLowerCase())) {
@@ -1216,6 +1100,7 @@
                 }
             }
             
+            // Quick search
             if (quickSearchTerm) {
                 const itemName = (sale.item_name || '').toLowerCase();
                 const category = (sale.category || '').toLowerCase();
@@ -1242,16 +1127,16 @@
             case 'KCB Paybill': return 'badge-kcb';
             case 'Bank': return 'badge-bank';
             case 'Debt': return 'badge-debt';
-            default: return 'badge-split';
+            default: return '';
         }
     }
 
-    function getSaleTypeBadge(itemName) {
+    function getGasTypeBadge(itemName) {
         if (!itemName) return '';
-        if (itemName.includes('REFILL')) {
-            return '<span class="sale-type-badge sale-type-refill">REFILL</span>';
-        } else if (itemName.includes('NEW CYLINDER') || itemName.includes('COMPLETE')) {
-            return '<span class="sale-type-badge sale-type-complete">NEW CYL</span>';
+        if (itemName.includes('Refill')) {
+            return '<span class="badge badge-gas-refill" style="margin-left:5px;">Refill</span>';
+        } else if (itemName.includes('New Cylinder')) {
+            return '<span class="badge badge-gas-complete" style="margin-left:5px;">New Cylinder</span>';
         }
         return '';
     }
@@ -1273,146 +1158,75 @@
             return;
         }
 
-        const { groups, ungrouped } = groupSplitSales(data);
-        const processedGroups = new Set();
-        
-        let allRows = [];
-        
-        ungrouped.forEach(s => {
-            allRows.push({ type: 'single', data: s });
-        });
-        
-        Object.values(groups).forEach(group => {
-            const key = group[0].created_at.substring(0, 16) + '-' + (group[0].product_id || '') + '-' + (group[0].quantity || 0);
-            if (!processedGroups.has(key)) {
-                processedGroups.add(key);
-                allRows.push({ type: 'group', data: group });
-            }
-        });
-        
-        allRows.sort((a, b) => {
-            const dateA = a.type === 'group' ? new Date(a.data[0].created_at) : new Date(a.data.created_at);
-            const dateB = b.type === 'group' ? new Date(b.data[0].created_at) : new Date(b.data.created_at);
-            return dateB - dateA;
-        });
-
-        tbody.innerHTML = allRows.map(item => {
-            if (item.type === 'single') {
-                const s = item.data;
-                const revenue = s.total_amount || 0;
-                const profit = calculateProfit(s);
-                const profitClass = profit >= 0 ? 'profit-positive' : 'profit-negative';
-                const date = new Date(s.created_at);
-                const branch = branches[s.branch_id] || { code: '--', name: 'Unknown' };
-                const paymentClass = getPaymentBadgeClass(s.payment_method);
-                const saleTypeBadge = getSaleTypeBadge(s.item_name);
+        tbody.innerHTML = data.map(s => {
+            const revenue = s.total_amount || 0;
+            const profit = calculateProfit(s);
+            const date = new Date(s.created_at);
+            
+            // Get branch info
+            const branch = branches[s.branch_id] || { code: '--', name: 'Unknown' };
+            
+            const paymentClass = getPaymentBadgeClass(s.payment_method);
+            const gasTypeBadge = getGasTypeBadge(s.item_name);
+            
+            // Calculate cost breakdown for display
+            let costDisplay = '';
+            if (s.category === 'Gas') {
+                const product = productsMap[s.product_id];
+                const gasCost = Number(s.cost_price || 0);
+                const cylinderCost = Number(product?.cylinder_price || 0);
                 
-                let costDisplay = '';
-                if (s.category === 'Gas') {
-                    const product = productsMap[s.product_id];
-                    if (s.item_name && (s.item_name.includes('NEW CYLINDER') || s.item_name.includes('COMPLETE'))) {
-                        costDisplay = `<div class="cost-breakdown">Complete Cost: Ksh ${(Number(product?.complete_cost || s.cost_price || 0) * (s.quantity || 1)).toLocaleString()}</div>`;
-                    } else {
-                        costDisplay = `<div class="cost-breakdown">Refill Cost: Ksh ${(Number(s.cost_price || product?.cost_price || 0) * (s.quantity || 1)).toLocaleString()}</div>`;
-                    }
+                if (s.item_name && s.item_name.includes('New Cylinder')) {
+                    costDisplay = `<small style="color: var(--text-dim); display:block;">Gas: Ksh ${gasCost} + Cyl: Ksh ${cylinderCost}</small>`;
+                } else {
+                    costDisplay = `<small style="color: var(--text-dim); display:block;">Gas: Ksh ${gasCost}</small>`;
                 }
-                
-                return `
-                    <tr>
-                        <td data-label="Date & Time">
-                            <span style="font-weight:700;">${date.toLocaleDateString()}</span>
-                            <small style="color:var(--text-dim); display:block;">${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
-                        </td>
-                        <td data-label="Item Details">
-                            <div style="font-weight:700; color:var(--admin-dark); display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
-                                ${s.item_name}
-                                ${saleTypeBadge}
-                                ${s.category === 'Gas' ? '<span class="gas-badge">GAS</span>' : ''}
-                            </div>
-                            <div style="font-size:0.7rem; color:var(--text-dim)">
-                                <i class="fas fa-tag"></i> ${s.category || 'General'}
-                            </div>
-                            ${costDisplay}
-                        </td>
-                        <td data-label="Quantity" style="font-weight:700;">${s.quantity}</td>
-                        <td data-label="Total Amount" style="font-weight:800;">Ksh ${revenue.toLocaleString()}</td>
-                        <td data-label="Cost" style="font-size:0.8rem;">
-                            Ksh ${(Number(s.cost_price || 0) * (s.quantity || 1)).toLocaleString()}
-                        </td>
-                        <td data-label="Est. Profit">
-                            <span class="${profitClass}">Ksh ${profit.toLocaleString()}</span>
-                            <div style="font-size:0.65rem; color:var(--text-dim);">
-                                ${revenue > 0 ? ((profit / revenue) * 100).toFixed(1) : 0}% margin
-                            </div>
-                        </td>
-                        <td data-label="Method">
-                            <span class="badge ${paymentClass}">${s.payment_method}</span>
-                        </td>
-                        <td data-label="Branch">
-                            <span class="branch-pill" title="${branch.name}">
-                                <i class="fas fa-store"></i> ${branch.code}
-                            </span>
-                        </td>
-                    </tr>
-                `;
-            } else {
-                const group = item.data;
-                const { totalRevenue, profit, quantity, breakdown } = calculateSplitGroupProfit(group);
-                const profitClass = profit >= 0 ? 'profit-positive' : 'profit-negative';
-                const date = new Date(group[0].created_at);
-                const branch = branches[group[0].branch_id] || { code: '--', name: 'Unknown' };
-                const firstSale = group[0];
-                
-                const methodsList = breakdown.map(b => 
-                    `<span class="badge ${getPaymentBadgeClass(b.method)}" style="margin-right:4px;">${b.method}: Ksh ${b.amount.toLocaleString()}</span>`
-                ).join('');
-                
-                const totalCost = totalRevenue - profit;
-                
-                return `
-                    <tr class="split-row">
-                        <td data-label="Date & Time">
-                            <span style="font-weight:700;">${date.toLocaleDateString()}</span>
-                            <small style="color:var(--text-dim); display:block;">${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
-                        </td>
-                        <td data-label="Item Details">
-                            <div style="font-weight:700; color:var(--admin-dark); display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
-                                ${firstSale.item_name.replace(/\s*\(Split-[^)]+\)/g, '').trim()}
-                                ${firstSale.category === 'Gas' ? '<span class="gas-badge">GAS</span>' : ''}
-                                <span class="badge badge-split">SPLIT</span>
-                            </div>
-                            <div style="font-size:0.7rem; color:var(--text-dim)">
-                                <i class="fas fa-tag"></i> ${firstSale.category || 'General'}
-                            </div>
-                            <div class="split-detail">
-                                ${methodsList}
-                            </div>
-                        </td>
-                        <td data-label="Quantity" style="font-weight:700;">${quantity}</td>
-                        <td data-label="Total Amount" style="font-weight:800;">Ksh ${totalRevenue.toLocaleString()}</td>
-                        <td data-label="Cost" style="font-size:0.8rem;">Ksh ${totalCost.toLocaleString()}</td>
-                        <td data-label="Est. Profit">
-                            <span class="${profitClass}">Ksh ${profit.toLocaleString()}</span>
-                            <div style="font-size:0.65rem; color:var(--text-dim);">
-                                ${((profit / totalRevenue) * 100).toFixed(1)}% margin
-                            </div>
-                        </td>
-                        <td data-label="Method">
-                            <span class="badge badge-split">Split (${group.length} ways)</span>
-                        </td>
-                        <td data-label="Branch">
-                            <span class="branch-pill" title="${branch.name}">
-                                <i class="fas fa-store"></i> ${branch.code}
-                            </span>
-                        </td>
-                    </tr>
-                `;
             }
+            
+            return `
+                <tr>
+                    <td data-label="Date & Time">
+                        <span style="font-weight:700;">${date.toLocaleDateString()}</span>
+                        <small style="color:var(--text-dim); display:block;">${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
+                    </td>
+                    <td data-label="Item Details">
+                        <div style="font-weight:700; color:var(--admin-dark);">
+                            ${s.item_name}
+                            ${gasTypeBadge}
+                            ${s.category === 'Gas' ? '<span class="gas-badge">GAS</span>' : ''}
+                        </div>
+                        <div style="font-size:0.7rem; color:var(--text-dim)">
+                            <i class="fas fa-tag"></i> ${s.category || 'General'}
+                        </div>
+                    </td>
+                    <td data-label="Quantity" style="font-weight:700;">${s.quantity}</td>
+                    <td data-label="Total Amount" style="font-weight:800;">Ksh ${revenue.toLocaleString()}</td>
+                    <td data-label="Cost" style="font-size:0.8rem;">
+                        Ksh ${(Number(s.cost_price || 0) * s.quantity).toLocaleString()}
+                        ${costDisplay}
+                    </td>
+                    <td data-label="Est. Profit">
+                        <span class="profit-text">+Ksh ${profit.toLocaleString()}</span>
+                        <div style="font-size:0.65rem; color:var(--text-dim);">
+                            ${((profit / revenue) * 100).toFixed(1)}% margin
+                        </div>
+                    </td>
+                    <td data-label="Method">
+                        <span class="badge ${paymentClass}">${s.payment_method}</span>
+                    </td>
+                    <td data-label="Branch">
+                        <span class="branch-pill" title="${branch.name}">
+                            <i class="fas fa-store"></i> ${branch.code}
+                        </span>
+                    </td>
+                </tr>
+            `;
         }).join('');
         
         document.getElementById('loadMore').style.display = data.length < filteredSales.length ? 'block' : 'none';
     }
 
+    // Event listeners for filters
     document.getElementById('paymentFilter').addEventListener('change', (e) => {
         paymentFilter = e.target.value;
         applyFilters();
@@ -1460,15 +1274,18 @@
         }
     };
 
+    // Initialize on load
     document.addEventListener('DOMContentLoaded', async function() {
         await loadBranches();
         await loadUserProfile();
         
+        // Set today's date
         const today = new Date();
         document.getElementById('dateRange').textContent = today.toLocaleDateString('en-GB', { 
             day: 'numeric', month: 'long', year: 'numeric' 
         });
         
+        // Set default branch selector
         document.getElementById('branchSelector').value = 'all';
         selectedBranchId = null;
         
