@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* ALL YOUR EXISTING STYLES - KEEP THEM EXACTLY AS THEY WERE */
         :root { 
             --admin-dark: #0f172a;
             --primary: #4f46e5; 
@@ -1344,7 +1345,7 @@
         if(document.getElementById(`pMethod-${type}`).value === 'Split') updateSplitBalance(type);
     };
 
-    // ==================== FIXED SALE PROCESSING WITH DEBT HANDLING ====================
+    // ==================== FIXED SALE PROCESSING WITH CORRECT PROFIT CALCULATION ====================
     async function processSale(btnId, type) {
         // Check if shift is active
         await checkShift();
@@ -1381,6 +1382,16 @@
         try {
             const total = price * qty;
             
+            // Calculate correct cost price based on sale type
+            let costPricePerUnit = outgoingItem.cost_price || 0;
+            
+            // For complete sales, add cylinder cost to the cost price
+            if (type === 'complete') {
+                costPricePerUnit = (outgoingItem.cost_price || 0) + (outgoingItem.cylinder_price || 0);
+            }
+            
+            const totalCost = costPricePerUnit * qty;
+            
             // Handle exchange logic for refill
             let exchangeInfo = "";
             let incomingId = outgoingId;
@@ -1394,7 +1405,7 @@
                 }
             }
 
-            // Create sale record
+            // Create sale record with correct cost price
             const saleRecord = {
                 shift_id: activeShift.id,
                 product_id: outgoingItem.id,
@@ -1403,7 +1414,7 @@
                 unit_price: price,
                 total_amount: total,
                 amount: total,
-                cost_price: outgoingItem.cost_price || 0,
+                cost_price: costPricePerUnit, // This is now the correct cost including cylinder for complete sales
                 discount_reason: discountReason,
                 category: 'Gas',
                 weight_category: outgoingItem.weight_category,
@@ -1453,13 +1464,12 @@
             }
 
             // ============================================
-            // FIXED: DEBT HANDLING - Record to debtors table
+            // DEBT HANDLING - Record to debtors table
             // ============================================
             if (method === 'Debt') {
                 const customerName = prompt("Customer Name (required):");
                 if (!customerName) {
                     alert("❌ Customer name is required for debt sales!");
-                    // Still continue with sale but warn
                 } else {
                     const customerPhone = prompt("Customer Phone (optional):", "");
                     
