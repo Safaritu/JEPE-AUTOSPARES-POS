@@ -1344,7 +1344,7 @@
         if(document.getElementById(`pMethod-${type}`).value === 'Split') updateSplitBalance(type);
     };
 
-    // ==================== FIXED SALE PROCESSING - NO MORE DUPLICATES ====================
+    // ==================== FIXED SALE PROCESSING WITH DEBT HANDLING ====================
     async function processSale(btnId, type) {
         // Check if shift is active
         await checkShift();
@@ -1394,7 +1394,7 @@
                 }
             }
 
-            // Create a single sale record - FIXED: No more splitting into two records
+            // Create sale record
             const saleRecord = {
                 shift_id: activeShift.id,
                 product_id: outgoingItem.id,
@@ -1412,21 +1412,18 @@
                 payment_method: method
             };
 
-            // Add split payment details if applicable - store in a single record
+            // Add split payment details if applicable
             if (method === 'Split') {
                 const cashPart = parseFloat(document.getElementById(`split-cash-${type}`).value) || 0;
                 const paybillPart = total - cashPart;
 
                 if (cashPart <= 0 || cashPart >= total) throw new Error("Invalid split amounts.");
                 
-                // Store split details in a JSON field or notes
-                // You can add these fields to your sales table if needed
-                saleRecord.split_cash = cashPart;
-                saleRecord.split_paybill = paybillPart;
+                // Store split details
                 saleRecord.notes = `Split payment: Cash Ksh ${cashPart}, Paybill Ksh ${paybillPart}`;
             }
 
-            // Insert SINGLE sale record - FIXED: Only one insert
+            // Insert SINGLE sale record
             const { error: saleErr, data: insertedSale } = await supabase
                 .from('sales')
                 .insert([saleRecord])
@@ -1455,17 +1452,24 @@
                     .eq('branch_id', currentBranchId);
             }
 
-            // Handle Debt recording if applicable - link to the sale
+            // ============================================
+            // FIXED: DEBT HANDLING - Record to debtors table
+            // ============================================
             if (method === 'Debt') {
-                const customerName = prompt("Enter customer name for debt:");
-                if (customerName && insertedSale && insertedSale[0]) {
+                const customerName = prompt("Customer Name (required):");
+                if (!customerName) {
+                    alert("❌ Customer name is required for debt sales!");
+                    // Still continue with sale but warn
+                } else {
+                    const customerPhone = prompt("Customer Phone (optional):", "");
+                    
                     await supabase.from('debtors').insert([{
                         customer_name: customerName,
+                        customer_phone: customerPhone || null,
                         product_id: outgoingItem.id,
                         amount_owed: total,
-                        status: 'Unpaid',
                         branch_id: currentBranchId,
-                        sale_id: insertedSale[0].id
+                        status: 'Unpaid'
                     }]);
                 }
             }
