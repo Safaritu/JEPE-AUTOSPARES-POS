@@ -22,7 +22,6 @@
             --sidebar-width: 260px;
             --sidebar-collapsed: 70px;
             --header-height: 70px;
-            --gas: #f59e0b;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
@@ -406,18 +405,6 @@
             background: #e0e7ff;
             color: #4338ca;
         }
-        .payment-mpesa {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        .payment-bank {
-            background: #fef3c7;
-            color: #92400e;
-        }
-        .payment-debt {
-            background: #f1f5f9;
-            color: #475569;
-        }
 
         .category-badge {
             background: #f1f5f9;
@@ -426,34 +413,6 @@
             border-radius: 4px;
             font-size: 0.65rem;
             font-weight: 600;
-        }
-        
-        .gas-badge {
-            background: var(--gas);
-            color: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.6rem;
-            font-weight: 700;
-            margin-left: 5px;
-        }
-        
-        .sale-type-badge {
-            background: #e2e8f0;
-            color: #334155;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.6rem;
-            font-weight: 700;
-            margin-left: 5px;
-        }
-        .sale-type-refill {
-            background: #ffedd5;
-            color: #9a3412;
-        }
-        .sale-type-complete {
-            background: #dbeafe;
-            color: #1e40af;
         }
 
         /* --- MOBILE CARD STYLES --- */
@@ -490,10 +449,6 @@
             .sale-mobile-title {
                 font-weight: 800;
                 font-size: 0.9rem;
-                display: flex;
-                align-items: center;
-                gap: 5px;
-                flex-wrap: wrap;
             }
             
             .sale-mobile-meta {
@@ -517,14 +472,6 @@
             
             .sale-mobile-value {
                 font-weight: 600;
-            }
-            
-            .cost-breakdown {
-                background: #f8fafc;
-                padding: 8px;
-                border-radius: 6px;
-                margin-top: 8px;
-                font-size: 0.7rem;
             }
         }
 
@@ -598,16 +545,6 @@
             z-index: 2500; 
         }
         .overlay.active { display: block; }
-        
-        .profit-positive {
-            color: var(--success);
-            font-weight: 600;
-        }
-        
-        .profit-negative {
-            color: var(--danger);
-            font-weight: 600;
-        }
     </style>
 </head>
 <body>
@@ -695,8 +632,6 @@
                     <option value="all">All Transactions</option>
                     <option value="Cash">Cash Only</option>
                     <option value="KCB Paybill">KCB Paybill Only</option>
-                    <option value="Mpesa">M-Pesa Only</option>
-                    <option value="Debt">Debt Only</option>
                 </select>
             </div>
             <div class="filter-group">
@@ -765,7 +700,6 @@
     
     let allSales = [];
     let filteredSales = [];
-    let productsMap = {};
     let currentUser = null;
     let currentBranchId = null;
     let currentBranch = null;
@@ -855,26 +789,6 @@
         location.href = 'index.html'; 
     };
 
-    // ==================== PRODUCT FETCHING ====================
-    
-    async function fetchProducts() {
-        try {
-            const branchId = getCurrentBranchId();
-            const { data } = await supabase
-                .from('products')
-                .select('id, cost_price, complete_cost, category, name, weight_category')
-                .eq('branch_id', branchId);
-            
-            productsMap = {};
-            data?.forEach(p => {
-                productsMap[p.id] = p;
-            });
-            console.log(`Loaded ${data?.length || 0} products for cost reference`);
-        } catch (error) {
-            console.error("Error fetching products:", error);
-        }
-    }
-
     // ==================== DATA FETCHING ====================
 
     async function fetchSales() {
@@ -886,9 +800,6 @@
                 console.error("No branch ID found");
                 return;
             }
-
-            // First fetch products for cost reference
-            await fetchProducts();
 
             // Fetch all sales for this branch
             const { data, error } = await supabase
@@ -931,7 +842,7 @@
 
     function applyFilters() {
         filteredSales = allSales.filter(sale => {
-            // Payment method filter
+            // Payment method filter (Cash or KCB Paybill only)
             if (paymentFilter !== 'all') {
                 if (sale.payment_method !== paymentFilter) {
                     return false;
@@ -964,58 +875,6 @@
         render();
     }
 
-    // ==================== PROFIT CALCULATION ====================
-    
-    function calculateProfit(sale) {
-        const revenue = Number(sale.total_amount || 0);
-        
-        // For gas sales, check if it's a complete purchase (new cylinder)
-        if (sale.category === 'Gas') {
-            const product = productsMap[sale.product_id];
-            
-            // Check if it's a complete sale (new cylinder)
-            if (sale.item_name && sale.item_name.includes('NEW CYLINDER')) {
-                // Complete sale: use complete_cost from product
-                const completeCost = Number(product?.complete_cost || sale.cost_price || 0);
-                const totalCost = completeCost * (sale.quantity || 1);
-                return revenue - totalCost;
-            } else {
-                // Refill sale: use cost_price from sale or product
-                const refillCost = Number(sale.cost_price || product?.cost_price || 0);
-                const totalCost = refillCost * (sale.quantity || 1);
-                return revenue - totalCost;
-            }
-        } else {
-            // Non-gas items
-            const cost = Number(sale.cost_price || 0) * (sale.quantity || 1);
-            return revenue - cost;
-        }
-    }
-    
-    function getCostBreakdown(sale) {
-        if (sale.category !== 'Gas') return null;
-        
-        const product = productsMap[sale.product_id];
-        
-        if (sale.item_name && sale.item_name.includes('NEW CYLINDER')) {
-            const completeCost = Number(product?.complete_cost || sale.cost_price || 0);
-            return {
-                type: 'complete',
-                cost: completeCost,
-                revenue: Number(sale.total_amount || 0),
-                profit: Number(sale.total_amount || 0) - (completeCost * (sale.quantity || 1))
-            };
-        } else {
-            const refillCost = Number(sale.cost_price || product?.cost_price || 0);
-            return {
-                type: 'refill',
-                cost: refillCost,
-                revenue: Number(sale.total_amount || 0),
-                profit: Number(sale.total_amount || 0) - (refillCost * (sale.quantity || 1))
-            };
-        }
-    }
-
     // ==================== RENDER FUNCTIONS ====================
 
     function render() {
@@ -1038,21 +897,8 @@
         switch(method) {
             case 'Cash': return 'payment-cash';
             case 'KCB Paybill': return 'payment-kcb';
-            case 'Mpesa': return 'payment-mpesa';
-            case 'Bank': return 'payment-bank';
-            case 'Debt': return 'payment-debt';
             default: return '';
         }
-    }
-    
-    function getSaleTypeBadge(itemName) {
-        if (!itemName) return '';
-        if (itemName.includes('REFILL')) {
-            return '<span class="sale-type-badge sale-type-refill">REFILL</span>';
-        } else if (itemName.includes('NEW CYLINDER')) {
-            return '<span class="sale-type-badge sale-type-complete">NEW CYL</span>';
-        }
-        return '';
     }
 
     function renderDesktop() {
@@ -1064,10 +910,8 @@
             const formattedDate = date.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
             const formattedTime = date.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
             
-            const profit = calculateProfit(sale);
-            const profitClass = profit >= 0 ? 'profit-positive' : 'profit-negative';
+            const profit = (Number(sale.unit_price || 0) - Number(sale.cost_price || 0)) * (sale.quantity || 0);
             const paymentClass = getPaymentBadgeClass(sale.payment_method);
-            const saleTypeBadge = getSaleTypeBadge(sale.item_name);
             
             html += `
                 <tr>
@@ -1076,19 +920,15 @@
                         <br><small style="color:var(--text-dim);">${formattedTime}</small>
                     </td>
                     <td>
-                        <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
-                            <b>${sale.item_name || 'Unknown'}</b>
-                            ${sale.category === 'Gas' ? '<span class="gas-badge">GAS</span>' : ''}
-                            ${saleTypeBadge}
-                        </div>
-                        ${sale.part_type ? `<small style="color:var(--text-dim); display:block; margin-top:4px;">${sale.part_type}</small>` : ''}
+                        <b>${sale.item_name || 'Unknown'}</b>
+                        ${sale.part_type ? `<br><small style="color:var(--text-dim);">${sale.part_type}</small>` : ''}
                     </td>
                     <td><span class="category-badge">${sale.category || 'N/A'}</span></td>
                     <td>${sale.quantity || 0}</td>
                     <td>Ksh ${Number(sale.unit_price || 0).toLocaleString()}</td>
                     <td style="font-weight:700;">Ksh ${Number(sale.total_amount || 0).toLocaleString()}</td>
                     <td><span class="payment-badge ${paymentClass}">${sale.payment_method || 'N/A'}</span></td>
-                    <td class="${profitClass}">Ksh ${profit.toLocaleString()}</td>
+                    <td style="color:var(--success); font-weight:600;">Ksh ${profit.toLocaleString()}</td>
                 </tr>
             `;
         });
@@ -1105,20 +945,13 @@
             const formattedDate = date.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
             const formattedTime = date.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
             
-            const profit = calculateProfit(sale);
-            const profitClass = profit >= 0 ? 'profit-positive' : 'profit-negative';
+            const profit = (Number(sale.unit_price || 0) - Number(sale.cost_price || 0)) * (sale.quantity || 0);
             const paymentClass = getPaymentBadgeClass(sale.payment_method);
-            const saleTypeBadge = getSaleTypeBadge(sale.item_name);
-            const costBreakdown = getCostBreakdown(sale);
             
             html += `
                 <div class="sale-mobile-card">
                     <div class="sale-mobile-header">
-                        <span class="sale-mobile-title">
-                            ${sale.item_name || 'Unknown'}
-                            ${sale.category === 'Gas' ? '<span class="gas-badge">GAS</span>' : ''}
-                            ${saleTypeBadge}
-                        </span>
+                        <span class="sale-mobile-title">${sale.item_name || 'Unknown'}</span>
                         <span class="payment-badge ${paymentClass}">${sale.payment_method || 'N/A'}</span>
                     </div>
                     
@@ -1149,18 +982,8 @@
                     
                     <div class="sale-mobile-detail">
                         <span class="sale-mobile-label">Profit</span>
-                        <span class="sale-mobile-value ${profitClass}">Ksh ${profit.toLocaleString()}</span>
+                        <span class="sale-mobile-value" style="color:var(--success);">Ksh ${profit.toLocaleString()}</span>
                     </div>
-                    
-                    ${costBreakdown ? `
-                        <div class="cost-breakdown">
-                            <small><i class="fas fa-info-circle"></i> 
-                                ${costBreakdown.type === 'complete' 
-                                    ? `Complete Cost: Ksh ${(costBreakdown.cost * (sale.quantity || 1)).toLocaleString()}` 
-                                    : `Refill Cost: Ksh ${(costBreakdown.cost * (sale.quantity || 1)).toLocaleString()}`}
-                            </small>
-                        </div>
-                    ` : ''}
                 </div>
             `;
         });
