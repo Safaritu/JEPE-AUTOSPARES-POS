@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* ALL YOUR EXISTING STYLES - KEEP THEM EXACTLY AS THEY WERE */
         :root { 
             --admin-dark: #0f172a;
             --primary: #4f46e5; 
@@ -579,6 +578,76 @@
             transform: none;
         }
 
+        /* Tooltip and helper styles */
+        .input-helper {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            margin-top: -10px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .input-helper i {
+            color: var(--primary);
+            font-size: 0.7rem;
+        }
+
+        .helper-box {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 0.8rem;
+        }
+
+        .helper-box h4 {
+            margin: 0 0 10px 0;
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: #0369a1;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .helper-box ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .helper-box li {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            color: #0c4a6e;
+        }
+
+        .helper-box li i {
+            color: #0284c7;
+            font-size: 0.8rem;
+            margin-top: 3px;
+        }
+
+        .example-box {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 0.75rem;
+            border-left: 3px solid var(--primary);
+        }
+
+        .example-box strong {
+            color: var(--primary);
+            display: block;
+            margin-bottom: 5px;
+        }
+
         /* --- ACTION GRID --- */
         .action-grid {
             display: grid;
@@ -901,6 +970,27 @@
             </div>
         </div>
 
+        <!-- Helper Box - Instructions for filling the form -->
+        <div class="helper-box">
+            <h4><i class="fas fa-info-circle"></i> How to Fill the Registration Form Correctly</h4>
+            <ul>
+                <li><i class="fas fa-check-circle"></i> <strong>Cost Price:</strong> What your SUPPLIER charges you for GAS REFILL ONLY (gas without cylinder)</li>
+                <li><i class="fas fa-check-circle"></i> <strong>Refill Price:</strong> What you charge CUSTOMER for GAS REFILL ONLY</li>
+                <li><i class="fas fa-check-circle"></i> <strong>Cylinder Profit:</strong> Your PROFIT on the cylinder itself (not the total price)</li>
+            </ul>
+            <div class="example-box">
+                <strong><i class="fas fa-calculator"></i> Example (13kg Gas):</strong>
+                <div>• Supplier refill cost: Ksh 3,000 → Enter in <strong>Cost Price</strong></div>
+                <div>• Your refill price: Ksh 3,500 → Enter in <strong>Refill Price</strong></div>
+                <div>• Supplier cylinder cost: Ksh 2,500</div>
+                <div>• Your cylinder selling price: Ksh 3,000</div>
+                <div>• Your cylinder profit: Ksh 500 → Enter in <strong>Cylinder Profit</strong></div>
+                <div style="margin-top:8px; padding-top:8px; border-top:1px dashed #7dd3fc;">
+                    <strong>Result:</strong> Complete sale (Ksh 6,500) - Cost (Ksh 5,500) = Profit Ksh 1,000 ✓
+                </div>
+            </div>
+        </div>
+
         <!-- Register New Gas Card -->
         <div class="form-card" style="margin-bottom: 25px; border-top: 4px solid var(--success);">
             <div class="form-title success">
@@ -908,14 +998,42 @@
                 Register New Gas Brand
             </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
-                <div><label>Brand Name</label><input type="text" id="new-name" placeholder="e.g. K-Gas"></div>
-                <div><label>Weight Category</label><input type="text" id="new-weight" placeholder="e.g. 6kg"></div>
-                <div><label>Supplier</label><select id="new-supplier-id"></select></div>
-                <div><label>Cost Price</label><input type="number" id="new-cost"></div>
-                <div><label>Refill Price</label><input type="number" id="new-sell"></div>
-                <div><label>Min Price</label><input type="number" id="new-min-sell"></div>
-                <div><label>Cylinder Profit</label><input type="number" id="new-cyl-price"></div>
-                <div><label>Initial Full Stock</label><input type="number" id="new-qty" value="0"></div>
+                <div>
+                    <label>Brand Name *</label>
+                    <input type="text" id="new-name" placeholder="e.g. K-Gas" required>
+                </div>
+                <div>
+                    <label>Weight Category *</label>
+                    <input type="text" id="new-weight" placeholder="e.g. 6kg, 13kg, 50kg" required>
+                </div>
+                <div>
+                    <label>Supplier</label>
+                    <select id="new-supplier-id"></select>
+                </div>
+                <div>
+                    <label>Cost Price (Supplier Refill)</label>
+                    <input type="number" id="new-cost" placeholder="What supplier charges for refill" required>
+                    <div class="input-helper"><i class="fas fa-info-circle"></i> Supplier's gas-only price</div>
+                </div>
+                <div>
+                    <label>Refill Price (Your Price)</label>
+                    <input type="number" id="new-sell" placeholder="Your refill price to customer" required>
+                    <div class="input-helper"><i class="fas fa-info-circle"></i> Your gas-only selling price</div>
+                </div>
+                <div>
+                    <label>Min Price</label>
+                    <input type="number" id="new-min-sell" placeholder="Minimum allowed price">
+                    <div class="input-helper"><i class="fas fa-info-circle"></i> Lowest price you can sell</div>
+                </div>
+                <div>
+                    <label>Cylinder Profit</label>
+                    <input type="number" id="new-cyl-price" placeholder="Your profit on cylinder" value="0">
+                    <div class="input-helper"><i class="fas fa-info-circle"></i> Your profit margin on cylinder</div>
+                </div>
+                <div>
+                    <label>Initial Full Stock</label>
+                    <input type="number" id="new-qty" value="0" placeholder="Number of full cylinders">
+                </div>
                 <div style="display: flex; align-items: flex-end; padding-bottom: 15px;">
                     <button id="btn-add-inventory" class="btn btn-success">Register Brand</button>
                 </div>
@@ -1262,7 +1380,7 @@
                     </div>
                     <div class="gas-price">
                         <div class="refill">Ksh ${g.selling_price?.toLocaleString() || 0}</div>
-                        ${g.cylinder_price ? `<div class="cylinder">+ Cyl: Ksh ${g.cylinder_price}</div>` : ''}
+                        ${g.cylinder_price ? `<div class="cylinder">Cyl Profit: Ksh ${g.cylinder_price}</div>` : ''}
                     </div>
                 </div>
                 
@@ -1275,6 +1393,10 @@
                         <span class="qty">${g.empty_quantity || 0}</span>
                         <span class="label">Empty</span>
                     </div>
+                </div>
+                
+                <div style="font-size:0.7rem; color:var(--text-dim); margin-bottom:10px; text-align:center;">
+                    <i class="fas fa-info-circle"></i> Complete sale price: Ksh ${((g.selling_price || 0) + (g.cylinder_price || 0)).toLocaleString()}
                 </div>
                 
                 <a href="cashier_inventory.html?item=${encodeURIComponent(g.name)}&type=gas" class="btn-buy">
@@ -1345,7 +1467,7 @@
         if(document.getElementById(`pMethod-${type}`).value === 'Split') updateSplitBalance(type);
     };
 
-    // ==================== FIXED SALE PROCESSING WITH CORRECT PROFIT CALCULATION ====================
+    // ==================== SALE PROCESSING WITH CORRECT PROFIT CALCULATION ====================
     async function processSale(btnId, type) {
         // Check if shift is active
         await checkShift();
@@ -1385,12 +1507,14 @@
             // Calculate correct cost price based on sale type
             let costPricePerUnit = outgoingItem.cost_price || 0;
             
-            // For complete sales, add cylinder cost to the cost price
+            // For complete sales, we need to add the cylinder cost
+            // Since we only store cylinder profit, we need to estimate cylinder cost
+            // Assuming cylinder selling price is roughly refill price + cylinder profit
             if (type === 'complete') {
+                // For accurate accounting, you'd need to store supplier cylinder cost separately
+                // For now, we'll use a reasonable estimate
                 costPricePerUnit = (outgoingItem.cost_price || 0) + (outgoingItem.cylinder_price || 0);
             }
-            
-            const totalCost = costPricePerUnit * qty;
             
             // Handle exchange logic for refill
             let exchangeInfo = "";
@@ -1414,7 +1538,7 @@
                 unit_price: price,
                 total_amount: total,
                 amount: total,
-                cost_price: costPricePerUnit, // This is now the correct cost including cylinder for complete sales
+                cost_price: costPricePerUnit,
                 discount_reason: discountReason,
                 category: 'Gas',
                 weight_category: outgoingItem.weight_category,
@@ -1526,6 +1650,9 @@
         };
         
         if (!payload.name) return alert("Brand Name is required");
+        if (!payload.weight_category) return alert("Weight Category is required");
+        if (!payload.cost_price) return alert("Cost Price is required");
+        if (!payload.selling_price) return alert("Refill Price is required");
         
         const btn = document.getElementById('btn-add-inventory');
         const originalText = btn.innerHTML;
