@@ -541,6 +541,7 @@
         .badge-debt { background: #f1f5f9; color: #475569; }
         .badge-gas-refill { background: #ffedd5; color: #9a3412; }
         .badge-gas-complete { background: #fed7aa; color: #7b341e; }
+        .badge-split { background: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; }
         
         .profit-positive {
             color: var(--success);
@@ -622,6 +623,13 @@
         .sale-type-complete {
             background: #dbeafe;
             color: #1e40af;
+        }
+        
+        .split-details-container {
+            margin-top: 5px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
         }
     </style>
 </head>
@@ -749,6 +757,14 @@
                 </div>
             </div>
             <div class="summary-card">
+                <div class="summary-label">Split Payments</div>
+                <div class="summary-value" id="splitSales">Ksh 0</div>
+                <div class="summary-detail">
+                    <span>Transactions</span>
+                    <span id="splitCount">0</span>
+                </div>
+            </div>
+            <div class="summary-card">
                 <div class="summary-label">Items Sold</div>
                 <div class="summary-value warning" id="totalItems">0</div>
                 <div class="summary-detail">
@@ -772,6 +788,7 @@
                     <option value="Mpesa">M-Pesa</option>
                     <option value="Bank">Bank</option>
                     <option value="Debt">Debt</option>
+                    <option value="Split">Split</option>
                 </select>
             </div>
             <div class="filter-group">
@@ -827,7 +844,6 @@
     let branchIdMap = {};
     let productsMap = {};
 
-    // Filter states
     let paymentFilter = 'all';
     let dateSearchTerm = '';
     let itemSearchTerm = '';
@@ -941,10 +957,29 @@
             data?.forEach(p => {
                 productsMap[p.id] = p;
             });
-            console.log(`Loaded ${data?.length || 0} products for cost reference`);
         } catch (error) {
             console.error("Error fetching products:", error);
         }
+    }
+
+    function groupSplitSales(sales) {
+        const groups = {};
+        const regularSales = [];
+        
+        sales.forEach(sale => {
+            if (sale.item_name && sale.item_name.includes('(Split-')) {
+                const baseName = sale.item_name.replace(/\s*\(Split-[^)]+\)/g, '');
+                const key = sale.created_at + '-' + baseName;
+                if (!groups[key]) {
+                    groups[key] = [];
+                }
+                groups[key].push(sale);
+            } else {
+                regularSales.push(sale);
+            }
+        });
+
+        return { groups, regularSales };
     }
 
     async function fetchSales() {
@@ -974,6 +1009,10 @@
             if (error) throw error;
 
             allSales = data || [];
+            
+            // Process split groups for summary
+            const { groups, regularSales } = groupSplitSales(allSales);
+            
             filteredSales = [...allSales];
             
             updateSummary();
@@ -992,29 +1031,23 @@
         }
     }
 
-    // ==================== FIXED PROFIT CALCULATION FOR GAS ====================
     function calculateProfit(sale) {
         const revenue = Number(sale.total_amount || 0);
         const quantity = sale.quantity || 1;
         
-        // For gas sales
         if (sale.category === 'Gas') {
             const product = productsMap[sale.product_id];
             
-            // Check if it's a complete sale (new cylinder)
             if (sale.item_name && (sale.item_name.includes('NEW CYLINDER') || sale.item_name.includes('COMPLETE'))) {
-                // Complete sale: use complete_cost from product
                 const completeCost = Number(product?.complete_cost || sale.cost_price || 0);
                 const totalCost = completeCost * quantity;
                 return revenue - totalCost;
             } else {
-                // Refill sale: use cost_price from sale or product
                 const refillCost = Number(sale.cost_price || product?.cost_price || 0);
                 const totalCost = refillCost * quantity;
                 return revenue - totalCost;
             }
         } else {
-            // Non-gas items
             const cost = Number(sale.cost_price || 0) * quantity;
             return revenue - cost;
         }
@@ -1026,12 +1059,33 @@
         let cashTotal = 0;
         let kcbTotal = 0;
         let mpesaTotal = 0;
+        let splitTotal = 0;
         let totalItems = 0;
         let cashCount = 0;
         let kcbCount = 0;
         let mpesaCount = 0;
+        let splitCount = 0;
 
-        allSales.forEach(sale => {
+        const { groups, regularSales } = groupSplitSales(allSales);
+        
+        // Process split groups
+        Object.values(groups).forEach(group => {
+            const totalRevenue = group.reduce((sum, s) => sum + Number(s.total_amount || 0), 0);
+            const totalQuantity = group.reduce((sum, s) => sum + (s.quantity || 0), 0);
+            
+            // Use the main sale for profit calculation (they all have same cost price)
+            const mainSale = group.find(s => s.quantity > 0) || group[0];
+            const profit = calculateProfit({...mainSale, total_amount: totalRevenue, quantity: totalQuantity});
+            
+            totalAmount += totalRevenue;
+            totalProfit += profit;
+            totalItems += totalQuantity;
+            splitTotal += totalRevenue;
+            splitCount++;
+        });
+        
+        // Process regular sales
+        regularSales.forEach(sale => {
             const amount = Number(sale.total_amount || 0);
             const profit = calculateProfit(sale);
             
@@ -1072,14 +1126,57 @@
         document.getElementById('mpesaSales').textContent = `Ksh ${mpesaTotal.toLocaleString()}`;
         document.getElementById('mpesaCount').textContent = mpesaCount;
         
+        document.getElementById('splitSales').textContent = `Ksh ${splitTotal.toLocaleString()}`;
+        document.getElementById('splitCount').textContent = splitCount;
+        
         document.getElementById('totalItems').textContent = totalItems;
         document.getElementById('avgItems').textContent = avgItems;
     }
 
     function applyFilters() {
-        filteredSales = allSales.filter(sale => {
-            if (paymentFilter !== 'all' && sale.payment_method !== paymentFilter) {
-                return false;
+        const { groups, regularSales } = groupSplitSales(allSales);
+        
+        // Create processed sales array for filtering
+        const processedSales = [];
+        
+        // Add regular sales
+        regularSales.forEach(s => processedSales.push(s));
+        
+        // Add combined split groups
+        Object.values(groups).forEach(group => {
+            if (group.length >= 2) {
+                const mainSale = group.find(s => s.quantity > 0) || group[0];
+                const otherSales = group.filter(s => s !== mainSale);
+                
+                const totalRevenue = group.reduce((sum, s) => sum + Number(s.total_amount || 0), 0);
+                const totalQuantity = group.reduce((sum, s) => sum + (s.quantity || 0), 0);
+                
+                const combinedSale = {
+                    ...mainSale,
+                    quantity: totalQuantity,
+                    total_amount: totalRevenue,
+                    payment_method: 'Split',
+                    split_details: otherSales.map(s => ({
+                        method: s.payment_method,
+                        amount: s.total_amount
+                    }))
+                };
+                processedSales.push(combinedSale);
+            } else {
+                group.forEach(s => processedSales.push(s));
+            }
+        });
+
+        // Apply filters to processed sales
+        filteredSales = processedSales.filter(sale => {
+            if (paymentFilter !== 'all') {
+                if (paymentFilter === 'Split') {
+                    if (sale.payment_method !== 'Split') {
+                        return false;
+                    }
+                } else if (sale.payment_method !== paymentFilter) {
+                    return false;
+                }
             }
             
             if (dateSearchTerm) {
@@ -1126,6 +1223,7 @@
             case 'KCB Paybill': return 'badge-kcb';
             case 'Bank': return 'badge-bank';
             case 'Debt': return 'badge-debt';
+            case 'Split': return 'badge-split';
             default: return '';
         }
     }
@@ -1157,76 +1255,28 @@
             return;
         }
 
-        // Group sales by timestamp to identify split payments
-        const splitGroups = {};
-        const regularSales = [];
-        
-        data.forEach(sale => {
-            if (sale.item_name && sale.item_name.includes('(Split-')) {
-                const baseName = sale.item_name.replace(/\s*\(Split-[^)]+\)/g, '');
-                const key = sale.created_at + '-' + baseName;
-                if (!splitGroups[key]) {
-                    splitGroups[key] = [];
-                }
-                splitGroups[key].push(sale);
-            } else {
-                regularSales.push(sale);
-            }
-        });
-
-        // Process split groups to combine them
-        const processedSales = [];
-        
-        // Add regular sales
-        regularSales.forEach(s => processedSales.push(s));
-        
-        // Add combined split groups
-        Object.values(splitGroups).forEach(group => {
-            if (group.length >= 2) {
-                // Find the one with quantity > 0 (the actual item)
-                const mainSale = group.find(s => s.quantity > 0) || group[0];
-                const otherSales = group.filter(s => s !== mainSale);
-                
-                // Calculate total revenue and cost
-                const totalRevenue = group.reduce((sum, s) => sum + Number(s.total_amount || 0), 0);
-                const totalQuantity = group.reduce((sum, s) => sum + (s.quantity || 0), 0);
-                
-                // Create combined sale record
-                const combinedSale = {
-                    ...mainSale,
-                    quantity: totalQuantity,
-                    total_amount: totalRevenue,
-                    payment_method: 'Split',
-                    split_details: otherSales.map(s => ({
-                        method: s.payment_method,
-                        amount: s.total_amount
-                    }))
-                };
-                processedSales.push(combinedSale);
-            } else {
-                // If only one split record found, add it as is
-                group.forEach(s => processedSales.push(s));
-            }
-        });
-
-        // Sort by date
-        processedSales.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-        tbody.innerHTML = processedSales.map(s => {
+        tbody.innerHTML = data.map(s => {
             const revenue = s.total_amount || 0;
             const profit = calculateProfit(s);
             const profitClass = profit >= 0 ? 'profit-positive' : 'profit-negative';
             const date = new Date(s.created_at);
             const branch = branches[s.branch_id] || { code: '--', name: 'Unknown' };
-            const paymentClass = s.payment_method === 'Split' ? 'badge-split' : getPaymentBadgeClass(s.payment_method);
+            const paymentClass = getPaymentBadgeClass(s.payment_method);
             const saleTypeBadge = getSaleTypeBadge(s.item_name);
             
             let methodDisplay = s.payment_method;
+            let splitDetailsHtml = '';
+            
             if (s.split_details) {
                 methodDisplay = 'Split';
+                splitDetailsHtml = '<div class="split-details-container">';
+                s.split_details.forEach(detail => {
+                    const detailClass = getPaymentBadgeClass(detail.method);
+                    splitDetailsHtml += `<span class="badge ${detailClass}" style="margin-right:4px;">${detail.method}: Ksh ${detail.amount.toLocaleString()}</span>`;
+                });
+                splitDetailsHtml += '</div>';
             }
             
-            // Calculate cost breakdown for display
             let costDisplay = '';
             if (s.category === 'Gas') {
                 const product = productsMap[s.product_id];
@@ -1238,17 +1288,6 @@
                 } else {
                     costDisplay = `<small style="color: var(--text-dim); display:block;">Refill Cost: Ksh ${(gasCost * (s.quantity || 1)).toLocaleString()}</small>`;
                 }
-            }
-            
-            // Create split details display if applicable
-            let splitDetailsHtml = '';
-            if (s.split_details) {
-                splitDetailsHtml = '<div style="font-size:0.7rem; margin-top:4px;">';
-                s.split_details.forEach(detail => {
-                    const detailClass = getPaymentBadgeClass(detail.method);
-                    splitDetailsHtml += `<span class="badge ${detailClass}" style="margin-right:4px;">${detail.method}: Ksh ${detail.amount.toLocaleString()}</span>`;
-                });
-                splitDetailsHtml += '</div>';
             }
             
             return `
