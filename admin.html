@@ -1646,7 +1646,6 @@
         if (message.includes('Branch')) icon = '🏢';
         else if (message.includes('Data')) icon = '🔄';
         else if (message.includes('Cashier')) icon = '🔄';
-        else if (message.includes('Banner')) icon = '🚫';
         
         notification.innerHTML = `
             <i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
@@ -1662,17 +1661,11 @@
 
     // ==================== DEBT BANNER FUNCTIONS ====================
     function shouldShowDebtBanner() {
-        // Get the dismissal status from localStorage
         const dismissed = localStorage.getItem('debtBannerDismissed');
         const dismissedTime = localStorage.getItem('debtBannerDismissedTime');
         
-        console.log("Debt banner check - Dismissed:", dismissed, "Time:", dismissedTime);
-        
         // If never dismissed, show banner
-        if (!dismissed || dismissed !== 'true') {
-            console.log("Banner never dismissed, showing");
-            return true;
-        }
+        if (!dismissed) return true;
         
         // If dismissed, check if 7 days have passed
         if (dismissed === 'true' && dismissedTime) {
@@ -1680,16 +1673,8 @@
             const now = new Date();
             const daysDiff = Math.floor((now - dismissedDate) / (1000 * 60 * 60 * 24));
             
-            console.log(`Days since dismissal: ${daysDiff}`);
-            
             // If more than 7 days have passed, show banner again
-            if (daysDiff >= 7) {
-                console.log("7+ days passed, showing banner again");
-                return true;
-            } else {
-                console.log(`${7 - daysDiff} days remaining until banner reappears`);
-                return false;
-            }
+            return daysDiff >= 7;
         }
         
         return true;
@@ -1697,32 +1682,23 @@
 
     function dismissDebtBanner() {
         const banner = document.getElementById('debtBanner');
-        if (banner) {
-            banner.style.display = 'none';
-            
-            // Store dismissal in localStorage with timestamp
-            localStorage.setItem('debtBannerDismissed', 'true');
-            localStorage.setItem('debtBannerDismissedTime', new Date().toISOString());
-            
-            console.log("Banner dismissed at:", new Date().toISOString());
-            showSuccessNotification('Banner Dismissed', 'Will reappear after 7 days');
-        }
+        banner.style.display = 'none';
+        
+        // Store dismissal in localStorage with timestamp
+        localStorage.setItem('debtBannerDismissed', 'true');
+        localStorage.setItem('debtBannerDismissedTime', new Date().toISOString());
+        
+        showSuccessNotification('Banner Dismissed', 'Will reappear after 7 days');
     }
 
     window.dismissDebtBanner = dismissDebtBanner;
 
     function handleDebtConfirm() {
+        // Redirect to debtors page for confirmation
+        window.location.href = 'admin-debtors.html';
+        
         // Store that admin is going to confirm debts
         sessionStorage.setItem('confirmingDebts', 'true');
-        
-        // Optionally, we could also dismiss the banner since they're taking action
-        // But we'll let them confirm on the debtors page first
-        showSuccessNotification('Redirecting to Debtors', 'Please confirm all pending debts');
-        
-        // Redirect to debtors page for confirmation
-        setTimeout(() => {
-            window.location.href = 'admin-debtors.html';
-        }, 500);
     }
 
     window.handleDebtConfirm = handleDebtConfirm;
@@ -1895,12 +1871,10 @@
     // ==================== DASHBOARD DATA LOADING ====================
     async function loadDashboardData() {
         // Show debt banner if conditions are met
-        const showBanner = shouldShowDebtBanner();
-        console.log("Should show debt banner:", showBanner);
-        
-        const debtBanner = document.getElementById('debtBanner');
-        if (debtBanner) {
-            debtBanner.style.display = showBanner ? 'flex' : 'none';
+        if (shouldShowDebtBanner()) {
+            document.getElementById('debtBanner').style.display = 'flex';
+        } else {
+            document.getElementById('debtBanner').style.display = 'none';
         }
 
         // Set greeting based on time of day
@@ -2535,12 +2509,7 @@
     window.handleLogout = async () => {
         if(confirm("Exit Admin Mode?")) {
             showSuccessNotification('Logging out', 'See you soon!');
-            
-            // Clear session data but KEEP localStorage for banner persistence
-            // localStorage.removeItem('pos_session'); // Comment this out if you want to keep session
-            localStorage.removeItem('pos_session'); // Keep this to clear session
-            // localStorage remains for banner data
-            
+            localStorage.removeItem('pos_session');
             await supabase.auth.signOut();
             setTimeout(() => {
                 window.location.href = 'index.html';
