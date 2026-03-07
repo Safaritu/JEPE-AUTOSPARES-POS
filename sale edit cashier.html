@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Inventory Control | JEPE CASHIER</title>
+    <title>Edit Stock | JEPE CASHIER</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -19,7 +19,6 @@
             --success: #10b981; 
             --danger: #ef4444; 
             --warning: #f59e0b;
-            --tuktuk: #8b5cf6;
             --gas: #f59e0b;
             --sidebar-width: 260px;
             --sidebar-collapsed: 70px;
@@ -38,7 +37,6 @@
             overflow-x: hidden;
         }
 
-        /* --- SIDEBAR - Collapsible like admin --- */
         .sidebar { 
             width: var(--sidebar-collapsed); 
             height: 100vh; 
@@ -92,7 +90,6 @@
             cursor: pointer; 
         }
 
-        /* Branch Info in Sidebar */
         .branch-info {
             padding: 10px;
             margin: 10px 0 20px;
@@ -183,7 +180,6 @@
             color: white; 
         }
 
-        /* --- MENU TRIGGER --- */
         .menu-trigger {
             display: none; 
             position: fixed; 
@@ -201,7 +197,6 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
-        /* --- MAIN LAYOUT --- */
         .main-wrapper { 
             width: 100%; 
             margin-left: var(--sidebar-collapsed); 
@@ -262,7 +257,6 @@
             }
         }
 
-        /* --- HEADER SECTION --- */
         .page-header {
             background: white;
             border: 1px solid var(--border);
@@ -346,7 +340,6 @@
             font-size: 1rem;
         }
 
-        /* --- SEARCH SECTION --- */
         .search-section {
             background: white;
             border: 1px solid var(--border);
@@ -423,7 +416,6 @@
             font-size: 0.8rem;
         }
 
-        /* --- STATS CARDS --- */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -479,7 +471,6 @@
             margin-top: 8px;
         }
 
-        /* --- TABLE STYLES --- */
         .table-container { 
             background: white; 
             border-radius: 16px; 
@@ -496,7 +487,7 @@
         table { 
             width: 100%; 
             border-collapse: collapse; 
-            min-width: 900px; 
+            min-width: 1000px; 
         }
         
         th { 
@@ -626,7 +617,6 @@
             color: white;
         }
 
-        /* --- MODAL --- */
         #productModal { 
             display: none; 
             position: fixed; 
@@ -644,7 +634,7 @@
             padding: 30px; 
             border-radius: 24px; 
             width: 100%; 
-            max-width: 600px; 
+            max-width: 700px; 
             max-height: 90vh; 
             overflow-y: auto;
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
@@ -830,7 +820,6 @@
             font-size: 0.9rem;
         }
 
-        /* --- TOOLTIP --- */
         [data-tooltip] {
             position: relative;
             cursor: help;
@@ -855,6 +844,60 @@
         [data-tooltip]:hover:before {
             display: block;
         }
+
+        .helper-box {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 0.8rem;
+        }
+
+        .helper-box h4 {
+            margin: 0 0 10px 0;
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: #0369a1;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .helper-box ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .helper-box li {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            color: #0c4a6e;
+        }
+
+        .helper-box li i {
+            color: #0284c7;
+            font-size: 0.8rem;
+            margin-top: 3px;
+        }
+
+        .example-box {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 0.75rem;
+            border-left: 3px solid var(--primary);
+        }
+
+        .example-box strong {
+            color: var(--primary);
+            display: block;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
@@ -868,7 +911,6 @@
         <button class="close-btn" onclick="toggleMenu()">×</button>
     </div>
     
-    <!-- Branch Info Display -->
     <div class="branch-info" id="sidebarBranchInfo">
         <div class="branch-label">Your Assigned Branch</div>
         <div class="branch-name" id="sidebarBranchName">
@@ -878,7 +920,6 @@
     </div>
     
     <nav class="nav-list" id="nav-container">
-        <!-- Cashier Navigation -->
         <a href="cashier.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
         <a href="cashiergashub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
         <a href="moneyinout.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
@@ -902,7 +943,6 @@
         <a href="cashier.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
     </nav>
     
-    <!-- Logout Button -->
     <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
         <button onclick="logoutUser()" style="width:100%; background:var(--danger); color:white; border:none; padding:12px; border-radius:10px; font-weight:700; cursor:pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
             <i class="fas fa-sign-out-alt"></i> <span>Logout System</span>
@@ -913,26 +953,40 @@
 <div class="main-wrapper">
     <div class="mobile-header">
         <button onclick="toggleMenu()" style="background:none; border:none; color:white; font-size:1.5rem;">☰</button>
-        <div style="font-weight:800;">INVENTORY CONTROL</div>
+        <div style="font-weight:800;">EDIT STOCK</div>
         <div style="width:24px;"></div>
     </div>
 
     <div class="container">
-        <!-- Page Header -->
         <div class="page-header">
             <div class="page-title">
                 <h1>
-                    <i class="fas fa-boxes"></i>
-                    <span>Inventory Control</span>
+                    <i class="fas fa-edit"></i>
+                    <span>Edit Stock</span>
                 </h1>
-                <p>Manage stock levels and pricing</p>
+                <p>Manage product details and pricing</p>
             </div>
             <div class="branch-badge" id="branchDisplay">
                 <i class="fas fa-store"></i> <span id="branchName">Loading...</span>
             </div>
         </div>
 
-        <!-- Stats Cards -->
+        <!-- Helper Box - Instructions for editing gas products -->
+        <div class="helper-box">
+            <h4><i class="fas fa-info-circle"></i> How to Edit Gas Products Correctly</h4>
+            <ul>
+                <li><i class="fas fa-check-circle"></i> <strong>Cost Price:</strong> What your SUPPLIER charges you for GAS REFILL ONLY</li>
+                <li><i class="fas fa-check-circle"></i> <strong>Selling Price:</strong> What you charge CUSTOMER for GAS REFILL ONLY</li>
+                <li><i class="fas fa-check-circle"></i> <strong>Complete Price:</strong> What you charge CUSTOMER for NEW CYLINDER + GAS</li>
+                <li><i class="fas fa-check-circle"></i> <strong>Complete Cost:</strong> What your SUPPLIER charges you for NEW CYLINDER + GAS</li>
+            </ul>
+            <div class="example-box">
+                <strong><i class="fas fa-calculator"></i> Example Calculation:</strong>
+                <div>• Refill: Buy @950 → Sell @1,150 → Profit = Ksh 200</div>
+                <div>• Complete: Buy @3,000 → Sell @3,500 → Profit = Ksh 500</div>
+            </div>
+        </div>
+
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-header">
@@ -968,7 +1022,6 @@
             </div>
         </div>
 
-        <!-- Search & Filter Section -->
         <div class="search-section">
             <div class="search-wrapper">
                 <i class="fas fa-search"></i>
@@ -991,12 +1044,11 @@
                     <i class="fas fa-car-side"></i> TUKTUK
                 </button>
             </div>
-            <button class="action-btn" onclick="openModal()">
+            <button class="action-btn" onclick="openAddModal()">
                 <i class="fas fa-plus"></i> Add Product
             </button>
         </div>
 
-        <!-- Products Table -->
         <div class="table-container">
             <div class="table-responsive">
                 <table>
@@ -1033,15 +1085,15 @@
         </div>
         <input type="hidden" id="prod-id">
         <div class="grid-form">
-            <div class="full"><label><i class="fas fa-tag"></i> Product Name</label><input type="text" id="prod-name" placeholder="Enter product name"></div>
+            <div class="full"><label><i class="fas fa-tag"></i> Product Name *</label><input type="text" id="prod-name" placeholder="Enter product name"></div>
             <div class="full"><label><i class="fas fa-truck"></i> Supplier</label><select id="prod-supplier"></select></div>
             
-            <div><label><i class="fas fa-layer-group"></i> Category</label>
+            <div><label><i class="fas fa-layer-group"></i> Category *</label>
                 <select id="prod-category" onchange="toggleFields()">
                     <option value="Spare Part">Spare Part</option>
                     <option value="Gas">Gas</option>
                     <option value="Motorbike">Motorbike</option>
-                    <option value="Tuktuk">🚖 TUKTUK</option>
+                    <option value="Tuktuk">TUKTUK</option>
                 </select>
             </div>
 
@@ -1055,21 +1107,29 @@
             </div>
 
             <div id="weight-container" style="display:none;">
-                <label><i class="fas fa-weight-scale"></i> Weight (Gas)</label>
-                <input type="text" id="prod-weight" placeholder="e.g. 6kg">
+                <label><i class="fas fa-weight-scale"></i> Weight Category *</label>
+                <input type="text" id="prod-weight" placeholder="e.g. 6kg, 13kg">
             </div>
 
-            <div id="cylinder-price-container" style="display:none;">
-                <label><i class="fas fa-gas-pump"></i> Cylinder Price (Ksh)</label>
-                <input type="number" id="prod-cylinder-price" placeholder="0" min="0">
+            <div id="complete-price-container" style="display:none;">
+                <label><i class="fas fa-gas-pump"></i> Complete Price (Your Price) *</label>
+                <input type="number" id="prod-complete-price" placeholder="Customer pays for new cylinder + gas" step="0.01" min="0">
                 <div class="gas-price-info" style="margin-top:5px;">
-                    <i class="fas fa-info-circle"></i> This is the price for new cylinder (complete sale)
+                    <i class="fas fa-info-circle"></i> What customer pays for NEW CYLINDER + GAS
+                </div>
+            </div>
+
+            <div id="complete-cost-container" style="display:none;">
+                <label><i class="fas fa-coins"></i> Supplier Complete Cost *</label>
+                <input type="number" id="prod-complete-cost" placeholder="Supplier charges for new cylinder + gas" step="0.01" min="0">
+                <div class="gas-price-info" style="margin-top:5px;">
+                    <i class="fas fa-info-circle"></i> What supplier charges you for NEW CYLINDER + GAS
                 </div>
             </div>
 
             <div id="min-selling-price-container" style="display:none;">
-                <label><i class="fas fa-coins"></i> Min Selling Price</label>
-                <input type="number" id="prod-min-sell" placeholder="Minimum allowed price" step="0.01" min="0">
+                <label><i class="fas fa-coins"></i> Min Refill Price</label>
+                <input type="number" id="prod-min-sell" placeholder="Minimum allowed refill price" step="0.01" min="0">
             </div>
 
             <div id="tuktuk-container" style="display:none;">
@@ -1081,10 +1141,10 @@
                 </select>
             </div>
 
-            <div><label><i class="fas fa-coins"></i> Cost Price</label><input type="number" id="prod-cost" placeholder="0" step="0.01" min="0"></div>
-            <div><label><i class="fas fa-tag"></i> Selling Price</label><input type="number" id="prod-sell" placeholder="0" step="0.01" min="0"></div>
-            <div><label><i class="fas fa-box"></i> Stock Qty</label><input type="number" id="prod-stock" placeholder="0" min="0"></div>
-            <div id="empty-container" style="display:none;"><label><i class="fas fa-gas-pump"></i> Empty Qty</label><input type="number" id="prod-empty" placeholder="0" min="0"></div>
+            <div><label><i class="fas fa-coins"></i> Refill Cost (Supplier) *</label><input type="number" id="prod-cost" placeholder="Supplier charges for refill" step="0.01" min="0"></div>
+            <div><label><i class="fas fa-tag"></i> Refill Price (Your Price) *</label><input type="number" id="prod-sell" placeholder="Your refill price" step="0.01" min="0"></div>
+            <div><label><i class="fas fa-box"></i> Full Stock Qty</label><input type="number" id="prod-stock" placeholder="Number of full units" min="0"></div>
+            <div id="empty-container" style="display:none;"><label><i class="fas fa-gas-pump"></i> Empty Qty</label><input type="number" id="prod-empty" placeholder="Number of empty cylinders" min="0"></div>
         </div>
         <div class="modal-actions">
             <button class="btn-save" onclick="saveProduct()"><i class="fas fa-save"></i> Save Changes</button>
@@ -1156,13 +1216,11 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
-            // Update sidebar with user's assigned branch
             const sidebarBranchName = document.querySelector('#sidebarBranchName span');
             if (profile.branches && sidebarBranchName) {
                 sidebarBranchName.textContent = profile.branches.name;
             }
             
-            // Update branch display
             const branchNameSpan = document.getElementById('branchName');
             if (branchNameSpan && profile.branches) {
                 branchNameSpan.textContent = profile.branches.name;
@@ -1283,7 +1341,6 @@
     window.filterCategory = (category) => {
         currentCategoryFilter = category;
         
-        // Update active tab
         document.querySelectorAll('.filter-tab').forEach(btn => {
             btn.classList.remove('active');
         });
@@ -1296,12 +1353,10 @@
         const searchTerm = document.getElementById('searchBar').value.toLowerCase();
         
         let filtered = allProducts.filter(p => {
-            // Category filter
             if (currentCategoryFilter !== 'all' && p.category !== currentCategoryFilter) {
                 return false;
             }
             
-            // Search filter
             if (searchTerm) {
                 return p.name.toLowerCase().includes(searchTerm) || 
                        p.category.toLowerCase().includes(searchTerm) ||
@@ -1347,7 +1402,6 @@
                                 <small>
                                     <i class="fas fa-box"></i> ${p.category}
                                     ${isGas && p.weight_category ? ` • ${p.weight_category}` : ''}
-                                    ${isGas && p.cylinder_price ? ` • Cyl: Ksh ${p.cylinder_price}` : ''}
                                 </small>
                             </div>
                         </div>
@@ -1369,10 +1423,11 @@
                         ` : ''}
                     </td>
                     <td>
-                        <div class="price-tag">Ksh ${(p.selling_price || 0).toLocaleString()}</div>
-                        <div class="cost-tag">Cost: Ksh ${(p.cost_price || 0).toLocaleString()}</div>
-                        ${isGas && p.cylinder_price ? `
-                            <div class="cost-tag">Cylinder: Ksh ${p.cylinder_price.toLocaleString()}</div>
+                        <div class="price-tag">Refill: Ksh ${(p.selling_price || 0).toLocaleString()}</div>
+                        <div class="cost-tag">Refill Cost: Ksh ${(p.cost_price || 0).toLocaleString()}</div>
+                        ${isGas ? `
+                            <div class="price-tag" style="margin-top:4px;">Complete: Ksh ${(p.complete_price || 0).toLocaleString()}</div>
+                            <div class="cost-tag">Complete Cost: Ksh ${(p.complete_cost || 0).toLocaleString()}</div>
                         ` : ''}
                     </td>
                     <td>
@@ -1399,17 +1454,18 @@
         const cat = document.getElementById('prod-category').value;
         const typeSelect = document.getElementById('prod-type');
         
-        // Hide all conditional fields first
         document.getElementById('type-container').style.display = 'none';
         document.getElementById('weight-container').style.display = 'none';
-        document.getElementById('cylinder-price-container').style.display = 'none';
+        document.getElementById('complete-price-container').style.display = 'none';
+        document.getElementById('complete-cost-container').style.display = 'none';
         document.getElementById('min-selling-price-container').style.display = 'none';
         document.getElementById('tuktuk-container').style.display = 'none';
         document.getElementById('empty-container').style.display = 'none';
         
         if (cat === 'Gas') {
             document.getElementById('weight-container').style.display = 'block';
-            document.getElementById('cylinder-price-container').style.display = 'block';
+            document.getElementById('complete-price-container').style.display = 'block';
+            document.getElementById('complete-cost-container').style.display = 'block';
             document.getElementById('min-selling-price-container').style.display = 'block';
             document.getElementById('empty-container').style.display = 'block';
             document.getElementById('type-container').style.display = 'block';
@@ -1418,6 +1474,11 @@
                 <option value="Copy">Copy</option>
                 <option value="N/A">N/A</option>
             `;
+            
+            // Mark required fields
+            document.getElementById('prod-weight').required = true;
+            document.getElementById('prod-complete-price').required = true;
+            document.getElementById('prod-complete-cost').required = true;
         } else if (cat === 'Tuktuk') {
             document.getElementById('tuktuk-container').style.display = 'block';
             document.getElementById('type-container').style.display = 'block';
@@ -1426,6 +1487,11 @@
                 <option value="Cargo">Cargo</option>
                 <option value="Spare Part">Spare Part</option>
             `;
+            
+            // Remove required from gas fields
+            document.getElementById('prod-weight').required = false;
+            document.getElementById('prod-complete-price').required = false;
+            document.getElementById('prod-complete-cost').required = false;
         } else {
             document.getElementById('type-container').style.display = 'block';
             typeSelect.innerHTML = `
@@ -1433,21 +1499,29 @@
                 <option value="Copy">Copy</option>
                 <option value="N/A">N/A</option>
             `;
+            
+            // Remove required from gas fields
+            document.getElementById('prod-weight').required = false;
+            document.getElementById('prod-complete-price').required = false;
+            document.getElementById('prod-complete-cost').required = false;
         }
     };
 
-    window.openModal = () => {
+    window.openAddModal = () => {
         document.getElementById('modalTitle').textContent = 'Add New Product';
         document.getElementById('prod-id').value = '';
         document.getElementById('prod-name').value = '';
         document.getElementById('prod-category').value = 'Spare Part';
-        document.getElementById('prod-stock').value = '';
+        document.getElementById('prod-stock').value = '0';
         document.getElementById('prod-cost').value = '';
         document.getElementById('prod-sell').value = '';
-        document.getElementById('prod-empty').value = '';
+        document.getElementById('prod-empty').value = '0';
         document.getElementById('prod-weight').value = '';
-        document.getElementById('prod-cylinder-price').value = '';
+        document.getElementById('prod-complete-price').value = '';
+        document.getElementById('prod-complete-cost').value = '';
         document.getElementById('prod-min-sell').value = '';
+        document.getElementById('prod-type').value = 'Original';
+        document.getElementById('tuktuk-type').value = 'Passenger';
         document.getElementById('productModal').style.display = 'flex';
         toggleFields();
     };
@@ -1464,22 +1538,21 @@
         document.getElementById('prod-id').value = p.id;
         document.getElementById('prod-name').value = p.name;
         document.getElementById('prod-category').value = p.category;
-        document.getElementById('prod-stock').value = p.stock_quantity;
-        document.getElementById('prod-cost').value = p.cost_price;
-        document.getElementById('prod-sell').value = p.selling_price;
+        document.getElementById('prod-stock').value = p.stock_quantity || 0;
+        document.getElementById('prod-cost').value = p.cost_price || '';
+        document.getElementById('prod-sell').value = p.selling_price || '';
         document.getElementById('prod-empty').value = p.empty_quantity || 0;
         document.getElementById('prod-weight').value = p.weight_category || '';
-        document.getElementById('prod-cylinder-price').value = p.cylinder_price || '';
+        document.getElementById('prod-complete-price').value = p.complete_price || '';
+        document.getElementById('prod-complete-cost').value = p.complete_cost || '';
         document.getElementById('prod-min-sell').value = p.min_selling_price || '';
         
-        // Set the type field based on category
         if (p.category === 'Tuktuk') {
             document.getElementById('prod-type').value = p.part_type || 'Passenger';
         } else {
             document.getElementById('prod-type').value = p.part_type || 'Original';
         }
         
-        // Set TUKTUK type if exists
         if (p.tuktuk_type) {
             document.getElementById('tuktuk-type').value = p.tuktuk_type;
         }
@@ -1497,24 +1570,62 @@
             alert("Branch information not found. Please log out and log in again.");
             return;
         }
-        
+
+        // Basic validation
+        const name = document.getElementById('prod-name').value;
+        if (!name) {
+            alert("Product name is required");
+            return;
+        }
+
+        const refillCost = parseFloat(document.getElementById('prod-cost').value) || 0;
+        const refillPrice = parseFloat(document.getElementById('prod-sell').value) || 0;
+
+        if (!refillCost) {
+            alert("Refill Cost is required");
+            return;
+        }
+        if (!refillPrice) {
+            alert("Refill Price is required");
+            return;
+        }
+
         const data = {
-            name: document.getElementById('prod-name').value,
+            name: name,
             category: category,
             part_type: document.getElementById('prod-type').value,
             supplier_id: document.getElementById('prod-supplier').value || null,
             weight_category: category === 'Gas' ? document.getElementById('prod-weight').value : null,
             stock_quantity: parseInt(document.getElementById('prod-stock').value) || 0,
-            cost_price: parseFloat(document.getElementById('prod-cost').value) || 0,
-            selling_price: parseFloat(document.getElementById('prod-sell').value) || 0,
+            cost_price: refillCost,
+            selling_price: refillPrice,
             empty_quantity: category === 'Gas' ? (parseInt(document.getElementById('prod-empty').value) || 0) : 0,
             branch_id: branchId
         };
 
         // Add gas-specific fields
         if (category === 'Gas') {
-            data.cylinder_price = parseInt(document.getElementById('prod-cylinder-price').value) || 0;
-            data.min_selling_price = parseFloat(document.getElementById('prod-min-sell').value) || 0;
+            const completePrice = parseFloat(document.getElementById('prod-complete-price').value) || 0;
+            const completeCost = parseFloat(document.getElementById('prod-complete-cost').value) || 0;
+            const minSell = parseFloat(document.getElementById('prod-min-sell').value) || refillPrice;
+            
+            if (!completePrice) {
+                alert("Complete Price is required for gas products");
+                return;
+            }
+            if (!completeCost) {
+                alert("Supplier Complete Cost is required for gas products");
+                return;
+            }
+            if (!document.getElementById('prod-weight').value) {
+                alert("Weight Category is required for gas products");
+                return;
+            }
+            
+            data.complete_price = completePrice;
+            data.complete_cost = completeCost;
+            data.min_selling_price = minSell;
+            data.cylinder_price = completePrice - refillPrice; // Calculate cylinder price
         }
 
         // Add TUKTUK type if category is Tuktuk
@@ -1522,9 +1633,17 @@
             data.tuktuk_type = document.getElementById('tuktuk-type').value;
         }
 
+        const btn = document.querySelector('.btn-save');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner"></span> SAVING...';
+        btn.disabled = true;
+
         const { error } = id 
             ? await supabase.from('products').update(data).eq('id', id)
             : await supabase.from('products').insert([data]);
+
+        btn.innerHTML = originalText;
+        btn.disabled = false;
 
         if (error) {
             alert("Error: " + error.message);
