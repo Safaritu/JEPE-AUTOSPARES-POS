@@ -286,59 +286,7 @@
             margin-right: 8px;
         }
 
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .summary-card {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        }
-
-        .summary-label {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            color: var(--text-dim);
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-        }
-
-        .summary-value {
-            font-size: 1.4rem;
-            font-weight: 800;
-            color: var(--text-main);
-        }
-
-        .summary-value.success {
-            color: var(--success);
-        }
-
-        .summary-value.primary {
-            color: var(--primary);
-        }
-
-        .summary-value.warning {
-            color: var(--warning);
-        }
-
-        .summary-value.danger {
-            color: var(--danger);
-        }
-
-        .summary-detail {
-            font-size: 0.7rem;
-            color: var(--text-dim);
-            margin-top: 5px;
-            display: flex;
-            justify-content: space-between;
-        }
+        /* --- summary grid removed per request --- */
 
         .filter-bar {
             background: white;
@@ -732,64 +680,7 @@
             </div>
         </div>
 
-        <div class="summary-grid">
-            <div class="summary-card">
-                <div class="summary-label">Total Sales</div>
-                <div class="summary-value primary" id="totalSales">Ksh 0</div>
-                <div class="summary-detail">
-                    <span>All transactions</span>
-                    <span id="totalTransactions">0</span>
-                </div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-label">Total Profit</div>
-                <div class="summary-value success" id="totalProfit">Ksh 0</div>
-                <div class="summary-detail">
-                    <span>Average margin</span>
-                    <span id="avgMargin">0%</span>
-                </div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-label">Cash Sales</div>
-                <div class="summary-value" id="cashSales">Ksh 0</div>
-                <div class="summary-detail">
-                    <span>Transactions</span>
-                    <span id="cashCount">0</span>
-                </div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-label">KCB Paybill</div>
-                <div class="summary-value" id="kcbSales">Ksh 0</div>
-                <div class="summary-detail">
-                    <span>Transactions</span>
-                    <span id="kcbCount">0</span>
-                </div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-label">M-Pesa</div>
-                <div class="summary-value" id="mpesaSales">Ksh 0</div>
-                <div class="summary-detail">
-                    <span>Transactions</span>
-                    <span id="mpesaCount">0</span>
-                </div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-label">Split Payments</div>
-                <div class="summary-value" id="splitSales">Ksh 0</div>
-                <div class="summary-detail">
-                    <span>Transactions</span>
-                    <span id="splitCount">0</span>
-                </div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-label">Items Sold</div>
-                <div class="summary-value warning" id="totalItems">0</div>
-                <div class="summary-detail">
-                    <span>Avg per sale</span>
-                    <span id="avgItems">0</span>
-                </div>
-            </div>
-        </div>
+        <!-- SUMMARY GRID COMPLETELY REMOVED (the seven boxes are gone) -->
 
         <div class="filter-bar">
             <div class="filter-group">
@@ -1028,7 +919,8 @@
 
             allSales = data || [];
             
-            updateSummary();
+            // No summary update needed (boxes removed)
+            // But we still keep filter/display working
             applyFilters();
             
         } catch (error) {
@@ -1043,82 +935,6 @@
         } finally {
             showLoading(false);
         }
-    }
-
-    function updateSummary() {
-        let totalAmount = 0;
-        let totalProfit = 0;
-        let cashTotal = 0;
-        let kcbTotal = 0;
-        let mpesaTotal = 0;
-        let splitTotal = 0;
-        let totalItems = 0;
-        let cashCount = 0;
-        let kcbCount = 0;
-        let mpesaCount = 0;
-        let splitCount = 0;
-
-        const { groups, regularSales } = groupSplitSales(allSales);
-        
-        Object.values(groups).forEach(group => {
-            const totalRevenue = group.reduce((sum, s) => sum + Number(s.total_amount || 0), 0);
-            const totalQuantity = group.reduce((sum, s) => sum + (s.quantity || 0), 0);
-            const mainSale = group.find(s => s.quantity > 0) || group[0];
-            const profit = calculateProfit({...mainSale, total_amount: totalRevenue, quantity: totalQuantity});
-            
-            totalAmount += totalRevenue;
-            totalProfit += profit;
-            totalItems += totalQuantity;
-            splitTotal += totalRevenue;
-            splitCount++;
-        });
-        
-        regularSales.forEach(sale => {
-            const amount = Number(sale.total_amount || 0);
-            const profit = calculateProfit(sale);
-            
-            totalAmount += amount;
-            totalProfit += profit;
-            totalItems += sale.quantity || 0;
-
-            switch(sale.payment_method) {
-                case 'Cash':
-                    cashTotal += amount;
-                    cashCount++;
-                    break;
-                case 'KCB Paybill':
-                    kcbTotal += amount;
-                    kcbCount++;
-                    break;
-                case 'Mpesa':
-                    mpesaTotal += amount;
-                    mpesaCount++;
-                    break;
-            }
-        });
-
-        const avgMargin = totalAmount > 0 ? ((totalProfit / totalAmount) * 100).toFixed(1) : 0;
-        const avgItems = allSales.length > 0 ? (totalItems / allSales.length).toFixed(1) : 0;
-
-        document.getElementById('totalSales').textContent = `Ksh ${totalAmount.toLocaleString()}`;
-        document.getElementById('totalProfit').textContent = `Ksh ${totalProfit.toLocaleString()}`;
-        document.getElementById('avgMargin').textContent = `${avgMargin}%`;
-        document.getElementById('totalTransactions').textContent = allSales.length;
-        
-        document.getElementById('cashSales').textContent = `Ksh ${cashTotal.toLocaleString()}`;
-        document.getElementById('cashCount').textContent = cashCount;
-        
-        document.getElementById('kcbSales').textContent = `Ksh ${kcbTotal.toLocaleString()}`;
-        document.getElementById('kcbCount').textContent = kcbCount;
-        
-        document.getElementById('mpesaSales').textContent = `Ksh ${mpesaTotal.toLocaleString()}`;
-        document.getElementById('mpesaCount').textContent = mpesaCount;
-        
-        document.getElementById('splitSales').textContent = `Ksh ${splitTotal.toLocaleString()}`;
-        document.getElementById('splitCount').textContent = splitCount;
-        
-        document.getElementById('totalItems').textContent = totalItems;
-        document.getElementById('avgItems').textContent = avgItems;
     }
 
     function showLoading(show) {
