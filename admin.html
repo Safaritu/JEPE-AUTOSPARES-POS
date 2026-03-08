@@ -1154,96 +1154,6 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* --- DEBT BANNER STYLES --- */
-        .debt-banner {
-            background: linear-gradient(135deg, #ef4444, #b91c1c);
-            color: white;
-            padding: 15px 30px;
-            margin-bottom: 20px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 15px;
-            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
-            animation: slideDown 0.3s ease;
-            border-left: 5px solid #fee2e2;
-        }
-
-        .debt-banner-content {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .debt-banner-content i {
-            font-size: 2rem;
-            animation: pulse 2s infinite;
-        }
-
-        .debt-banner-content h3 {
-            font-size: 1.1rem;
-            font-weight: 700;
-            margin: 0;
-        }
-
-        .debt-banner-content p {
-            font-size: 0.9rem;
-            opacity: 0.95;
-        }
-
-        .debt-banner-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .debt-btn {
-            padding: 10px 25px;
-            border-radius: 40px;
-            font-weight: 700;
-            font-size: 0.9rem;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .debt-btn.primary {
-            background: white;
-            color: #b91c1c;
-        }
-
-        .debt-btn.primary:hover {
-            background: #fee2e2;
-            transform: translateY(-2px);
-        }
-
-        .debt-btn.secondary {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            backdrop-filter: blur(10px);
-        }
-
-        .debt-btn.secondary:hover {
-            background: rgba(255,255,255,0.3);
-            transform: translateY(-2px);
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
         /* --- MOBILE RESPONSIVE HEADER --- */
         @media (max-width: 768px) {
             header {
@@ -1277,18 +1187,6 @@
             }
             .segment-grid { 
                 grid-template-columns: 1fr; 
-            }
-            .debt-banner {
-                padding: 15px 20px;
-            }
-            .debt-banner-content {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-            .debt-banner-actions {
-                width: 100%;
-                justify-content: flex-end;
             }
         }
 
@@ -1393,25 +1291,6 @@
 </header>
 
 <div class="container">
-    <!-- Debt Banner - Will be shown when admin enters the page -->
-    <div id="debtBanner" class="debt-banner" style="display: none;">
-        <div class="debt-banner-content">
-            <i class="fas fa-exclamation-triangle"></i>
-            <div>
-                <h3><i class="fas fa-users"></i> Several Debts Detected!</h3>
-                <p>Multiple outstanding debts require your attention. Please review and confirm all pending debt records.</p>
-            </div>
-        </div>
-        <div class="debt-banner-actions">
-            <button class="debt-btn primary" onclick="handleDebtConfirm()">
-                <i class="fas fa-check-circle"></i> View & Confirm
-            </button>
-            <button class="debt-btn secondary" onclick="dismissDebtBanner()">
-                <i class="fas fa-times-circle"></i> Cancel
-            </button>
-        </div>
-    </div>
-
     <!-- Branch Selector Card -->
     <div class="branch-selector-card">
         <div class="branch-filter">
@@ -1659,50 +1538,6 @@
         setTimeout(() => notification.remove(), 3000);
     }
 
-    // ==================== DEBT BANNER FUNCTIONS ====================
-    function shouldShowDebtBanner() {
-        const dismissed = localStorage.getItem('debtBannerDismissed');
-        const dismissedTime = localStorage.getItem('debtBannerDismissedTime');
-        
-        // If never dismissed, show banner
-        if (!dismissed) return true;
-        
-        // If dismissed, check if 7 days have passed
-        if (dismissed === 'true' && dismissedTime) {
-            const dismissedDate = new Date(dismissedTime);
-            const now = new Date();
-            const daysDiff = Math.floor((now - dismissedDate) / (1000 * 60 * 60 * 24));
-            
-            // If more than 7 days have passed, show banner again
-            return daysDiff >= 7;
-        }
-        
-        return true;
-    }
-
-    function dismissDebtBanner() {
-        const banner = document.getElementById('debtBanner');
-        banner.style.display = 'none';
-        
-        // Store dismissal in localStorage with timestamp
-        localStorage.setItem('debtBannerDismissed', 'true');
-        localStorage.setItem('debtBannerDismissedTime', new Date().toISOString());
-        
-        showSuccessNotification('Banner Dismissed', 'Will reappear after 7 days');
-    }
-
-    window.dismissDebtBanner = dismissDebtBanner;
-
-    function handleDebtConfirm() {
-        // Redirect to debtors page for confirmation
-        window.location.href = 'admin-debtors.html';
-        
-        // Store that admin is going to confirm debts
-        sessionStorage.setItem('confirmingDebts', 'true');
-    }
-
-    window.handleDebtConfirm = handleDebtConfirm;
-
     // ==================== NAVIGATION FUNCTIONS ====================
     window.toggleNav = () => {
         document.getElementById('navBanner').classList.toggle('active');
@@ -1870,13 +1705,6 @@
 
     // ==================== DASHBOARD DATA LOADING ====================
     async function loadDashboardData() {
-        // Show debt banner if conditions are met
-        if (shouldShowDebtBanner()) {
-            document.getElementById('debtBanner').style.display = 'flex';
-        } else {
-            document.getElementById('debtBanner').style.display = 'none';
-        }
-
         // Set greeting based on time of day
         const hour = new Date().getHours();
         let greeting = '';
