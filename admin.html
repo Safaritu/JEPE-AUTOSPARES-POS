@@ -454,6 +454,170 @@
             background: #fee2e2;
         }
 
+        /* --- DEBT REMINDER BANNER - NEW STYLES --- */
+        .debt-reminder-banner {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border: 2px solid #ef4444;
+            border-radius: 16px;
+            padding: 16px 24px;
+            margin: 20px 30px 0 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.2);
+            animation: slideDownBanner 0.5s ease;
+            position: relative;
+            z-index: 50;
+        }
+
+        @keyframes slideDownBanner {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .debt-reminder-content {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .debt-reminder-icon {
+            width: 48px;
+            height: 48px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #ef4444;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            animation: pulse-warning 2s infinite;
+        }
+
+        @keyframes pulse-warning {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .debt-reminder-text {
+            flex: 1;
+        }
+
+        .debt-reminder-text h3 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #991b1b;
+            margin: 0 0 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .debt-reminder-text p {
+            font-size: 0.9rem;
+            color: #7f1d1d;
+            margin: 0;
+            opacity: 0.9;
+        }
+
+        .debt-reminder-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .debt-reminder-btn {
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-weight: 800;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .debt-reminder-btn.primary {
+            background: #991b1b;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .debt-reminder-btn.primary:hover {
+            background: #7f1d1d;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(153, 27, 27, 0.3);
+        }
+
+        .debt-reminder-btn.secondary {
+            background: white;
+            color: #991b1b;
+            border: 2px solid #991b1b;
+        }
+
+        .debt-reminder-btn.secondary:hover {
+            background: #fee2e2;
+            transform: translateY(-2px);
+        }
+
+        .debt-reminder-close {
+            background: none;
+            border: none;
+            color: #991b1b;
+            font-size: 1.3rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .debt-reminder-close:hover {
+            background: rgba(153, 27, 27, 0.1);
+            transform: rotate(90deg);
+        }
+
+        @media (max-width: 768px) {
+            .debt-reminder-banner {
+                padding: 16px;
+                margin: 15px 15px 0 15px;
+            }
+            .debt-reminder-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            .debt-reminder-actions {
+                width: 100%;
+                flex-direction: column;
+            }
+            .debt-reminder-btn {
+                width: 100%;
+                justify-content: center;
+            }
+            .debt-reminder-close {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+            }
+        }
+
         /* --- SUCCESS NOTIFICATION --- */
         .success-notification {
             position: fixed;
@@ -1258,6 +1422,30 @@
 <!-- Success Notification Container -->
 <div id="success-notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
 
+<!-- DEBT REMINDER BANNER - NEW -->
+<div id="debtReminderBanner" class="debt-reminder-banner" style="display: none;">
+    <div class="debt-reminder-content">
+        <div class="debt-reminder-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div class="debt-reminder-text">
+            <h3><i class="fas fa-clock"></i> Overdue Debts Alert!</h3>
+            <p id="debtReminderMessage">Some debts are over 30 days old and need your attention.</p>
+        </div>
+    </div>
+    <div class="debt-reminder-actions">
+        <button class="debt-reminder-btn primary" onclick="goToDebtorsPage()">
+            <i class="fas fa-eye"></i> Review Debts
+        </button>
+        <button class="debt-reminder-btn secondary" onclick="dismissDebtReminder()">
+            <i class="fas fa-check"></i> Dismiss
+        </button>
+    </div>
+    <button class="debt-reminder-close" onclick="dismissDebtReminder()">
+        <i class="fas fa-times"></i>
+    </button>
+</div>
+
 <header>
     <div class="brand-info">
         <div class="shop-name">JEPE AUTOSPARES</div>
@@ -1596,6 +1784,50 @@
     window.closeBranchModal = () => {
         document.getElementById('branchModal').classList.remove('active');
         selectedCashierBranch = null;
+    };
+
+    // ==================== DEBT REMINDER FUNCTIONS ====================
+    async function checkOverdueDebts() {
+        try {
+            // Calculate date 30 days ago
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            
+            // Query for unpaid debts older than 30 days
+            const { data: overdueDebts, error } = await supabase
+                .from('debtors')
+                .select('*')
+                .eq('status', 'Unpaid')
+                .lt('created_at', thirtyDaysAgo.toISOString());
+            
+            if (error) throw error;
+            
+            if (overdueDebts && overdueDebts.length > 0) {
+                // Show the banner
+                const banner = document.getElementById('debtReminderBanner');
+                const messageEl = document.getElementById('debtReminderMessage');
+                
+                const totalAmount = overdueDebts.reduce((sum, debt) => sum + (debt.amount_owed || 0), 0);
+                messageEl.textContent = `${overdueDebts.length} debt${overdueDebts.length > 1 ? 's are' : ' is'} over 30 days old, totaling Ksh ${totalAmount.toLocaleString()}. Please review.`;
+                
+                banner.style.display = 'flex';
+                
+                // Also show a notification
+                showSuccessNotification('⚠️ Overdue Debts Alert', `${overdueDebts.length} debt${overdueDebts.length > 1 ? 's are' : ' is'} past due!`);
+            }
+        } catch (error) {
+            console.error("Error checking overdue debts:", error);
+        }
+    }
+
+    window.goToDebtorsPage = () => {
+        window.location.href = 'admin-debtors.html';
+    };
+
+    window.dismissDebtReminder = () => {
+        document.getElementById('debtReminderBanner').style.display = 'none';
+        // Store in localStorage that admin dismissed for this session
+        sessionStorage.setItem('debtReminderDismissed', 'true');
     };
 
     // Close dropdown when clicking outside
@@ -2359,6 +2591,11 @@
         document.getElementById('currentBranchDisplay').textContent = 'ALL BRANCHES';
         
         await loadDashboardData();
+        
+        // Check for overdue debts (only if not dismissed in this session)
+        if (!sessionStorage.getItem('debtReminderDismissed')) {
+            await checkOverdueDebts();
+        }
         
         // Hide hand if menu was clicked before
         if (sessionStorage.getItem('menuClicked') === 'true') {
