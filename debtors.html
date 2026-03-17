@@ -19,6 +19,7 @@
             --success: #10b981; 
             --danger: #ef4444; 
             --warning: #f59e0b;
+            --kcb-paybill: #2563eb;
             --sidebar-width: 260px;
             --sidebar-collapsed: 70px;
             --header-height: 70px;
@@ -742,6 +743,7 @@
             width: 90%;
             margin: 0 auto;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            position: relative;
         }
 
         @media (max-width: 768px) {
@@ -865,6 +867,17 @@
         .payment-option label:hover {
             border-color: var(--primary);
             background: #f1f5ff;
+        }
+
+        /* --- KCB PAYBILL HIGHLIGHT --- */
+        .payment-option input[value="KCB Paybill"] + label {
+            border-color: var(--kcb-paybill);
+            background: #eff6ff;
+        }
+
+        .payment-option input[value="KCB Paybill"]:checked + label {
+            background: var(--kcb-paybill);
+            border-color: var(--kcb-paybill);
         }
 
         /* --- MODAL ACTION BUTTONS --- */
@@ -1008,6 +1021,18 @@
             .modal-header h3 {
                 font-size: 1.1rem;
             }
+        }
+
+        /* --- KCB PAYBILL BADGE --- */
+        .kcb-paybill-badge {
+            background: var(--kcb-paybill);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            margin-left: 5px;
+            display: inline-block;
         }
     </style>
 </head>
@@ -1213,7 +1238,7 @@
     </div>
 </div>
 
-<!-- Settle Modal - UPDATED WITH BETTER PAYMENT METHOD SELECTION -->
+<!-- Settle Modal - UPDATED WITH BETTER PAYMENT METHOD SELECTION AND KCB PAYBILL HIGHLIGHT -->
 <div id="settle-modal" class="overlay" style="display: none;">
     <div class="modal" style="position: relative;">
         <button class="modal-close" onclick="closeModal()">✕</button>
@@ -1254,6 +1279,9 @@
                         <span>KCB Paybill</span>
                     </label>
                 </div>
+            </div>
+            <div style="margin-top: 8px; font-size: 0.7rem; color: var(--text-dim); text-align: center;">
+                <span class="kcb-paybill-badge">LIVE KCB</span> payments will appear in the Live KCB Paybill box on dashboard
             </div>
         </div>
         
@@ -1572,32 +1600,47 @@
             
             if (debtError) throw debtError;
 
-            // 2. Record to cash transactions
+            // 2. Record to cash transactions - UPDATED: For KCB Paybill, use category "KCB Paybill" to update live box
+            const transactionCategory = method === 'KCB Paybill' ? 'KCB Paybill' : method;
+            
             const { error: transError } = await supabase
                 .from('cash_transactions')
                 .insert([{
                     shift_id: currentShift.id,
                     type: 'Money In',
-                    category: method === 'Cash' ? 'Cash' : method,
+                    category: transactionCategory,
                     amount: selectedDebt.amt,
-                    description: `Debt settlement: ${selectedDebt.name} - ${selectedDebt.item}`,
+                    description: `Debt settlement: ${selectedDebt.name} - ${selectedDebt.item}${method === 'KCB Paybill' ? ' [LIVE KCB]' : ''}`,
                     branch_id: branchId,
                     user_id: currentUser.id
                 }]);
             
             if (transError) throw transError;
 
-            // 3. Update sales record if needed
-            await supabase
+            // 3. Also record as a sale for history purposes
+            const { error: saleError } = await supabase
                 .from('sales')
-                .update({ 
+                .insert([{
+                    shift_id: currentShift.id,
+                    item_name: `DEBT SETTLEMENT: ${selectedDebt.item}`,
+                    quantity: 1,
+                    unit_price: selectedDebt.amt,
+                    total_amount: selectedDebt.amt,
+                    amount: selectedDebt.amt,
                     payment_method: method,
-                    discount_reason: `Debt settled: ${selectedDebt.name}`
-                })
-                .eq('payment_method', 'Debt')
-                .eq('discount_reason', `Debt for ${selectedDebt.name} [UNPAID]`);
+                    cost_price: 0,
+                    branch_id: branchId,
+                    discount_reason: `Debt settled by ${selectedDebt.name}`,
+                    user_id: currentUser.id,
+                    category: 'Debt Settlement'
+                }]);
+            
+            if (saleError) {
+                console.error("Error recording sale for debt settlement:", saleError);
+                // Don't throw - continue even if sale record fails
+            }
 
-            alert('✅ Debt settled successfully!');
+            alert('✅ Debt settled successfully! ' + (method === 'KCB Paybill' ? 'Amount added to Live KCB Paybill box.' : ''));
             closeModal();
             await loadDebts();
             
