@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="="en">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -1473,7 +1473,7 @@
         if(document.getElementById(`pMethod-${type}`).value === 'Split') updateSplitBalance(type);
     };
 
-    // ==================== SALE PROCESSING WITH CORRECT PROFIT CALCULATION ====================
+    // ==================== FIXED SALE PROCESSING - NO NOTES COLUMN ====================
     async function processSale(btnId, type) {
         // Check if shift is active
         await checkShift();
@@ -1536,42 +1536,88 @@
                 }
             }
 
-            // Create sale record with correct cost price
-            const saleRecord = {
-                shift_id: activeShift.id,
-                product_id: outgoingItem.id,
-                item_name: itemName,
-                quantity: qty,
-                unit_price: price,
-                total_amount: total,
-                amount: total,
-                cost_price: costPricePerUnit,
-                discount_reason: discountReason,
-                category: 'Gas',
-                weight_category: outgoingItem.weight_category,
-                branch_id: currentBranchId,
-                user_id: currentUser.id,
-                payment_method: method
-            };
-
-            // Add split payment details if applicable
+            // FIXED: Handle Split Payments - Create multiple sales records instead of using notes column
             if (method === 'Split') {
                 const cashPart = parseFloat(document.getElementById(`split-cash-${type}`).value) || 0;
                 const paybillPart = total - cashPart;
 
                 if (cashPart <= 0 || cashPart >= total) throw new Error("Invalid split amounts.");
                 
-                // Store split details
-                saleRecord.notes = `Split payment: Cash Ksh ${cashPart}, Paybill Ksh ${paybillPart}`;
+                // Create CASH sale record
+                const cashSaleRecord = {
+                    shift_id: activeShift.id,
+                    product_id: outgoingItem.id,
+                    item_name: `${itemName} (Split-Cash)`,
+                    quantity: qty,
+                    unit_price: cashPart / qty,
+                    total_amount: cashPart,
+                    amount: cashPart,
+                    cost_price: costPricePerUnit,
+                    discount_reason: discountReason,
+                    category: 'Gas',
+                    weight_category: outgoingItem.weight_category,
+                    branch_id: currentBranchId,
+                    user_id: currentUser.id,
+                    payment_method: 'Cash'
+                };
+                
+                // Create PAYBILL sale record
+                const paybillSaleRecord = {
+                    shift_id: activeShift.id,
+                    product_id: outgoingItem.id,
+                    item_name: `${itemName} (Split-Paybill)`,
+                    quantity: 0,
+                    unit_price: 0,
+                    total_amount: paybillPart,
+                    amount: paybillPart,
+                    cost_price: costPricePerUnit,
+                    discount_reason: discountReason,
+                    category: 'Gas',
+                    weight_category: outgoingItem.weight_category,
+                    branch_id: currentBranchId,
+                    user_id: currentUser.id,
+                    payment_method: 'KCB Paybill'
+                };
+                
+                // Insert both sale records
+                const { error: cashErr } = await supabase
+                    .from('sales')
+                    .insert([cashSaleRecord]);
+                    
+                if (cashErr) throw cashErr;
+                
+                const { error: paybillErr } = await supabase
+                    .from('sales')
+                    .insert([paybillSaleRecord]);
+                    
+                if (paybillErr) throw paybillErr;
+                
+            } else {
+                // Normal single payment method
+                const saleRecord = {
+                    shift_id: activeShift.id,
+                    product_id: outgoingItem.id,
+                    item_name: itemName,
+                    quantity: qty,
+                    unit_price: price,
+                    total_amount: total,
+                    amount: total,
+                    cost_price: costPricePerUnit,
+                    discount_reason: discountReason,
+                    category: 'Gas',
+                    weight_category: outgoingItem.weight_category,
+                    branch_id: currentBranchId,
+                    user_id: currentUser.id,
+                    payment_method: method
+                };
+
+                // Insert SINGLE sale record
+                const { error: saleErr } = await supabase
+                    .from('sales')
+                    .insert([saleRecord]);
+
+                if (saleErr) throw saleErr;
             }
-
-            // Insert SINGLE sale record
-            const { error: saleErr, data: insertedSale } = await supabase
-                .from('sales')
-                .insert([saleRecord])
-                .select();
-
-            if (saleErr) throw saleErr;
 
             // Update Outgoing Stock (Full -> -qty)
             await supabase.from('products')
