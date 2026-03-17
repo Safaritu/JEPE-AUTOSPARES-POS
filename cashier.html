@@ -27,6 +27,7 @@
             --admin-accent: #1e3a8a;
             --switch-btn: #0ea5e9;
             --gas: #f59e0b;
+            --kcb-paybill: #2563eb;
         }
 
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
@@ -131,6 +132,17 @@
             font-weight: 700;
         }
         
+        /* KCB Paybill badge */
+        .kcb-paybill-badge {
+            background: var(--kcb-paybill);
+            color: white;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 5px;
+            font-weight: 700;
+        }
+        
         /* Start button with larger font */
         .start-btn-large {
             font-size: 0.9rem !important;
@@ -219,9 +231,9 @@
         }
         
         .kcb-live-box { 
-            border: 2px solid var(--primary); 
+            border: 2px solid var(--kcb-paybill); 
             border-radius: 10px; 
-            background: #f5f3ff; 
+            background: #eff6ff; 
         }
 
         .card { 
@@ -494,6 +506,7 @@
         .btn-primary { background: var(--primary); color: white; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-sync { background: var(--warning); color: white; }
+        .btn-kcb { background: var(--kcb-paybill); color: white; }
         
         .btn-refund { 
             background: #f59e0b; 
@@ -1554,7 +1567,7 @@
             </div>
         </div>
 
-        <!-- MONEY IN/OUT RECORD SECTION -->
+        <!-- MONEY IN/OUT RECORD SECTION - UPDATED WITH KCB PAYBILL OPTION -->
         <div class="card">
             <div class="section-label">MONEY IN/OUT RECORD</div>
             <input type="number" id="exp-amt" placeholder="Amount" style="margin-bottom:12px; padding: 12px; border-radius: 8px;">
@@ -1566,8 +1579,9 @@
             <select id="exp-method" style="width:100%; margin-bottom:15px; padding: 12px; border-radius: 8px;">
                 <option value="Cash">Cash</option>
                 <option value="Mpesa">Mpesa</option>
-                <option value="KCB">KCB Float</option>
-                <option value="Equity">Equity Float</option>
+                <option value="KCB Float">KCB Float</option>
+                <option value="Equity Float">Equity Float</option>
+                <option value="KCB Paybill" style="color: #2563eb; font-weight: 700;">💰 KCB Paybill (Live Box)</option>
             </select>
             <button id="record-expense-btn" class="btn btn-sync" style="width: 100%; padding: 14px; font-size: 0.9rem;">RECORD MONEY</button>
         </div>
@@ -2517,9 +2531,17 @@
             const sales = salesRes.data || [];
             const trans = transRes.data || [];
 
-            currentKcbSalesTotal = sales
+            // Calculate KCB Paybill sales including both regular sales and any Money In transactions to KCB Paybill
+            const kcbPaybillSales = sales
                 .filter(s => s.payment_method === 'KCB Paybill' && !s.refunded && s.total_amount > 0)
                 .reduce((a, b) => a + b.total_amount, 0);
+            
+            // Also include any Money In transactions that were added to KCB Paybill (like debt settlements)
+            const kcbPaybillMoneyIn = trans
+                .filter(t => t.type === 'Money In' && t.category === 'KCB Paybill')
+                .reduce((a, b) => a + b.amount, 0);
+            
+            currentKcbSalesTotal = kcbPaybillSales + kcbPaybillMoneyIn;
                 
             const liveKcbBox = document.getElementById('live-kcb-box');
             if (liveKcbBox) liveKcbBox.innerText = currentKcbSalesTotal.toLocaleString();
@@ -2538,6 +2560,7 @@
                             ${s.total_amount < 0 ? '<span class="refunded-badge" style="background:#b91c1c">REFUND</span>' : ''}
                             ${s.category === 'Gas' ? '<span class="gas-badge">GAS</span>' : ''}
                             ${s.payment_method === 'Debt' ? '<span class="refunded-badge" style="background:var(--warning)">DEBT</span>' : ''}
+                            ${s.payment_method === 'KCB Paybill' ? '<span class="kcb-paybill-badge">KCB PAYBILL</span>' : ''}
                         </td>
                         <td data-label="Qty" class="${s.quantity < 0 ? 'text-danger' : ''}">
                             ${s.quantity < 0 ? `-${Math.abs(s.quantity)}` : s.quantity}
@@ -2578,17 +2601,27 @@
             
             const liveTransBody = document.getElementById('live-trans-body');
             if (liveTransBody) {
-                liveTransBody.innerHTML = trans.map(t => `
-                    <tr class="${t.type === 'Money In' ? 'money-in-row' : 'money-out-row'}">
-                        <td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
-                        <td data-label="Reason">${t.description}</td>
-                        <td data-label="Amount">Ksh ${t.amount.toLocaleString()}</td>
-                        <td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">
-                            ${t.type}
-                        </td>
-                        <td data-label="Wallet">${t.category}</td>
-                    </tr>
-                `).join('');
+                liveTransBody.innerHTML = trans.map(t => {
+                    // Highlight KCB Paybill transactions in the table
+                    const isKcbPaybill = t.category === 'KCB Paybill';
+                    return `
+                        <tr class="${t.type === 'Money In' ? 'money-in-row' : 'money-out-row'} ${isKcbPaybill ? 'kcb-live-box' : ''}">
+                            <td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
+                            <td data-label="Reason">
+                                ${t.description}
+                                ${isKcbPaybill ? '<span class="kcb-paybill-badge">LIVE KCB</span>' : ''}
+                            </td>
+                            <td data-label="Amount">Ksh ${t.amount.toLocaleString()}</td>
+                            <td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">
+                                ${t.type}
+                            </td>
+                            <td data-label="Wallet">
+                                ${t.category}
+                                ${isKcbPaybill ? '💰' : ''}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
             }
             
             checkLowFloats();
@@ -3142,7 +3175,10 @@
                 await loadShiftData();
                 this.disabled = false;
                 this.innerHTML = 'RECORD MONEY';
-                showSuccessNotification('Transaction recorded successfully!', `${document.getElementById('exp-type').value}: Ksh ${amt.toLocaleString()} - ${desc}`);
+                
+                // Show success message with method
+                const method = document.getElementById('exp-method').value;
+                showSuccessNotification('Transaction recorded successfully!', `${document.getElementById('exp-type').value}: Ksh ${amt.toLocaleString()} via ${method}`);
             } else {
                 throw error;
             }
