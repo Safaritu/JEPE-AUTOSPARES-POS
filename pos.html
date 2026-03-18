@@ -19,6 +19,7 @@
             --success: #10b981; 
             --danger: #ef4444; 
             --warning: #f59e0b;
+            --kcb-paybill: #2563eb;
             --sidebar-width: 260px;
             --sidebar-collapsed: 70px;
             --header-height: 70px;
@@ -318,6 +319,26 @@
             box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
         }
 
+        .shift-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+
+        .shift-badge.open {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .shift-badge.closed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
         /* --- POS CONTAINER --- */
         .pos-container { 
             display: grid; 
@@ -327,7 +348,7 @@
         
         @media (min-width: 1100px) { 
             .pos-container { 
-                grid-template-columns: 1fr 400px; 
+                grid-template-columns: 1fr 450px; 
             } 
         }
 
@@ -635,6 +656,68 @@
             color: var(--primary);
         }
 
+        /* --- SPLIT PAYMENT SECTION --- */
+        .split-payment-section {
+            background: #eff6ff;
+            border: 1px solid #dbeafe;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .split-payment-section.active {
+            display: block;
+        }
+
+        .split-title {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: #1e40af;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .split-input-group {
+            margin-bottom: 15px;
+        }
+
+        .split-input-group label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            margin-bottom: 5px;
+        }
+
+        .split-input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .split-input-group input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .split-info {
+            background: #ffffff;
+            border: 1px dashed #93c5fd;
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #1e40af;
+            text-align: center;
+        }
+
         .payment-select {
             width: 100%;
             padding: 14px;
@@ -646,11 +729,22 @@
             outline: none;
             transition: all 0.2s;
             cursor: pointer;
+            background: white;
         }
 
         .payment-select:focus {
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .payment-select option[value="KCB Paybill"] {
+            color: var(--kcb-paybill);
+            font-weight: 700;
+        }
+
+        .payment-select option[value="Split"] {
+            color: var(--warning);
+            font-weight: 700;
         }
 
         .btn-checkout { 
@@ -806,8 +900,13 @@
                 </h1>
                 <p>Quick and easy checkout for customers</p>
             </div>
-            <div class="branch-badge" id="branchDisplay">
-                <i class="fas fa-store"></i> <span id="branchName">Loading...</span>
+            <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                <span id="shiftStatus" class="shift-badge closed">
+                    <i class="fas fa-clock"></i> Shift: Closed
+                </span>
+                <div class="branch-badge" id="branchDisplay">
+                    <i class="fas fa-store"></i> <span id="branchName">Loading...</span>
+                </div>
             </div>
         </div>
 
@@ -861,9 +960,25 @@
                     </div>
                 </div>
 
-                <select id="pay-method" class="payment-select">
+                <!-- Split Payment Section -->
+                <div id="split-section" class="split-payment-section">
+                    <div class="split-title">
+                        <i class="fas fa-divide"></i> Split Payment Details
+                    </div>
+                    <div class="split-input-group">
+                        <label>Cash Amount (Ksh)</label>
+                        <input type="number" id="split-cash" placeholder="Enter cash amount" oninput="updateSplitInfo()">
+                    </div>
+                    <div id="split-info" class="split-info">Paybill Portion: Ksh 0</div>
+                </div>
+
+                <select id="pay-method" class="payment-select" onchange="toggleSplitSection()">
                     <option value="Cash">💰 Cash</option>
                     <option value="KCB Paybill">🏦 KCB Paybill</option>
+                    <option value="Mpesa">📱 M-Pesa</option>
+                    <option value="KCB Float">🏦 KCB Float</option>
+                    <option value="Equity Float">🏦 Equity Float</option>
+                    <option value="Split">🔄 Split: Cash + KCB Paybill</option>
                     <option value="Debt">📝 Credit/Debt</option>
                 </select>
 
@@ -969,21 +1084,37 @@
 
     // ==================== SHIFT FUNCTIONS ====================
 
-    async function getCurrentShift() {
+    async function checkShift() {
         try {
             const branchId = getCurrentBranchId();
-            const { data } = await supabase
+            
+            const { data: shift, error } = await supabase
                 .from('daily_shifts')
                 .select('*')
                 .eq('branch_id', branchId)
-                .eq('status', 'open')
+                .eq('status', 'Open')
                 .order('start_time', { ascending: false })
                 .limit(1)
-                .single();
+                .maybeSingle();
+                
+            if (error) {
+                console.error("Error checking shift:", error);
+            }
             
-            currentShift = data;
+            currentShift = shift;
+            console.log("Active shift found:", currentShift);
+            
+            const shiftStatus = document.getElementById('shiftStatus');
+            
+            if (currentShift) {
+                shiftStatus.innerHTML = '<i class="fas fa-clock"></i> Shift: Open';
+                shiftStatus.className = 'shift-badge open';
+            } else {
+                shiftStatus.innerHTML = '<i class="fas fa-clock"></i> Shift: Closed';
+                shiftStatus.className = 'shift-badge closed';
+            }
         } catch (error) {
-            console.error("Error getting current shift:", error);
+            console.error("Error checking shift:", error);
         }
     }
 
@@ -1127,7 +1258,36 @@
         subtotalEl.textContent = `Ksh ${subtotal.toLocaleString()}`;
         grandTotalEl.textContent = `Ksh ${subtotal.toLocaleString()}`;
         checkoutBtn.disabled = cart.length === 0;
+        
+        // Update split info if split is selected
+        if (document.getElementById('pay-method').value === 'Split') {
+            updateSplitInfo();
+        }
     }
+
+    // ==================== SPLIT PAYMENT FUNCTIONS ====================
+
+    window.toggleSplitSection = () => {
+        const method = document.getElementById('pay-method').value;
+        const splitSection = document.getElementById('split-section');
+        splitSection.classList.toggle('active', method === 'Split');
+        if (method === 'Split') {
+            updateSplitInfo();
+        }
+    };
+
+    window.updateSplitInfo = () => {
+        const total = cart.reduce((sum, item) => sum + (item.selling_price * item.qty), 0);
+        const cash = parseFloat(document.getElementById('split-cash').value) || 0;
+        const paybill = total - cash;
+        document.getElementById('split-info').innerHTML = `Paybill Portion: Ksh ${paybill.toLocaleString()}`;
+        
+        if (paybill < 0) {
+            alert("Cash amount cannot exceed total!");
+            document.getElementById('split-cash').value = total;
+            updateSplitInfo();
+        }
+    };
 
     // ==================== CHECKOUT FUNCTIONS ====================
 
@@ -1147,10 +1307,34 @@
     }
 
     window.processCheckout = async () => {
+        // Check if shift is active
+        await checkShift();
+        
+        if (!currentShift) {
+            alert("❌ No active shift found. Please open a shift in the Cashier Dashboard first!");
+            return;
+        }
+
         const method = document.getElementById('pay-method').value;
         const total = cart.reduce((sum, item) => sum + (item.selling_price * item.qty), 0);
         
-        if (!confirm(`Confirm sale of Ksh ${total.toLocaleString()}?`)) return;
+        // Handle split payment validation
+        if (method === 'Split') {
+            const cash = parseFloat(document.getElementById('split-cash').value) || 0;
+            const paybill = total - cash;
+            
+            if (cash <= 0 || cash >= total) {
+                alert("Please enter a valid cash amount for split payment. Cash must be between 0 and total amount.");
+                return;
+            }
+            
+            if (paybill <= 0) {
+                alert("Paybill portion must be greater than 0.");
+                return;
+            }
+        }
+        
+        if (!confirm(`Confirm sale of Ksh ${total.toLocaleString()} via ${method}?`)) return;
 
         const checkoutBtn = document.getElementById('checkout-btn');
         const originalText = checkoutBtn.innerHTML;
@@ -1159,37 +1343,105 @@
 
         try {
             const branchId = getCurrentBranchId();
-            
-            // Get current shift
-            await getCurrentShift();
-            
-            if (!currentShift) {
-                alert("No active shift found. Please start a shift first.");
-                return;
+
+            // Create sales records based on payment method
+            if (method === 'Split') {
+                const cash = parseFloat(document.getElementById('split-cash').value);
+                const paybill = total - cash;
+                
+                // Create CASH sale record
+                const cashSalesRecords = cart.map(item => ({
+                    product_id: item.id,
+                    item_name: `${item.name} (Split-Cash)`,
+                    part_type: item.part_type,
+                    quantity: item.qty,
+                    unit_price: cash / cart.reduce((sum, i) => sum + i.qty, 0), // Approximate unit price
+                    total_amount: (item.selling_price * item.qty) * (cash / total), // Proportionate cash portion
+                    payment_method: 'Cash',
+                    cost_price: item.cost_price,
+                    shift_id: currentShift.id,
+                    category: item.category,
+                    branch_id: branchId,
+                    user_id: currentUser?.id,
+                    discount_reason: `Split payment - Cash portion`
+                }));
+
+                // Create PAYBILL sale record
+                const paybillSalesRecords = cart.map(item => ({
+                    product_id: item.id,
+                    item_name: `${item.name} (Split-Paybill)`,
+                    part_type: item.part_type,
+                    quantity: 0, // Quantity set to 0 for paybill portion
+                    unit_price: 0,
+                    total_amount: (item.selling_price * item.qty) * (paybill / total), // Proportionate paybill portion
+                    payment_method: 'KCB Paybill',
+                    cost_price: item.cost_price,
+                    shift_id: currentShift.id,
+                    category: item.category,
+                    branch_id: branchId,
+                    user_id: currentUser?.id,
+                    discount_reason: `Split payment - Paybill portion`
+                }));
+
+                // Insert all sales records
+                const { error: cashError } = await supabase
+                    .from('sales')
+                    .insert(cashSalesRecords);
+
+                if (cashError) throw cashError;
+
+                const { error: paybillError } = await supabase
+                    .from('sales')
+                    .insert(paybillSalesRecords);
+
+                if (paybillError) throw paybillError;
+
+            } else {
+                // Normal single payment method
+                const salesRecords = cart.map(item => ({
+                    product_id: item.id,
+                    item_name: item.name,
+                    part_type: item.part_type,
+                    quantity: item.qty,
+                    unit_price: item.selling_price,
+                    total_amount: item.selling_price * item.qty,
+                    payment_method: method,
+                    cost_price: item.cost_price,
+                    shift_id: currentShift.id,
+                    category: item.category,
+                    branch_id: branchId,
+                    user_id: currentUser?.id
+                }));
+
+                const { error: salesError } = await supabase
+                    .from('sales')
+                    .insert(salesRecords);
+
+                if (salesError) throw salesError;
             }
 
-            // Create sales records
-            const salesRecords = cart.map(item => ({
-                product_id: item.id,
-                item_name: item.name,
-                part_type: item.part_type,
-                quantity: item.qty,
-                unit_price: item.selling_price,
-                total_amount: item.selling_price * item.qty,
-                payment_method: method,
-                cost_price: item.cost_price,
-                shift_id: currentShift.id,
-                category: item.category,
-                branch_id: branchId,
-                user_id: currentUser?.id
-            }));
-
-            // Insert all sales
-            const { error: salesError } = await supabase
-                .from('sales')
-                .insert(salesRecords);
-
-            if (salesError) throw salesError;
+            // Handle Debt separately
+            if (method === 'Debt') {
+                const customerName = prompt("Customer Name (required):");
+                if (!customerName) {
+                    alert("❌ Customer name is required for debt sales!");
+                    throw new Error("Customer name required");
+                }
+                const customerPhone = prompt("Customer Phone (optional):", "");
+                
+                // Create debt records
+                for (const item of cart) {
+                    const itemTotal = item.selling_price * item.qty;
+                    await supabase.from('debtors').insert([{
+                        customer_name: customerName,
+                        customer_phone: customerPhone || null,
+                        product_id: item.id,
+                        amount_owed: itemTotal,
+                        branch_id: branchId,
+                        status: 'Unpaid'
+                    }]);
+                }
+            }
 
             // Update stock for each product
             for (const item of cart) {
@@ -1203,11 +1455,12 @@
             }
 
             // Show success message
-            showSuccessMessage(`✅ Sale completed! Total: Ksh ${total.toLocaleString()}`);
+            showSuccessMessage(`✅ Sale completed! Total: Ksh ${total.toLocaleString()} via ${method}`);
 
             // Clear cart and refresh
             cart = [];
             renderCart();
+            document.getElementById('split-cash').value = '';
             await loadProducts();
 
         } catch (error) {
@@ -1234,7 +1487,7 @@
     async function init() {
         const profile = await loadUserProfile();
         if (profile) {
-            await getCurrentShift();
+            await checkShift();
             await loadProducts();
             renderCart();
         }
