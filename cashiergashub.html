@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* All styles remain the same as your original file */
         :root { 
             --admin-dark: #0f172a;
             --primary: #4f46e5; 
@@ -970,7 +971,7 @@
             </div>
         </div>
 
-        <!-- Helper Box - Instructions for filling the form -->
+        <!-- Helper Box -->
         <div class="helper-box">
             <h4><i class="fas fa-info-circle"></i> How to Fill the Registration Form Correctly</h4>
             <ul>
@@ -979,14 +980,6 @@
                 <li><i class="fas fa-check-circle"></i> <strong>Complete Price:</strong> What you charge CUSTOMER for NEW CYLINDER + GAS (e.g., Ksh 3,500)</li>
                 <li><i class="fas fa-check-circle"></i> <strong>Supplier Complete Cost:</strong> What your SUPPLIER charges you for NEW CYLINDER + GAS (e.g., Ksh 3,000)</li>
             </ul>
-            <div class="example-box">
-                <strong><i class="fas fa-calculator"></i> Example Calculation:</strong>
-                <div>• Refill: Buy @950 → Sell @1,150 → Profit = Ksh 200</div>
-                <div>• Complete: Buy @3,000 → Sell @3,500 → Profit = Ksh 500</div>
-                <div style="margin-top:8px; padding-top:8px; border-top:1px dashed #7dd3fc;">
-                    <strong>Note:</strong> The system automatically calculates cylinder cost as: Complete Cost - Refill Cost
-                </div>
-            </div>
         </div>
 
         <!-- Register New Gas Card -->
@@ -1011,12 +1004,10 @@
                 <div>
                     <label>Refill Cost (Supplier) *</label>
                     <input type="number" id="new-cost" placeholder="What supplier charges for refill" required>
-                    <div class="input-helper"><i class="fas fa-info-circle"></i> e.g., 950</div>
                 </div>
                 <div>
                     <label>Refill Price (Your Price) *</label>
                     <input type="number" id="new-sell" placeholder="Your refill price" required>
-                    <div class="input-helper"><i class="fas fa-info-circle"></i> e.g., 1,150</div>
                 </div>
                 <div>
                     <label>Min Refill Price</label>
@@ -1025,12 +1016,10 @@
                 <div>
                     <label>Complete Price (Your Price) *</label>
                     <input type="number" id="new-complete-price" placeholder="Your new cylinder + gas price" required>
-                    <div class="input-helper"><i class="fas fa-info-circle"></i> e.g., 3,500</div>
                 </div>
                 <div>
                     <label>Supplier Complete Cost *</label>
                     <input type="number" id="new-supplier-complete" placeholder="Supplier's new cylinder + gas cost" required>
-                    <div class="input-helper"><i class="fas fa-info-circle"></i> e.g., 3,000</div>
                 </div>
                 <div>
                     <label>Initial Full Stock</label>
@@ -1055,7 +1044,7 @@
                 <select class="gas-dropdown" id="sale-select" onchange="autoFillPrice('refill')"></select>
                 
                 <div class="exchange-box">
-                    <label><i class="fas fa-arrow-down" style="color: var(--danger);"></i> Incoming Empty</label>
+                    <label><i class="fas fa-arrow-down"></i> Incoming Empty</label>
                     <select class="gas-dropdown" id="incoming-select">
                         <option value="same">-- Same as Outgoing Brand --</option>
                     </select>
@@ -1072,6 +1061,7 @@
                 <select id="pMethod-refill" onchange="toggleSplitFields('refill')">
                     <option value="Cash">💰 Cash</option>
                     <option value="KCB Paybill">🏦 KCB Paybill</option>
+                    <option value="Mpesa">📱 M-Pesa</option>
                     <option value="Split">🔄 Split: Cash + KCB Paybill</option>
                     <option value="Debt">📝 Credit/Debt</option>
                 </select>
@@ -1111,6 +1101,7 @@
                 <select id="pMethod-complete" onchange="toggleSplitFields('complete')">
                     <option value="Cash">💰 Cash</option>
                     <option value="KCB Paybill">🏦 KCB Paybill</option>
+                    <option value="Mpesa">📱 M-Pesa</option>
                     <option value="Split">🔄 Split: Cash + KCB Paybill</option>
                     <option value="Debt">📝 Credit/Debt</option>
                 </select>
@@ -1175,6 +1166,7 @@
     let currentUser = null;
     let currentBranchId = null;
     let currentBranch = null;
+    let debtCustomerInfo = null; // Store customer info to avoid duplicate prompts
 
     // ==================== SIDEBAR FUNCTIONS ====================
     window.toggleMenu = () => {
@@ -1230,13 +1222,11 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
-            // Update sidebar with user's assigned branch
             const sidebarBranchName = document.querySelector('#sidebarBranchName span');
             if (profile.branches && sidebarBranchName) {
                 sidebarBranchName.textContent = profile.branches.name;
             }
             
-            // Update branch display
             const branchNameSpan = document.getElementById('branchName');
             if (branchNameSpan && profile.branches) {
                 branchNameSpan.textContent = profile.branches.name;
@@ -1275,7 +1265,6 @@
             }
             
             activeShift = shift;
-            console.log("Active shift found:", activeShift);
             
             const shiftStatus = document.getElementById('shiftStatus');
             
@@ -1374,7 +1363,6 @@
         }
 
         display.innerHTML = gasItems.map(g => {
-            const cylinderCost = g.complete_cost - g.cost_price;
             return `
             <div class="gas-card">
                 <div class="gas-header">
@@ -1473,7 +1461,7 @@
         if(document.getElementById(`pMethod-${type}`).value === 'Split') updateSplitBalance(type);
     };
 
-    // ==================== FIXED SALE PROCESSING - NO NOTES COLUMN ====================
+    // ==================== SALE PROCESSING WITH FIXED DEBT HANDLING ====================
     async function processSale(btnId, type) {
         // Check if shift is active
         await checkShift();
@@ -1536,7 +1524,37 @@
                 }
             }
 
-            // FIXED: Handle Split Payments - Create multiple sales records instead of using notes column
+            // ============================================
+            // DEBT HANDLING - Collect customer info ONCE before processing
+            // ============================================
+            let customerName = null;
+            let customerPhone = null;
+            
+            if (method === 'Debt') {
+                // Check if we already have customer info from previous prompt (to avoid duplicate)
+                if (!debtCustomerInfo || debtCustomerInfo.used) {
+                    customerName = prompt("Customer Name (required for debt):");
+                    if (!customerName) {
+                        alert("❌ Customer name is required for debt sales!");
+                        btn.disabled = false;
+                        btn.innerHTML = (type === 'refill') ? "Complete Refill" : "Complete Full Sale";
+                        return;
+                    }
+                    customerPhone = prompt("Customer Phone (optional):", "");
+                    
+                    // Store for potential multiple items in same transaction
+                    debtCustomerInfo = {
+                        name: customerName,
+                        phone: customerPhone,
+                        used: true
+                    };
+                } else {
+                    customerName = debtCustomerInfo.name;
+                    customerPhone = debtCustomerInfo.phone;
+                }
+            }
+
+            // Handle Split Payments
             if (method === 'Split') {
                 const cashPart = parseFloat(document.getElementById(`split-cash-${type}`).value) || 0;
                 const paybillPart = total - cashPart;
@@ -1641,16 +1659,31 @@
             }
 
             // ============================================
-            // DEBT HANDLING - Record to debtors table
+            // DEBT HANDLING - Record to debtors table (ONCE per transaction)
             // ============================================
-            if (method === 'Debt') {
-                const customerName = prompt("Customer Name (required):");
-                if (!customerName) {
-                    alert("❌ Customer name is required for debt sales!");
-                } else {
-                    const customerPhone = prompt("Customer Phone (optional):", "");
+            if (method === 'Debt' && customerName) {
+                // Check if debt already recorded for this customer and product
+                const { data: existingDebt } = await supabase
+                    .from('debtors')
+                    .select('id, amount_owed')
+                    .eq('customer_name', customerName)
+                    .eq('product_id', outgoingItem.id)
+                    .eq('status', 'Unpaid')
+                    .eq('branch_id', currentBranchId)
+                    .maybeSingle();
+                
+                if (existingDebt) {
+                    // Update existing debt
+                    const newAmount = existingDebt.amount_owed + total;
+                    const { error: updateDebtError } = await supabase
+                        .from('debtors')
+                        .update({ amount_owed: newAmount })
+                        .eq('id', existingDebt.id);
                     
-                    await supabase.from('debtors').insert([{
+                    if (updateDebtError) throw updateDebtError;
+                } else {
+                    // Create new debt record
+                    const { error: debtError } = await supabase.from('debtors').insert([{
                         customer_name: customerName,
                         customer_phone: customerPhone || null,
                         product_id: outgoingItem.id,
@@ -1658,7 +1691,12 @@
                         branch_id: currentBranchId,
                         status: 'Unpaid'
                     }]);
+                    
+                    if (debtError) throw debtError;
                 }
+                
+                // Reset customer info after successful transaction
+                debtCustomerInfo = null;
             }
 
             showSuccessMessage(`✅ Sale completed! Total: Ksh ${total.toLocaleString()}`);
@@ -1673,7 +1711,9 @@
 
         } catch (err) { 
             console.error("Sale error:", err);
-            alert("❌ Error: " + err.message); 
+            alert("❌ Error: " + err.message);
+            // Reset customer info on error to allow retry
+            debtCustomerInfo = null;
         } finally { 
             btn.disabled = false; 
             btn.innerHTML = (type === 'refill') ? "Complete Refill" : "Complete Full Sale"; 
