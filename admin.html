@@ -38,6 +38,165 @@
             min-height: 100vh;
         }
 
+        /* ==================== DANGER BANNER STYLES ==================== */
+        .danger-banner {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white;
+            position: relative;
+            overflow: hidden;
+            z-index: 150;
+            box-shadow: 0 4px 20px rgba(220, 38, 38, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .danger-banner.minimized {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: auto;
+            max-width: 280px;
+            border-radius: 50px;
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
+            cursor: pointer;
+            z-index: 2000;
+        }
+        
+        .danger-banner.minimized .banner-content {
+            padding: 12px 20px;
+        }
+        
+        .danger-banner.minimized .banner-text {
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .danger-banner.minimized .banner-icon {
+            font-size: 1rem;
+            animation: pulse-red 1.5s infinite;
+        }
+        
+        .danger-banner.minimized .banner-close,
+        .danger-banner.minimized .banner-minimize {
+            display: none;
+        }
+        
+        .danger-banner.minimized .banner-expand {
+            display: inline-flex;
+        }
+        
+        .danger-banner:not(.minimized) .banner-expand {
+            display: none;
+        }
+        
+        .banner-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .banner-message {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+        }
+        
+        .banner-icon {
+            font-size: 1.5rem;
+            animation: pulse-red 1.5s infinite;
+        }
+        
+        .banner-text {
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 0.3px;
+        }
+        
+        .banner-text strong {
+            font-weight: 800;
+            text-transform: uppercase;
+            background: rgba(255,255,255,0.2);
+            padding: 3px 8px;
+            border-radius: 20px;
+            margin-right: 8px;
+        }
+        
+        .banner-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .banner-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .banner-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.02);
+        }
+        
+        .banner-minimize, .banner-expand {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .banner-minimize:hover, .banner-expand:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.05);
+        }
+        
+        .banner-close {
+            background: rgba(0,0,0,0.3);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .banner-close:hover {
+            background: rgba(0,0,0,0.5);
+            transform: scale(1.05);
+        }
+        
+        @keyframes pulse-red {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.9; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
         /* --- FLOATING NAVIGATION MENU --- */
         .nav-overlay { 
             position: fixed; 
@@ -1156,6 +1315,27 @@
 
         /* --- MOBILE RESPONSIVE HEADER --- */
         @media (max-width: 768px) {
+            .banner-content {
+                padding: 12px 15px;
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .banner-message {
+                flex-direction: column;
+                text-align: center;
+            }
+            .banner-text {
+                font-size: 0.85rem;
+                text-align: center;
+            }
+            .banner-actions {
+                justify-content: center;
+            }
+            .danger-banner.minimized {
+                bottom: 80px;
+                right: 15px;
+                max-width: 250px;
+            }
             header {
                 padding: 12px 15px;
                 flex-direction: row;
@@ -1205,6 +1385,34 @@
 </head>
 <body>
 
+<!-- DANGER BANNER - Security Warning -->
+<div id="securityBanner" class="danger-banner">
+    <div class="banner-content">
+        <div class="banner-message">
+            <div class="banner-icon">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <div class="banner-text">
+                <strong>⚠️ SECURITY ALERT</strong> Unprotected data detected! Ensure antivirus is updated on both cashier and admin computers for secure data recording.
+            </div>
+        </div>
+        <div class="banner-actions">
+            <button class="banner-btn" onclick="dismissBannerTemporarily()">
+                <i class="fas fa-bell-slash"></i> Remind Later
+            </button>
+            <button class="banner-minimize" onclick="minimizeBanner()">
+                <i class="fas fa-window-minimize"></i>
+            </button>
+            <button class="banner-expand" onclick="expandBanner()" style="display: none;">
+                <i class="fas fa-window-maximize"></i>
+            </button>
+            <button class="banner-close" onclick="closeBanner()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Branch Selection Modal for Cashier Switch -->
 <div class="branch-modal" id="branchModal">
     <div class="branch-modal-content">
@@ -1223,7 +1431,6 @@
 
 <div class="guide-hand" id="onboardingHand">
     <div class="guide-label"> <span>👇</span> CLICK FOR MENU</div>
-   
 </div>
 
 <div class="nav-overlay" id="navBanner">
@@ -1443,7 +1650,7 @@
                     <th>Revenue</th>
                     <th>Profit</th>
                     <th>Margin</th>
-                </tr>
+                 </tr>
             </thead>
             <tbody id="profit-breakdown-body">
                 <tr>
@@ -1482,12 +1689,11 @@
 <script type="module">
     import { supabase } from './auth.js';
 
-    // Check if user is authenticated - PREVENT UNAUTHORIZED ACCESS
+    // Check if user is authenticated
     async function checkAuth() {
         try {
             const { data: { user }, error } = await supabase.auth.getUser();
             if (error || !user) {
-                console.log("No authenticated user, redirecting to login");
                 window.location.href = 'index.html';
                 return false;
             }
@@ -1513,6 +1719,47 @@
     let invChart = null;
     let selectedCashierBranch = null;
 
+    // ==================== BANNER FUNCTIONS ====================
+    window.minimizeBanner = function() {
+        const banner = document.getElementById('securityBanner');
+        banner.classList.add('minimized');
+        localStorage.setItem('bannerMinimized', 'true');
+    };
+    
+    window.expandBanner = function() {
+        const banner = document.getElementById('securityBanner');
+        banner.classList.remove('minimized');
+        localStorage.removeItem('bannerMinimized');
+    };
+    
+    window.closeBanner = function() {
+        const banner = document.getElementById('securityBanner');
+        banner.style.display = 'none';
+        localStorage.setItem('bannerClosed', 'true');
+    };
+    
+    window.dismissBannerTemporarily = function() {
+        const banner = document.getElementById('securityBanner');
+        banner.style.display = 'none';
+        localStorage.setItem('bannerDismissed', Date.now().toString());
+    };
+    
+    function checkBannerState() {
+        const banner = document.getElementById('securityBanner');
+        if (localStorage.getItem('bannerClosed') === 'true') {
+            banner.style.display = 'none';
+        } else if (localStorage.getItem('bannerMinimized') === 'true') {
+            banner.classList.add('minimized');
+        }
+        const dismissed = localStorage.getItem('bannerDismissed');
+        if (dismissed && (Date.now() - parseInt(dismissed)) < 24 * 60 * 60 * 1000) {
+            banner.style.display = 'none';
+        } else if (dismissed) {
+            localStorage.removeItem('bannerDismissed');
+            banner.style.display = 'block';
+        }
+    }
+
     // ==================== NOTIFICATION FUNCTION ====================
     function showSuccessNotification(message, details = '') {
         const container = document.getElementById('success-notification-container');
@@ -1520,20 +1767,13 @@
         
         const notification = document.createElement('div');
         notification.className = 'success-notification';
-        
-        let icon = '✅';
-        if (message.includes('Branch')) icon = '🏢';
-        else if (message.includes('Data')) icon = '🔄';
-        else if (message.includes('Cashier')) icon = '🔄';
-        
         notification.innerHTML = `
             <i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
             <div style="flex: 1;">
-                <div style="font-weight: 800;">${icon} ${message}</div>
+                <div style="font-weight: 800;">✅ ${message}</div>
                 ${details ? `<div style="font-size: 0.75rem; opacity: 0.9;">${details}</div>` : ''}
             </div>
         `;
-        
         container.appendChild(notification);
         setTimeout(() => notification.remove(), 3000);
     }
@@ -1550,13 +1790,11 @@
         document.getElementById('profileDropdown').classList.toggle('active');
     };
 
-    // Branch selection modal functions
     window.openBranchModal = (e) => {
         e.preventDefault();
         const modal = document.getElementById('branchModal');
         const optionsContainer = document.getElementById('branchOptions');
         
-        // Populate branch options
         let optionsHtml = '';
         Object.values(branches).forEach(branch => {
             optionsHtml += `
@@ -1574,7 +1812,6 @@
 
     window.selectBranch = (branchId) => {
         selectedCashierBranch = branchId;
-        // Check the radio button
         const radio = document.querySelector(`input[value="${branchId}"]`);
         if (radio) radio.checked = true;
     };
@@ -1586,8 +1823,6 @@
         }
         const branchName = branches[selectedCashierBranch]?.name || 'Selected Branch';
         showSuccessNotification('Switching to Cashier Mode', `Branch: ${branchName}`);
-        // Redirect to cashier page with selected branch ID
-        console.log("Switching to cashier with branch ID:", selectedCashierBranch);
         setTimeout(() => {
             window.location.href = `cashier.html?branch=${selectedCashierBranch}`;
         }, 1500);
@@ -1598,7 +1833,6 @@
         selectedCashierBranch = null;
     };
 
-    // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.profile-menu')) {
             document.getElementById('profileDropdown').classList.remove('active');
@@ -1615,10 +1849,6 @@
             branchIdMap[b.code] = b.id;
         });
         
-        console.log("Branches loaded:", branches);
-        console.log("Branch ID Map:", branchIdMap);
-        
-        // Populate branch selector
         const selector = document.getElementById('branchSelector');
         let options = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>';
         data?.forEach(b => {
@@ -1642,15 +1872,7 @@
             
             const { data: profile, error } = await supabase
                 .from('profiles')
-                .select(`
-                    *,
-                    branches (
-                        id,
-                        name,
-                        code,
-                        location
-                    )
-                `)
+                .select(`*, branches(id, name, code, location)`)
                 .eq('id', user.id)
                 .single();
             
@@ -1667,7 +1889,6 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
-            // Update profile info
             document.getElementById('profile-name').textContent = profile.full_name || 'Admin User';
             document.getElementById('profile-email').textContent = user.email;
             
@@ -1683,29 +1904,24 @@
         const selectedCode = selector.value;
         
         const branchDisplay = document.getElementById('currentBranchDisplay');
-        let branchName = 'ALL BRANCHES';
         
         if (selectedCode === 'all') {
             branchDisplay.textContent = 'ALL BRANCHES';
             selectedBranchId = null;
-            branchName = 'All Branches';
         } else {
             const branchId = getBranchIdFromCode(selectedCode);
             if (branchId) {
                 selectedBranchId = branchId;
-                branchName = branches[branchId].name;
-                branchDisplay.textContent = branchName;
+                branchDisplay.textContent = branches[branchId].name;
             }
         }
         
-        console.log("Branch changed - selectedBranchId:", selectedBranchId);
-        showSuccessNotification('Branch Changed', `Viewing: ${branchName}`);
         await loadDashboardData();
+        showSuccessNotification('Branch Changed', `Viewing: ${branchDisplay.textContent}`);
     };
 
     // ==================== DASHBOARD DATA LOADING ====================
     async function loadDashboardData() {
-        // Set greeting based on time of day
         const hour = new Date().getHours();
         let greeting = '';
         let icon = '';
@@ -1723,125 +1939,33 @@
         
         document.getElementById('greeting-text').innerHTML = `<i class="fas ${icon}"></i> ${greeting}, Admin`;
 
-        // ========== 1. LOAD SHIFT DATA - Get ALL shifts when "All Branches" selected ==========
-        let shiftQuery = supabase
-            .from('daily_shifts')
-            .select('*')
-            .order('start_time', { ascending: false });
-
-        // IMPORTANT: Only filter by branch if a specific branch is selected
+        // Load shift data
+        let shiftQuery = supabase.from('daily_shifts').select('*').order('start_time', { ascending: false });
         if (selectedBranchId) {
-            // If a specific branch is selected, get ONLY that branch's shifts
             shiftQuery = shiftQuery.eq('branch_id', selectedBranchId);
-            console.log("Loading dashboard data for specific branch:", selectedBranchId);
-        } else {
-            console.log("Loading dashboard data for ALL branches");
         }
-        // If selectedBranchId is null (All Branches), we DON'T filter by branch at all
-        // This ensures we get ALL shifts from ALL branches
-
         const { data: shifts } = await shiftQuery;
-        console.log("All shifts fetched:", shifts);
 
-        // Group to get latest shift per branch
+        // Get latest shifts per branch
         const latestShifts = {};
-
-        // Process ALL shifts to get latest for EACH branch
         shifts?.forEach(shift => {
             const branchId = shift.branch_id;
-            // If we don't have this branch yet, or this shift is newer than the one we have
             if (!latestShifts[branchId] || new Date(shift.start_time) > new Date(latestShifts[branchId].start_time)) {
                 latestShifts[branchId] = shift;
             }
         });
 
-        console.log("Latest shifts per branch:", latestShifts);
-
-        // Check specifically for Kitui branch
-        const kituiId = branchIdMap['KIT'];
-        if (kituiId) {
-            console.log("Kitui branch ID:", kituiId);
-            console.log("Kitui latest shift:", latestShifts[kituiId]);
-        }
-
-        // ========== FIX 1: CORRECT SHIFT STATUS DISPLAY ON FLOATS ==========
-        // Instead of just showing status from latest shift, we need to show the actual status
-        // of the shift being displayed
-        
-        // ========== DISPLAY FLOATS - Show ALL branches when "All Branches" selected ==========
+        // Display floats
         const floatsContainer = document.getElementById('floats-container');
+        const branchIds = selectedBranchId ? [selectedBranchId] : Object.keys(branches);
         
-        if (selectedBranchId === null) {
-            // Show floats for ALL branches using LATEST shifts
-            const branchIds = Object.keys(branches);
-            
-            if (branchIds.length > 0) {
-                let floatsHtml = '';
+        if (branchIds.length > 0) {
+            let floatsHtml = '';
+            branchIds.forEach(branchId => {
+                const branch = branches[branchId];
+                const shift = latestShifts[branchId];
                 
-                // Create a card for EACH branch
-                branchIds.forEach(branchId => {
-                    const branch = branches[branchId];
-                    const shift = latestShifts[branchId];
-                    
-                    floatsHtml += `
-                        <div class="float-item">
-                            <div class="branch-label">
-                                <span><i class="fas fa-store"></i> ${branch.name}</span>
-                                ${shift ? `
-                                    <span class="status-badge" style="background: ${shift.status && shift.status.toLowerCase() === 'open' ? '#10b981' : '#64748b'}; color: white;">
-                                        ${shift.status && shift.status.toLowerCase() === 'open' ? 'OPEN' : 'CLOSED'}
-                                    </span>
-                                ` : `
-                                    <span class="status-badge" style="background: #94a3b8; color: white;">
-                                        NO SHIFT
-                                    </span>
-                                `}
-                            </div>
-                            ${shift ? `
-                                <div class="float-details">
-                                    <div class="float-detail">
-                                        <small>M-PESA</small>
-                                        <span>Ksh ${(shift.open_mpesa || 0).toLocaleString()}</span>
-                                    </div>
-                                    <div class="float-detail">
-                                        <small>CASH</small>
-                                        <span>Ksh ${(shift.open_cash || 0).toLocaleString()}</span>
-                                    </div>
-                                    <div class="float-detail">
-                                        <small>KCB</small>
-                                        <span>Ksh ${(shift.open_kcb || 0).toLocaleString()}</span>
-                                    </div>
-                                    <div class="float-detail">
-                                        <small>EQUITY</small>
-                                        <span>Ksh ${(shift.open_equity || 0).toLocaleString()}</span>
-                                    </div>
-                                </div>
-                            ` : `
-                                <div class="float-details">
-                                    <div class="float-detail" style="grid-column: span 2; text-align: center; background: transparent; border: none;">
-                                        <span style="color: var(--text-dim);">No shift data available</span>
-                                    </div>
-                                </div>
-                            `}
-                        </div>
-                    `;
-                });
-                
-                floatsContainer.innerHTML = floatsHtml;
-            } else {
-                floatsContainer.innerHTML = `
-                    <div class="float-item" style="grid-column: 1/-1; text-align: center; padding: 30px;">
-                        <span>No branches found</span>
-                    </div>
-                `;
-            }
-        } else {
-            // Show single branch floats
-            const branch = branches[selectedBranchId];
-            const shift = latestShifts[selectedBranchId];
-            
-            if (branch) {
-                floatsContainer.innerHTML = `
+                floatsHtml += `
                     <div class="float-item">
                         <div class="branch-label">
                             <span><i class="fas fa-store"></i> ${branch.name}</span>
@@ -1857,43 +1981,23 @@
                         </div>
                         ${shift ? `
                             <div class="float-details">
-                                <div class="float-detail">
-                                    <small>M-PESA</small>
-                                    <span>Ksh ${(shift.open_mpesa || 0).toLocaleString()}</span>
-                                </div>
-                                <div class="float-detail">
-                                    <small>CASH</small>
-                                    <span>Ksh ${(shift.open_cash || 0).toLocaleString()}</span>
-                                </div>
-                                <div class="float-detail">
-                                    <small>KCB</small>
-                                    <span>Ksh ${(shift.open_kcb || 0).toLocaleString()}</span>
-                                </div>
-                                <div class="float-detail">
-                                    <small>EQUITY</small>
-                                    <span>Ksh ${(shift.open_equity || 0).toLocaleString()}</span>
-                                </div>
+                                <div class="float-detail"><small>M-PESA</small><span>Ksh ${(shift.open_mpesa || 0).toLocaleString()}</span></div>
+                                <div class="float-detail"><small>CASH</small><span>Ksh ${(shift.open_cash || 0).toLocaleString()}</span></div>
+                                <div class="float-detail"><small>KCB</small><span>Ksh ${(shift.open_kcb || 0).toLocaleString()}</span></div>
+                                <div class="float-detail"><small>EQUITY</small><span>Ksh ${(shift.open_equity || 0).toLocaleString()}</span></div>
                             </div>
                         ` : `
                             <div class="float-details">
-                                <div class="float-detail" style="grid-column: span 2; text-align: center; background: transparent; border: none;">
-                                    <span style="color: var(--text-dim);">No shift data available</span>
-                                </div>
+                                <div class="float-detail" style="grid-column: span 2; text-align: center;"><span>No shift data available</span></div>
                             </div>
                         `}
                     </div>
                 `;
-            } else {
-                floatsContainer.innerHTML = `
-                    <div class="float-item" style="grid-column: 1/-1; text-align: center; padding: 30px;">
-                        <span>No branch data available</span>
-                    </div>
-                `;
-            }
+            });
+            floatsContainer.innerHTML = floatsHtml;
         }
 
-        // ========== FIX 2: CORRECT SHIFT STATUS DETECTION FOR HEADER ==========
-        // Check if ANY shift is open by looking at all shifts, not just latest per branch
+        // Shift status header
         let anyOpen = false;
         if (shifts && shifts.length > 0) {
             anyOpen = shifts.some(shift => shift?.status?.toLowerCase() === 'open');
@@ -1910,31 +2014,15 @@
             document.getElementById('status-dot').className = 'status-dot';
         }
 
-        // ========== 3. CALCULATE PAYBILL PER BRANCH (all-time) ==========
+        // Paybill balances
         const paybillContainer = document.getElementById('paybill-container');
-        const branchIds = selectedBranchId ? [selectedBranchId] : Object.keys(branches);
-        
         let paybillHTML = '';
         
         for (const branchId of branchIds) {
-            // Get all KCB Paybill sales for this branch
-            let paybillQuery = supabase
-                .from('sales')
-                .select('*')
-                .eq('payment_method', 'KCB Paybill')
-                .eq('branch_id', branchId);
+            let paybillQuery = supabase.from('sales').select('*').eq('payment_method', 'KCB Paybill').eq('branch_id', branchId);
+            let adminQuery = supabase.from('admin_expenses').select('*').eq('payment_source', 'KCB Paybill').eq('branch_id', branchId);
             
-            // Get all admin expenses for this branch
-            let adminQuery = supabase
-                .from('admin_expenses')
-                .select('*')
-                .eq('payment_source', 'KCB Paybill')
-                .eq('branch_id', branchId);
-            
-            const [paybillRes, adminRes] = await Promise.all([
-                paybillQuery,
-                adminQuery
-            ]);
+            const [paybillRes, adminRes] = await Promise.all([paybillQuery, adminQuery]);
 
             let totalPaybillIncome = 0, pbProfit = 0;
             paybillRes.data?.forEach(s => {
@@ -1953,60 +2041,30 @@
             
             paybillHTML += `
                 <div class="paybill-card">
-                    <div class="paybill-card-header">
-                        <i class="fas fa-credit-card"></i>
-                        <span class="branch-name">${branches[branchId]?.name || 'Unknown Branch'}</span>
-                    </div>
+                    <div class="paybill-card-header"><i class="fas fa-credit-card"></i><span class="branch-name">${branches[branchId]?.name || 'Unknown Branch'}</span></div>
                     <label>NET BALANCE</label>
                     <div class="paybill-main-val">Ksh ${netPaybillBalance.toLocaleString()}</div>
-                    <div class="paybill-profit-val">
-                        <i class="fas fa-chart-line"></i> Profit: Ksh ${pbProfit.toLocaleString()}
-                    </div>
+                    <div class="paybill-profit-val"><i class="fas fa-chart-line"></i> Profit: Ksh ${pbProfit.toLocaleString()}</div>
                 </div>
             `;
         }
         paybillContainer.innerHTML = paybillHTML;
 
-        // ========== 4. LOAD TODAY'S MONEY FLOW STATS (FROM LATEST SHIFT) ==========
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-
-        // For each branch, get its latest shift and aggregate today's data
+        // Today's stats
         let tRev = 0, tProf = 0, tIn = 0, tOut = 0;
         
-        const branchList = selectedBranchId ? [selectedBranchId] : Object.keys(branches);
-        
-        for (const branchId of branchList) {
-            // Get latest shift for this branch
-            const { data: branchShift } = await supabase
-                .from('daily_shifts')
-                .select('*')
-                .eq('branch_id', branchId)
-                .order('start_time', { ascending: false })
-                .limit(1);
-            
+        for (const branchId of branchIds) {
+            const { data: branchShift } = await supabase.from('daily_shifts').select('*').eq('branch_id', branchId).order('start_time', { ascending: false }).limit(1);
             const latestShift = branchShift?.[0];
             
             if (latestShift) {
-                // Get sales for this shift
-                const { data: shiftSales } = await supabase
-                    .from('sales')
-                    .select('*')
-                    .eq('shift_id', latestShift.id);
-                
+                const { data: shiftSales } = await supabase.from('sales').select('*').eq('shift_id', latestShift.id);
                 shiftSales?.forEach(s => {
                     tRev += parseFloat(s.total_amount || 0);
                     tProf += (parseFloat(s.unit_price || 0) - parseFloat(s.cost_price || 0)) * parseInt(s.quantity || 0);
                 });
 
-                // Get cash transactions for this shift
-                const { data: shiftCash } = await supabase
-                    .from('cash_transactions')
-                    .select('*')
-                    .eq('shift_id', latestShift.id);
-                
+                const { data: shiftCash } = await supabase.from('cash_transactions').select('*').eq('shift_id', latestShift.id);
                 shiftCash?.forEach(t => {
                     if (t.type === 'Money In') tIn += parseFloat(t.amount || 0);
                     else if (t.type === 'Money Out') tOut += parseFloat(t.amount || 0);
@@ -2019,27 +2077,21 @@
         document.getElementById('t-in').innerText = `Ksh ${tIn.toLocaleString()}`;
         document.getElementById('t-exp').innerText = `Ksh ${tOut.toLocaleString()}`;
 
-        // ========== 5. LOAD ALL SALES AND PRODUCTS FOR CHARTS AND STATS ==========
+        // Load products and sales
         let productsQuery = supabase.from('products').select('*');
         let salesQuery = supabase.from('sales').select('*, products(*)');
         
         if (selectedBranchId) {
             productsQuery = productsQuery.eq('branch_id', selectedBranchId);
             salesQuery = salesQuery.eq('branch_id', selectedBranchId);
-        } else if (currentBranchId) {
-            productsQuery = productsQuery.eq('branch_id', currentBranchId);
-            salesQuery = salesQuery.eq('branch_id', currentBranchId);
         }
         
-        const [productsRes, salesRes] = await Promise.all([
-            productsQuery,
-            salesQuery
-        ]);
+        const [productsRes, salesRes] = await Promise.all([productsQuery, salesQuery]);
 
         allProducts = productsRes.data || [];
         allSales = salesRes.data || [];
 
-        // ========== 6. PROCESS CATEGORY DATA (Expanded to all categories) ==========
+        // Category calculations
         const gasProducts = allProducts.filter(p => p.category === 'Gas');
         const spareProducts = allProducts.filter(p => p.category === 'Spare Part');
         const motoProducts = allProducts.filter(p => p.category === 'Motorbike');
@@ -2052,9 +2104,7 @@
 
         // Gas stats
         let gasStockCost = 0, gasRevenue = 0, gasProfit = 0;
-        gasProducts.forEach(p => {
-            gasStockCost += (p.stock_quantity || 0) * (p.cost_price || 0);
-        });
+        gasProducts.forEach(p => gasStockCost += (p.stock_quantity || 0) * (p.cost_price || 0));
         gasSales.forEach(s => {
             gasRevenue += s.total_amount || 0;
             gasProfit += ((s.unit_price || 0) - (s.cost_price || 0)) * (s.quantity || 0);
@@ -2066,9 +2116,7 @@
 
         // Motorbike stats
         let motoStockCost = 0, motoRevenue = 0, motoProfit = 0;
-        motoProducts.forEach(p => {
-            motoStockCost += (p.stock_quantity || 0) * (p.cost_price || 0);
-        });
+        motoProducts.forEach(p => motoStockCost += (p.stock_quantity || 0) * (p.cost_price || 0));
         motoSales.forEach(s => {
             motoRevenue += s.total_amount || 0;
             motoProfit += ((s.unit_price || 0) - (s.cost_price || 0)) * (s.quantity || 0);
@@ -2080,9 +2128,7 @@
 
         // Tuktuk stats
         let tuktukStockCost = 0, tuktukRevenue = 0, tuktukProfit = 0;
-        tuktukProducts.forEach(p => {
-            tuktukStockCost += (p.stock_quantity || 0) * (p.cost_price || 0);
-        });
+        tuktukProducts.forEach(p => tuktukStockCost += (p.stock_quantity || 0) * (p.cost_price || 0));
         tuktukSales.forEach(s => {
             tuktukRevenue += s.total_amount || 0;
             tuktukProfit += ((s.unit_price || 0) - (s.cost_price || 0)) * (s.quantity || 0);
@@ -2092,7 +2138,7 @@
         document.getElementById('sales-tuktuk').innerText = `Ksh ${tuktukRevenue.toLocaleString()}`;
         document.getElementById('profit-tuktuk').innerText = `Ksh ${tuktukProfit.toLocaleString()}`;
 
-        // Spare parts by type (Original, Copy, General)
+        // Spare parts by type
         const productTypeMap = {};
         const spareStats = {
             Original: { cost: 0, sales: 0, profit: 0, count: 0 },
@@ -2103,22 +2149,18 @@
         spareProducts.forEach(p => {
             const type = p.part_type === 'N/A' || !p.part_type ? 'General' : p.part_type;
             productTypeMap[p.id] = type;
-            const stockVal = (p.stock_quantity || 0) * (p.cost_price || 0);
-            spareStats[type].cost += stockVal;
+            spareStats[type].cost += (p.stock_quantity || 0) * (p.cost_price || 0);
             spareStats[type].count++;
         });
 
         spareSales.forEach(s => {
-            if (productTypeMap[s.product_id] || s.category === 'Spare Part') {
-                const type = productTypeMap[s.product_id] || 'General';
-                const amt = s.total_amount || 0;
-                const profit = amt - ((s.cost_price || 0) * (s.quantity || 0));
-                spareStats[type].sales += amt;
-                spareStats[type].profit += profit;
-            }
+            const type = productTypeMap[s.product_id] || 'General';
+            const amt = s.total_amount || 0;
+            const profit = amt - ((s.cost_price || 0) * (s.quantity || 0));
+            spareStats[type].sales += amt;
+            spareStats[type].profit += profit;
         });
 
-        // Update spare parts stats
         ['Original', 'Copy', 'General'].forEach(t => {
             const low = t.toLowerCase();
             document.getElementById(`count-${low}`).innerText = `${spareStats[t].count} items`;
@@ -2127,86 +2169,55 @@
             document.getElementById(`profit-${low}`).innerText = `Ksh ${spareStats[t].profit.toLocaleString()}`;
         });
 
-        // ========== 7. CALCULATE CATEGORY BREAKDOWN ==========
-        const categories = { 
-            Gas: { profit: 0, revenue: 0 }, 
-            Spare: { profit: 0, revenue: 0 }, 
-            Motorbike: { profit: 0, revenue: 0 },
-            Tuktuk: { profit: 0, revenue: 0 } 
-        };
+        // Category breakdown
+        const categories = { Gas: { profit: 0, revenue: 0 }, Spare: { profit: 0, revenue: 0 }, Motorbike: { profit: 0, revenue: 0 }, Tuktuk: { profit: 0, revenue: 0 } };
 
         allSales.forEach(s => {
             const p = allProducts.find(prod => prod.id === s.product_id) || { cost_price: 0, category: 'Other' };
             const itemProfit = ((s.unit_price || 0) - (s.cost_price || p.cost_price || 0)) * (s.quantity || 0);
             
-            let catKey = 'Other';
-            if (p.category === 'Gas') catKey = 'Gas';
-            else if (p.category === 'Spare Part') catKey = 'Spare';
-            else if (p.category === 'Motorbike') catKey = 'Motorbike';
-            else if (p.category === 'Tuktuk') catKey = 'Tuktuk';
-            
-            if (categories[catKey]) {
-                categories[catKey].profit += itemProfit;
-                categories[catKey].revenue += s.total_amount || 0;
-            }
+            if (p.category === 'Gas') { categories.Gas.profit += itemProfit; categories.Gas.revenue += s.total_amount || 0; }
+            else if (p.category === 'Spare Part') { categories.Spare.profit += itemProfit; categories.Spare.revenue += s.total_amount || 0; }
+            else if (p.category === 'Motorbike') { categories.Motorbike.profit += itemProfit; categories.Motorbike.revenue += s.total_amount || 0; }
+            else if (p.category === 'Tuktuk') { categories.Tuktuk.profit += itemProfit; categories.Tuktuk.revenue += s.total_amount || 0; }
         });
 
-        // Update category breakdown table
         document.getElementById('profit-breakdown-body').innerHTML = Object.entries(categories).map(([name, val]) => {
             const margin = val.revenue > 0 ? ((val.profit / val.revenue) * 100).toFixed(1) : 0;
-            return `<tr>
-                <td><b>${name}</b></td>
-                <td>Ksh ${val.revenue.toLocaleString()}</td>
-                <td class="profit-text">Ksh ${val.profit.toLocaleString()}</td>
-                <td><span class="badge" style="background:#f1f5f9;">${margin}%</span></td>
-            </tr>`;
+            return `<tr><td><b>${name}</b></td><td>Ksh ${val.revenue.toLocaleString()}</td><td class="profit-text">Ksh ${val.profit.toLocaleString()}</td><td><span class="badge" style="background:#f1f5f9;">${margin}%</span></td></tr>`;
         }).join('');
 
-        // ========== 8. UPDATE CHARTS ==========
-        updateCharts(categories, spareStats);
+        // Charts
+        if (profitChart) profitChart.destroy();
+        if (invChart) invChart.destroy();
+        
+        const profitCtx = document.getElementById('profitChart').getContext('2d');
+        profitChart = new Chart(profitCtx, {
+            type: 'doughnut',
+            data: { labels: ['Gas', 'Spares', 'Motorbike', 'Tuktuk'], datasets: [{ data: [categories.Gas.profit, categories.Spare.profit, categories.Motorbike.profit, categories.Tuktuk.profit], backgroundColor: ['#10b981', '#4f46e5', '#f59e0b', '#8b5cf6'], borderWidth: 0 }] },
+            options: { maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'bottom', labels: { padding: 15, font: { family: 'Plus Jakarta Sans', size: 11 } } } } }
+        });
 
-        // ========== 9. RENDER SPARE PARTS LIST ==========
+        const invCtx = document.getElementById('invChart').getContext('2d');
+        invChart = new Chart(invCtx, {
+            type: 'bar',
+            data: { labels: ['Original', 'Copy', 'General'], datasets: [{ label: 'Inventory Value (Ksh)', data: [spareStats.Original.cost, spareStats.Copy.cost, spareStats.General.cost], backgroundColor: ['#10b981', '#ef4444', '#64748b'], borderRadius: 6, barPercentage: 0.7 }] },
+            options: { maintainAspectRatio: false, responsive: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return `Ksh ${(context.raw || 0).toLocaleString()}`; } } } }, scales: { y: { beginAtZero: true, ticks: { callback: function(value) { return 'Ksh ' + value.toLocaleString(); } } } } }
+        });
+
+        // Spare parts stock
         renderSpareParts();
 
-        // ========== 10. LOAD RECENT TRANSACTIONS ==========
-        let recentQuery = supabase
-            .from('sales')
-            .select(`
-                *,
-                products(name)
-            `)
-            .order('created_at', { ascending: false })
-            .limit(10);
-            
-        if (selectedBranchId) {
-            recentQuery = recentQuery.eq('branch_id', selectedBranchId);
-        } else if (currentBranchId) {
-            recentQuery = recentQuery.eq('branch_id', currentBranchId);
-        }
-        
+        // Recent transactions
+        let recentQuery = supabase.from('sales').select(`*, products(name)`).order('created_at', { ascending: false }).limit(10);
+        if (selectedBranchId) recentQuery = recentQuery.eq('branch_id', selectedBranchId);
         const { data: recentSales } = await recentQuery;
         
         const transactionList = document.getElementById('recent-transactions');
         if (recentSales && recentSales.length > 0) {
             transactionList.innerHTML = recentSales.map(s => {
                 const branchName = branches[s.branch_id]?.name || 'Unknown';
-                return `
-                    <div class="transaction-item">
-                        <div class="transaction-info">
-                            <div class="transaction-icon">
-                                <i class="fas ${s.category === 'Gas' ? 'fa-fire' : s.category === 'Motorbike' ? 'fa-motorcycle' : s.category === 'Tuktuk' ? 'fa-car-side' : 'fa-cog'}"></i>
-                            </div>
-                            <div class="transaction-details">
-                                <div class="item-name">${s.item_name}</div>
-                                <div class="meta">
-                                    <i class="far fa-clock"></i> ${new Date(s.created_at).toLocaleTimeString()}
-                                    <span class="transaction-branch"><i class="fas fa-store"></i> ${branchName}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="transaction-amount">Ksh ${s.total_amount?.toLocaleString()}</div>
-                    </div>
-                `;
+                return `<div class="transaction-item"><div class="transaction-info"><div class="transaction-icon"><i class="fas ${s.category === 'Gas' ? 'fa-fire' : s.category === 'Motorbike' ? 'fa-motorcycle' : s.category === 'Tuktuk' ? 'fa-car-side' : 'fa-cog'}"></i></div><div class="transaction-details"><div class="item-name">${s.item_name}</div><div class="meta"><i class="far fa-clock"></i> ${new Date(s.created_at).toLocaleTimeString()}<span class="transaction-branch"><i class="fas fa-store"></i> ${branchName}</span></div></div></div><div class="transaction-amount">Ksh ${s.total_amount?.toLocaleString()}</div></div>`;
             }).join('');
         } else {
             transactionList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-dim);">No recent transactions</div>';
@@ -2215,112 +2226,12 @@
         showSuccessNotification('Data loaded successfully', `Viewing: ${selectedBranchId ? branches[selectedBranchId]?.name : 'All Branches'}`);
     }
 
-    function updateCharts(categories, spareStats) {
-        // Destroy existing charts
-        if (profitChart) profitChart.destroy();
-        if (invChart) invChart.destroy();
-        
-        // Profit Chart (doughnut)
-        const profitCtx = document.getElementById('profitChart').getContext('2d');
-        profitChart = new Chart(profitCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Gas', 'Spares', 'Motorbike', 'Tuktuk'],
-                datasets: [{
-                    data: [
-                        categories.Gas.profit, 
-                        categories.Spare.profit, 
-                        categories.Motorbike.profit,
-                        categories.Tuktuk.profit
-                    ],
-                    backgroundColor: ['#10b981', '#4f46e5', '#f59e0b', '#8b5cf6'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                maintainAspectRatio: false,
-                cutout: '65%',
-                plugins: { 
-                    legend: { 
-                        position: 'bottom', 
-                        labels: { 
-                            padding: 15, 
-                            font: { family: 'Plus Jakarta Sans', size: 11 } 
-                        } 
-                    } 
-                }
-            }
-        });
-
-        // Inventory Chart (bar chart) - Now showing Original, Copy, General
-        const invCtx = document.getElementById('invChart').getContext('2d');
-        invChart = new Chart(invCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Original', 'Copy', 'General'],
-                datasets: [{
-                    label: 'Inventory Value (Ksh)',
-                    data: [spareStats.Original.cost, spareStats.Copy.cost, spareStats.General.cost],
-                    backgroundColor: ['#10b981', '#ef4444', '#64748b'],
-                    borderRadius: 6,
-                    barPercentage: 0.7
-                }]
-            },
-            options: {
-                maintainAspectRatio: false,
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let value = context.raw || 0;
-                                return `Ksh ${value.toLocaleString()}`;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return 'Ksh ' + value.toLocaleString();
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
     function renderSpareParts() {
         const stockTerm = document.getElementById('invSearch').value.toLowerCase();
-        
-        // Spare parts with branch indicators (using full branch names)
         const stockItems = allProducts.filter(p => p.category !== 'Gas' && p.name.toLowerCase().includes(stockTerm));
         document.getElementById('stock-list').innerHTML = stockItems.slice(0, stockLimit).map(p => {
             const branchName = branches[p.branch_id]?.name || 'Unknown';
-            return `
-                <div class="stock-card ${p.stock_quantity < 5 ? 'low-stock' : ''}">
-                    <div class="stock-header">
-                        <div>
-                            <div class="stock-name">${p.name}</div>
-                            <div class="stock-type">
-                                <i class="fas fa-store"></i> ${branchName} · ${p.part_type || 'Spare'}
-                            </div>
-                        </div>
-                        <div class="stock-qty">${p.stock_quantity} <small>left</small></div>
-                    </div>
-                    <div class="stock-prices">
-                        <div><span class="price-label">BUY</span><span class="price-value">Ksh ${p.cost_price}</span></div>
-                        <div><span class="price-label">SELL</span><span class="price-value">Ksh ${p.selling_price}</span></div>
-                        <div><span class="price-label">PROFIT</span><span class="price-value profit-value">+Ksh ${p.selling_price - p.cost_price}</span></div>
-                    </div>
-                </div>
-            `;
+            return `<div class="stock-card ${p.stock_quantity < 5 ? 'low-stock' : ''}"><div class="stock-header"><div><div class="stock-name">${p.name}</div><div class="stock-type"><i class="fas fa-store"></i> ${branchName} · ${p.part_type || 'Spare'}</div></div><div class="stock-qty">${p.stock_quantity} <small>left</small></div></div><div class="stock-prices"><div><span class="price-label">BUY</span><span class="price-value">Ksh ${p.cost_price}</span></div><div><span class="price-label">SELL</span><span class="price-value">Ksh ${p.selling_price}</span></div><div><span class="price-label">PROFIT</span><span class="price-value profit-value">+Ksh ${p.selling_price - p.cost_price}</span></div></div></div>`;
         }).join('');
         
         if (stockItems.length === 0) {
@@ -2329,38 +2240,26 @@
     }
 
     document.getElementById('invSearch').addEventListener('input', renderSpareParts);
-    document.getElementById('loadStockBtn').addEventListener('click', () => { 
-        stockLimit += 10; 
-        renderSpareParts(); 
-    });
+    document.getElementById('loadStockBtn').addEventListener('click', () => { stockLimit += 10; renderSpareParts(); });
 
     window.handleLogout = async () => {
         if(confirm("Exit Admin Mode?")) {
             showSuccessNotification('Logging out', 'See you soon!');
             localStorage.removeItem('pos_session');
             await supabase.auth.signOut();
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 1500);
+            setTimeout(() => { window.location.href = 'index.html'; }, 1500);
         }
     };
-
-    async function init() {
-        // Check authentication first
+ async function init() {
         const user = await checkAuth();
         if (!user) return;
-        
         await loadBranches();
         await loadUserProfile();
-        
-        // Set default branch selector to 'all' (all branches)
         document.getElementById('branchSelector').value = 'all';
         selectedBranchId = null;
         document.getElementById('currentBranchDisplay').textContent = 'ALL BRANCHES';
-        
         await loadDashboardData();
-        
-        // Hide hand if menu was clicked before
+        checkBannerState();
         if (sessionStorage.getItem('menuClicked') === 'true') {
             document.getElementById('onboardingHand').style.display = 'none';
         }
