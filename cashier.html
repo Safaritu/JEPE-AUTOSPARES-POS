@@ -393,6 +393,30 @@
             }
         }
         
+        /* Date cell with stacked time pills */
+        .date-cell {
+            vertical-align: top;
+        }
+        .date-cell b {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+        }
+        .date-cell .time-pill {
+            display: block;
+            background: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+            text-align: center;
+        }
+        .date-cell .time-pill:last-child {
+            margin-bottom: 0;
+        }
+        
         @media (max-width: 768px) {
             .mobile-hide-header { display: none; }
             
@@ -1410,9 +1434,10 @@
 
     <!-- DUAL TABLES SECTION -->
     <div class="dual-tables">
+        <!-- MAXIMIZED TODAY'S SALES SECTION -->
         <div>
             <div class="section-label">TODAY'S SALES</div>
-            <div class="table-card" style="max-height: 350px; overflow-y: auto;">
+            <div class="table-card" style="max-height: 500px; overflow-y: auto; min-height: 400px;">
                 <table class="today-sales-table">
                     <thead class="mobile-hide-header">
                         <tr>
@@ -1429,23 +1454,23 @@
             </div>
         </div>
 
-        <!-- MONEY IN/OUT RECORD SECTION -->
-        <div class="card">
-            <div class="section-label">MONEY IN/OUT RECORD</div>
-            <input type="number" id="exp-amt" placeholder="Amount" style="margin-bottom:12px; padding: 12px; border-radius: 8px;">
-            <select id="exp-type" style="margin-bottom:12px; padding: 12px; border-radius: 8px;">
+        <!-- MINIMIZED MONEY IN/OUT RECORD SECTION -->
+        <div class="card" style="padding: 12px;">
+            <div class="section-label" style="margin-bottom: 8px; font-size: 0.65rem;">MONEY IN/OUT RECORD</div>
+            <input type="number" id="exp-amt" placeholder="Amount" style="margin-bottom:8px; padding: 8px; border-radius: 8px; font-size: 0.8rem;">
+            <select id="exp-type" style="margin-bottom:8px; padding: 8px; border-radius: 8px; font-size: 0.8rem;">
                 <option value="Money Out">Money Out</option>
                 <option value="Money In">Money In</option>
             </select>
-            <input type="text" id="exp-desc" placeholder="Reason (e.g. Loading Fee, Lunch)" style="width:100%; margin-bottom:12px; padding: 12px; border-radius: 8px;">
-            <select id="exp-method" style="width:100%; margin-bottom:15px; padding: 12px; border-radius: 8px;">
+            <input type="text" id="exp-desc" placeholder="Reason (e.g. Loading Fee, Lunch)" style="width:100%; margin-bottom:8px; padding: 8px; border-radius: 8px; font-size: 0.8rem;">
+            <select id="exp-method" style="width:100%; margin-bottom:8px; padding: 8px; border-radius: 8px; font-size: 0.8rem;">
                 <option value="Cash">Cash</option>
                 <option value="Mpesa">Mpesa</option>
                 <option value="KCB Float">KCB Float</option>
                 <option value="Equity Float">Equity Float</option>
                 <option value="KCB Paybill" style="color: #2563eb; font-weight: 700;">💰 KCB Paybill (Live Box)</option>
             </select>
-            <button id="record-expense-btn" class="btn btn-sync" style="width: 100%; padding: 14px; font-size: 0.9rem;">RECORD MONEY</button>
+            <button id="record-expense-btn" class="btn btn-sync" style="width: 100%; padding: 10px; font-size: 0.8rem;">RECORD MONEY</button>
         </div>
     </div>
 
@@ -1497,7 +1522,7 @@
             <table class="shift-history-table">
                 <thead>
                     <tr>
-                        <th width="160">DATE</th>
+                        <th width="180">DATE & TIME</th>
                         <th width="210">OPENING FLOATS</th>
                         <th width="210">PAYMENT METHOD</th>
                         <th width="190">MONEY IN/OUT</th>
@@ -2022,7 +2047,7 @@
             
             const liveTransBody = document.getElementById('live-trans-body');
             if (liveTransBody) {
-                liveTransBody.innerHTML = trans.map(t => `<tr class="${t.type === 'Money In' ? 'money-in-row' : 'money-out-row'}"><td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Reason">${t.description}</td><td data-label="Amount">Ksh ${t.amount.toLocaleString()}</td><td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">${t.type}</td><td data-label="Wallet">${t.category}</td></tr>`).join('');
+                liveTransBody.innerHTML = trans.map(t => `<tr class="${t.type === 'Money In' ? 'money-in-row' : 'money-out-row'}"><td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Reason">${t.description}</td><td data-label="Amount">Ksh ${t.amount.toLocaleString()}</td><td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">${t.type}</td><td data-label="Wallet">${t.category}</td></td>`).join('');
             }
             checkLowFloats();
         } catch (error) { console.error("Error loading shift data:", error); }
@@ -2135,13 +2160,19 @@
             else if (varianceVal < 0) { varianceDisplay = varianceVal.toLocaleString(); varianceClass = 'var-negative'; }
             else { varianceDisplay = '0'; varianceClass = 'var-balanced'; }
             const startD = new Date(sh.start_time);
-            tableHtml += `<tr><td class="date-cell"><b>${startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'})}</b><span class="time-pill">IN: ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span><br><span class="time-pill">${sh.end_time ? 'OUT: '+new Date(sh.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'ACTIVE'}</span></td>
-            <td><div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity||0).toLocaleString()}</span></div><div class="total-row">Total: ${openTotal.toLocaleString()}</div></td>
-            <td><a href="sales_reports.html" class="revenue-card"><div class="account-line"><span class="account-label">Cash Sales</span><span class="account-val" style="color:var(--success)">+${cashSales.toLocaleString()}</span></div><div class="account-line"><span class="account-label">KCB Paybill</span><span class="account-val" style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span></div><div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW ➔</div></a></td>
-            <td><a href="moneyinout.html" class="revenue-card"><div class="account-line"><span class="account-label">In</span><span class="account-val" style="color:var(--success)">+${moneyIn.toLocaleString()}</span></div><div class="account-line"><span class="account-label">Out</span><span class="account-val" style="color:var(--danger)">-${moneyOut.toLocaleString()}</span></div><div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW ➔</div></a></td>
-            <td><div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.close_cash||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.close_kcb||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.close_equity||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">Paybill</span><span class="account-val">${(sh.close_kcb_bank||0).toLocaleString()}</span></div><div class="total-row" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div></td>
-            <td><span class="status-badge ${varianceClass}">${varianceDisplay}</span><div style="font-size:0.65rem; color:var(--text-dim); margin-top:8px; text-align:center;">Expected: ${expected.toLocaleString()}</div></td>
-            <td><div style="max-height:120px; overflow-y:auto; font-size:0.8rem; color:var(--text-dim); font-style:italic;">${sh.variance_note && sh.variance_note !== 'Balanced' ? sh.variance_note : sh.variance_note || 'No notes added.'}</div></td>
+            const endD = sh.end_time ? new Date(sh.end_time) : null;
+            tableHtml += `<tr>
+                <td class="date-cell">
+                    <b>${startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'})}</b>
+                    <span class="time-pill"><i class="fas fa-sign-in-alt"></i> ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                    ${endD ? `<span class="time-pill"><i class="fas fa-sign-out-alt"></i> ${endD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>` : '<span class="time-pill"><i class="fas fa-clock"></i> ACTIVE</span>'}
+                  </td>
+                <td><div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity||0).toLocaleString()}</span></div><div class="total-row">Total: ${openTotal.toLocaleString()}</div></td>
+                <td><a href="sales_reports.html" class="revenue-card"><div class="account-line"><span class="account-label">Cash Sales</span><span class="account-val" style="color:var(--success)">+${cashSales.toLocaleString()}</span></div><div class="account-line"><span class="account-label">KCB Paybill</span><span class="account-val" style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span></div><div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW ➔</div></a></td>
+                <td><a href="moneyinout.html" class="revenue-card"><div class="account-line"><span class="account-label">In</span><span class="account-val" style="color:var(--success)">+${moneyIn.toLocaleString()}</span></div><div class="account-line"><span class="account-label">Out</span><span class="account-val" style="color:var(--danger)">-${moneyOut.toLocaleString()}</span></div><div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW ➔</div></a></td>
+                <td><div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.close_cash||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.close_kcb||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.close_equity||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">Paybill</span><span class="account-val">${(sh.close_kcb_bank||0).toLocaleString()}</span></div><div class="total-row" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div></td>
+                <td><span class="status-badge ${varianceClass}">${varianceDisplay}</span><div style="font-size:0.65rem; color:var(--text-dim); margin-top:8px; text-align:center;">Expected: ${expected.toLocaleString()}</div></td>
+                <td><div style="max-height:120px; overflow-y:auto; font-size:0.8rem; color:var(--text-dim); font-style:italic;">${sh.variance_note && sh.variance_note !== 'Balanced' ? sh.variance_note : sh.variance_note || 'No notes added.'}</div></td>
             </tr>`;
         });
         desktopTbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.</td></tr>';
