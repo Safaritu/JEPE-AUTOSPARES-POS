@@ -344,11 +344,11 @@
         table { width: 100%; border-collapse: collapse; }
         
         .today-sales-table { 
-            min-width: 100%;
+            min-width: 600px; 
         }
         
         .money-history-table {
-            min-width: 100%;
+            min-width: 700px;
         }
         
         .shift-history-table {
@@ -375,11 +375,11 @@
         
         @media (min-width: 768px) {
             .today-sales-table { 
-                min-width: 100%;
+                min-width: 800px;
             }
             
             .money-history-table {
-                min-width: 100%;
+                min-width: 900px;
             }
             
             th { 
@@ -393,37 +393,28 @@
             }
         }
         
-        /* Date cell with stacked time pills */
-        .date-cell {
-            vertical-align: top;
-        }
-        .date-cell b {
-            display: block;
-            margin-bottom: 6px;
-            font-size: 0.9rem;
-        }
-        .date-cell .time-pill {
-            display: block;
-            background: #f1f5f9;
-            padding: 4px 8px;
-            border-radius: 5px;
-            font-size: 0.65rem;
-            font-weight: 700;
-            color: var(--text-dim);
-            margin-bottom: 4px;
-            text-align: center;
-        }
-        .date-cell .time-pill:last-child {
-            margin-bottom: 0;
+        @media (min-width: 1024px) {
+            .today-sales-table { 
+                min-width: 1000px;
+            }
+            
+            .money-history-table {
+                min-width: 100%;
+            }
+            
+            th { 
+                padding: 18px 15px; 
+                font-size: 0.8rem;
+            }
+            
+            td { 
+                padding: 16px 15px; 
+                font-size: 0.95rem;
+            }
         }
         
         @media (max-width: 768px) {
             .mobile-hide-header { display: none; }
-            
-            .today-sales-table, .money-history-table {
-                min-width: 100%;
-            }
-            
             tr { 
                 display: block; 
                 background: white; 
@@ -433,38 +424,28 @@
                 border: 1px solid var(--border); 
                 box-shadow: 0 2px 4px rgba(0,0,0,0.04); 
             }
-            
             td { 
                 display: flex; 
                 justify-content: space-between; 
-                align-items: center;
                 padding: 8px 0; 
                 border: none !important; 
                 border-bottom: 1px dashed #f1f5f9 !important; 
                 text-align: right; 
                 font-size: 0.8rem;
             }
-            
             td::before { 
                 content: attr(data-label); 
                 font-weight: 800; 
                 color: var(--text-dim); 
                 font-size: 0.65rem; 
                 display: block; 
-                text-align: left;
-                min-width: 100px;
-            }
-            
-            .action-column {
-                display: flex;
-                justify-content: flex-end;
+                text-align: left; 
             }
             
             .table-card {
                 margin-bottom: 12px;
                 border-radius: 12px;
-                max-height: 400px;
-                overflow-y: auto;
+                max-height: none !important;
             }
             
             #record-expense-btn {
@@ -523,6 +504,7 @@
         .btn-primary { background: var(--primary); color: white; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-sync { background: var(--warning); color: white; }
+        .btn-kcb { background: var(--kcb-paybill); color: white; }
         
         .btn-refund { 
             background: #f59e0b; 
@@ -610,7 +592,13 @@
 
         .text-success { color: #15803d !important; font-weight: 700; }
         .text-danger { color: #b91c1c !important; font-weight: 700; }
+        .variance-status { font-weight: 800; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; text-align: center; }
         
+        .balanced { background: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; }
+        .mismatch { background: #fee2e2; color: #991b1b; }
+        .variance-positive { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .variance-negative { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+
         .search-input {
             width: 100%;
             padding: 16px 22px;
@@ -639,6 +627,28 @@
 
         .revenue-card { background: #fff; border: 1px solid var(--border); padding: 12px; border-radius: 10px; text-decoration: none; display: block; transition: 0.2s; }
         .revenue-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+        
+        .adj-box { padding: 14px; border-radius: 12px; background: #fafafa; border: 1px solid #f0f0f0; text-decoration: none; display: block; }
+
+        .date-cell b { display: block; margin-bottom: 8px; font-size: 0.95rem; }
+        .time-pill { background: #f1f5f9; padding: 3px 8px; border-radius: 5px; font-size: 0.7rem; font-weight: 700; color: var(--text-dim); display: inline-block; margin-top: 4px; }
+        
+        .clickable-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 5px;
+        }
+        
+        .clickable-link:hover {
+            background: #f1f5ff;
+            text-decoration: underline;
+            transform: translateY(-1px);
+        }
         
         .nav-overlay { 
             position: fixed; 
@@ -827,6 +837,21 @@
             .greeting-time { font-size: 0.85rem; }
         }
         
+        .low-stock-alert {
+            color: #ff4d4d !important;
+            font-weight: 800;
+            animation: pulse-red 1.5s infinite;
+            padding: 3px 8px;
+            border-radius: 5px;
+            background: rgba(255, 77, 77, 0.1);
+        }
+
+        @keyframes pulse-red {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
         .profile-dropdown {
             position: absolute;
             top: 60px;
@@ -929,6 +954,15 @@
             }
         }
         
+        .alert-indicator {
+            position: relative;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
         .refund-modal .modal {
             max-width: 400px;
         }
@@ -952,6 +986,11 @@
             text-align: center;
         }
         
+        .refund-warning i {
+            color: #ea580c;
+            margin-right: 5px;
+        }
+        
         .refund-actions {
             display: flex;
             gap: 12px;
@@ -961,6 +1000,24 @@
         .refund-actions .btn {
             flex: 1;
         }
+        
+        .slide-indicator { 
+            background: #0f172a; 
+            color: white; 
+            padding: 14px; 
+            border-radius: 12px; 
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 12px; 
+            margin-bottom: 15px; 
+            font-size: 0.8rem; 
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .hand-icon { font-size: 1.2rem; animation: tapSide 1.5s infinite; }
+        @keyframes tapSide { 0%, 100% { transform: translateX(5px); } 50% { transform: translateX(-5px); } }
+        @media (max-width: 1024px) { .slide-indicator { display: none; } }
         
         .money-summary-cards {
             display: grid;
@@ -1019,9 +1076,81 @@
                 padding: 12px;
             }
             
+            .table-card {
+                max-height: 300px !important;
+            }
+            
             .dual-tables > div:last-child .card {
                 padding: 18px;
             }
+            
+            .money-inout-form input,
+            .money-inout-form select {
+                padding: 16px;
+                font-size: 16px;
+            }
+            
+            .money-inout-form .btn {
+                padding: 18px;
+                font-size: 1rem;
+            }
+        }
+        
+        @media (min-width: 769px) and (max-width: 1023px) {
+            .dual-tables {
+                grid-template-columns: 1fr;
+            }
+            
+            .dual-tables > div:first-child .table-card {
+                max-height: 350px;
+            }
+            
+            .dual-tables > div:last-child {
+                min-width: 100%;
+            }
+        }
+        
+        .action-btn-small {
+            padding: 5px 10px !important;
+            font-size: 0.75rem !important;
+            min-width: auto !important;
+        }
+        
+        .today-sales-container {
+            position: relative;
+        }
+        
+        .table-card::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        
+        .table-card::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+        
+        .table-card::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        
+        .table-card::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        .money-in-row {
+            background-color: rgba(16, 185, 129, 0.05);
+        }
+        
+        .money-out-row {
+            background-color: rgba(225, 29, 72, 0.05);
+        }
+        
+        .money-total-row {
+            background-color: #f8fafc;
+            font-weight: 800;
+            border-top: 2px solid var(--border);
         }
         
         .refunded-row {
@@ -1151,6 +1280,10 @@
             margin-right: 10px;
         }
         
+        .branch-name-display i {
+            font-size: 0.9rem;
+        }
+        
         .gas-redirect-notice {
             background: #fef3c7;
             border-left: 4px solid var(--warning);
@@ -1164,6 +1297,11 @@
             animation: pulse 2s infinite;
         }
         
+        .gas-redirect-notice i {
+            font-size: 1.5rem;
+            color: var(--warning);
+        }
+        
         .gas-redirect-notice button {
             background: var(--warning);
             color: white;
@@ -1174,6 +1312,11 @@
             cursor: pointer;
             margin-left: auto;
             transition: all 0.2s;
+        }
+        
+        .gas-redirect-notice button:hover {
+            background: #d97706;
+            transform: scale(1.05);
         }
         
         @keyframes pulse {
@@ -1201,6 +1344,10 @@
             max-width: 350px;
         }
         
+        .success-notification i {
+            font-size: 1.5rem;
+        }
+        
         @keyframes slideInRight {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -1221,6 +1368,12 @@
         }
         
         @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .cache-indicator {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            margin-left: 5px;
+        }
     </style>
 </head>
 <body>
@@ -1289,8 +1442,8 @@
         <a href="sale edit cashier.html" class="nav-card"><span>✏️</span><small>Edit sales</small></a>
         <a href="gas_delivery.html" class="nav-card"><span>🏍️</span><small>Delivery</small></a>
         <a href="cashier_report.html" class="nav-card"><span>📝</span><small>Today's Report</small></a>
-        <a href="pos.html" class="nav-card"><span>🛒</span><small>Cart Shop</small></a>
-        <a href="cashierprofile.html" class="nav-card"><span>👤</span><small>Settings</small></a>
+          <a href="pos.html" class="nav-card"><span>🛒</span><small>Cart Shop</small></a>
+         <a href="cashierprofile.html" class="nav-card"><span>👤</span><small>Settings</small></a>
         <a href="cashier.html" class="nav-card"><span>🏠</span><small>HOME</small></a>
         <button onclick="logoutUser()" style="grid-column: span 2; margin-top:20px; background:var(--danger); color:white; border:none; padding:18px; border-radius:15px; font-weight:800;">🚪 LOGOUT SYSTEM</button>
     </div>
@@ -1434,10 +1587,9 @@
 
     <!-- DUAL TABLES SECTION -->
     <div class="dual-tables">
-        <!-- MAXIMIZED TODAY'S SALES SECTION -->
         <div>
             <div class="section-label">TODAY'S SALES</div>
-            <div class="table-card" style="max-height: 500px; overflow-y: auto; min-height: 400px;">
+            <div class="table-card" style="max-height: 350px; overflow-y: auto;">
                 <table class="today-sales-table">
                     <thead class="mobile-hide-header">
                         <tr>
@@ -1454,23 +1606,23 @@
             </div>
         </div>
 
-        <!-- MINIMIZED MONEY IN/OUT RECORD SECTION -->
-        <div class="card" style="padding: 12px;">
-            <div class="section-label" style="margin-bottom: 8px; font-size: 0.65rem;">MONEY IN/OUT RECORD</div>
-            <input type="number" id="exp-amt" placeholder="Amount" style="margin-bottom:8px; padding: 8px; border-radius: 8px; font-size: 0.8rem;">
-            <select id="exp-type" style="margin-bottom:8px; padding: 8px; border-radius: 8px; font-size: 0.8rem;">
+        <!-- MONEY IN/OUT RECORD SECTION - UPDATED WITH KCB PAYBILL OPTION -->
+        <div class="card">
+            <div class="section-label">MONEY IN/OUT RECORD</div>
+            <input type="number" id="exp-amt" placeholder="Amount" style="margin-bottom:12px; padding: 12px; border-radius: 8px;">
+            <select id="exp-type" style="margin-bottom:12px; padding: 12px; border-radius: 8px;">
                 <option value="Money Out">Money Out</option>
                 <option value="Money In">Money In</option>
             </select>
-            <input type="text" id="exp-desc" placeholder="Reason (e.g. Loading Fee, Lunch)" style="width:100%; margin-bottom:8px; padding: 8px; border-radius: 8px; font-size: 0.8rem;">
-            <select id="exp-method" style="width:100%; margin-bottom:8px; padding: 8px; border-radius: 8px; font-size: 0.8rem;">
+            <input type="text" id="exp-desc" placeholder="Reason (e.g. Loading Fee, Lunch)" style="width:100%; margin-bottom:12px; padding: 12px; border-radius: 8px;">
+            <select id="exp-method" style="width:100%; margin-bottom:15px; padding: 12px; border-radius: 8px;">
                 <option value="Cash">Cash</option>
                 <option value="Mpesa">Mpesa</option>
                 <option value="KCB Float">KCB Float</option>
                 <option value="Equity Float">Equity Float</option>
                 <option value="KCB Paybill" style="color: #2563eb; font-weight: 700;">💰 KCB Paybill (Live Box)</option>
             </select>
-            <button id="record-expense-btn" class="btn btn-sync" style="width: 100%; padding: 10px; font-size: 0.8rem;">RECORD MONEY</button>
+            <button id="record-expense-btn" class="btn btn-sync" style="width: 100%; padding: 14px; font-size: 0.9rem;">RECORD MONEY</button>
         </div>
     </div>
 
@@ -1522,7 +1674,7 @@
             <table class="shift-history-table">
                 <thead>
                     <tr>
-                        <th width="180">DATE & TIME</th>
+                        <th width="160">DATE</th>
                         <th width="210">OPENING FLOATS</th>
                         <th width="210">PAYMENT METHOD</th>
                         <th width="190">MONEY IN/OUT</th>
@@ -1594,6 +1746,9 @@
     let allSales = [];
     let currentKcbSalesTotal = 0;
     let currentUser = null;
+    let timeCheckInterval = null;
+    let alertSoundPlayed = false;
+    let audioContext = null;
     let refundingSale = null;
     let currentUserProfile = null;
     let currentBranchId = null;
@@ -2047,7 +2202,7 @@
             
             const liveTransBody = document.getElementById('live-trans-body');
             if (liveTransBody) {
-                liveTransBody.innerHTML = trans.map(t => `<tr class="${t.type === 'Money In' ? 'money-in-row' : 'money-out-row'}"><td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Reason">${t.description}</td><td data-label="Amount">Ksh ${t.amount.toLocaleString()}</td><td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">${t.type}</td><td data-label="Wallet">${t.category}</td></td>`).join('');
+                liveTransBody.innerHTML = trans.map(t => `<tr class="${t.type === 'Money In' ? 'money-in-row' : 'money-out-row'}"><td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Reason">${t.description}</td><td data-label="Amount">Ksh ${t.amount.toLocaleString()}</td><td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">${t.type}</td><td data-label="Wallet">${t.category}</td></tr>`).join('');
             }
             checkLowFloats();
         } catch (error) { console.error("Error loading shift data:", error); }
@@ -2164,8 +2319,8 @@
             tableHtml += `<tr>
                 <td class="date-cell">
                     <b>${startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'})}</b>
-                    <span class="time-pill"><i class="fas fa-sign-in-alt"></i> ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-                    ${endD ? `<span class="time-pill"><i class="fas fa-sign-out-alt"></i> ${endD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>` : '<span class="time-pill"><i class="fas fa-clock"></i> ACTIVE</span>'}
+                    <span class="time-pill">IN: ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                    ${endD ? `<span class="time-pill">OUT: ${endD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>` : '<span class="time-pill">ACTIVE</span>'}
                   </td>
                 <td><div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity||0).toLocaleString()}</span></div><div class="total-row">Total: ${openTotal.toLocaleString()}</div></td>
                 <td><a href="sales_reports.html" class="revenue-card"><div class="account-line"><span class="account-label">Cash Sales</span><span class="account-val" style="color:var(--success)">+${cashSales.toLocaleString()}</span></div><div class="account-line"><span class="account-label">KCB Paybill</span><span class="account-val" style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span></div><div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW ➔</div></a></td>
