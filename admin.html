@@ -2050,26 +2050,46 @@
         }
         paybillContainer.innerHTML = paybillHTML;
 
-        // Today's stats
+        // ==================== FIXED: TODAY'S STATS INCLUDING GAS ====================
         let tRev = 0, tProf = 0, tIn = 0, tOut = 0;
         
+        // Get today's date range
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
         for (const branchId of branchIds) {
-            const { data: branchShift } = await supabase.from('daily_shifts').select('*').eq('branch_id', branchId).order('start_time', { ascending: false }).limit(1);
-            const latestShift = branchShift?.[0];
+            // Get ALL sales for today (not just from shift) to ensure gas is included
+            const { data: todaySales } = await supabase
+                .from('sales')
+                .select('*')
+                .eq('branch_id', branchId)
+                .gte('created_at', today.toISOString())
+                .lt('created_at', tomorrow.toISOString());
             
-            if (latestShift) {
-                const { data: shiftSales } = await supabase.from('sales').select('*').eq('shift_id', latestShift.id);
-                shiftSales?.forEach(s => {
-                    tRev += parseFloat(s.total_amount || 0);
-                    tProf += (parseFloat(s.unit_price || 0) - parseFloat(s.cost_price || 0)) * parseInt(s.quantity || 0);
-                });
-
-                const { data: shiftCash } = await supabase.from('cash_transactions').select('*').eq('shift_id', latestShift.id);
-                shiftCash?.forEach(t => {
-                    if (t.type === 'Money In') tIn += parseFloat(t.amount || 0);
-                    else if (t.type === 'Money Out') tOut += parseFloat(t.amount || 0);
-                });
-            }
+            // Process today's sales
+            todaySales?.forEach(s => {
+                // Skip refunded sales
+                if (s.refunded === true) return;
+                
+                tRev += parseFloat(s.total_amount || 0);
+                const profit = (parseFloat(s.unit_price || 0) - parseFloat(s.cost_price || 0)) * parseInt(s.quantity || 0);
+                tProf += profit;
+            });
+            
+            // Get today's cash transactions
+            const { data: todayCash } = await supabase
+                .from('cash_transactions')
+                .select('*')
+                .eq('branch_id', branchId)
+                .gte('created_at', today.toISOString())
+                .lt('created_at', tomorrow.toISOString());
+            
+            todayCash?.forEach(t => {
+                if (t.type === 'Money In') tIn += parseFloat(t.amount || 0);
+                else if (t.type === 'Money Out') tOut += parseFloat(t.amount || 0);
+            });
         }
 
         document.getElementById('t-rev').innerText = `Ksh ${tRev.toLocaleString()}`;
@@ -2077,7 +2097,7 @@
         document.getElementById('t-in').innerText = `Ksh ${tIn.toLocaleString()}`;
         document.getElementById('t-exp').innerText = `Ksh ${tOut.toLocaleString()}`;
 
-        // Load products and sales
+        // Load products and sales for other sections
         let productsQuery = supabase.from('products').select('*');
         let salesQuery = supabase.from('sales').select('*, products(*)');
         
@@ -2184,7 +2204,12 @@
 
         document.getElementById('profit-breakdown-body').innerHTML = Object.entries(categories).map(([name, val]) => {
             const margin = val.revenue > 0 ? ((val.profit / val.revenue) * 100).toFixed(1) : 0;
-            return `<tr><td><b>${name}</b></td><td>Ksh ${val.revenue.toLocaleString()}</td><td class="profit-text">Ksh ${val.profit.toLocaleString()}</td><td><span class="badge" style="background:#f1f5f9;">${margin}%</span></td></tr>`;
+            return `<tr>
+                <td><b>${name}</b></td>
+                <td>Ksh ${val.revenue.toLocaleString()}</td>
+                <td class="profit-text">Ksh ${val.profit.toLocaleString()}</td>
+                <td><span class="badge" style="background:#f1f5f9;">${margin}%</span></td>
+            </tr>`;
         }).join('');
 
         // Charts
@@ -2250,7 +2275,8 @@
             setTimeout(() => { window.location.href = 'index.html'; }, 1500);
         }
     };
- async function init() {
+    
+    async function init() {
         const user = await checkAuth();
         if (!user) return;
         await loadBranches();
