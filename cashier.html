@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* ALL YOUR EXISTING STYLES - KEEP THEM EXACTLY AS THEY WERE */
         :root { 
             --primary: #4f46e5; 
             --primary-dark: #3730a3;
@@ -1602,11 +1603,11 @@
                         </tr>
                     </thead>
                     <tbody id="live-sales-body"></tbody>
-                </tr>
+                </table>
             </div>
         </div>
 
-        <!-- MONEY IN/OUT RECORD SECTION - UPDATED WITH KCB PAYBILL OPTION -->
+        <!-- MONEY IN/OUT RECORD SECTION -->
         <div class="card">
             <div class="section-label">MONEY IN/OUT RECORD</div>
             <input type="number" id="exp-amt" placeholder="Amount" style="margin-bottom:12px; padding: 12px; border-radius: 8px;">
@@ -2195,7 +2196,6 @@
             let totalMoneyIn = 0, totalMoneyOut = 0;
             trans.forEach(t => { if (t.type === 'Money In') totalMoneyIn += t.amount; else if (t.type === 'Money Out') totalMoneyOut += t.amount; });
             
-            // Safely update money summary elements with null checks
             const totalMoneyInFullEl = document.getElementById('total-money-in-full');
             const totalMoneyOutFullEl = document.getElementById('total-money-out-full');
             
@@ -2321,8 +2321,8 @@
             tableHtml += `<tr>
                 <td class="date-cell">
                     <b>${startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'})}</b>
-                    <span class="time-pill">IN: ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-                    ${endD ? `<span class="time-pill">OUT: ${endD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>` : '<span class="time-pill">ACTIVE</span>'}
+                    <span class="time-pill"><i class="fas fa-sign-in-alt"></i> ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                    ${endD ? `<span class="time-pill"><i class="fas fa-sign-out-alt"></i> ${endD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>` : '<span class="time-pill"><i class="fas fa-clock"></i> ACTIVE</span>'}
                   </td>
                 <td><div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity||0).toLocaleString()}</span></div><div class="total-row">Total: ${openTotal.toLocaleString()}</div></td>
                 <td><a href="sales_reports.html" class="revenue-card"><div class="account-line"><span class="account-label">Cash Sales</span><span class="account-val" style="color:var(--success)">+${cashSales.toLocaleString()}</span></div><div class="account-line"><span class="account-label">KCB Paybill</span><span class="account-val" style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span></div><div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW ➔</div></a></td>
@@ -2332,7 +2332,7 @@
                 <td><div style="max-height:120px; overflow-y:auto; font-size:0.8rem; color:var(--text-dim); font-style:italic;">${sh.variance_note && sh.variance_note !== 'Balanced' ? sh.variance_note : sh.variance_note || 'No notes added.'}</div></td>
             </tr>`;
         });
-        desktopTbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.</td></tr>';
+        desktopTbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.<tr></tr>';
     }
 
     function renderMobileHistory(shifts, transData, salesData, query = "") {
