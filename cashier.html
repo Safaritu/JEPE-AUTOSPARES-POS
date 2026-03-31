@@ -1752,6 +1752,27 @@
     let currentBranchId = null;
     let branches = {};
 
+    // Helper function to safely set innerText
+    function safeSetInnerText(elementId, value) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.innerText = value;
+            return true;
+        }
+        console.warn(`Element with id '${elementId}' not found`);
+        return false;
+    }
+
+    // Helper function to safely set display style
+    function safeSetDisplay(elementId, displayValue) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.style.display = displayValue;
+            return true;
+        }
+        return false;
+    }
+
     function getBranchIdFromUrl() {
         const urlParams = new URLSearchParams(window.location.search);
         const branchId = urlParams.get('branch');
@@ -1825,31 +1846,38 @@
     };
 
     window.openRefundModal = function(sale) {
-        // Prevent refund for debt items
         if (sale.payment_method === 'Debt') {
             alert("❌ Debt items cannot be refunded. Please settle the debt first or contact admin.");
             return;
         }
         refundingSale = sale;
-        document.getElementById('refund-item-name').textContent = sale.item_name || 'Unknown Item';
-        document.getElementById('refund-original-amount').textContent = sale.total_amount.toLocaleString();
-        document.getElementById('refund-quantity').textContent = sale.quantity;
-        document.getElementById('refund-amount').value = sale.total_amount;
-        document.getElementById('refund-reason').value = '';
-        document.getElementById('refund-modal').style.display = 'flex';
+        safeSetInnerText('refund-item-name', sale.item_name || 'Unknown Item');
+        safeSetInnerText('refund-original-amount', sale.total_amount.toLocaleString());
+        safeSetInnerText('refund-quantity', sale.quantity);
+        const refundAmountInput = document.getElementById('refund-amount');
+        if (refundAmountInput) refundAmountInput.value = sale.total_amount;
+        const refundReasonInput = document.getElementById('refund-reason');
+        if (refundReasonInput) refundReasonInput.value = '';
+        const refundModal = document.getElementById('refund-modal');
+        if (refundModal) refundModal.style.display = 'flex';
     };
 
     window.closeRefundModal = function() {
-        document.getElementById('refund-modal').style.display = 'none';
+        const refundModal = document.getElementById('refund-modal');
+        if (refundModal) refundModal.style.display = 'none';
         refundingSale = null;
     };
 
     window.processRefund = async function() {
         if (!refundingSale || !currentShift) return;
         
-        const refundMethod = document.getElementById('refund-method').value;
-        const refundAmount = parseFloat(document.getElementById('refund-amount').value);
-        const refundReason = document.getElementById('refund-reason').value || 'Item return';
+        const refundMethodSelect = document.getElementById('refund-method');
+        const refundAmountInput = document.getElementById('refund-amount');
+        const refundReasonInput = document.getElementById('refund-reason');
+        
+        const refundMethod = refundMethodSelect ? refundMethodSelect.value : 'Cash';
+        const refundAmount = refundAmountInput ? parseFloat(refundAmountInput.value || 0) : 0;
+        const refundReason = refundReasonInput ? (refundReasonInput.value || 'Item return') : 'Item return';
         const branchId = getCurrentBranchId();
         
         if (!refundAmount || refundAmount <= 0) {
@@ -1866,9 +1894,11 @@
         if (!confirmed) return;
         
         const submitBtn = document.querySelector('#refund-modal .btn-danger');
-        const originalBtnText = submitBtn.innerHTML;
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner"></span> PROCESSING...';
+        const originalBtnText = submitBtn ? submitBtn.innerHTML : 'PROCESS';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner"></span> PROCESSING...';
+        }
         
         try {
             await supabase.from('sales').insert([{
@@ -1918,14 +1948,18 @@
             console.error("Refund error:", error);
             alert("Error processing refund: " + error.message);
         } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalBtnText;
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+            }
         }
     };
 
     window.toggleProfileDropdown = function() {
         const dropdown = document.getElementById('profileDropdown');
-        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        if (dropdown) {
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        }
     };
 
     document.addEventListener('click', function(event) {
@@ -1938,10 +1972,10 @@
 
     function checkLowFloats() {
         const floatItems = [
-            { id: 'float-cash-item', value: parseFloat(document.getElementById('float-cash')?.innerText.replace(/,/g, '')) || 0 },
-            { id: 'float-mpesa-item', value: parseFloat(document.getElementById('float-mpesa')?.innerText.replace(/,/g, '')) || 0 },
-            { id: 'float-kcb-item', value: parseFloat(document.getElementById('float-kcb')?.innerText.replace(/,/g, '')) || 0 },
-            { id: 'float-equity-item', value: parseFloat(document.getElementById('float-equity')?.innerText.replace(/,/g, '')) || 0 }
+            { id: 'float-cash-item', value: parseFloat(document.getElementById('float-cash')?.innerText?.replace(/,/g, '') || '0') || 0 },
+            { id: 'float-mpesa-item', value: parseFloat(document.getElementById('float-mpesa')?.innerText?.replace(/,/g, '') || '0') || 0 },
+            { id: 'float-kcb-item', value: parseFloat(document.getElementById('float-kcb')?.innerText?.replace(/,/g, '') || '0') || 0 },
+            { id: 'float-equity-item', value: parseFloat(document.getElementById('float-equity')?.innerText?.replace(/,/g, '') || '0') || 0 }
         ];
         floatItems.forEach(item => {
             const floatItemElement = document.getElementById(item.id);
@@ -1955,12 +1989,16 @@
 
     window.refreshData = async function() {
         const btn = event.target.closest('button');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="spinner"></span>';
-        btn.disabled = true;
+        const originalText = btn ? btn.innerHTML : 'Refresh';
+        if (btn) {
+            btn.innerHTML = '<span class="spinner"></span>';
+            btn.disabled = true;
+        }
         await Promise.all([fetchInventory(), loadShiftData(), loadHistory()]);
-        btn.disabled = false;
-        btn.innerHTML = originalText;
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
         showSuccessNotification('Data refreshed successfully!');
     };
 
@@ -1983,17 +2021,35 @@
     function updateStockDisplay(item) {
         const hStock = document.getElementById('hint-stock');
         if (hStock) {
-            if (item.category === 'Gas') hStock.innerText = `Full: ${item.stock_quantity} | Empty: ${item.empty_quantity || 0}`;
-            else hStock.innerText = `Stock: ${item.stock_quantity}`;
+            if (item.category === 'Gas') {
+                hStock.innerText = `Full: ${item.stock_quantity} | Empty: ${item.empty_quantity || 0}`;
+            } else {
+                hStock.innerText = `Stock: ${item.stock_quantity}`;
+            }
             hStock.style.display = 'inline-block';
-            if (item.stock_quantity <= 0) { hStock.innerText = item.category === 'Gas' ? "OUT OF FULL STOCK" : "OUT OF STOCK"; hStock.classList.add('low-stock-alert'); }
-            else if (item.stock_quantity < 5) hStock.classList.add('low-stock-alert');
-            else hStock.classList.remove('low-stock-alert');
+            if (item.stock_quantity <= 0) { 
+                hStock.innerText = item.category === 'Gas' ? "OUT OF FULL STOCK" : "OUT OF STOCK"; 
+                hStock.classList.add('low-stock-alert');
+            }
+            else if (item.stock_quantity < 5) {
+                hStock.classList.add('low-stock-alert');
+            }
+            else {
+                hStock.classList.remove('low-stock-alert');
+            }
+        } else {
+            console.warn('hint-stock element not found in DOM');
+        }
+        
+        const hintMin = document.getElementById('hint-min');
+        if (hintMin) {
+            hintMin.innerText = `Min: ${item.min_price || 0}`;
+            hintMin.style.display = 'inline-block';
         }
     }
 
     window.toggleNav = () => {
-        document.getElementById('navBanner').classList.toggle('active');
+        document.getElementById('navBanner')?.classList.toggle('active');
         const onboardingHand = document.getElementById('onboardingHand');
         if (onboardingHand) onboardingHand.style.display = 'none';
         sessionStorage.setItem('menuClicked', 'true');
@@ -2001,18 +2057,28 @@
         if (dropdown) dropdown.style.display = 'none';
     };
 
-    window.logoutUser = async () => { localStorage.removeItem('pos_session'); await supabase.auth.signOut(); location.href = 'index.html'; };
+    window.logoutUser = async () => { 
+        localStorage.removeItem('pos_session'); 
+        await supabase.auth.signOut(); 
+        location.href = 'index.html'; 
+    };
 
     window.toggleSplitFields = () => {
-        const method = document.getElementById('pMethod').value;
+        const methodSelect = document.getElementById('pMethod');
+        const method = methodSelect ? methodSelect.value : 'Cash';
         const splitFields = document.getElementById('split-fields');
-        if (splitFields) splitFields.style.display = (method === 'Split') ? 'grid' : 'none';
+        if (splitFields) {
+            splitFields.style.display = (method === 'Split') ? 'grid' : 'none';
+        }
         if(method === 'Split') calculateSplit();
     };
 
     window.calculateSplit = () => {
-        const total = parseFloat(document.getElementById('pPrice').value || 0) * parseInt(document.getElementById('pQty').value || 0);
-        const cash = parseFloat(document.getElementById('split-cash').value || 0);
+        const priceInput = document.getElementById('pPrice');
+        const qtyInput = document.getElementById('pQty');
+        const total = (priceInput ? parseFloat(priceInput.value || 0) : 0) * (qtyInput ? parseInt(qtyInput.value || 0) : 0);
+        const cashInput = document.getElementById('split-cash');
+        const cash = cashInput ? parseFloat(cashInput.value || 0) : 0;
         const splitOnline = document.getElementById('split-online');
         if (splitOnline) splitOnline.value = (total - cash).toFixed(2);
     };
@@ -2040,7 +2106,9 @@
             if (!profile) return;
             const branchId = getCurrentBranchId();
             const branchNameHeader = document.getElementById('branch-name-header');
-            if (branchNameHeader && branchId && branches[branchId]) branchNameHeader.innerHTML = `<i class="fas fa-store"></i> ${branches[branchId].name}`;
+            if (branchNameHeader && branchId && branches[branchId]) {
+                branchNameHeader.innerHTML = `<i class="fas fa-store"></i> ${branches[branchId].name}`;
+            }
             updateGreeting();
             setInterval(updateGreeting, 60000);
             const [prodRes, shiftRes] = await Promise.all([
@@ -2052,23 +2120,31 @@
             const actionBtnContainer = document.getElementById('shift-action-container');
             if (shiftRes.data) {
                 currentShift = shiftRes.data;
-                actionBtnContainer.innerHTML = `<button class="btn btn-danger special-action-btn" onclick="showCloseModal()">🔴 CLOSE DAY</button><button class="btn" onclick="refreshData()" style="background:#e2e8f0; padding:8px 12px; font-size:0.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>`;
-                document.getElementById('float-cash').innerText = (currentShift.open_cash || 0).toLocaleString();
-                document.getElementById('float-mpesa').innerText = (currentShift.open_mpesa || 0).toLocaleString();
-                document.getElementById('float-kcb').innerText = (currentShift.open_kcb || 0).toLocaleString();
-                document.getElementById('float-equity').innerText = (currentShift.open_equity || 0).toLocaleString();
+                if (actionBtnContainer) {
+                    actionBtnContainer.innerHTML = `<button class="btn btn-danger special-action-btn" onclick="showCloseModal()">🔴 CLOSE DAY</button><button class="btn" onclick="refreshData()" style="background:#e2e8f0; padding:8px 12px; font-size:0.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>`;
+                }
+                safeSetInnerText('float-cash', (currentShift.open_cash || 0).toLocaleString());
+                safeSetInnerText('float-mpesa', (currentShift.open_mpesa || 0).toLocaleString());
+                safeSetInnerText('float-kcb', (currentShift.open_kcb || 0).toLocaleString());
+                safeSetInnerText('float-equity', (currentShift.open_equity || 0).toLocaleString());
                 await loadShiftData();
                 setTimeout(checkLowFloats, 500);
             } else {
-                actionBtnContainer.innerHTML = `<button class="btn btn-primary special-action-btn start-btn-large" onclick="document.getElementById('open-modal').style.display='flex'">🚀 START DAY</button><button class="btn" onclick="refreshData()" style="background:#e2e8f0; padding:8px 12px; font-size:0.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>`;
+                if (actionBtnContainer) {
+                    actionBtnContainer.innerHTML = `<button class="btn btn-primary special-action-btn start-btn-large" onclick="document.getElementById('open-modal').style.display='flex'">🚀 START DAY</button><button class="btn" onclick="refreshData()" style="background:#e2e8f0; padding:8px 12px; font-size:0.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>`;
+                }
             }
             await loadHistory();
-        } catch (error) { console.error("Error initializing:", error); }
+        } catch (error) { 
+            console.error("Error initializing:", error); 
+        }
     }
 
     function refreshProductDatalist() {
         const pList = document.getElementById('pList');
-        if (pList) pList.innerHTML = inventory.map(p => `<option value="${formatItemName(p)}">`).join('');
+        if (pList) {
+            pList.innerHTML = inventory.map(p => `<option value="${formatItemName(p)}">`).join('');
+        }
     }
 
     function formatItemName(p) {
@@ -2078,81 +2154,159 @@
         return name;
     }
 
-    document.getElementById('pSearch').addEventListener('input', (e) => {
-        selectedItem = inventory.find(p => formatItemName(p) === e.target.value);
-        const notice = document.getElementById('gas-redirect-notice');
-        if (notice) notice.style.display = 'none';
-        if (selectedItem) {
-            document.getElementById('pPrice').value = selectedItem.selling_price;
-            const hintMin = document.getElementById('hint-min');
-            if (hintMin) { hintMin.innerText = `Min: ${selectedItem.min_price || 0}`; hintMin.style.display = 'inline-block'; }
-            updateStockDisplay(selectedItem);
-            updateTotal();
-            if (selectedItem.category === 'Gas') { document.getElementById('gas-exchange-note').style.display = 'block'; if (notice) notice.style.display = 'flex'; }
-            else document.getElementById('gas-exchange-note').style.display = 'none';
-        } else document.getElementById('gas-exchange-note').style.display = 'none';
-    });
-
-    function updateTotal() {
-        const price = parseFloat(document.getElementById('pPrice').value || 0);
-        const qty = parseInt(document.getElementById('pQty').value || 0);
-        const totalText = document.getElementById('total-text');
-        if (totalText) totalText.innerText = (price * qty).toLocaleString();
-        if (document.getElementById('pMethod').value === 'Split') calculateSplit();
+    // Safely add event listeners only if elements exist
+    const pSearch = document.getElementById('pSearch');
+    if (pSearch) {
+        pSearch.addEventListener('input', (e) => {
+            selectedItem = inventory.find(p => formatItemName(p) === e.target.value);
+            const notice = document.getElementById('gas-redirect-notice');
+            if (notice) notice.style.display = 'none';
+            if (selectedItem) {
+                const priceInput = document.getElementById('pPrice');
+                if (priceInput) priceInput.value = selectedItem.selling_price;
+                updateStockDisplay(selectedItem);
+                updateTotal();
+                const gasExchangeNote = document.getElementById('gas-exchange-note');
+                if (selectedItem.category === 'Gas') { 
+                    if (gasExchangeNote) gasExchangeNote.style.display = 'block'; 
+                    if (notice) notice.style.display = 'flex'; 
+                } else {
+                    if (gasExchangeNote) gasExchangeNote.style.display = 'none';
+                }
+            } else {
+                const gasExchangeNote = document.getElementById('gas-exchange-note');
+                if (gasExchangeNote) gasExchangeNote.style.display = 'none';
+            }
+        });
     }
 
-    document.getElementById('pPrice').addEventListener('input', updateTotal);
-    document.getElementById('pQty').addEventListener('input', updateTotal);
+    function updateTotal() {
+        const priceInput = document.getElementById('pPrice');
+        const qtyInput = document.getElementById('pQty');
+        const price = priceInput ? parseFloat(priceInput.value || 0) : 0;
+        const qty = qtyInput ? parseInt(qtyInput.value || 0) : 0;
+        const totalText = document.getElementById('total-text');
+        if (totalText) totalText.innerText = (price * qty).toLocaleString();
+        const methodSelect = document.getElementById('pMethod');
+        if (methodSelect && methodSelect.value === 'Split') calculateSplit();
+    }
 
-    document.getElementById('sale-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('submit-sale-btn');
-        const branchId = getCurrentBranchId();
-        if (!currentShift) { alert("❌ You must open a shift first before making sales!"); return; }
-        if (!selectedItem) { alert("Select a valid item."); return; }
-        if (selectedItem.category === 'Gas') { const notice = document.getElementById('gas-redirect-notice'); if (notice) { notice.style.display = 'flex'; setTimeout(() => { if (notice.style.display === 'flex') notice.style.display = 'none'; }, 5000); } return; }
-        const price = parseFloat(document.getElementById('pPrice').value);
-        const qty = parseInt(document.getElementById('pQty').value);
-        const total = price * qty;
-        const method = document.getElementById('pMethod').value;
-        if (price < (selectedItem.min_price || 0)) { const discReason = prompt(`Price below Min. Reason:`); if (!discReason) return; selectedItem.tempReason = discReason; }
-        if (qty > selectedItem.stock_quantity) { alert("Insufficient stock!"); return; }
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> RECORDING...';
-        let salesToInsert = [];
-        const baseSale = { shift_id: currentShift.id, product_id: selectedItem.id, quantity: qty, unit_price: price, cost_price: selectedItem.cost_price || 0, part_type: selectedItem.part_type || 'N/A', discount_reason: selectedItem.tempReason || "", user_id: currentUser.id, category: selectedItem.category, weight_category: selectedItem.weight_category, branch_id: branchId };
-        if (method === 'Split') {
-            const cashAmt = parseFloat(document.getElementById('split-cash').value || 0);
-            const onlineAmt = total - cashAmt;
-            salesToInsert.push({ ...baseSale, item_name: `${formatItemName(selectedItem)} (Split-C)`, total_amount: cashAmt, payment_method: 'Cash' });
-            salesToInsert.push({ ...baseSale, item_name: `${formatItemName(selectedItem)} (Split-O)`, quantity: 0, total_amount: onlineAmt, payment_method: 'KCB Paybill' });
-        } else {
-            salesToInsert.push({ ...baseSale, item_name: formatItemName(selectedItem), total_amount: total, payment_method: method });
-        }
-        try {
-            const { error } = await supabase.from('sales').insert(salesToInsert).select();
-            if (error) throw error;
-            const newStock = selectedItem.stock_quantity - qty;
-            await supabase.from('products').update({ stock_quantity: newStock }).eq('id', selectedItem.id);
-            if(method === "Debt") {
-                const customerName = prompt("Customer Name (required):");
-                if(!customerName) { alert("❌ Customer name is required for debt sales!"); btn.disabled = false; btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>'; return; }
-                const customerPhone = prompt("Customer Phone (optional):", "");
-                await supabase.from('debtors').insert([{ customer_name: customerName, customer_phone: customerPhone || null, product_id: selectedItem.id, amount_owed: total, branch_id: branchId, status: 'Unpaid' }]);
+    const pPrice = document.getElementById('pPrice');
+    const pQty = document.getElementById('pQty');
+    if (pPrice) pPrice.addEventListener('input', updateTotal);
+    if (pQty) pQty.addEventListener('input', updateTotal);
+
+    const saleForm = document.getElementById('sale-form');
+    if (saleForm) {
+        saleForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submit-sale-btn');
+            const branchId = getCurrentBranchId();
+            if (!currentShift) { alert("❌ You must open a shift first before making sales!"); return; }
+            if (!selectedItem) { alert("Select a valid item."); return; }
+            if (selectedItem.category === 'Gas') { 
+                const notice = document.getElementById('gas-redirect-notice'); 
+                if (notice) { 
+                    notice.style.display = 'flex'; 
+                    setTimeout(() => { 
+                        if (notice.style.display === 'flex') notice.style.display = 'none'; 
+                    }, 5000); 
+                } 
+                return; 
             }
-            await fetchInventory(); await loadShiftData();
-            document.getElementById('sale-form').reset();
-            document.getElementById('pSearch').value = '';
-            document.getElementById('hint-stock').style.display = 'none';
-            document.getElementById('hint-min').style.display = 'none';
-            document.getElementById('total-text').innerText = '0';
-            document.getElementById('gas-exchange-note').style.display = 'none';
-            selectedItem = null;
-            btn.disabled = false;
-            btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
-            showSuccessNotification('Sale recorded successfully!', `Ksh ${total.toLocaleString()} - ${method}`);
-        } catch (error) { console.error("Sale Error:", error); alert("❌ Error: " + error.message); btn.disabled = false; btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>'; }
-    });
+            const priceInput = document.getElementById('pPrice');
+            const qtyInput = document.getElementById('pQty');
+            const methodSelect = document.getElementById('pMethod');
+            
+            const price = priceInput ? parseFloat(priceInput.value) : 0;
+            const qty = qtyInput ? parseInt(qtyInput.value) : 0;
+            const total = price * qty;
+            const method = methodSelect ? methodSelect.value : 'Cash';
+            
+            if (price < (selectedItem.min_price || 0)) { 
+                const discReason = prompt(`Price below Min. Reason:`); 
+                if (!discReason) return; 
+                selectedItem.tempReason = discReason; 
+            }
+            if (qty > selectedItem.stock_quantity) { 
+                alert("Insufficient stock!"); 
+                return; 
+            }
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner"></span> RECORDING...';
+            }
+            let salesToInsert = [];
+            const baseSale = { 
+                shift_id: currentShift.id, 
+                product_id: selectedItem.id, 
+                quantity: qty, 
+                unit_price: price, 
+                cost_price: selectedItem.cost_price || 0, 
+                part_type: selectedItem.part_type || 'N/A', 
+                discount_reason: selectedItem.tempReason || "", 
+                user_id: currentUser.id, 
+                category: selectedItem.category, 
+                weight_category: selectedItem.weight_category, 
+                branch_id: branchId 
+            };
+            if (method === 'Split') {
+                const cashInput = document.getElementById('split-cash');
+                const cashAmt = cashInput ? parseFloat(cashInput.value || 0) : 0;
+                const onlineAmt = total - cashAmt;
+                salesToInsert.push({ ...baseSale, item_name: `${formatItemName(selectedItem)} (Split-C)`, total_amount: cashAmt, payment_method: 'Cash' });
+                salesToInsert.push({ ...baseSale, item_name: `${formatItemName(selectedItem)} (Split-O)`, quantity: 0, total_amount: onlineAmt, payment_method: 'KCB Paybill' });
+            } else {
+                salesToInsert.push({ ...baseSale, item_name: formatItemName(selectedItem), total_amount: total, payment_method: method });
+            }
+            try {
+                const { error } = await supabase.from('sales').insert(salesToInsert).select();
+                if (error) throw error;
+                const newStock = selectedItem.stock_quantity - qty;
+                await supabase.from('products').update({ stock_quantity: newStock }).eq('id', selectedItem.id);
+                if(method === "Debt") {
+                    const customerName = prompt("Customer Name (required):");
+                    if(!customerName) { 
+                        alert("❌ Customer name is required for debt sales!"); 
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
+                        }
+                        return; 
+                    }
+                    const customerPhone = prompt("Customer Phone (optional):", "");
+                    await supabase.from('debtors').insert([{ customer_name: customerName, customer_phone: customerPhone || null, product_id: selectedItem.id, amount_owed: total, branch_id: branchId, status: 'Unpaid' }]);
+                }
+                await fetchInventory(); 
+                await loadShiftData();
+                const saleFormElement = document.getElementById('sale-form');
+                if (saleFormElement) saleFormElement.reset();
+                const pSearchElement = document.getElementById('pSearch');
+                if (pSearchElement) pSearchElement.value = '';
+                const hintStock = document.getElementById('hint-stock');
+                if (hintStock) hintStock.style.display = 'none';
+                const hintMin = document.getElementById('hint-min');
+                if (hintMin) hintMin.style.display = 'none';
+                const totalText = document.getElementById('total-text');
+                if (totalText) totalText.innerText = '0';
+                const gasExchangeNote = document.getElementById('gas-exchange-note');
+                if (gasExchangeNote) gasExchangeNote.style.display = 'none';
+                selectedItem = null;
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
+                }
+                showSuccessNotification('Sale recorded successfully!', `Ksh ${total.toLocaleString()} - ${method}`);
+            } catch (error) { 
+                console.error("Sale Error:", error); 
+                alert("❌ Error: " + error.message); 
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
+                }
+            }
+        });
+    }
 
     async function loadShiftData() {
         try {
@@ -2165,19 +2319,18 @@
             const sales = salesRes.data || [];
             const trans = transRes.data || [];
             
-            // Calculate KCB Paybill sales - EXCLUDE debt settlements from sales
             const kcbPaybillSales = sales
                 .filter(s => s.payment_method === 'KCB Paybill' && !s.refunded && s.total_amount > 0 && s.category !== 'Debt' && s.payment_method !== 'Debt')
                 .reduce((a, b) => a + b.total_amount, 0);
             
-            // Include Money In transactions to KCB Paybill (from debt settlements)
             const kcbPaybillMoneyIn = trans
                 .filter(t => t.type === 'Money In' && t.category === 'KCB Paybill')
                 .reduce((a, b) => a + b.amount, 0);
             
             currentKcbSalesTotal = kcbPaybillSales + kcbPaybillMoneyIn;
-            document.getElementById('live-kcb-box').innerText = currentKcbSalesTotal.toLocaleString();
-            document.getElementById('c-bank').value = currentKcbSalesTotal;
+            safeSetInnerText('live-kcb-box', currentKcbSalesTotal.toLocaleString());
+            const cBankInput = document.getElementById('c-bank');
+            if (cBankInput) cBankInput.value = currentKcbSalesTotal;
 
             const liveSalesBody = document.getElementById('live-sales-body');
             if (liveSalesBody) {
@@ -2196,47 +2349,77 @@
             let totalMoneyIn = 0, totalMoneyOut = 0;
             trans.forEach(t => { if (t.type === 'Money In') totalMoneyIn += t.amount; else if (t.type === 'Money Out') totalMoneyOut += t.amount; });
             
-            const totalMoneyInFullEl = document.getElementById('total-money-in-full');
-            const totalMoneyOutFullEl = document.getElementById('total-money-out-full');
-            
-            if (totalMoneyInFullEl) totalMoneyInFullEl.textContent = `Ksh ${totalMoneyIn.toLocaleString()}`;
-            if (totalMoneyOutFullEl) totalMoneyOutFullEl.textContent = `Ksh ${totalMoneyOut.toLocaleString()}`;
+            safeSetInnerText('total-money-in-full', `Ksh ${totalMoneyIn.toLocaleString()}`);
+            safeSetInnerText('total-money-out-full', `Ksh ${totalMoneyOut.toLocaleString()}`);
             
             const liveTransBody = document.getElementById('live-trans-body');
             if (liveTransBody) {
-                liveTransBody.innerHTML = trans.map(t => `<tr class="${t.type === 'Money In' ? 'money-in-row' : 'money-out-row'}"><td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Reason">${t.description}</td><td data-label="Amount">Ksh ${t.amount.toLocaleString()}</td><td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">${t.type}</td><td data-label="Wallet">${t.category}</td></td>`).join('');
+                liveTransBody.innerHTML = trans.map(t => `<tr class="${t.type === 'Money In' ? 'money-in-row' : 'money-out-row'}"><td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Reason">${t.description}</td><td data-label="Amount">Ksh ${t.amount.toLocaleString()}</td><td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">${t.type}</td><td data-label="Wallet">${t.category}</tr>`).join('');
             }
             checkLowFloats();
-        } catch (error) { console.error("Error loading shift data:", error); }
+        } catch (error) { 
+            console.error("Error loading shift data:", error); 
+        }
     }
 
-    document.getElementById('confirm-open').addEventListener('click', async function() {
-        const branchId = getCurrentBranchId();
-        const existingOpenShift = await checkForOpenShift(branchId);
-        if (existingOpenShift) { alert("❌ There is already an open shift for this branch."); this.disabled = false; this.innerHTML = 'START DAY'; document.getElementById('open-modal').style.display = 'none'; return; }
-        const cash = parseFloat(document.getElementById('o-cash').value || 0);
-        const mpesa = parseFloat(document.getElementById('o-mpesa').value || 0);
-        const kcb = parseFloat(document.getElementById('o-kcb').value || 0);
-        const equity = parseFloat(document.getElementById('o-equity').value || 0);
-        if (!confirm(`Confirm opening floats?\n\nCash: Ksh ${cash}\nMpesa: Ksh ${mpesa}\nKCB Float: Ksh ${kcb}\nEquity Float: Ksh ${equity}`)) return;
-        this.disabled = true;
-        this.innerHTML = '<span class="spinner"></span> STARTING...';
-        try {
-            await supabase.from('daily_shifts').insert([{ user_id: currentUser.id, branch_id: branchId, open_cash: cash, open_mpesa: mpesa, open_kcb: kcb, open_equity: equity, status: 'Open', start_time: new Date().toISOString() }]);
-            showSuccessNotification('Shift started successfully!');
-            setTimeout(() => location.reload(), 1500);
-        } catch (error) { alert("Error starting shift: " + error.message); this.disabled = false; this.innerHTML = 'START DAY'; }
-    });
+    const confirmOpenBtn = document.getElementById('confirm-open');
+    if (confirmOpenBtn) {
+        confirmOpenBtn.addEventListener('click', async function() {
+            const branchId = getCurrentBranchId();
+            const existingOpenShift = await checkForOpenShift(branchId);
+            if (existingOpenShift) { 
+                alert("❌ There is already an open shift for this branch."); 
+                this.disabled = false; 
+                this.innerHTML = 'START DAY'; 
+                const openModal = document.getElementById('open-modal');
+                if (openModal) openModal.style.display = 'none';
+                return; 
+            }
+            const cashInput = document.getElementById('o-cash');
+            const mpesaInput = document.getElementById('o-mpesa');
+            const kcbInput = document.getElementById('o-kcb');
+            const equityInput = document.getElementById('o-equity');
+            
+            const cash = cashInput ? parseFloat(cashInput.value || 0) : 0;
+            const mpesa = mpesaInput ? parseFloat(mpesaInput.value || 0) : 0;
+            const kcb = kcbInput ? parseFloat(kcbInput.value || 0) : 0;
+            const equity = equityInput ? parseFloat(equityInput.value || 0) : 0;
+            
+            if (!confirm(`Confirm opening floats?\n\nCash: Ksh ${cash}\nMpesa: Ksh ${mpesa}\nKCB Float: Ksh ${kcb}\nEquity Float: Ksh ${equity}`)) return;
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner"></span> STARTING...';
+            try {
+                await supabase.from('daily_shifts').insert([{ user_id: currentUser.id, branch_id: branchId, open_cash: cash, open_mpesa: mpesa, open_kcb: kcb, open_equity: equity, status: 'Open', start_time: new Date().toISOString() }]);
+                showSuccessNotification('Shift started successfully!');
+                setTimeout(() => location.reload(), 1500);
+            } catch (error) { 
+                alert("Error starting shift: " + error.message); 
+                this.disabled = false; 
+                this.innerHTML = 'START DAY'; 
+            }
+        });
+    }
 
-    window.showCloseModal = function() { document.getElementById('close-modal').style.display = 'flex'; };
+    window.showCloseModal = function() { 
+        const closeModal = document.getElementById('close-modal');
+        if (closeModal) closeModal.style.display = 'flex'; 
+    };
 
     function showCloseConfirmation() {
-        const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
-        const clK = parseFloat(document.getElementById('c-kcb').value || 0);
-        const clE = parseFloat(document.getElementById('c-equity').value || 0);
-        const clC = parseFloat(document.getElementById('c-cash').value || 0);
+        const mpesaInput = document.getElementById('c-mpesa');
+        const kcbInput = document.getElementById('c-kcb');
+        const equityInput = document.getElementById('c-equity');
+        const cashInput = document.getElementById('c-cash');
+        
+        const clM = mpesaInput ? parseFloat(mpesaInput.value || 0) : 0;
+        const clK = kcbInput ? parseFloat(kcbInput.value || 0) : 0;
+        const clE = equityInput ? parseFloat(equityInput.value || 0) : 0;
+        const clC = cashInput ? parseFloat(cashInput.value || 0) : 0;
         const clB = currentKcbSalesTotal;
-        document.getElementById('close-modal').style.display = 'none';
+        
+        const closeModal = document.getElementById('close-modal');
+        if (closeModal) closeModal.style.display = 'none';
+        
         const card = document.createElement('div');
         card.className = 'overlay';
         card.id = 'close-confirm-card';
@@ -2245,21 +2428,40 @@
         document.body.appendChild(card);
     }
 
-    window.closeConfirmationCard = function() { const card = document.getElementById('close-confirm-card'); if (card) card.remove(); document.getElementById('close-modal').style.display = 'flex'; };
-    document.getElementById('confirm-close').addEventListener('click', function() { showCloseConfirmation(); });
+    window.closeConfirmationCard = function() { 
+        const card = document.getElementById('close-confirm-card'); 
+        if (card) card.remove(); 
+        const closeModal = document.getElementById('close-modal');
+        if (closeModal) closeModal.style.display = 'flex'; 
+    };
+    
+    const confirmCloseBtn = document.getElementById('confirm-close');
+    if (confirmCloseBtn) {
+        confirmCloseBtn.addEventListener('click', function() { showCloseConfirmation(); });
+    }
 
     window.processFinalClose = async function() {
         const card = document.getElementById('close-confirm-card');
         if (!card) return;
-        const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
-        const clK = parseFloat(document.getElementById('c-kcb').value || 0);
-        const clE = parseFloat(document.getElementById('c-equity').value || 0);
-        const clC = parseFloat(document.getElementById('c-cash').value || 0);
+        
+        const mpesaInput = document.getElementById('c-mpesa');
+        const kcbInput = document.getElementById('c-kcb');
+        const equityInput = document.getElementById('c-equity');
+        const cashInput = document.getElementById('c-cash');
+        
+        const clM = mpesaInput ? parseFloat(mpesaInput.value || 0) : 0;
+        const clK = kcbInput ? parseFloat(kcbInput.value || 0) : 0;
+        const clE = equityInput ? parseFloat(equityInput.value || 0) : 0;
+        const clC = cashInput ? parseFloat(cashInput.value || 0) : 0;
         const clB = currentKcbSalesTotal;
         card.remove();
+        
         const btn = document.getElementById('confirm-close');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> FINALIZING...';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> FINALIZING...';
+        }
+        
         try {
             const { data: sales } = await supabase.from('sales').select('total_amount').eq('shift_id', currentShift.id).neq('payment_method','Debt').eq('refunded', false).gt('total_amount', 0);
             const { data: trans } = await supabase.from('cash_transactions').select('amount, type').eq('shift_id', currentShift.id);
@@ -2272,11 +2474,27 @@
             const variance = actual - expected;
             let note = "";
             if (Math.abs(variance) < 1) note = "Balanced";
-            else { const sign = variance > 0 ? "+" : "-"; note = prompt(`Variance: ${sign}${Math.abs(variance).toFixed(2)}. Please enter reason:`); if (!note) { btn.disabled = false; btn.innerHTML = 'FINALIZE & CLOSE'; return; } }
+            else { 
+                const sign = variance > 0 ? "+" : "-"; 
+                note = prompt(`Variance: ${sign}${Math.abs(variance).toFixed(2)}. Please enter reason:`); 
+                if (!note) { 
+                    if (btn) {
+                        btn.disabled = false; 
+                        btn.innerHTML = 'FINALIZE & CLOSE';
+                    }
+                    return; 
+                } 
+            }
             await supabase.from('daily_shifts').update({ close_mpesa: clM, close_kcb: clK, close_equity: clE, close_kcb_bank: clB, close_cash: clC, status: 'Closed', end_time: new Date().toISOString(), variance_note: note, system_expected_total: expected }).eq('id', currentShift.id);
             showSuccessNotification('Shift closed successfully!', `Variance: ${variance === 0 ? 'Balanced' : variance.toFixed(2)}`);
             setTimeout(() => location.reload(), 1500);
-        } catch (error) { alert("Error closing shift: " + error.message); btn.disabled = false; btn.innerHTML = 'FINALIZE & CLOSE'; }
+        } catch (error) { 
+            alert("Error closing shift: " + error.message); 
+            if (btn) {
+                btn.disabled = false; 
+                btn.innerHTML = 'FINALIZE & CLOSE';
+            }
+        }
     };
 
     async function loadHistory(searchQuery = "") {
@@ -2332,7 +2550,7 @@
                 <td><div style="max-height:120px; overflow-y:auto; font-size:0.8rem; color:var(--text-dim); font-style:italic;">${sh.variance_note && sh.variance_note !== 'Balanced' ? sh.variance_note : sh.variance_note || 'No notes added.'}</div></td>
             </tr>`;
         });
-        desktopTbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.<tr></tr>';
+        desktopTbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.</td></tr>';
     }
 
     function renderMobileHistory(shifts, transData, salesData, query = "") {
@@ -2364,41 +2582,80 @@
         mobileContainer.innerHTML = mobileHtml || '<div style="text-align:center; padding:50px; color:var(--text-dim);">No shift records found</div>';
     }
 
-    document.getElementById('history-search').addEventListener('input', (e) => {
-        const term = e.target.value.toLowerCase();
-        const filtered = allShifts.filter(sh => { const dateStr = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }).toLowerCase(); return dateStr.includes(term); });
-        if (window.innerWidth <= 768) renderMobileHistory(filtered, allTransactions, allSales, term);
-        else renderDesktopHistory(filtered, allTransactions, allSales, term);
-    });
+    const historySearch = document.getElementById('history-search');
+    if (historySearch) {
+        historySearch.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = allShifts.filter(sh => { const dateStr = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }).toLowerCase(); return dateStr.includes(term); });
+            if (window.innerWidth <= 768) renderMobileHistory(filtered, allTransactions, allSales, term);
+            else renderDesktopHistory(filtered, allTransactions, allSales, term);
+        });
+    }
     
-    document.getElementById('load-more-btn').addEventListener('click', () => { historyLimit += 10; loadHistory(); });
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', () => { historyLimit += 10; loadHistory(); });
+    }
     
-    document.getElementById('record-expense-btn').addEventListener('click', async function() {
-        const amt = parseFloat(document.getElementById('exp-amt').value);
-        const desc = document.getElementById('exp-desc').value;
-        const branchId = getCurrentBranchId();
-        if (!amt || !desc || !currentShift) { alert("❌ Please fill all fields and make sure a shift is active"); return; }
-        this.disabled = true;
-        this.innerHTML = '<span class="spinner"></span> RECORDING...';
-        try {
-            await supabase.from('cash_transactions').insert([{ shift_id: currentShift.id, type: document.getElementById('exp-type').value, category: document.getElementById('exp-method').value, amount: amt, description: desc, branch_id: branchId, user_id: currentUser.id }]);
-            document.getElementById('exp-amt').value = '';
-            document.getElementById('exp-desc').value = '';
-            await loadShiftData();
-            this.disabled = false;
-            this.innerHTML = 'RECORD MONEY';
-            showSuccessNotification('Transaction recorded!', `${document.getElementById('exp-type').value}: Ksh ${amt.toLocaleString()}`);
-        } catch (error) { alert("❌ Error: " + error.message); this.disabled = false; this.innerHTML = 'RECORD MONEY'; }
-    });
+    const recordExpenseBtn = document.getElementById('record-expense-btn');
+    if (recordExpenseBtn) {
+        recordExpenseBtn.addEventListener('click', async function() {
+            const amtInput = document.getElementById('exp-amt');
+            const descInput = document.getElementById('exp-desc');
+            const typeSelect = document.getElementById('exp-type');
+            const methodSelect = document.getElementById('exp-method');
+            
+            const amt = amtInput ? parseFloat(amtInput.value) : 0;
+            const desc = descInput ? descInput.value : '';
+            const branchId = getCurrentBranchId();
+            
+            if (!amt || !desc || !currentShift) { 
+                alert("❌ Please fill all fields and make sure a shift is active"); 
+                return; 
+            }
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner"></span> RECORDING...';
+            try {
+                await supabase.from('cash_transactions').insert([{ 
+                    shift_id: currentShift.id, 
+                    type: typeSelect ? typeSelect.value : 'Money Out', 
+                    category: methodSelect ? methodSelect.value : 'Cash', 
+                    amount: amt, 
+                    description: desc, 
+                    branch_id: branchId, 
+                    user_id: currentUser.id 
+                }]);
+                if (amtInput) amtInput.value = '';
+                if (descInput) descInput.value = '';
+                await loadShiftData();
+                this.disabled = false;
+                this.innerHTML = 'RECORD MONEY';
+                showSuccessNotification('Transaction recorded!', `${typeSelect ? typeSelect.value : 'Money Out'}: Ksh ${amt.toLocaleString()}`);
+            } catch (error) { 
+                alert("❌ Error: " + error.message); 
+                this.disabled = false; 
+                this.innerHTML = 'RECORD MONEY'; 
+            }
+        });
+    }
 
     window.addEventListener('resize', function() {
         if (allShifts.length > 0) {
             if (window.innerWidth <= 768) renderMobileHistory(allShifts, allTransactions, allSales);
-            else { renderDesktopHistory(allShifts, allTransactions, allSales); const desktopContainer = document.querySelector('.shift-history-table-container'); const mobileContainer = document.getElementById('mobile-shifts-container'); if (desktopContainer) desktopContainer.style.display = 'block'; if (mobileContainer) mobileContainer.style.display = 'none'; }
+            else { 
+                renderDesktopHistory(allShifts, allTransactions, allSales); 
+                const desktopContainer = document.querySelector('.shift-history-table-container'); 
+                const mobileContainer = document.getElementById('mobile-shifts-container'); 
+                if (desktopContainer) desktopContainer.style.display = 'block'; 
+                if (mobileContainer) mobileContainer.style.display = 'none'; 
+            }
         }
     });
 
-    document.addEventListener('DOMContentLoaded', function() { init(); setInterval(checkLowFloats, 30000); });
+    document.addEventListener('DOMContentLoaded', function() { 
+        init(); 
+        setInterval(checkLowFloats, 30000); 
+    });
 </script>
 </body>
 </html>
