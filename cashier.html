@@ -1746,9 +1746,6 @@
     let allSales = [];
     let currentKcbSalesTotal = 0;
     let currentUser = null;
-    let timeCheckInterval = null;
-    let alertSoundPlayed = false;
-    let audioContext = null;
     let refundingSale = null;
     let currentUserProfile = null;
     let currentBranchId = null;
@@ -2197,12 +2194,17 @@
 
             let totalMoneyIn = 0, totalMoneyOut = 0;
             trans.forEach(t => { if (t.type === 'Money In') totalMoneyIn += t.amount; else if (t.type === 'Money Out') totalMoneyOut += t.amount; });
-            document.getElementById('total-money-in-full').textContent = `Ksh ${totalMoneyIn.toLocaleString()}`;
-            document.getElementById('total-money-out-full').textContent = `Ksh ${totalMoneyOut.toLocaleString()}`;
+            
+            // Safely update money summary elements
+            const totalMoneyInFullEl = document.getElementById('total-money-in-full');
+            const totalMoneyOutFullEl = document.getElementById('total-money-out-full');
+            
+            if (totalMoneyInFullEl) totalMoneyInFullEl.textContent = `Ksh ${totalMoneyIn.toLocaleString()}`;
+            if (totalMoneyOutFullEl) totalMoneyOutFullEl.textContent = `Ksh ${totalMoneyOut.toLocaleString()}`;
             
             const liveTransBody = document.getElementById('live-trans-body');
             if (liveTransBody) {
-                liveTransBody.innerHTML = trans.map(t => `<tr class="${t.type === 'Money In' ? 'money-in-row' : 'money-out-row'}"><td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Reason">${t.description}</td><td data-label="Amount">Ksh ${t.amount.toLocaleString()}</td><td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">${t.type}</td><td data-label="Wallet">${t.category}</td></tr>`).join('');
+                liveTransBody.innerHTML = trans.map(t => `<tr class="${t.type === 'Money In' ? 'money-in-row' : 'money-out-row'}"><td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td data-label="Reason">${t.description}</td><td data-label="Amount">Ksh ${t.amount.toLocaleString()}</td><td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">${t.type}</td><td data-label="Wallet">${t.category}</td></td>`).join('');
             }
             checkLowFloats();
         } catch (error) { console.error("Error loading shift data:", error); }
