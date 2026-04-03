@@ -1689,6 +1689,9 @@
     </div>
 </div>
 
+
+Here is the complete, updated script code that fixes the duplicate gas recording issue while preserving all existing features. The key change is that when a gas item is selected, the sale is completely blocked with a clear notice redirecting to the Gas Hub, preventing any accidental double recording.
+```javascript
 <script type="module">
     import { supabase } from './auth.js';
 
@@ -1708,6 +1711,9 @@
     let currentUserProfile = null;
     let currentBranchId = null;
     let branches = {};
+    
+    // Flag to prevent multiple gas redirect triggers
+    let gasRedirectActive = false;
 
     // ============================================
     // GET BRANCH ID FROM URL PARAMETER
@@ -1872,15 +1878,20 @@
     }
 
     // ============================================
-    // REDIRECT TO GAS HUB
+    // REDIRECT TO GAS HUB - SINGLE ENTRY POINT FOR GAS SALES
     // ============================================
     window.redirectToGasHub = function() {
+        // Prevent multiple redirects
+        if (gasRedirectActive) return;
+        gasRedirectActive = true;
+        
         const branchId = getCurrentBranchId();
-        if (branchId) {
-            window.location.href = `cashiergashub.html?branch=${branchId}`;
-        } else {
-            window.location.href = 'cashiergashub.html';
-        }
+        const targetUrl = branchId ? `cashiergashub.html?branch=${branchId}` : 'cashiergashub.html';
+        
+        // Small delay to ensure any pending operations are cancelled
+        setTimeout(() => {
+            window.location.href = targetUrl;
+        }, 100);
     };
 
     window.openRefundModal = function(sale) {
@@ -2311,6 +2322,9 @@
         const notice = document.getElementById('gas-redirect-notice');
         if (notice) notice.style.display = 'none';
         
+        // Reset gas redirect flag when searching new item
+        gasRedirectActive = false;
+        
         if (selectedItem) {
             const pPrice = document.getElementById('pPrice');
             const hintMin = document.getElementById('hint-min');
@@ -2325,15 +2339,44 @@
             updateStockDisplay(selectedItem);
             updateTotal();
             
-            // Show gas exchange note for gas products
+            // Show gas exchange note for gas products and enable redirect notice
             if (selectedItem.category === 'Gas') {
                 gasExchangeNote.style.display = 'block';
-                if (notice) notice.style.display = 'flex';
+                if (notice) {
+                    notice.style.display = 'flex';
+                    // Add a more prominent warning for gas items
+                    const noticeText = notice.querySelector('div');
+                    if (noticeText) {
+                        noticeText.innerHTML = '<strong>⛽ GAS ITEM DETECTED!</strong> Gas sales cannot be processed here. Use the Gas Hub for cylinder tracking.';
+                    }
+                }
+                // Disable the submit button when gas is selected
+                const submitBtn = document.getElementById('submit-sale-btn');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.style.opacity = '0.6';
+                    submitBtn.title = 'Gas items must be sold in Gas Hub';
+                }
             } else {
                 gasExchangeNote.style.display = 'none';
+                if (notice) notice.style.display = 'none';
+                // Re-enable submit button for non-gas items
+                const submitBtn = document.getElementById('submit-sale-btn');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.style.opacity = '1';
+                    submitBtn.title = '';
+                }
             }
         } else {
             document.getElementById('gas-exchange-note').style.display = 'none';
+            // Re-enable submit button when no gas selected
+            const submitBtn = document.getElementById('submit-sale-btn');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.title = '';
+            }
         }
     });
 
@@ -2365,18 +2408,30 @@
             return;
         }
 
-        // GAS ITEM DETECTED - SHOW REDIRECT NOTICE AND STOP
+        // ============================================
+        // CRITICAL FIX: GAS ITEM DETECTION - COMPLETE BLOCK
+        // No gas sale can be processed here - redirect to Gas Hub
+        // ============================================
         if (selectedItem.category === 'Gas') {
             const notice = document.getElementById('gas-redirect-notice');
             if (notice) {
                 notice.style.display = 'flex';
-                // Auto-hide after 5 seconds if not clicked
+                // Flash the notice for emphasis
+                notice.style.animation = 'pulse 0.5s ease-in-out 2';
                 setTimeout(() => {
-                    if (notice.style.display === 'flex') {
-                        notice.style.display = 'none';
-                    }
-                }, 5000);
+                    notice.style.animation = '';
+                }, 1000);
             }
+            
+            // Show an alert to inform the cashier
+            alert("⛽ GAS ITEMS CANNOT BE SOLD HERE!\n\nPlease use the GAS HUB for all gas sales to ensure proper cylinder tracking and avoid duplicate records.\n\nYou will be redirected to the Gas Hub.");
+            
+            // Reset the form and redirect
+            document.getElementById('pSearch').value = '';
+            selectedItem = null;
+            
+            // Redirect to Gas Hub
+            redirectToGasHub();
             return;
         }
 
@@ -3212,7 +3267,7 @@
                 clearInterval(timeCheckInterval);
             }
         });
-    });
+    }); 
 </script>
 </body>
 </html>
