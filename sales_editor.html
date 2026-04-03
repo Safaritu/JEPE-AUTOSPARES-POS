@@ -326,7 +326,7 @@
         /* --- SEARCH --- */
         #searchBar { 
             width: 100%; 
-            padding: 14px 20px; 
+            padding: 14px 20px 14px 45px; 
             border-radius: 14px; 
             border: 1px solid #cbd5e1;
             font-size: 0.9rem; 
@@ -346,7 +346,7 @@
         table { 
             width: 100%; 
             border-collapse: collapse; 
-            min-width: 1100px; /* Increased to accommodate new column */
+            min-width: 1200px;
         }
         
         th { 
@@ -493,6 +493,20 @@
             background: #fee2e2;
         }
 
+        /* Gas info helper */
+        .gas-price-info {
+            background: #fef3c7;
+            border-left: 4px solid var(--warning);
+            padding: 8px 12px;
+            margin-top: 8px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            color: #92400e;
+        }
+        .gas-price-info i {
+            margin-right: 6px;
+        }
+
         /* --- MODAL --- */
         #productModal { 
             display: none; 
@@ -510,7 +524,7 @@
             padding: 25px; 
             border-radius: 20px; 
             width: 100%; 
-            max-width: 550px; 
+            max-width: 650px; 
             max-height: 90vh; 
             overflow-y: auto;
         }
@@ -578,7 +592,6 @@
         <button class="close-btn" onclick="toggleMenu()">×</button>
     </div>
     
-    <!-- Branch Info Display -->
     <div class="branch-info" id="sidebarBranchInfo">
         <div class="branch-label">Your Assigned Branch</div>
         <div class="branch-name" id="sidebarBranchName">
@@ -591,34 +604,26 @@
         <a href="#" onclick="confirmSwitchToCashier(event)" class="nav-link switch-link">
             <i class="fas fa-exchange-alt"></i> <span>SWITCH TO CASHIER</span>
         </a>
-
         <a href="admin.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
         <a href="gas_hub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
         <a href="spares_hub.html" class="nav-link"><i class="fas fa-cogs"></i> <span>Spare Parts Hub</span></a>
         <a href="motorbike_hub.html" class="nav-link"><i class="fas fa-motorcycle"></i> <span>Motorbike Hub</span></a>
         <a href="tuktuk_hub.html" class="nav-link"><i class="fas fa-car-side"></i> <span>TUKTUK Hub</span></a>
-
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
-
         <a href="shift-history.html" class="nav-link"><i class="fas fa-history"></i> <span>Daily Shifts</span></a>
         <a href="money-history.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
         <a href="sales-history.html" class="nav-link"><i class="fas fa-chart-line"></i> <span>Sales History</span></a>
-
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
-
         <a href="inventory.html" class="nav-link"><i class="fas fa-plus-circle"></i> <span>Add Stock</span></a>
         <a href="sales_editor.html" class="nav-link active"><i class="fas fa-edit"></i> <span>Edit Stock</span></a>
         <a href="admin-debtors.html" class="nav-link"><i class="fas fa-users"></i> <span>Debtors</span></a>
         <a href="low_stock.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
         <a href="audit_trail.html" class="nav-link"><i class="fas fa-search"></i> <span>Inventory Track</span></a>
-
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
-
         <a href="reports.html" class="nav-link"><i class="fas fa-file-alt"></i> <span>Reports</span></a>
         <a href="price_audits.html" class="nav-link"><i class="fas fa-tags"></i> <span>Underpriced</span></a>
         <a href="suppliers.html" class="nav-link"><i class="fas fa-handshake"></i> <span>Suppliers</span></a>
         <a href="admin.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
-        
         <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
             <a onclick="handleLogout()" class="nav-link" style="color: #fb7185; cursor:pointer;">
                 <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
@@ -634,7 +639,6 @@
         <div style="width:24px;"></div>
     </div>
 
-    <!-- Branch Selector -->
     <div class="branch-selector-container">
         <div class="branch-filter">
             <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
@@ -663,7 +667,7 @@
     <div class="card">
         <div style="position: relative;">
             <i class="fas fa-search" style="position: absolute; left: 15px; top: 27px; color: var(--text-dim);"></i>
-            <input type="text" id="searchBar" placeholder="Search by name, supplier, category, or branch..." style="padding-left: 45px;">
+            <input type="text" id="searchBar" placeholder="Search by name, supplier, category, or branch...">
         </div>
         
         <div class="table-container">
@@ -675,18 +679,13 @@
                         <th>Supplier</th>
                         <th>Branch</th>
                         <th>Stock Levels</th>
-                        <th>Price (Ksh)</th>
+                        <th>Pricing (Ksh)</th>
                         <th>Classification</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="product-list-body">
-                    <tr>
-                        <td colspan="8" style="text-align:center; padding:40px;">
-                            <div class="spinner" style="margin: 0 auto;"></div>
-                            Loading products...
-                        </td>
-                    </tr>
+                    <tr><td colspan="8" style="text-align:center; padding:40px;"><div class="spinner"></div> Loading...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -695,46 +694,24 @@
 
 <div id="productModal">
     <div class="modal-content">
-        <h2 id="modalTitle" style="margin:0 0 20px 0; font-size: 1.1rem; color: var(--primary);">
-            <i class="fas fa-edit"></i> Edit Product
-        </h2>
+        <h2 id="modalTitle" style="margin:0 0 20px 0; font-size: 1.1rem; color: var(--primary);"><i class="fas fa-edit"></i> Edit Product</h2>
         <input type="hidden" id="prod-id">
         <div class="grid-form">
             <div class="full"><label><i class="fas fa-tag"></i> Product Name</label><input type="text" id="prod-name" placeholder="Enter product name"></div>
             <div class="full"><label><i class="fas fa-truck"></i> Supplier</label><select id="prod-supplier"></select></div>
+            <div><label><i class="fas fa-layer-group"></i> Category</label><select id="prod-category" onchange="toggleFields()"><option value="Spare Part">Spare Part</option><option value="Gas">Gas</option><option value="Motorbike">Motorbike</option><option value="Tuktuk">TUKTUK</option></select></div>
+            <div id="type-container"><label><i class="fas fa-cog"></i> <span id="type-label">Part Type</span></label><select id="prod-type"><option value="Original">Original</option><option value="Copy">Copy</option><option value="N/A">N/A</option></select></div>
+            <div id="weight-container" style="display:none;"><label><i class="fas fa-weight-scale"></i> Weight Category *</label><input type="text" id="prod-weight" placeholder="e.g. 6kg, 13kg"></div>
             
-            <div><label><i class="fas fa-layer-group"></i> Category</label>
-                <select id="prod-category" onchange="toggleFields()">
-                    <option value="Spare Part">Spare Part</option>
-                    <option value="Gas">Gas</option>
-                    <option value="Motorbike">Motorbike</option>
-                    <option value="Tuktuk">TUKTUK</option>
-                </select>
-            </div>
-
-            <div id="type-container">
-                <label><i class="fas fa-cog"></i> 
-                    <span id="type-label">Part Type</span>
-                </label>
-                <select id="prod-type">
-                    <option value="Original">Original</option>
-                    <option value="Copy">Copy</option>
-                    <option value="N/A">N/A</option>
-                    <option value="Passenger">Passenger</option>
-                    <option value="Cargo">Cargo</option>
-                </select>
-            </div>
-
-            <div id="weight-container" style="display:none;">
-                <label><i class="fas fa-weight-scale"></i> Weight (Gas)</label>
-                <input type="text" id="prod-weight" placeholder="e.g. 6kg">
-            </div>
-
-            <div><label><i class="fas fa-coins"></i> Cost Price</label><input type="number" id="prod-cost" placeholder="0"></div>
-            <div><label><i class="fas fa-tag"></i> Selling Price</label><input type="number" id="prod-sell" placeholder="0"></div>
-            <div><label><i class="fas fa-shield"></i> Min Sell Price</label><input type="number" id="prod-min-sell" placeholder="0"></div>
-            <div><label><i class="fas fa-box"></i> Stock (Full)</label><input type="number" id="prod-stock" placeholder="0"></div>
-            <div id="empty-container" class="full"><label><i class="fas fa-gas-pump"></i> Empty Cylinders (Gas Only)</label><input type="number" id="prod-empty" placeholder="0"></div>
+            <!-- Gas-specific complete price & cost fields (mirror cashier editor) -->
+            <div id="complete-price-container" style="display:none;"><label><i class="fas fa-gas-pump"></i> Complete Price (Your Price)</label><input type="number" id="prod-complete-price" placeholder="Customer pays for new cylinder + gas" step="0.01" min="0"><div class="gas-price-info"><i class="fas fa-info-circle"></i> What customer pays for NEW CYLINDER + GAS</div></div>
+            <div id="complete-cost-container" style="display:none;"><label><i class="fas fa-coins"></i> Supplier Complete Cost</label><input type="number" id="prod-complete-cost" placeholder="Supplier charges for new cylinder + gas" step="0.01" min="0"><div class="gas-price-info"><i class="fas fa-info-circle"></i> What supplier charges you for NEW CYLINDER + GAS</div></div>
+            
+            <div><label><i class="fas fa-coins"></i> Refill Cost (Supplier)</label><input type="number" id="prod-cost" placeholder="Supplier refill cost" step="0.01"></div>
+            <div><label><i class="fas fa-tag"></i> Refill Price (Your Price)</label><input type="number" id="prod-sell" placeholder="Your refill price" step="0.01"></div>
+            <div><label><i class="fas fa-shield"></i> Min Refill Price</label><input type="number" id="prod-min-sell" placeholder="Minimum allowed refill" step="0.01"></div>
+            <div><label><i class="fas fa-box"></i> Full Stock Qty</label><input type="number" id="prod-stock" placeholder="Full units" min="0"></div>
+            <div id="empty-container" class="full"><label><i class="fas fa-gas-pump"></i> Empty Cylinders (Gas Only)</label><input type="number" id="prod-empty" placeholder="Number of empty cylinders" min="0"></div>
         </div>
         <div style="display:flex; gap:10px; margin-top:20px;">
             <button class="btn btn-add" style="flex:1;" onclick="saveProduct()"><i class="fas fa-save"></i> Save Changes</button>
@@ -754,316 +731,109 @@
     let branches = {};
     let branchIdMap = {};
 
-    // ==================== SIDEBAR FUNCTIONS ====================
     window.toggleMenu = () => {
         document.getElementById('sidebar').classList.toggle('mobile-active');
         document.getElementById('overlay').classList.toggle('active');
     };
+    window.confirmSwitchToCashier = (e) => { e.preventDefault(); if(confirm("Switch to Cashier Mode?")) window.location.href = "cashier.html"; };
 
-    window.confirmSwitchToCashier = (e) => {
-        e.preventDefault();
-        if(confirm("Switch to Cashier Mode?")) window.location.href = "cashier.html";
-    };
-
-    // ==================== BRANCH FUNCTIONS ====================
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
-        branches = {};
-        branchIdMap = {};
-        data?.forEach(b => {
-            branches[b.id] = b;
-            branchIdMap[b.code] = b.id;
-        });
-        
-        // Populate branch selector
+        branches = {}; branchIdMap = {};
+        data?.forEach(b => { branches[b.id] = b; branchIdMap[b.code] = b.id; });
         const selector = document.getElementById('branchSelector');
         let options = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>';
-        data?.forEach(b => {
-            options += `<option value="${b.code}">🏪 ${b.name}</option>`;
-        });
+        data?.forEach(b => options += `<option value="${b.code}">🏪 ${b.name}</option>`);
         selector.innerHTML = options;
-        
         return branches;
     }
-
-    function getBranchIdFromCode(code) {
-        return branchIdMap[code] || null;
-    }
+    function getBranchIdFromCode(code) { return branchIdMap[code] || null; }
 
     async function loadUserProfile() {
         try {
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                window.location.href = 'index.html';
-                return null;
-            }
-            
+            if (!user) { window.location.href = 'index.html'; return null; }
             currentUser = user;
-            
-            const { data: profile, error } = await supabase
-                .from('profiles')
-                .select(`
-                    *,
-                    branches (
-                        id,
-                        name,
-                        code,
-                        location
-                    )
-                `)
-                .eq('id', user.id)
-                .single();
-            
+            const { data: profile, error } = await supabase.from('profiles').select('*, branches(*)').eq('id', user.id).single();
             if (error) throw error;
-            
             currentBranchId = profile.branch_id;
             currentBranch = profile.branches;
-            
-            const session = {
-                user: user,
-                profile: profile,
-                branch: profile.branches,
-                role: profile.role
-            };
-            localStorage.setItem('pos_session', JSON.stringify(session));
-            
-            // Update sidebar with user's assigned branch
-            const sidebarBranchName = document.querySelector('#sidebarBranchName span');
-            if (profile.branches && sidebarBranchName) {
-                sidebarBranchName.textContent = profile.branches.name;
-            }
-            
+            localStorage.setItem('pos_session', JSON.stringify({ user, profile, branch: profile.branches, role: profile.role }));
+            const sidebarSpan = document.querySelector('#sidebarBranchName span');
+            if (profile.branches && sidebarSpan) sidebarSpan.textContent = profile.branches.name;
             return profile;
-        } catch (error) {
-            console.error("Error loading profile:", error);
-            return null;
-        }
+        } catch (error) { console.error(error); return null; }
     }
 
-    window.handleBranchChange = async function() {
-        const selector = document.getElementById('branchSelector');
-        const selectedCode = selector.value;
-        
+    window.handleBranchChange = async () => {
+        const selectedCode = document.getElementById('branchSelector').value;
         const branchDisplay = document.getElementById('currentBranchDisplay');
-        
-        if (selectedCode === 'all') {
-            branchDisplay.textContent = 'ALL BRANCHES';
-            selectedBranchId = null;
-        } else {
-            const branchId = getBranchIdFromCode(selectedCode);
-            if (branchId) {
-                selectedBranchId = branchId;
-                branchDisplay.textContent = branches[branchId].name;
-            }
-        }
-        
+        if (selectedCode === 'all') { selectedBranchId = null; branchDisplay.textContent = 'ALL BRANCHES'; }
+        else { const bid = getBranchIdFromCode(selectedCode); if(bid) { selectedBranchId = bid; branchDisplay.textContent = branches[bid]?.name; } }
         await fetchProducts();
     };
 
-    // ==================== PRODUCT FUNCTIONS ====================
     async function fetchProducts() {
         try {
-            // Build query with branch filter
-            let query = supabase
-                .from('products')
-                .select(`
-                    *,
-                    suppliers(name),
-                    branches(code)
-                `)
-                .order('name');
-
-            // Apply branch filter if a specific branch is selected
-            if (selectedBranchId) {
-                query = query.eq('branch_id', selectedBranchId);
-            } else if (currentBranchId && !selectedBranchId) {
-                // If no branch selected but user has a branch, filter by user's branch
-                query = query.eq('branch_id', currentBranchId);
-            }
-
+            let query = supabase.from('products').select('*, suppliers(name), branches(code)').order('name');
+            if (selectedBranchId) query = query.eq('branch_id', selectedBranchId);
+            else if (currentBranchId && !selectedBranchId) query = query.eq('branch_id', currentBranchId);
             const { data } = await query;
             allProducts = data || [];
             renderTable(allProducts);
-            
-            // Also load suppliers for dropdown
-            let suppliersQuery = supabase.from('suppliers').select('id, name').order('name');
-            if (selectedBranchId) {
-                suppliersQuery = suppliersQuery.eq('branch_id', selectedBranchId);
-            } else if (currentBranchId) {
-                suppliersQuery = suppliersQuery.eq('branch_id', currentBranchId);
-            }
-            
-            const { data: sups } = await suppliersQuery;
-            document.getElementById('prod-supplier').innerHTML = '<option value="">-- No Supplier --</option>' + 
-                (sups || []).map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-                
-        } catch (error) {
-            console.error("Error fetching products:", error);
-            document.getElementById('product-list-body').innerHTML = `
-                <tr>
-                    <td colspan="8" style="text-align:center; padding:40px; color: var(--danger);">
-                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                        Error loading products: ${error.message}
-                    </td>
-                </tr>
-            `;
-        }
+            let supQuery = supabase.from('suppliers').select('id, name').order('name');
+            if (selectedBranchId) supQuery = supQuery.eq('branch_id', selectedBranchId);
+            else if (currentBranchId) supQuery = supQuery.eq('branch_id', currentBranchId);
+            const { data: sups } = await supQuery;
+            document.getElementById('prod-supplier').innerHTML = '<option value="">-- No Supplier --</option>' + (sups || []).map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        } catch(err) { console.error(err); }
     }
 
     window.toggleFields = () => {
         const cat = document.getElementById('prod-category').value;
         const typeLabel = document.getElementById('type-label');
         const typeSelect = document.getElementById('prod-type');
-        
-        // Hide all conditional fields first
         document.getElementById('weight-container').style.display = 'none';
         document.getElementById('empty-container').style.display = 'none';
+        document.getElementById('complete-price-container').style.display = 'none';
+        document.getElementById('complete-cost-container').style.display = 'none';
         
-        // Update type select options based on category
         if (cat === 'Gas') {
             document.getElementById('weight-container').style.display = 'block';
             document.getElementById('empty-container').style.display = 'block';
+            document.getElementById('complete-price-container').style.display = 'block';
+            document.getElementById('complete-cost-container').style.display = 'block';
             typeLabel.textContent = 'Part Type';
-            // Reset type select for gas
-            typeSelect.innerHTML = `
-                <option value="Original">Original</option>
-                <option value="Copy">Copy</option>
-                <option value="N/A">N/A</option>
-            `;
+            typeSelect.innerHTML = `<option value="Original">Original</option><option value="Copy">Copy</option><option value="N/A">N/A</option>`;
         } else if (cat === 'Tuktuk') {
             typeLabel.textContent = 'TUKTUK Type';
-            // Update type select for tuktuk
-            typeSelect.innerHTML = `
-                <option value="Passenger">Passenger</option>
-                <option value="Cargo">Cargo</option>
-                <option value="Spare">Spare Part</option>
-            `;
+            typeSelect.innerHTML = `<option value="Passenger">Passenger</option><option value="Cargo">Cargo</option><option value="Spare">Spare Part</option>`;
         } else {
             typeLabel.textContent = 'Part Type';
-            // Reset type select for other categories
-            typeSelect.innerHTML = `
-                <option value="Original">Original</option>
-                <option value="Copy">Copy</option>
-                <option value="N/A">N/A</option>
-            `;
+            typeSelect.innerHTML = `<option value="Original">Original</option><option value="Copy">Copy</option><option value="N/A">N/A</option>`;
         }
-    }
-
-    function getCategoryBadgeClass(category) {
-        switch(category) {
-            case 'Gas':
-                return 'category-gas';
-            case 'Spare Part':
-                return 'category-spare';
-            case 'Motorbike':
-                return 'category-moto';
-            case 'Tuktuk':
-                return 'category-tuktuk';
-            default:
-                return '';
-        }
-    }
-
-    function getCategoryIcon(category) {
-        switch(category) {
-            case 'Gas':
-                return 'fa-fire';
-            case 'Spare Part':
-                return 'fa-cogs';
-            case 'Motorbike':
-                return 'fa-motorcycle';
-            case 'Tuktuk':
-                return 'fa-car-side';
-            default:
-                return 'fa-box';
-        }
-    }
+    };
 
     function renderTable(data) {
-        if (data.length === 0) {
-            const branchName = selectedBranchId ? branches[selectedBranchId]?.name : (currentBranch?.name || 'this branch');
-            document.getElementById('product-list-body').innerHTML = `
-                <tr>
-                    <td colspan="8" style="text-align:center; padding:40px; color: var(--text-dim);">
-                        <i class="fas fa-box-open" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                        No products found for ${branchName}
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-
+        if (!data.length) { document.getElementById('product-list-body').innerHTML = `<tr><td colspan="8" style="text-align:center; padding:40px;">No products found</td></tr>`; return; }
         document.getElementById('product-list-body').innerHTML = data.map(p => {
             const isGas = p.category === 'Gas';
-            const isTuktuk = p.category === 'Tuktuk';
-            
-            let badgeClass = 'badge-spare';
-            let icon = 'fa-cog';
-            
-            if (isGas) {
-                badgeClass = 'badge-gas';
-                icon = 'fa-fire';
-            } else if (p.category === 'Motorbike') {
-                badgeClass = 'badge-bike';
-                icon = 'fa-motorcycle';
-            } else if (isTuktuk) {
-                badgeClass = 'badge-tuktuk';
-                icon = 'fa-car-side';
-            }
-            
             const branchCode = p.branches?.code || branches[p.branch_id]?.code || '--';
-            
-            // Determine display type
+            const categoryBadgeClass = { Gas:'category-gas','Spare Part':'category-spare',Motorbike:'category-moto',Tuktuk:'category-tuktuk' }[p.category] || '';
+            const iconMap = { Gas:'fa-fire','Spare Part':'fa-cogs',Motorbike:'fa-motorcycle',Tuktuk:'fa-car-side' };
             let typeDisplay = p.part_type;
-            if (isTuktuk && (p.part_type === 'Passenger' || p.part_type === 'Cargo' || p.part_type === 'Spare')) {
-                typeDisplay = p.part_type;
-            } else if (isGas) {
-                typeDisplay = p.weight_category || 'Gas';
-            }
-            
-            // Get category badge class
-            const categoryBadgeClass = getCategoryBadgeClass(p.category);
-            const categoryIcon = getCategoryIcon(p.category);
-            
-            return `
-            <tr>
-                <td data-label="Product">
-                    <div style="font-weight:700; color:var(--primary)">${p.name}</div>
-                </td>
-                <td data-label="Category">
-                    <span class="category-badge ${categoryBadgeClass}">
-                        <i class="fas ${categoryIcon}"></i> ${p.category}
-                    </span>
-                </td>
+            if (isGas) typeDisplay = p.weight_category || 'Gas Cylinder';
+            const completeHtml = isGas ? `<div style="font-size:0.7rem; margin-top:4px;"><i class="fas fa-cart-plus"></i> Complete: ${p.complete_price || 0} / Cost: ${p.complete_cost || 0}</div>` : '';
+            return `<tr>
+                <td data-label="Product"><div style="font-weight:700; color:var(--primary)">${p.name}</div>${completeHtml}</td>
+                <td data-label="Category"><span class="category-badge ${categoryBadgeClass}"><i class="fas ${iconMap[p.category] || 'fa-box'}"></i> ${p.category}</span></td>
                 <td data-label="Supplier"><small><i class="fas fa-truck"></i> ${p.suppliers?.name || '---'}</small></td>
-                <td data-label="Branch">
-                    <span class="branch-pill">
-                        <i class="fas fa-store"></i> ${branchCode}
-                    </span>
-                </td>
-                <td data-label="Stock">
-                    <span style="font-weight:800; color:${p.stock_quantity < 5 ? 'var(--danger)' : 'var(--green)'}">
-                        <i class="fas fa-box"></i> ${p.stock_quantity} Full
-                    </span>
-                    ${isGas ? `<span style="color:var(--text-dim); margin-left:5px;"><i class="fas fa-gas-pump"></i> | ${p.empty_quantity || 0} Empty</span>` : ''}
-                </td>
-                <td data-label="Prices">
-                    <small><i class="fas fa-coins"></i> C: ${p.cost_price} / <i class="fas fa-tag"></i> <b>${p.selling_price}</b></small>
-                </td>
-                <td data-label="Type">
-                    <span class="badge ${badgeClass}">
-                        <i class="fas ${icon}"></i> 
-                        ${typeDisplay}
-                    </span>
-                </td>
-                <td data-label="Actions">
-                    <div style="display:flex; gap:5px;">
-                        <button class="btn btn-edit" onclick="editProduct('${p.id}')"><i class="fas fa-edit"></i> Edit</button>
-                        <button class="btn btn-delete" onclick="deleteProduct('${p.id}')"><i class="fas fa-trash"></i> Del</button>
-                    </div>
-                </td>
-            </tr>
-        `}).join('');
+                <td data-label="Branch"><span class="branch-pill"><i class="fas fa-store"></i> ${branchCode}</span></td>
+                <td data-label="Stock"><span style="font-weight:800; color:${p.stock_quantity<5?'var(--danger)':'var(--green)'}"><i class="fas fa-box"></i> ${p.stock_quantity} Full</span> ${isGas ? `<span style="margin-left:5px;"><i class="fas fa-gas-pump"></i> ${p.empty_quantity||0} Empty</span>` : ''}</td>
+                <td data-label="Prices"><small><i class="fas fa-coins"></i> Refill Cost: ${p.cost_price}<br><i class="fas fa-tag"></i> Refill Price: <b>${p.selling_price}</b>${p.min_selling_price ? `<br><i class="fas fa-lock"></i> Min: ${p.min_selling_price}` : ''}</small></td>
+                <td data-label="Type"><span class="badge ${isGas?'badge-gas':p.category==='Motorbike'?'badge-bike':p.category==='Tuktuk'?'badge-tuktuk':'badge-spare'}"><i class="fas ${iconMap[p.category]||'fa-cog'}"></i> ${typeDisplay}</span></td>
+                <td data-label="Actions"><div style="display:flex; gap:5px;"><button class="btn btn-edit" onclick="editProduct('${p.id}')"><i class="fas fa-edit"></i> Edit</button><button class="btn btn-delete" onclick="deleteProduct('${p.id}')"><i class="fas fa-trash"></i> Del</button></div></td>
+            </tr>`; }).join('');
     }
 
     window.openModal = () => {
@@ -1079,12 +849,12 @@
         document.getElementById('prod-min-sell').value = "";
         document.getElementById('prod-stock').value = "";
         document.getElementById('prod-empty').value = "";
+        document.getElementById('prod-complete-price').value = "";
+        document.getElementById('prod-complete-cost').value = "";
         document.getElementById('productModal').style.display = "flex";
         toggleFields();
     };
-
     window.closeModal = () => document.getElementById('productModal').style.display = "none";
-
     window.editProduct = (id) => {
         const p = allProducts.find(item => item.id === id);
         if (!p) return;
@@ -1093,28 +863,23 @@
         document.getElementById('prod-name').value = p.name;
         document.getElementById('prod-supplier').value = p.supplier_id || "";
         document.getElementById('prod-category').value = p.category;
-        
-        // Set the type field based on category
-        if (p.category === 'Tuktuk') {
-            // For Tuktuk, we need to set the type select with the appropriate options first
+        const isGas = p.category === 'Gas';
+        const isTuktuk = p.category === 'Tuktuk';
+        if (isTuktuk) {
             const typeSelect = document.getElementById('prod-type');
-            typeSelect.innerHTML = `
-                <option value="Passenger">Passenger</option>
-                <option value="Cargo">Cargo</option>
-                <option value="Spare">Spare Part</option>
-            `;
+            typeSelect.innerHTML = `<option value="Passenger">Passenger</option><option value="Cargo">Cargo</option><option value="Spare">Spare Part</option>`;
             document.getElementById('prod-type').value = p.part_type || "Passenger";
         } else {
             document.getElementById('prod-type').value = p.part_type || "N/A";
         }
-        
         document.getElementById('prod-weight').value = p.weight_category || "";
-        document.getElementById('prod-cost').value = p.cost_price;
-        document.getElementById('prod-sell').value = p.selling_price;
+        document.getElementById('prod-cost').value = p.cost_price || 0;
+        document.getElementById('prod-sell').value = p.selling_price || 0;
         document.getElementById('prod-min-sell').value = p.min_selling_price || 0;
-        document.getElementById('prod-stock').value = p.stock_quantity;
+        document.getElementById('prod-stock').value = p.stock_quantity || 0;
         document.getElementById('prod-empty').value = p.empty_quantity || 0;
-        
+        document.getElementById('prod-complete-price').value = p.complete_price || "";
+        document.getElementById('prod-complete-cost').value = p.complete_cost || "";
         document.getElementById('productModal').style.display = "flex";
         toggleFields();
     };
@@ -1122,89 +887,63 @@
     window.saveProduct = async () => {
         const id = document.getElementById('prod-id').value;
         const branchToUse = selectedBranchId || currentBranchId;
-        
-        if (!branchToUse) {
-            alert("Branch information not found. Please select a branch.");
-            return;
-        }
-        
+        if (!branchToUse) { alert("Branch missing"); return; }
         const category = document.getElementById('prod-category').value;
-        
+        const isGas = category === 'Gas';
         const data = {
             name: document.getElementById('prod-name').value,
             supplier_id: document.getElementById('prod-supplier').value || null,
             category: category,
             part_type: document.getElementById('prod-type').value,
-            weight_category: category === 'Gas' ? document.getElementById('prod-weight').value : null,
+            weight_category: isGas ? document.getElementById('prod-weight').value : null,
             cost_price: parseFloat(document.getElementById('prod-cost').value) || 0,
             selling_price: parseFloat(document.getElementById('prod-sell').value) || 0,
             min_selling_price: parseFloat(document.getElementById('prod-min-sell').value) || 0,
             stock_quantity: parseInt(document.getElementById('prod-stock').value) || 0,
-            empty_quantity: category === 'Gas' ? (parseInt(document.getElementById('prod-empty').value) || 0) : 0,
+            empty_quantity: isGas ? (parseInt(document.getElementById('prod-empty').value) || 0) : 0,
             branch_id: branchToUse
         };
-
-        let error;
-        if (id) {
-            // Update existing product
-            ({ error } = await supabase.from('products').update(data).eq('id', id));
+        if (isGas) {
+            const completePrice = parseFloat(document.getElementById('prod-complete-price').value) || 0;
+            const completeCost = parseFloat(document.getElementById('prod-complete-cost').value) || 0;
+            if (!completePrice && data.name) alert("Complete Price is recommended for gas products");
+            data.complete_price = completePrice;
+            data.complete_cost = completeCost;
+            data.cylinder_price = completePrice - data.selling_price;
         } else {
-            // Insert new product
-            ({ error } = await supabase.from('products').insert([data]));
+            data.complete_price = null;
+            data.complete_cost = null;
+            data.cylinder_price = null;
         }
-        
-        if (error) {
-            alert("Error: " + error.message);
-        } else { 
-            closeModal(); 
-            await fetchProducts();
-            alert(id ? "✅ Product updated successfully!" : "✅ Product added successfully!");
-        }
+        let error;
+        if (id) ({ error } = await supabase.from('products').update(data).eq('id', id));
+        else ({ error } = await supabase.from('products').insert([data]));
+        if (error) alert("Error: " + error.message);
+        else { closeModal(); await fetchProducts(); alert(id ? "✅ Updated!" : "✅ Added!"); }
     };
 
     window.deleteProduct = async (id) => {
-        if (confirm("Delete this product permanently? This action cannot be undone.")) {
+        if(confirm("Permanently delete?")) {
             const { error } = await supabase.from('products').delete().eq('id', id);
-            if (error) {
-                alert("Error: " + error.message);
-            } else {
-                await fetchProducts();
-            }
+            if(error) alert(error.message);
+            else await fetchProducts();
         }
     };
-
     document.getElementById('searchBar').oninput = (e) => {
         const term = e.target.value.toLowerCase();
-        renderTable(allProducts.filter(p => 
-            p.name.toLowerCase().includes(term) || 
-            p.category.toLowerCase().includes(term) ||
-            (p.suppliers?.name && p.suppliers.name.toLowerCase().includes(term)) ||
-            (branches[p.branch_id]?.code && branches[p.branch_id].code.toLowerCase().includes(term))
-        ));
+        renderTable(allProducts.filter(p => p.name.toLowerCase().includes(term) || p.category.toLowerCase().includes(term) || (p.suppliers?.name && p.suppliers.name.toLowerCase().includes(term)) || (branches[p.branch_id]?.code && branches[p.branch_id].code.toLowerCase().includes(term))));
     };
-
-    window.handleLogout = async () => { 
-        if(confirm("Logout?")) {
-            localStorage.removeItem('pos_session');
-            await supabase.auth.signOut(); 
-            window.location.href = 'index.html'; 
-        }
-    };
-
+    window.handleLogout = async () => { if(confirm("Logout?")) { localStorage.removeItem('pos_session'); await supabase.auth.signOut(); window.location.href = 'index.html'; } };
     async function init() {
         await loadBranches();
         await loadUserProfile();
-        
-        // Set default branch selector to user's branch
         if (currentBranch) {
             document.getElementById('branchSelector').value = currentBranch.code;
             selectedBranchId = currentBranch.id;
             document.getElementById('currentBranchDisplay').textContent = currentBranch.name;
         }
-        
         await fetchProducts();
     }
-    
     init();
 </script>
 </body>
