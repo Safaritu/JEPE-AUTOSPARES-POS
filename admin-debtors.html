@@ -766,42 +766,42 @@
                     <thead>
                         <tr><th>Date</th><th>Customer</th><th>Item</th><th>Amount</th><th>Branch</th><th>Status</th><th>Action</th></tr>
                     </thead>
-                    <tbody id="ledger-body"><tr><td colspan="7" style="text-align:center; padding:40px;"><div class="spinner" style="margin: 0 auto;"></div>Loading debtors...</td></tr></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
+                    <tbody id="ledger-body"><tr><td colspan="7" style="text-align:center; padding:40px;"><div class="spinner" style="margin: 0 auto;"></div>Loading debtors...<\/div><\/td><\/tr><\/tbody>
+                <\/table>
+            <\/div>
+        <\/div>
+    <\/div>
+<\/div>
 
 <!-- Settle Modal -->
 <div class="modal" id="settle-modal">
     <div class="modal-content">
-        <h3 style="margin-top:0;"><i class="fas fa-hand-holding-usd" style="color: var(--success);"></i> Settle Debt</h3>
-        <p id="modal-info" style="color: var(--text-dim); margin-bottom: 20px; font-size: 0.9rem;"></p>
-        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase;">Payment Method</label>
+        <h3 style="margin-top:0;"><i class="fas fa-hand-holding-usd" style="color: var(--success);"></i> Settle Debt<\/h3>
+        <p id="modal-info" style="color: var(--text-dim); margin-bottom: 20px; font-size: 0.9rem;"><\/p>
+        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase;">Payment Method<\/label>
         <select id="settle-method" style="margin: 10px 0 20px 0;">
-            <option value="Cash">Cash</option>
-            <option value="Mpesa">Mpesa</option>
-            <option value="Bank">Bank Transfer</option>
-            <option value="KCB Paybill">KCB Paybill</option>
-        </select>
-        <button class="btn-primary" id="confirm-settle-btn"><i class="fas fa-print"></i> CLEAR & PRINT RECEIPT</button>
-        <button onclick="closeModal()" style="width:100%; background:none; border:none; color:var(--text-dim); font-weight:700; margin-top:15px; cursor:pointer;">Cancel</button>
-    </div>
-</div>
+            <option value="Cash">Cash<\/option>
+            <option value="Mpesa">Mpesa<\/option>
+            <option value="Bank">Bank Transfer<\/option>
+            <option value="KCB Paybill">KCB Paybill<\/option>
+        <\/select>
+        <button class="btn-primary" id="confirm-settle-btn"><i class="fas fa-print"><\/i> CLEAR & PRINT RECEIPT<\/button>
+        <button onclick="closeModal()" style="width:100%; background:none; border:none; color:var(--text-dim); font-weight:700; margin-top:15px; cursor:pointer;">Cancel<\/button>
+    <\/div>
+<\/div>
 
 <!-- Delete Confirmation Modal -->
 <div class="modal" id="delete-modal">
     <div class="modal-content delete-confirm-modal">
-        <div class="warning-icon"><i class="fas fa-trash-alt"></i></div>
-        <h3 style="margin-bottom: 10px;">Delete Debt Record?</h3>
-        <p id="delete-modal-info" style="color: var(--text-dim); margin-bottom: 20px;">This action cannot be undone.</p>
+        <div class="warning-icon"><i class="fas fa-trash-alt"><\/i><\/div>
+        <h3 style="margin-bottom: 10px;">Delete Debt Record?<\/h3>
+        <p id="delete-modal-info" style="color: var(--text-dim); margin-bottom: 20px;">This action cannot be undone.<\/p>
         <div class="modal-actions">
-            <button class="confirm-delete-btn" id="confirm-delete-btn">Delete Permanently</button>
-            <button class="cancel-delete-btn" onclick="closeDeleteModal()">Cancel</button>
-        </div>
-    </div>
-</div>
+            <button class="confirm-delete-btn" id="confirm-delete-btn">Delete Permanently<\/button>
+            <button class="cancel-delete-btn" onclick="closeDeleteModal()">Cancel<\/button>
+        <\/div>
+    <\/div>
+<\/div>
 
 <script type="module">
     import { supabase } from './auth.js';
@@ -857,6 +857,7 @@
             localStorage.setItem('pos_session', JSON.stringify({user,profile,branch:profile.branches,role:profile.role}));
             const sidebarBranchName = document.querySelector('#sidebarBranchName span');
             if (profile.branches && sidebarBranchName) sidebarBranchName.textContent = profile.branches.name;
+            // Load shift but don't require it for settlement
             const { data: shift } = await supabase.from('daily_shifts').select('*').eq('branch_id', currentBranchId).eq('status', 'Open').maybeSingle();
             currentShift = shift;
             return profile;
@@ -883,6 +884,7 @@
             let productsQuery = supabase.from('products').select('*');
             if (branchFilter) productsQuery = productsQuery.eq('branch_id', branchFilter);
             const prodRes = await productsQuery;
+            // Load shift for reference but don't require it
             let shiftQuery = supabase.from('daily_shifts').select('*').eq('status', 'open').order('start_time', { ascending: false }).limit(1);
             if (branchFilter) shiftQuery = shiftQuery.eq('branch_id', branchFilter);
             const shiftRes = await shiftQuery.maybeSingle();
@@ -922,33 +924,34 @@
         document.getElementById('total-profit').innerHTML = `<i class="fas fa-chart-line"></i> Ksh ${prof.toLocaleString()}`;
         document.getElementById('active-debtors').innerHTML = `<i class="fas fa-users"></i> ${allDebts.filter(d => d.status === 'Unpaid').length}`;
         if (filtered.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color: var(--text-dim);"><i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>No debt records found</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color: var(--text-dim);"><i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>No debt records found<\/td><\/tr>`;
             return;
         }
         tbody.innerHTML = filtered.map(d => {
             const branchCode = d.branches?.code || branches[d.branch_id]?.code || '--';
             const isPaid = d.status === 'Paid';
             return `<tr>
-                <td data-label="Date"><small>${new Date(d.created_at).toLocaleDateString()}</small></td>
-                <td data-label="Customer"><b><i class="fas fa-user"></i> ${escapeHtml(d.customer_name)}</b>${d.customer_phone ? `<br><small>${d.customer_phone}</small>` : ''}</td>
-                <td data-label="Item">${d.products?.name || 'Manual Entry'}</td>
-                <td data-label="Amount" style="font-weight:800">Ksh ${d.amount_owed.toLocaleString()}</td>
-                <td data-label="Branch"><span class="branch-pill"><i class="fas fa-store"></i> ${branchCode}</span></td>
-                <td data-label="Status"><span class="badge ${isPaid ? 'bg-paid' : 'bg-unpaid'}">${d.status}</span></td>
+                <td data-label="Date"><small>${new Date(d.created_at).toLocaleDateString()}<\/small><\/td>
+                <td data-label="Customer"><b><i class="fas fa-user"></i> ${escapeHtml(d.customer_name)}<\/b>${d.customer_phone ? `<br><small>${d.customer_phone}<\/small>` : ''}<\/td>
+                <td data-label="Item">${d.products?.name || 'Manual Entry'}<\/td>
+                <td data-label="Amount" style="font-weight:800">Ksh ${d.amount_owed.toLocaleString()}<\/td>
+                <td data-label="Branch"><span class="branch-pill"><i class="fas fa-store"></i> ${branchCode}<\/span><\/td>
+                <td data-label="Status"><span class="badge ${isPaid ? 'bg-paid' : 'bg-unpaid'}">${d.status}<\/span><\/td>
                 <td data-label="Action">
                     <div class="action-buttons">
-                        ${!isPaid ? `<button onclick="openSettleModal('${d.id}', ${d.amount_owed}, '${escapeHtml(d.customer_name)}', '${escapeHtml(d.products?.name || 'Item')}')" class="settle-btn"><i class="fas fa-hand-holding-usd"></i> SETTLE</button>` : ''}
-                        <button onclick="openDeleteModal('${d.id}', '${escapeHtml(d.customer_name)}', ${d.amount_owed})" class="delete-btn"><i class="fas fa-trash-alt"></i> DELETE</button>
-                    </div>
-                </td>
-            </tr>`;
+                        ${!isPaid ? `<button onclick="openSettleModal('${d.id}', ${d.amount_owed}, '${escapeHtml(d.customer_name)}', '${escapeHtml(d.products?.name || 'Item')}')" class="settle-btn"><i class="fas fa-hand-holding-usd"></i> SETTLE<\/button>` : ''}
+                        <button onclick="openDeleteModal('${d.id}', '${escapeHtml(d.customer_name)}', ${d.amount_owed})" class="delete-btn"><i class="fas fa-trash-alt"></i> DELETE<\/button>
+                    <\/div>
+                <\/td>
+             \)`;
         }).join('');
     }
     
     function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m) { if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; return m; }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) { return c; }); }
 
+    // UPDATED: Removed shift check for settling debts - Admin can settle without open shift
     window.openSettleModal = (id, amt, name, item) => {
-        if (!currentShift) return alert("You must have an open shift to settle debts!");
+        // No shift check - admin can settle anytime
         selectedDebt = { id, amt, name, item };
         document.getElementById('modal-info').innerHTML = `Settling <b>Ksh ${amt.toLocaleString()}</b> for <b>${name}</b>`;
         document.getElementById('settle-modal').style.display = 'flex';
@@ -979,6 +982,7 @@
         finally { btn.innerHTML = originalText; btn.disabled = false; }
     };
 
+    // UPDATED: Settlement no longer requires currentShift - uses null shift_id or creates transaction without shift
     document.getElementById('confirm-settle-btn').onclick = async () => {
         const method = document.getElementById('settle-method').value;
         const btn = document.getElementById('confirm-settle-btn');
@@ -986,12 +990,40 @@
         btn.disabled = true;
         try {
             const branchId = selectedBranchId || currentBranchId;
+            
+            // 1. Update Debt Status
             const { error: debtError } = await supabase.from('debtors').update({ status: 'Paid' }).eq('id', selectedDebt.id);
             if (debtError) throw debtError;
-            const { error: saleUpdateError } = await supabase.from('sales').update({ payment_method: method, discount_reason: `Debt settled: ${selectedDebt.name}` }).eq('payment_method', 'Debt').eq('discount_reason', `Debt for ${selectedDebt.name} [UNPAID]`);
-            if (saleUpdateError) throw saleUpdateError;
-            const { error: transError } = await supabase.from('cash_transactions').insert([{ shift_id: currentShift.id, type: 'Money In', category: method === 'Cash' ? 'Cash' : method, amount: selectedDebt.amt, description: `Debt recovery: ${selectedDebt.name} - ${selectedDebt.item}`, branch_id: branchId, user_id: currentUser.id }]);
+            
+            // 2. Update Sales Record for this debt (if exists)
+            const { error: saleUpdateError } = await supabase.from('sales')
+                .update({ payment_method: method, discount_reason: `Debt settled: ${selectedDebt.name}` })
+                .eq('payment_method', 'Debt')
+                .eq('discount_reason', `Debt for ${selectedDebt.name} [UNPAID]`);
+            if (saleUpdateError) console.error("Sale update warning:", saleUpdateError);
+            
+            // 3. Log recovery into Cash transactions - Use null shift_id if no open shift
+            const transactionData = {
+                type: 'Money In',
+                category: method === 'Cash' ? 'Cash' : method,
+                amount: selectedDebt.amt,
+                description: `Debt recovery: ${selectedDebt.name} - ${selectedDebt.item}`,
+                branch_id: branchId,
+                user_id: currentUser.id,
+                created_at: new Date().toISOString()
+            };
+            
+            // Only add shift_id if there is an active shift
+            if (currentShift && currentShift.id) {
+                transactionData.shift_id = currentShift.id;
+            } else {
+                transactionData.shift_id = null;
+                console.log("No active shift, recording transaction without shift_id");
+            }
+            
+            const { error: transError } = await supabase.from('cash_transactions').insert([transactionData]);
             if (transError) throw transError;
+            
             generateReceipt(selectedDebt, method);
             alert("✅ Debt cleared successfully!");
             closeModal();
@@ -1018,7 +1050,11 @@
 
     document.getElementById('debt-form').onsubmit = async (e) => {
         e.preventDefault();
-        if (!currentShift) return alert("Please open a shift first!");
+        if (!currentShift) {
+            // Allow recording debt even without shift? Yes, but warn
+            const proceed = confirm("No open shift found. Debt will still be recorded but may not appear in today's sales. Continue?");
+            if (!proceed) return;
+        }
         const searchVal = document.getElementById('prod-search').value;
         const opt = document.querySelector(`#prod-list option[value="${searchVal}"]`);
         if(!opt) return alert("Please select a valid product");
@@ -1032,7 +1068,9 @@
         try {
             const { error: debtError } = await supabase.from('debtors').insert([{ customer_name: customer, customer_phone: document.getElementById('cust-phone').value, product_id: opt.dataset.id, amount_owed: amount, status: 'Unpaid', branch_id: branchToUse }]);
             if (debtError) throw debtError;
-            const { error: saleError } = await supabase.from('sales').insert([{ product_id: opt.dataset.id, item_name: searchVal, quantity: 1, unit_price: amount, total_amount: amount, amount: amount, payment_method: 'Debt', cost_price: parseFloat(opt.dataset.cost), shift_id: currentShift.id, branch_id: branchToUse, discount_reason: `Debt for ${customer} [UNPAID]`, user_id: currentUser.id, category: 'Debt' }]);
+            const saleData = { product_id: opt.dataset.id, item_name: searchVal, quantity: 1, unit_price: amount, total_amount: amount, amount: amount, payment_method: 'Debt', cost_price: parseFloat(opt.dataset.cost), branch_id: branchToUse, discount_reason: `Debt for ${customer} [UNPAID]`, user_id: currentUser.id, category: 'Debt' };
+            if (currentShift && currentShift.id) saleData.shift_id = currentShift.id;
+            const { error: saleError } = await supabase.from('sales').insert([saleData]);
             if (saleError) throw saleError;
             const newStock = parseInt(opt.dataset.stock) - 1;
             await supabase.from('products').update({ stock_quantity: newStock }).eq('id', opt.dataset.id);
@@ -1046,6 +1084,6 @@
     async function initialize() { await loadBranches(); await loadUserProfile(); if (currentBranch) { document.getElementById('branchSelector').value = currentBranch.code; selectedBranchId = currentBranch.id; document.getElementById('currentBranchDisplay').textContent = currentBranch.name; } await init(); }
     initialize();
     document.getElementById('delete-modal').addEventListener('click', function(e){ if(e.target === this) closeDeleteModal(); });
-</script>
-</body>
-</html>
+<\/script>
+<\/body>
+<\/html>
