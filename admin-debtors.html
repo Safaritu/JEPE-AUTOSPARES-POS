@@ -579,7 +579,7 @@
             // 2. Update sales record if exists
             await supabase.from('sales').update({ payment_method: method, discount_reason: `Debt settled: ${selectedDebt.name}` }).eq('payment_method', 'Debt').like('discount_reason', `%${selectedDebt.name}%`);
             // 3. Record cash transaction (allow null shift_id)
-            const transData = { type: 'Money In', category: method === 'Cash' ? 'Cash' : method, amount: selectedDebt.amt, description: `Debt recovery: ${selectedDebt.name} - ${selectedDebt.item}`, branch_id: branchId, user_id: currentUser.id, created_at: new Date().toISOString() };
+            const transData = { type: 'Money In', category: method === 'Cash' ? 'Cash' : method, amount: selectedDebt.amt, description: `Debt settlement-admin side: ${selectedDebt.name} - ${selectedDebt.item}`, branch_id: branchId, user_id: currentUser.id, created_at: new Date().toISOString() };
             if (currentShift && currentShift.id) transData.shift_id = currentShift.id;
             const { error: transError } = await supabase.from('cash_transactions').insert([transData]);
             if (transError) throw transError;
