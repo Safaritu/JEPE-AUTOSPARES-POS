@@ -707,9 +707,9 @@
             <div id="complete-price-container" style="display:none;"><label><i class="fas fa-gas-pump"></i> Complete Price (Your Price)</label><input type="number" id="prod-complete-price" placeholder="Customer pays for new cylinder + gas" step="0.01" min="0"><div class="gas-price-info"><i class="fas fa-info-circle"></i> What customer pays for NEW CYLINDER + GAS</div></div>
             <div id="complete-cost-container" style="display:none;"><label><i class="fas fa-coins"></i> Supplier Complete Cost</label><input type="number" id="prod-complete-cost" placeholder="Supplier charges for new cylinder + gas" step="0.01" min="0"><div class="gas-price-info"><i class="fas fa-info-circle"></i> What supplier charges you for NEW CYLINDER + GAS</div></div>
             
-            <div><label><i class="fas fa-coins"></i> Refill Cost (Supplier)</label><input type="number" id="prod-cost" placeholder="Supplier refill cost" step="0.01"></div>
-            <div><label><i class="fas fa-tag"></i> Refill Price (Your Price)</label><input type="number" id="prod-sell" placeholder="Your refill price" step="0.01"></div>
-            <div><label><i class="fas fa-shield"></i> Min Refill Price</label><input type="number" id="prod-min-sell" placeholder="Minimum allowed refill" step="0.01"></div>
+            <div><label><i class="fas fa-coins"></i> buying price (Supplier)</label><input type="number" id="prod-cost" placeholder="Supplier buying price" step="0.01"></div>
+            <div><label><i class="fas fa-tag"></i> selling price (Your Price)</label><input type="number" id="prod-sell" placeholder="Your selling price" step="0.01"></div>
+            <div><label><i class="fas fa-shield"></i> Min selling price</label><input type="number" id="prod-min-sell" placeholder="Minimum allowed refill" step="0.01"></div>
             <div><label><i class="fas fa-box"></i> Full Stock Qty</label><input type="number" id="prod-stock" placeholder="Full units" min="0"></div>
             <div id="empty-container" class="full"><label><i class="fas fa-gas-pump"></i> Empty Cylinders (Gas Only)</label><input type="number" id="prod-empty" placeholder="Number of empty cylinders" min="0"></div>
         </div>
@@ -830,7 +830,7 @@
                 <td data-label="Supplier"><small><i class="fas fa-truck"></i> ${p.suppliers?.name || '---'}</small></td>
                 <td data-label="Branch"><span class="branch-pill"><i class="fas fa-store"></i> ${branchCode}</span></td>
                 <td data-label="Stock"><span style="font-weight:800; color:${p.stock_quantity<5?'var(--danger)':'var(--green)'}"><i class="fas fa-box"></i> ${p.stock_quantity} Full</span> ${isGas ? `<span style="margin-left:5px;"><i class="fas fa-gas-pump"></i> ${p.empty_quantity||0} Empty</span>` : ''}</td>
-                <td data-label="Prices"><small><i class="fas fa-coins"></i> Refill Cost: ${p.cost_price}<br><i class="fas fa-tag"></i> Refill Price: <b>${p.selling_price}</b>${p.min_selling_price ? `<br><i class="fas fa-lock"></i> Min: ${p.min_selling_price}` : ''}</small></td>
+                <td data-label="Prices"><small><i class="fas fa-coins"></i> buying price: ${p.cost_price}<br><i class="fas fa-tag"></i> selling price: <b>${p.selling_price}</b>${p.min_selling_price ? `<br><i class="fas fa-lock"></i> Min: ${p.min_selling_price}` : ''}</small></td>
                 <td data-label="Type"><span class="badge ${isGas?'badge-gas':p.category==='Motorbike'?'badge-bike':p.category==='Tuktuk'?'badge-tuktuk':'badge-spare'}"><i class="fas ${iconMap[p.category]||'fa-cog'}"></i> ${typeDisplay}</span></td>
                 <td data-label="Actions"><div style="display:flex; gap:5px;"><button class="btn btn-edit" onclick="editProduct('${p.id}')"><i class="fas fa-edit"></i> Edit</button><button class="btn btn-delete" onclick="deleteProduct('${p.id}')"><i class="fas fa-trash"></i> Del</button></div></td>
             </tr>`; }).join('');
