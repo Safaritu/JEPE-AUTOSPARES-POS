@@ -17,6 +17,7 @@
             --text-dim: #64748b;
             --danger: #ef4444; 
             --success: #10b981; 
+            --warning: #f59e0b;
             --sidebar-width: 260px;
             --sidebar-collapsed: 70px;
             --sidebar-bg: #0f172a;
@@ -87,7 +88,6 @@
             cursor: pointer; 
         }
 
-        /* Branch Info in Sidebar */
         .branch-info {
             padding: 10px;
             margin: 10px 0 20px;
@@ -183,7 +183,6 @@
             margin-bottom: 15px;
         }
 
-        /* --- MENU TRIGGER --- */
         .menu-trigger {
             display: none; 
             position: fixed; 
@@ -201,7 +200,6 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
-        /* --- MAIN CONTENT --- */
         .main-content { 
             margin-left: var(--sidebar-collapsed); 
             padding: 30px; 
@@ -255,7 +253,6 @@
             }
         }
 
-        /* --- BRANCH SELECTOR --- */
         .branch-selector-container {
             background: white;
             border: 1px solid var(--border);
@@ -373,6 +370,21 @@
         .btn-primary:hover {
             background: #6366f1;
         }
+        
+        .btn-danger {
+            background: var(--danger);
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+        .btn-warning:hover {
+            background: #d97706;
+        }
 
         .branch-pill {
             background: #f1f5f9;
@@ -407,6 +419,7 @@
             padding: 15px; 
             border-bottom: 1px solid var(--border); 
             font-size: 0.9rem; 
+            vertical-align: middle;
         }
 
         .badge { 
@@ -449,6 +462,50 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
         }
 
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .settle-btn {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.7rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .delete-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.7rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .delete-btn:hover {
+            background: #dc2626;
+            transform: scale(1.02);
+        }
+        
+        .settle-btn:hover {
+            background: #0d9488;
+            transform: scale(1.02);
+        }
+
         .overlay { 
             position: fixed; 
             inset: 0; 
@@ -459,7 +516,6 @@
         }
         .overlay.active { display: block; }
 
-        /* Modal Styles */
         .modal { 
             position: fixed; 
             inset: 0; 
@@ -526,6 +582,45 @@
                 text-transform: uppercase; 
                 text-align: left; 
             }
+            .action-buttons {
+                justify-content: flex-end;
+                width: 100%;
+            }
+        }
+        
+        .delete-confirm-modal .modal-content {
+            text-align: center;
+        }
+        
+        .delete-confirm-modal .warning-icon {
+            font-size: 3rem;
+            color: var(--danger);
+            margin-bottom: 15px;
+        }
+        
+        .delete-confirm-modal .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .delete-confirm-modal .modal-actions button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .delete-confirm-modal .confirm-delete-btn {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .delete-confirm-modal .cancel-delete-btn {
+            background: #e2e8f0;
+            color: var(--text);
         }
     </style>
 </head>
@@ -541,7 +636,6 @@
         <button class="close-btn" onclick="toggleMenu()">×</button>
     </div>
     
-    <!-- Branch Info Display -->
     <div class="branch-info" id="sidebarBranchInfo">
         <div class="branch-label">Your Assigned Branch</div>
         <div class="branch-name" id="sidebarBranchName">
@@ -559,7 +653,7 @@
         <a href="gas_hub.html" class="nav-item"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
         <a href="spares_hub.html" class="nav-item"><i class="fas fa-cogs"></i> <span>Spare Parts Hub</span></a>
         <a href="motorbike_hub.html" class="nav-item"><i class="fas fa-motorcycle"></i> <span>Motorbike Hub</span></a>
-        <a href="tuktuk_hub.html" class="nav-link"><i class="fas fa-car-side"></i> <span>TUKTUK Hub</span></a>
+        <a href="tuktuk_hub.html" class="nav-item"><i class="fas fa-car-side"></i> <span>TUKTUK Hub</span></a>
 
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
 
@@ -597,7 +691,6 @@
         <div style="width:24px;"></div>
     </div>
 
-    <!-- Branch Selector -->
     <div class="branch-selector-container">
         <div class="branch-filter">
             <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
@@ -671,30 +764,16 @@
             <div class="table-container">
                 <table id="debt-table">
                     <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Customer</th>
-                            <th>Item</th>
-                            <th>Amount</th>
-                            <th>Branch</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
+                        <tr><th>Date</th><th>Customer</th><th>Item</th><th>Amount</th><th>Branch</th><th>Status</th><th>Action</th></tr>
                     </thead>
-                    <tbody id="ledger-body">
-                        <tr>
-                            <td colspan="7" style="text-align:center; padding:40px;">
-                                <div class="spinner" style="margin: 0 auto;"></div>
-                                Loading debtors...
-                            </td>
-                        </tr>
-                    </tbody>
+                    <tbody id="ledger-body"><tr><td colspan="7" style="text-align:center; padding:40px;"><div class="spinner" style="margin: 0 auto;"></div>Loading debtors...</td></tr></tbody>
                 </table>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Settle Modal -->
 <div class="modal" id="settle-modal">
     <div class="modal-content">
         <h3 style="margin-top:0;"><i class="fas fa-hand-holding-usd" style="color: var(--success);"></i> Settle Debt</h3>
@@ -706,12 +785,21 @@
             <option value="Bank">Bank Transfer</option>
             <option value="KCB Paybill">KCB Paybill</option>
         </select>
-        <button class="btn-primary" id="confirm-settle-btn">
-            <i class="fas fa-print"></i> CLEAR & PRINT RECEIPT
-        </button>
-        <button onclick="closeModal()" style="width:100%; background:none; border:none; color:var(--text-dim); font-weight:700; margin-top:15px; cursor:pointer;">
-            Cancel
-        </button>
+        <button class="btn-primary" id="confirm-settle-btn"><i class="fas fa-print"></i> CLEAR & PRINT RECEIPT</button>
+        <button onclick="closeModal()" style="width:100%; background:none; border:none; color:var(--text-dim); font-weight:700; margin-top:15px; cursor:pointer;">Cancel</button>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" id="delete-modal">
+    <div class="modal-content delete-confirm-modal">
+        <div class="warning-icon"><i class="fas fa-trash-alt"></i></div>
+        <h3 style="margin-bottom: 10px;">Delete Debt Record?</h3>
+        <p id="delete-modal-info" style="color: var(--text-dim); margin-bottom: 20px;">This action cannot be undone.</p>
+        <div class="modal-actions">
+            <button class="confirm-delete-btn" id="confirm-delete-btn">Delete Permanently</button>
+            <button class="cancel-delete-btn" onclick="closeDeleteModal()">Cancel</button>
+        </div>
     </div>
 </div>
 
@@ -722,6 +810,7 @@
     let currentFilter = 'All';
     let currentShift = null;
     let selectedDebt = null;
+    let selectedDebtToDelete = null;
     let currentUser = null;
     let currentBranchId = null;
     let currentBranch = null;
@@ -729,7 +818,6 @@
     let branches = {};
     let branchIdMap = {};
 
-    // ==================== SIDEBAR FUNCTIONS ====================
     window.toggleMenu = () => {
         document.getElementById('sidebar').classList.toggle('mobile-active');
         document.getElementById('overlay').classList.toggle('active');
@@ -740,7 +828,6 @@
         if(confirm("Switch to Cashier Mode?")) window.location.href = "cashier.html";
     };
 
-    // ==================== BRANCH FUNCTIONS ====================
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
         branches = {};
@@ -749,226 +836,116 @@
             branches[b.id] = b;
             branchIdMap[b.code] = b.id;
         });
-        
-        // Populate branch selector
         const selector = document.getElementById('branchSelector');
         let options = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>';
-        data?.forEach(b => {
-            options += `<option value="${b.code}">🏪 ${b.name}</option>`;
-        });
+        data?.forEach(b => { options += `<option value="${b.code}">🏪 ${b.name}</option>`; });
         selector.innerHTML = options;
-        
         return branches;
     }
 
-    function getBranchIdFromCode(code) {
-        return branchIdMap[code] || null;
-    }
+    function getBranchIdFromCode(code) { return branchIdMap[code] || null; }
 
     async function loadUserProfile() {
         try {
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                window.location.href = 'index.html';
-                return null;
-            }
-            
+            if (!user) { window.location.href = 'index.html'; return null; }
             currentUser = user;
-            
-            const { data: profile, error } = await supabase
-                .from('profiles')
-                .select(`
-                    *,
-                    branches (
-                        id,
-                        name,
-                        code,
-                        location
-                    )
-                `)
-                .eq('id', user.id)
-                .single();
-            
+            const { data: profile, error } = await supabase.from('profiles').select('*,branches(*)').eq('id', user.id).single();
             if (error) throw error;
-            
             currentBranchId = profile.branch_id;
             currentBranch = profile.branches;
-            
-            const session = {
-                user: user,
-                profile: profile,
-                branch: profile.branches,
-                role: profile.role
-            };
-            localStorage.setItem('pos_session', JSON.stringify(session));
-            
-            // Update sidebar with user's assigned branch
+            localStorage.setItem('pos_session', JSON.stringify({user,profile,branch:profile.branches,role:profile.role}));
             const sidebarBranchName = document.querySelector('#sidebarBranchName span');
-            if (profile.branches && sidebarBranchName) {
-                sidebarBranchName.textContent = profile.branches.name;
-            }
-            
-            // Check for open shift
-            const { data: shift } = await supabase
-                .from('daily_shifts')
-                .select('*')
-                .eq('branch_id', currentBranchId)
-                .eq('status', 'Open')
-                .maybeSingle();
-            
+            if (profile.branches && sidebarBranchName) sidebarBranchName.textContent = profile.branches.name;
+            const { data: shift } = await supabase.from('daily_shifts').select('*').eq('branch_id', currentBranchId).eq('status', 'Open').maybeSingle();
             currentShift = shift;
-            
             return profile;
-        } catch (error) {
-            console.error("Error loading profile:", error);
-            return null;
-        }
+        } catch (error) { console.error("Error loading profile:", error); return null; }
     }
 
     window.handleBranchChange = async function() {
         const selector = document.getElementById('branchSelector');
         const selectedCode = selector.value;
-        
         const branchDisplay = document.getElementById('currentBranchDisplay');
-        
         if (selectedCode === 'all') {
             branchDisplay.textContent = 'ALL BRANCHES';
             selectedBranchId = null;
         } else {
             const branchId = getBranchIdFromCode(selectedCode);
-            if (branchId) {
-                selectedBranchId = branchId;
-                branchDisplay.textContent = branches[branchId].name;
-            }
+            if (branchId) { selectedBranchId = branchId; branchDisplay.textContent = branches[branchId].name; }
         }
-        
         await init();
     };
 
-    // ==================== MAIN FUNCTIONS ====================
     async function init() {
         try {
             const branchFilter = selectedBranchId || currentBranchId;
-
-            // Load products with branch filter
             let productsQuery = supabase.from('products').select('*');
-            if (branchFilter) {
-                productsQuery = productsQuery.eq('branch_id', branchFilter);
-            }
+            if (branchFilter) productsQuery = productsQuery.eq('branch_id', branchFilter);
             const prodRes = await productsQuery;
-
-            // Load shifts with branch filter
             let shiftQuery = supabase.from('daily_shifts').select('*').eq('status', 'open').order('start_time', { ascending: false }).limit(1);
-            if (branchFilter) {
-                shiftQuery = shiftQuery.eq('branch_id', branchFilter);
-            }
+            if (branchFilter) shiftQuery = shiftQuery.eq('branch_id', branchFilter);
             const shiftRes = await shiftQuery.maybeSingle();
-
             const prods = prodRes.data || [];
             currentShift = shiftRes.data;
-
             const dList = document.getElementById('prod-list');
-            dList.innerHTML = prods.map(p => `
-                <option value="${p.name}" 
-                    data-id="${p.id}" 
-                    data-price="${p.selling_price}" 
-                    data-stock="${p.stock_quantity}" 
-                    data-cost="${p.cost_price || 0}"
-                    data-min="${p.min_selling_price || p.min_price || 0}">
-            `).join('');
-            
+            dList.innerHTML = prods.map(p => `<option value="${p.name}" data-id="${p.id}" data-price="${p.selling_price}" data-stock="${p.stock_quantity}" data-cost="${p.cost_price || 0}" data-min="${p.min_selling_price || p.min_price || 0}">`).join('');
             await loadLedger();
-        } catch (error) {
-            console.error("Error in init:", error);
-        }
+        } catch (error) { console.error("Error in init:", error); }
     }
 
     async function loadLedger() {
         try {
-            // Build query with branch filter
-            let query = supabase
-                .from('debtors')
-                .select(`
-                    *,
-                    products(*),
-                    branches(code, name)
-                `)
-                .order('created_at', { ascending: false });
-
+            let query = supabase.from('debtors').select('*,products(*),branches(code, name)').order('created_at', { ascending: false });
             const branchFilter = selectedBranchId || currentBranchId;
-            if (branchFilter) {
-                query = query.eq('branch_id', branchFilter);
-            }
-
+            if (branchFilter) query = query.eq('branch_id', branchFilter);
             const { data } = await query;
             allDebts = data || [];
             renderLedger();
-        } catch (error) {
-            console.error("Error loading ledger:", error);
-        }
+        } catch (error) { console.error("Error loading ledger:", error); }
     }
 
     function renderLedger(searchTerm = '') {
         const tbody = document.getElementById('ledger-body');
         const filtered = allDebts.filter(d => {
             const matchesFilter = currentFilter === 'All' || d.status === currentFilter;
-            const matchesSearch = d.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                                 (d.products?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesSearch = d.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) || (d.products?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
             return matchesFilter && matchesSearch;
         });
-
         let out = 0, rec = 0, prof = 0;
         allDebts.forEach(d => {
-            if(d.status === 'Unpaid') {
-                out += d.amount_owed;
-                prof += (d.amount_owed - (d.products?.cost_price || 0));
-            } else { 
-                rec += d.amount_owed; 
-            }
+            if(d.status === 'Unpaid') { out += d.amount_owed; prof += (d.amount_owed - (d.products?.cost_price || 0)); } 
+            else { rec += d.amount_owed; }
         });
-
         document.getElementById('total-debt').innerHTML = `<i class="fas fa-credit-card"></i> Ksh ${out.toLocaleString()}`;
         document.getElementById('total-recovered').innerHTML = `<i class="fas fa-check-circle"></i> Ksh ${rec.toLocaleString()}`;
         document.getElementById('total-profit').innerHTML = `<i class="fas fa-chart-line"></i> Ksh ${prof.toLocaleString()}`;
         document.getElementById('active-debtors').innerHTML = `<i class="fas fa-users"></i> ${allDebts.filter(d => d.status === 'Unpaid').length}`;
-
         if (filtered.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" style="text-align:center; padding:40px; color: var(--text-dim);">
-                        <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                        No debt records found
-                    </td>
-                </tr>
-            `;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color: var(--text-dim);"><i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>No debt records found</td></tr>`;
             return;
         }
-
         tbody.innerHTML = filtered.map(d => {
             const branchCode = d.branches?.code || branches[d.branch_id]?.code || '--';
-            return `
-            <tr>
+            const isPaid = d.status === 'Paid';
+            return `<tr>
                 <td data-label="Date"><small>${new Date(d.created_at).toLocaleDateString()}</small></td>
-                <td data-label="Customer"><b><i class="fas fa-user"></i> ${d.customer_name}</b></td>
+                <td data-label="Customer"><b><i class="fas fa-user"></i> ${escapeHtml(d.customer_name)}</b>${d.customer_phone ? `<br><small>${d.customer_phone}</small>` : ''}</td>
                 <td data-label="Item">${d.products?.name || 'Manual Entry'}</td>
                 <td data-label="Amount" style="font-weight:800">Ksh ${d.amount_owed.toLocaleString()}</td>
-                <td data-label="Branch">
-                    <span class="branch-pill">
-                        <i class="fas fa-store"></i> ${branchCode}
-                    </span>
-                </td>
-                <td data-label="Status"><span class="badge ${d.status === 'Unpaid' ? 'bg-unpaid' : 'bg-paid'}">${d.status}</span></td>
+                <td data-label="Branch"><span class="branch-pill"><i class="fas fa-store"></i> ${branchCode}</span></td>
+                <td data-label="Status"><span class="badge ${isPaid ? 'bg-paid' : 'bg-unpaid'}">${d.status}</span></td>
                 <td data-label="Action">
-                    ${d.status === 'Unpaid' ? 
-                        `<button onclick="openSettleModal('${d.id}', ${d.amount_owed}, '${d.customer_name.replace(/'/g, "\\'")}', '${d.products?.name || 'Item'}')" style="background:var(--success); color:white; border:none; padding:8px 15px; border-radius:10px; cursor:pointer; font-weight:700; width:100%;">
-                            <i class="fas fa-hand-holding-usd"></i> SETTLE
-                        </button>` : 
-                        '<span style="color: var(--success);"><i class="fas fa-check-circle"></i> Fully Paid</span>'
-                    }
+                    <div class="action-buttons">
+                        ${!isPaid ? `<button onclick="openSettleModal('${d.id}', ${d.amount_owed}, '${escapeHtml(d.customer_name)}', '${escapeHtml(d.products?.name || 'Item')}')" class="settle-btn"><i class="fas fa-hand-holding-usd"></i> SETTLE</button>` : ''}
+                        <button onclick="openDeleteModal('${d.id}', '${escapeHtml(d.customer_name)}', ${d.amount_owed})" class="delete-btn"><i class="fas fa-trash-alt"></i> DELETE</button>
+                    </div>
                 </td>
-            </tr>
-        `}).join('');
+            </tr>`;
+        }).join('');
     }
+    
+    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m) { if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; return m; }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) { return c; }); }
 
     window.openSettleModal = (id, amt, name, item) => {
         if (!currentShift) return alert("You must have an open shift to settle debts!");
@@ -977,9 +954,29 @@
         document.getElementById('settle-modal').style.display = 'flex';
     };
 
-    window.closeModal = () => {
-        document.getElementById('settle-modal').style.display = 'none';
-        selectedDebt = null;
+    window.closeModal = () => { document.getElementById('settle-modal').style.display = 'none'; selectedDebt = null; };
+    window.closeDeleteModal = () => { document.getElementById('delete-modal').style.display = 'none'; selectedDebtToDelete = null; };
+    
+    window.openDeleteModal = (id, name, amount) => {
+        selectedDebtToDelete = { id, name, amount };
+        document.getElementById('delete-modal-info').innerHTML = `Delete debt record for <b>${name}</b> (Ksh ${amount.toLocaleString()})? This action cannot be undone.`;
+        document.getElementById('delete-modal').style.display = 'flex';
+    };
+
+    document.getElementById('confirm-delete-btn').onclick = async () => {
+        if (!selectedDebtToDelete) return;
+        const btn = document.getElementById('confirm-delete-btn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner"></span> DELETING...';
+        btn.disabled = true;
+        try {
+            const { error } = await supabase.from('debtors').delete().eq('id', selectedDebtToDelete.id);
+            if (error) throw error;
+            alert(`✅ Debt record for ${selectedDebtToDelete.name} has been deleted.`);
+            closeDeleteModal();
+            await loadLedger();
+        } catch (err) { alert("Error deleting record: " + err.message); }
+        finally { btn.innerHTML = originalText; btn.disabled = false; }
     };
 
     document.getElementById('confirm-settle-btn').onclick = async () => {
@@ -987,196 +984,68 @@
         const btn = document.getElementById('confirm-settle-btn');
         btn.innerHTML = '<span class="spinner"></span> Processing...';
         btn.disabled = true;
-
         try {
             const branchId = selectedBranchId || currentBranchId;
-
-            // 1. Update Debt Status
-            const { error: debtError } = await supabase
-                .from('debtors')
-                .update({ status: 'Paid' })
-                .eq('id', selectedDebt.id);
-            
+            const { error: debtError } = await supabase.from('debtors').update({ status: 'Paid' }).eq('id', selectedDebt.id);
             if (debtError) throw debtError;
-
-            // 2. Update Sales Record for this debt
-            const { error: saleUpdateError } = await supabase
-                .from('sales')
-                .update({ 
-                    payment_method: method,
-                    discount_reason: `Debt settled: ${selectedDebt.name}`
-                })
-                .eq('payment_method', 'Debt')
-                .eq('discount_reason', `Debt for ${selectedDebt.name} [UNPAID]`);
-            
+            const { error: saleUpdateError } = await supabase.from('sales').update({ payment_method: method, discount_reason: `Debt settled: ${selectedDebt.name}` }).eq('payment_method', 'Debt').eq('discount_reason', `Debt for ${selectedDebt.name} [UNPAID]`);
             if (saleUpdateError) throw saleUpdateError;
-
-            // 3. Log recovery into Cash transactions
-            const { error: transError } = await supabase
-                .from('cash_transactions')
-                .insert([{
-                    shift_id: currentShift.id,
-                    type: 'Money In',
-                    category: method === 'Cash' ? 'Cash' : method,
-                    amount: selectedDebt.amt,
-                    description: `Debt recovery: ${selectedDebt.name} - ${selectedDebt.item}`,
-                    branch_id: branchId,
-                    user_id: currentUser.id
-                }]);
-            
+            const { error: transError } = await supabase.from('cash_transactions').insert([{ shift_id: currentShift.id, type: 'Money In', category: method === 'Cash' ? 'Cash' : method, amount: selectedDebt.amt, description: `Debt recovery: ${selectedDebt.name} - ${selectedDebt.item}`, branch_id: branchId, user_id: currentUser.id }]);
             if (transError) throw transError;
-
             generateReceipt(selectedDebt, method);
             alert("✅ Debt cleared successfully!");
             closeModal();
             await loadLedger();
-        } catch (err) {
-            alert("Error: " + err.message);
-        } finally {
-            btn.innerHTML = '<i class="fas fa-print"></i> CLEAR & PRINT RECEIPT';
-            btn.disabled = false;
-        }
+        } catch (err) { alert("Error: " + err.message); }
+        finally { btn.innerHTML = '<i class="fas fa-print"></i> CLEAR & PRINT RECEIPT'; btn.disabled = false; }
     };
 
     function generateReceipt(debt, method) {
         const area = document.getElementById('print-area');
-        area.innerHTML = `
-            <div style="text-align:center; font-family: 'Courier New', monospace; padding: 20px; border: 1px dashed #000; width: 300px; margin: auto;">
-                <h2 style="margin:0;">JEPE ADMIN</h2>
-                <p>OFFICIAL DEBT RECEIPT</p>
-                <hr>
-                <p style="text-align:left;">Date: ${new Date().toLocaleString()}</p>
-                <p style="text-align:left;">Customer: ${debt.name}</p>
-                <p style="text-align:left;">Item: ${debt.item}</p>
-                <hr>
-                <h3 style="margin:10px 0;">PAID: Ksh ${debt.amt.toLocaleString()}</h3>
-                <p>Method: ${method}</p>
-                <hr>
-                <p>Payment Received & Verified</p>
-            </div>
-        `;
+        area.innerHTML = `<div style="text-align:center; font-family: 'Courier New', monospace; padding: 20px; border: 1px dashed #000; width: 300px; margin: auto;"><h2 style="margin:0;">JEPE ADMIN</h2><p>OFFICIAL DEBT RECEIPT</p><hr><p style="text-align:left;">Date: ${new Date().toLocaleString()}</p><p style="text-align:left;">Customer: ${debt.name}</p><p style="text-align:left;">Item: ${debt.item}</p><hr><h3 style="margin:10px 0;">PAID: Ksh ${debt.amt.toLocaleString()}</h3><p>Method: ${method}</p><hr><p>Payment Received & Verified</p></div>`;
         window.print();
         area.innerHTML = '';
     }
 
-    window.filterTable = (status, btn) => {
-        currentFilter = status;
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        btn.classList.add('active');
-        renderLedger();
-    };
-
+    window.filterTable = (status, btn) => { currentFilter = status; document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); btn.classList.add('active'); renderLedger(); };
     window.handleSearch = (val) => renderLedger(val);
-
-    window.handleLogout = async () => {
-        if(confirm("Logout?")) {
-            localStorage.removeItem('pos_session');
-            await supabase.auth.signOut();
-            window.location.href = 'index.html';
-        }
-    };
+    window.handleLogout = async () => { if(confirm("Logout?")) { localStorage.removeItem('pos_session'); await supabase.auth.signOut(); window.location.href = 'index.html'; } };
 
     document.getElementById('prod-search').oninput = (e) => {
         const opt = document.querySelector(`#prod-list option[value="${e.target.value}"]`);
-        if (opt) {
-            document.getElementById('debt-amt').value = opt.dataset.price;
-            document.getElementById('live-stock').innerText = opt.dataset.stock;
-            document.getElementById('live-min').innerHTML = `<i class="fas fa-shield"></i> ${parseFloat(opt.dataset.min).toLocaleString()}`;
-        }
+        if (opt) { document.getElementById('debt-amt').value = opt.dataset.price; document.getElementById('live-stock').innerText = opt.dataset.stock; document.getElementById('live-min').innerHTML = `<i class="fas fa-shield"></i> ${parseFloat(opt.dataset.min).toLocaleString()}`; }
     };
 
     document.getElementById('debt-form').onsubmit = async (e) => {
         e.preventDefault();
         if (!currentShift) return alert("Please open a shift first!");
-        
         const searchVal = document.getElementById('prod-search').value;
         const opt = document.querySelector(`#prod-list option[value="${searchVal}"]`);
         if(!opt) return alert("Please select a valid product");
-
         const btn = document.getElementById('submit-btn');
         btn.innerHTML = '<span class="spinner"></span> Processing...';
         btn.disabled = true;
-
         const customer = document.getElementById('cust-name').value;
         const amount = parseFloat(document.getElementById('debt-amt').value);
         const branchToUse = selectedBranchId || currentBranchId;
-
-        if (!branchToUse) {
-            alert("Branch information not found.");
-            btn.innerHTML = '<i class="fas fa-save"></i> RECORD ENTRY';
-            btn.disabled = false;
-            return;
-        }
-
+        if (!branchToUse) { alert("Branch information not found."); btn.innerHTML = '<i class="fas fa-save"></i> RECORD ENTRY'; btn.disabled = false; return; }
         try {
-            // 1. Save to Debtors
-            const { error: debtError } = await supabase
-                .from('debtors')
-                .insert([{
-                    customer_name: customer,
-                    customer_phone: document.getElementById('cust-phone').value,
-                    product_id: opt.dataset.id,
-                    amount_owed: amount,
-                    status: 'Unpaid',
-                    branch_id: branchToUse
-                }]);
-
+            const { error: debtError } = await supabase.from('debtors').insert([{ customer_name: customer, customer_phone: document.getElementById('cust-phone').value, product_id: opt.dataset.id, amount_owed: amount, status: 'Unpaid', branch_id: branchToUse }]);
             if (debtError) throw debtError;
-
-            // 2. Save to Sales (Marked as Debt/Unpaid)
-            const { error: saleError } = await supabase
-                .from('sales')
-                .insert([{
-                    product_id: opt.dataset.id,
-                    item_name: searchVal,
-                    quantity: 1,
-                    unit_price: amount,
-                    total_amount: amount,
-                    amount: amount,
-                    payment_method: 'Debt',
-                    cost_price: parseFloat(opt.dataset.cost),
-                    shift_id: currentShift.id,
-                    branch_id: branchToUse,
-                    discount_reason: `Debt for ${customer} [UNPAID]`,
-                    user_id: currentUser.id,
-                    category: 'Debt'
-                }]);
-
+            const { error: saleError } = await supabase.from('sales').insert([{ product_id: opt.dataset.id, item_name: searchVal, quantity: 1, unit_price: amount, total_amount: amount, amount: amount, payment_method: 'Debt', cost_price: parseFloat(opt.dataset.cost), shift_id: currentShift.id, branch_id: branchToUse, discount_reason: `Debt for ${customer} [UNPAID]`, user_id: currentUser.id, category: 'Debt' }]);
             if (saleError) throw saleError;
-
-            // 3. Update Inventory
             const newStock = parseInt(opt.dataset.stock) - 1;
-            await supabase
-                .from('products')
-                .update({ stock_quantity: newStock })
-                .eq('id', opt.dataset.id);
-
-            alert("✅ Debt Recorded & Stock Updated! It will appear in Sales History.");
+            await supabase.from('products').update({ stock_quantity: newStock }).eq('id', opt.dataset.id);
+            alert("✅ Debt Recorded & Stock Updated!");
             document.getElementById('debt-form').reset();
             await init();
-        } catch (err) {
-            alert("Error: " + err.message);
-        } finally {
-            btn.innerHTML = '<i class="fas fa-save"></i> RECORD ENTRY';
-            btn.disabled = false;
-        }
+        } catch (err) { alert("Error: " + err.message); }
+        finally { btn.innerHTML = '<i class="fas fa-save"></i> RECORD ENTRY'; btn.disabled = false; }
     };
 
-    async function initialize() {
-        await loadBranches();
-        await loadUserProfile();
-        
-        // Set default branch selector to user's branch
-        if (currentBranch) {
-            document.getElementById('branchSelector').value = currentBranch.code;
-            selectedBranchId = currentBranch.id;
-            document.getElementById('currentBranchDisplay').textContent = currentBranch.name;
-        }
-        
-        await init();
-    }
-    
+    async function initialize() { await loadBranches(); await loadUserProfile(); if (currentBranch) { document.getElementById('branchSelector').value = currentBranch.code; selectedBranchId = currentBranch.id; document.getElementById('currentBranchDisplay').textContent = currentBranch.name; } await init(); }
     initialize();
+    document.getElementById('delete-modal').addEventListener('click', function(e){ if(e.target === this) closeDeleteModal(); });
 </script>
 </body>
 </html>
