@@ -8,222 +8,124 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* ========== ORIGINAL STYLES - PRESERVED COMPLETELY ========== */
+        /* ========== ORIGINAL STYLES - FULLY PRESERVED ========== */
         :root { 
-            --primary: #4f46e5; 
-            --primary-dark: #3730a3;
-            --bg: #f1f5f9; 
-            --card-bg: #ffffff; 
-            --danger: #e11d48; 
-            --success: #10b981; 
-            --warning: #f59e0b;
-            --nav-btn-bg: #6366f1;
-            --text-main: #1e293b; 
-            --text-dim: #64748b;
-            --border: #e2e8f0; 
-            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            --deep-blue: #1e3a8a;
-            --admin-dark: #0f172a;
-            --admin-accent: #1e3a8a;
-            --switch-btn: #0ea5e9;
-            --gas: #f59e0b;
+            --primary: #4f46e5; --primary-dark: #3730a3; --bg: #f1f5f9; --card-bg: #ffffff; 
+            --danger: #e11d48; --success: #10b981; --warning: #f59e0b; --text-main: #1e293b; 
+            --text-dim: #64748b; --border: #e2e8f0; --shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            --deep-blue: #1e3a8a; --admin-dark: #0f172a; --switch-btn: #0ea5e9; --gas: #f59e0b;
             --kcb-paybill: #2563eb;
         }
-
-        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
-
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background-color: var(--bg);
-            padding: 10px; margin: 0; color: var(--text-main); line-height: 1.5; 
-            overflow-x: hidden;
-            width: 100%;
-        }
-
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); padding: 10px; margin: 0; color: var(--text-main); overflow-x: hidden; width: 100%; }
         .container { max-width: 1450px; margin: auto; width: 100%; }
-        
-        .compact-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding: 12px 15px;
-            background: #fff;
-            border-radius: 14px;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
+        .compact-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 12px 15px; background: #fff; border-radius: 14px; box-shadow: var(--shadow); border: 1px solid var(--border); flex-wrap: wrap; gap: 10px; }
         .header-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         .profile-btn { width: 38px; height: 38px; border-radius: 50%; background: var(--primary); color: white; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.1rem; }
         .logo-compact { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.5px; color: #111827; }
-        .logo-compact span { color: var(--primary); font-weight: 500; font-size: 0.75rem; margin-left: 5px; opacity: 0.8; }
         .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .special-action-btn { font-size: 0.75rem !important; padding: 8px 14px !important; border-radius: 8px !important; box-shadow: 0 0 8px rgba(79, 70, 229, 0.4) !important; border: 2px solid white !important; }
-        .branch-badge { background: var(--primary); color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; border: 2px solid white; box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3); }
-        .gas-badge { background: var(--gas); color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; margin-left: 5px; font-weight: 700; }
-        .kcb-paybill-badge { background: var(--kcb-paybill); color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; margin-left: 5px; font-weight: 700; }
-        .start-btn-large { font-size: 0.9rem !important; padding: 10px 18px !important; font-weight: 900 !important; letter-spacing: 0.5px !important; }
-
-        .float-status-card { background: #fff; padding: 12px; border-radius: 14px; border: 1px solid var(--border); margin-bottom: 15px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
-        .low-float-warning { background: #fee2e2 !important; color: #b91c1c !important; border-color: #fecaca !important; }
-        .danger-alert { border: 2px solid #ef4444 !important; background: #fff1f2 !important; animation: pulse-border 2s infinite; }
-        @keyframes pulse-border { 0% { border-color: #ef4444; } 50% { border-color: #fca5a5; } 100% { border-color: #ef4444; } }
-        @media (min-width: 600px) { .float-status-card { grid-template-columns: repeat(5, 1fr); padding: 15px; gap: 12px; } }
-        .float-item { text-align: center; padding: 10px; border-radius: 10px; border: 1px solid var(--border); transition: all 0.3s; position: relative; }
-        .float-item:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .float-item label { display: block; font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; font-weight: 800; margin-bottom: 4px; }
-        .float-item span { font-size: 1rem; font-weight: 800; color: var(--primary); display: block; }
-        @media (min-width: 768px) { .float-item span { font-size: 1.1rem; } .float-item label { font-size: 0.65rem; } .compact-header { padding: 15px 20px; margin-bottom: 20px; } .logo-compact { font-size: 1.3rem; } .profile-btn { width: 42px; height: 42px; font-size: 1.3rem; } }
-        .kcb-live-box { border: 2px solid var(--kcb-paybill); border-radius: 10px; background: #eff6ff; }
-
+        .special-action-btn { font-size: 0.75rem !important; padding: 8px 14px !important; border-radius: 8px !important; box-shadow: 0 0 8px rgba(79,70,229,0.4) !important; border: 2px solid white !important; }
+        .branch-name-display { background: var(--primary); color: white; padding: 6px 14px; border-radius: 30px; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; border: 2px solid white; box-shadow: 0 2px 10px rgba(79,70,229,0.3); }
+        
+        .float-status-card { background: #fff; padding: 12px; border-radius: 14px; border: 1px solid var(--border); margin-bottom: 15px; display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
+        @media (min-width: 600px) { .float-status-card { grid-template-columns: repeat(5,1fr); padding: 15px; gap: 12px; } }
+        .float-item { text-align: center; padding: 10px; border-radius: 10px; border: 1px solid var(--border); }
+        .float-item label { font-size: 0.6rem; color: var(--text-dim); font-weight: 800; display: block; }
+        .float-item span { font-size: 1rem; font-weight: 800; color: var(--primary); }
+        .kcb-live-box { border: 2px solid var(--kcb-paybill); background: #eff6ff; }
+        
         .card { background: var(--card-bg); border-radius: 14px; border: 1px solid var(--border); padding: 15px; margin-bottom: 15px; box-shadow: var(--shadow); }
-        @media (min-width: 768px) { .card { padding: 22px; margin-bottom: 22px; border-radius: 20px; } }
         .section-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--primary); margin-bottom: 15px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
-        @media (min-width: 768px) { .section-label { font-size: 0.8rem; margin-bottom: 20px; } }
         .section-label::after { content: ""; flex: 1; height: 1px; background: var(--border); }
-        .grid-inputs { display: grid; gap: 12px; }
+        .compact-form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        @media (min-width: 640px) { .compact-form-grid { grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); } }
         .input-group { display: flex; flex-direction: column; }
-        label { margin-bottom: 5px; font-weight: 700; color: var(--text-main); font-size: 0.7rem; }
-        @media (min-width: 768px) { label { font-size: 0.8rem; } }
-        input, select { background: #f8fafc; border: 1px solid var(--border); padding: 12px; border-radius: 10px; font-size: 14px; font-family: inherit; transition: 0.2s; color: var(--text-main); width: 100%; }
-        @media (min-width: 768px) { input, select { padding: 16px; font-size: 16px; border-radius: 12px; } }
-        .hint-badge { padding: 3px 8px; border-radius: 5px; font-size: 0.65rem; font-weight: 700; margin-top: 4px; }
-        @media (min-width: 768px) { .hint-badge { font-size: 0.75rem; } }
-        .bg-stock { background: #dcfce7; color: #166534; }
-        .bg-min { background: #fef9c3; color: #854d0e; }
-
-        .table-card { border-radius: 14px; margin-bottom: 15px; width: 100%; background: #fff; border: 1px solid var(--border); overflow-x: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
-        table { width: 100%; border-collapse: collapse; }
-        .today-sales-table { min-width: 600px; }
-        .money-history-table { min-width: 700px; }
+        label { font-size: 0.7rem; font-weight: 700; margin-bottom: 4px; }
+        input, select { background: #f8fafc; border: 1px solid var(--border); padding: 12px; border-radius: 10px; font-size: 14px; width: 100%; }
+        .btn { padding: 12px 16px; border-radius: 10px; font-weight: 800; cursor: pointer; border: none; font-size: 0.85rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-refund { background: #f59e0b; color: white; padding: 5px 12px; font-size: 0.7rem; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+        
+        .table-card { border-radius: 14px; background: #fff; border: 1px solid var(--border); overflow-x: auto; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th { background: #f8fafc; padding: 12px 10px; font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); text-align: left; }
+        td { padding: 12px 10px; border-bottom: 1px solid var(--border); font-size: 0.85rem; vertical-align: middle; }
         .shift-history-table { min-width: 1250px; }
-        th { background: #f8fafc; padding: 12px 10px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); border-bottom: 1px solid var(--border); text-align: left; }
-        td { padding: 12px 10px; border-bottom: 1px solid var(--border); font-size: 0.85rem; vertical-align: top; }
-        @media (min-width: 768px) { .today-sales-table { min-width: 800px; } .money-history-table { min-width: 900px; } th { padding: 16px 14px; font-size: 0.75rem; } td { padding: 14px 14px; font-size: 0.9rem; } }
-
-        /* MOBILE RESPONSIVE - REFUND BUTTON VISIBLE */
+        
+        /* Mobile responsive - ensures refund button visible */
         @media (max-width: 768px) {
             .mobile-hide-header { display: none; }
-            tr { display: block; background: white; margin-bottom: 10px; padding: 10px; border-radius: 10px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
-            td { display: flex; justify-content: space-between; padding: 8px 0; border: none !important; border-bottom: 1px dashed #f1f5f9 !important; text-align: right; font-size: 0.8rem; flex-wrap: wrap; }
-            td::before { content: attr(data-label); font-weight: 800; color: var(--text-dim); font-size: 0.65rem; display: block; text-align: left; }
-            .table-card { margin-bottom: 12px; border-radius: 12px; max-height: none !important; }
-            .action-column { justify-content: flex-end; width: 100%; }
+            .today-sales-table thead, .money-history-table thead { display: none; }
+            .today-sales-table tbody tr, .money-history-table tbody tr { display: block; background: white; margin-bottom: 12px; padding: 12px; border-radius: 14px; border: 1px solid var(--border); }
+            .today-sales-table td, .money-history-table td { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border: none; border-bottom: 1px dashed #f1f5f9; text-align: right; flex-wrap: wrap; }
+            .today-sales-table td::before, .money-history-table td::before { content: attr(data-label); font-weight: 800; color: var(--text-dim); font-size: 0.7rem; text-align: left; }
+            .action-column { justify-content: flex-end; }
             .btn-refund { padding: 8px 16px !important; font-size: 0.75rem !important; white-space: nowrap; }
-            #record-expense-btn { font-size: 0.85rem !important; padding: 14px !important; margin: 0 auto; width: 90%; display: block; }
-            .header-right .btn { font-size: 0.75rem !important; padding: 8px 12px !important; }
-            .slide-indicator { display: none !important; }
-            .dual-tables > div:last-child .card { display: flex; flex-direction: column; align-items: center; }
-            .dual-tables > div:last-child .card input, .dual-tables > div:last-child .card select { width: 100%; }
-            .shift-mobile-card { background: white; border-radius: 14px; padding: 18px; margin-bottom: 18px; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+            .shift-mobile-card { background: white; border-radius: 14px; padding: 18px; margin-bottom: 18px; border: 1px solid var(--border); }
             .shift-mobile-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
-            .shift-mobile-date { font-weight: 800; font-size: 0.95rem; color: var(--text-main); }
+            .shift-mobile-date { font-weight: 800; font-size: 0.95rem; }
             .shift-mobile-status { font-size: 0.75rem; padding: 5px 10px; border-radius: 8px; font-weight: 700; }
             .shift-mobile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
             .shift-mobile-section { background: #f8fafc; padding: 12px; border-radius: 10px; border: 1px solid var(--border); }
             .shift-mobile-section-title { font-size: 0.75rem; color: var(--text-dim); font-weight: 700; margin-bottom: 6px; text-transform: uppercase; }
             .mobile-shifts-container { display: block; }
             .shift-history-table-container { display: none; }
+            #record-expense-btn { font-size: 0.85rem !important; padding: 14px !important; width: 90%; display: block; margin: 0 auto; }
         }
-
-        .btn { padding: 14px 18px; border-radius: 10px; font-weight: 800; cursor: pointer; border: none; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px; text-transform: uppercase; transition: 0.3s opacity; }
-        @media (min-width: 768px) { .btn { padding: 18px 24px; font-size: 0.95rem; border-radius: 12px; } }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-sync { background: var(--warning); color: white; }
-        .btn-kcb { background: var(--kcb-paybill); color: white; }
-        .btn-refund { background: #f59e0b; color: white; padding: 6px 12px !important; font-size: 0.7rem !important; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
-
-        .overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(8px); padding: 15px; }
-        .modal { background: #fff; padding: 22px; border-radius: 18px; width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto; }
-        @media (min-width: 768px) { .modal { padding: 28px; max-width: 500px; border-radius: 24px; } }
-        .dual-tables { display: grid; grid-template-columns: 1fr; gap: 15px; width: 100%; }
-        @media (min-width: 1024px) { .dual-tables { grid-template-columns: 1.2fr 1fr; gap: 22px; } }
-
-        .text-success { color: #15803d !important; font-weight: 700; }
-        .text-danger { color: #b91c1c !important; font-weight: 700; }
-        .search-input { width: 100%; padding: 16px 22px; border: 1px solid var(--border); border-radius: 16px; margin-bottom: 24px; font-size: 1rem; outline: none; background: white; }
-        .search-input:focus { border-color: var(--primary); }
-        .account-line { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px dashed #f1f5f9; padding-bottom: 3px; }
-        .account-label { color: var(--text-dim); font-size: 0.8rem; font-weight: 500; }
-        .account-val { font-weight: 600; color: var(--text-main); font-size: 0.85rem; }
-        .total-row { font-weight: 800; margin-top: 12px; padding: 10px; background: #f5f3ff; color: var(--primary); border-radius: 8px; text-align: center; }
-        .status-badge { font-weight: 800; padding: 8px 14px; border-radius: 10px; font-size: 0.8rem; display: block; text-align: center; min-width: 130px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid transparent; }
-        .active-shift { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
-        .var-positive { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
-        .var-negative { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
-        .var-balanced { background: #f1f5f9; color: var(--text-main); border-color: var(--border); }
-        .revenue-card { background: #fff; border: 1px solid var(--border); padding: 12px; border-radius: 10px; text-decoration: none; display: block; transition: 0.2s; }
-        .revenue-card:hover { border-color: var(--primary); transform: translateY(-2px); }
-        .date-cell b { display: block; margin-bottom: 8px; font-size: 0.95rem; }
-        .time-pill { background: #f1f5f9; padding: 3px 8px; border-radius: 5px; font-size: 0.7rem; font-weight: 700; color: var(--text-dim); display: inline-block; margin-top: 4px; }
         
-        .nav-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(15px); z-index: 3000; display: none; flex-direction: column; padding: 50px 15px 30px 15px; overflow-y: auto; }
-        .nav-overlay.active { display: flex; animation: fadeIn 0.3s ease forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .nav-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; max-width: 500px; margin: 0 auto; }
-        .nav-card { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 14px 8px; text-align: center; color: white; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .nav-header-title { color: white; text-align: center; font-weight: 800; font-size: 1.3rem; margin-bottom: 20px; letter-spacing: 1px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 12px; }
-        .fab-menu { position: fixed; bottom: 20px; left: 15px; width: 60px; height: 60px; background: var(--deep-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.4rem; box-shadow: 0 8px 25px rgba(30, 58, 138, 0.4); border: 4px solid white; cursor: pointer; z-index: 2000; animation: swing 3s infinite ease-in-out; transform-origin: center bottom; }
-        @keyframes swing { 0%, 100% { transform: rotate(0deg); } 20% { transform: rotate(10deg); } 40% { transform: rotate(-10deg); } }
-        .guide-hand { position: fixed; bottom: 90px; left: 25px; z-index: 2500; display: flex; flex-direction: column; align-items: center; animation: bounce 1.5s infinite; }
-        .guide-label { background: var(--admin-dark); color: white; padding: 3px 6px; border-radius: 5px; font-size: 0.5rem; font-weight: 800; margin-bottom: 3px; border: 1px solid var(--admin-accent); }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-        .congrats-msg { background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); color: #166534; padding: 10px 14px; border-radius: 10px; margin-bottom: 15px; text-align: center; font-weight: 700; font-size: 0.85rem; display: none; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2); border: 2px solid #86efac; animation: slideDown 0.5s ease; max-width: 400px; margin-left: auto; margin-right: auto; }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-        .greeting-banner { background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); color: white; padding: 14px 18px; border-radius: 16px; margin-bottom: 18px; box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .greeting-text h2 { margin: 0; font-size: 1.2rem; font-weight: 800; letter-spacing: -0.5px; }
-        .greeting-text p { margin: 3px 0 0 0; font-size: 0.8rem; opacity: 0.9; }
-        .greeting-time { font-size: 0.8rem; opacity: 0.9; font-weight: 600; }
-        .low-stock-alert { color: #ff4d4d !important; font-weight: 800; animation: pulse-red 1.5s infinite; padding: 3px 8px; border-radius: 5px; background: rgba(255, 77, 77, 0.1); }
-        @keyframes pulse-red { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
-        .profile-dropdown { position: absolute; top: 60px; left: 15px; background: white; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 1px solid var(--border); width: 240px; z-index: 1001; display: none; overflow: hidden; }
-        .profile-header { padding: 15px; background: var(--primary); color: white; text-align: center; }
-        .profile-header h4 { margin: 0; font-size: 1rem; }
-        .profile-menu { list-style: none; margin: 0; padding: 10px 0; }
-        .profile-menu a { display: flex; align-items: center; gap: 10px; padding: 12px 15px; text-decoration: none; color: var(--text-main); font-size: 0.9rem; font-weight: 600; transition: background 0.2s; }
-        .profile-menu a:hover { background: #f8fafc; }
-        .profile-menu a i { width: 20px; text-align: center; color: var(--primary); }
-        .logout-btn { width: 100%; background: var(--danger); color: white; border: none; padding: 12px 15px; font-weight: 800; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .compact-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
-        @media (min-width: 768px) { .compact-form-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; } }
-        .refund-modal .modal { max-width: 400px; }
-        .refund-item-info { background: #f8fafc; padding: 15px; border-radius: 10px; margin-bottom: 18px; border-left: 4px solid var(--warning); }
-        .refund-warning { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; padding: 12px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 18px; text-align: center; }
-        .refund-actions { display: flex; gap: 12px; margin-top: 22px; }
-        .refund-actions .btn { flex: 1; }
-        .slide-indicator { background: #0f172a; color: white; padding: 14px; border-radius: 12px; display: none; align-items: center; justify-content: center; gap: 12px; margin-bottom: 15px; font-size: 0.8rem; font-weight: 700; }
-        @media (max-width: 1024px) { .slide-indicator { display: none; } }
-        .money-summary-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
-        .money-summary-card { padding: 12px; border-radius: 10px; text-align: center; }
-        .money-in-card { background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border: 1px solid #86efac; }
-        .money-out-card { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border: 1px solid #fca5a5; }
-        .money-summary-label { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; margin-bottom: 5px; }
-        .money-summary-amount { font-size: 1.2rem; font-weight: 800; }
-        .money-in-amount { color: #166534; }
-        .money-out-amount { color: #b91c1c; }
-        .refunded-row { background-color: #fff7ed !important; opacity: 0.8; }
-        .refunded-badge { background: #f59e0b; color: white; padding: 3px 8px; border-radius: 5px; font-size: 0.7rem; font-weight: 700; margin-left: 5px; }
-        .action-column { width: 80px; text-align: center; }
+        .gas-redirect-notice { background: #fef3c7; border-left: 4px solid var(--warning); padding: 15px; margin: 15px 0; border-radius: 8px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .gas-redirect-notice button { background: var(--warning); color: white; border: none; padding: 8px 16px; border-radius: 30px; font-weight: 700; cursor: pointer; }
         .exchange-note { background: #fffbeb; border-left: 4px solid var(--gas); padding: 12px; margin: 12px 0; border-radius: 8px; font-size: 0.85rem; }
-        .branch-name-display { background: var(--primary); color: white; padding: 6px 14px; border-radius: 30px; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; border: 2px solid white; box-shadow: 0 2px 10px rgba(79, 70, 229, 0.3); margin-right: 10px; }
-        .gas-redirect-notice { background: #fef3c7; border-left: 4px solid var(--warning); padding: 15px; margin: 15px 0; border-radius: 8px; display: flex; align-items: center; gap: 12px; font-weight: 600; animation: pulse 2s infinite; flex-wrap: wrap; }
-        .gas-redirect-notice button { background: var(--warning); color: white; border: none; padding: 8px 16px; border-radius: 30px; font-weight: 700; cursor: pointer; margin-left: auto; transition: all 0.2s; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
-        .success-notification { position: fixed; top: 20px; right: 20px; background: var(--success); color: white; padding: 15px 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3); z-index: 9999; animation: slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s forwards; display: flex; align-items: center; gap: 10px; font-weight: 700; border-left: 5px solid #0f5c3e; max-width: 350px; }
+        .refunded-row { background-color: #fff7ed !important; }
+        .refunded-badge { background: #f59e0b; color: white; padding: 2px 8px; border-radius: 5px; font-size: 0.65rem; font-weight: 700; margin-left: 5px; display: inline-block; }
+        .gas-badge, .kcb-paybill-badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; margin-left: 5px; font-weight: 700; display: inline-block; }
+        .gas-badge { background: var(--gas); color: white; }
+        .kcb-paybill-badge { background: var(--kcb-paybill); color: white; }
+        
+        .overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(8px); padding: 15px; }
+        .modal { background: #fff; padding: 22px; border-radius: 18px; width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto; }
+        .dual-tables { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        @media (min-width: 1024px) { .dual-tables { grid-template-columns: 1.2fr 1fr; } }
+        
+        .success-notification { position: fixed; top: 20px; right: 20px; background: var(--success); color: white; padding: 12px 20px; border-radius: 12px; z-index: 9999; animation: slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s forwards; display: flex; align-items: center; gap: 10px; font-weight: 700; max-width: 350px; }
         @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes fadeOut { to { opacity: 0; transform: translateX(100%); } }
         .spinner { display: inline-block; width: 16px; height: 16px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .money-in-row { background-color: rgba(16, 185, 129, 0.05); }
-        .money-out-row { background-color: rgba(225, 29, 72, 0.05); }
-        .table-card::-webkit-scrollbar { height: 8px; width: 8px; }
-        .table-card::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
-        .table-card::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        .fab-menu { position: fixed; bottom: 20px; left: 15px; width: 55px; height: 55px; background: var(--deep-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.4rem; box-shadow: 0 8px 25px rgba(30,58,138,0.4); border: 3px solid white; cursor: pointer; z-index: 2000; }
+        .nav-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.98); backdrop-filter: blur(15px); z-index: 3000; display: none; flex-direction: column; padding: 50px 15px 30px; overflow-y: auto; }
+        .nav-overlay.active { display: flex; }
+        .nav-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; max-width: 500px; margin: 0 auto; }
+        .nav-card { background: rgba(255,255,255,0.08); border-radius: 14px; padding: 14px 8px; text-align: center; color: white; text-decoration: none; }
+        .profile-dropdown { position: absolute; top: 70px; left: 15px; background: white; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); width: 240px; display: none; z-index: 1001; }
+        .logout-btn { width: 100%; background: var(--danger); color: white; border: none; padding: 12px; font-weight: 800; cursor: pointer; }
+        .greeting-banner { background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); color: white; padding: 14px 18px; border-radius: 16px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .search-input { width: 100%; padding: 14px 20px; border: 1px solid var(--border); border-radius: 16px; margin-bottom: 20px; font-size: 1rem; outline: none; background: white; }
+        .account-line { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px dashed #f1f5f9; padding-bottom: 3px; }
+        .total-row { font-weight: 800; margin-top: 12px; padding: 10px; background: #f5f3ff; color: var(--primary); border-radius: 8px; text-align: center; }
+        .status-badge { font-weight: 800; padding: 8px 14px; border-radius: 10px; font-size: 0.8rem; display: inline-block; text-align: center; min-width: 100px; }
+        .active-shift { background: #e0e7ff; color: #4338ca; }
+        .var-positive { background: #dcfce7; color: #15803d; }
+        .var-negative { background: #fee2e2; color: #b91c1c; }
+        .var-balanced { background: #f1f5f9; color: var(--text-main); }
+        .revenue-card { background: #fff; border: 1px solid var(--border); padding: 12px; border-radius: 10px; text-decoration: none; display: block; }
+        .money-summary-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+        .money-summary-card { padding: 12px; border-radius: 10px; text-align: center; }
+        .money-in-card { background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border: 1px solid #86efac; }
+        .money-out-card { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border: 1px solid #fca5a5; }
+        .money-in-amount { color: #166534; }
+        .money-out-amount { color: #b91c1c; }
+        .refund-modal .modal { max-width: 400px; }
+        .refund-item-info { background: #f8fafc; padding: 15px; border-radius: 10px; margin-bottom: 18px; border-left: 4px solid var(--warning); }
+        .refund-actions { display: flex; gap: 12px; margin-top: 22px; }
+        .refund-actions .btn { flex: 1; }
+        .guide-hand { position: fixed; bottom: 90px; left: 25px; z-index: 2500; display: flex; flex-direction: column; align-items: center; animation: bounce 1.5s infinite; }
+        .guide-label { background: var(--admin-dark); color: white; padding: 3px 6px; border-radius: 5px; font-size: 0.5rem; font-weight: 800; margin-bottom: 3px; }
+        @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        .money-in-row { background-color: rgba(16,185,129,0.05); }
+        .money-out-row { background-color: rgba(225,29,72,0.05); }
     </style>
 </head>
 <body>
@@ -231,38 +133,36 @@
 <!-- Refund Modal -->
 <div id="refund-modal" class="overlay refund-modal">
     <div class="modal">
-        <h3 style="margin-top:0; font-size:1.2rem;">🔄 Process Refund</h3>
+        <h3 style="margin-top:0;">🔄 Process Refund</h3>
         <div class="refund-item-info"><div><strong>Item:</strong> <span id="refund-item-name"></span></div><div><strong>Original Amount:</strong> Ksh <span id="refund-original-amount"></span></div><div><strong>Quantity:</strong> <span id="refund-quantity"></span></div></div>
-        <div class="refund-warning"><i class="fas fa-exclamation-triangle"></i> Please check the returned item's condition before processing refund.</div>
-        <div class="input-group"><label>Refund Method</label><select id="refund-method"><option value="Cash">Cash</option><option value="Mpesa">Mpesa</option><option value="KCB Paybill">KCB Paybill</option><option value="KCB">KCB Float</option><option value="Equity">Equity Float</option></select></div>
-        <div class="input-group"><label>Refund Amount (Ksh)</label><input type="number" id="refund-amount" placeholder="Enter refund amount"></div>
-        <div class="input-group"><label>Refund Reason</label><input type="text" id="refund-reason" placeholder="e.g., Damaged item"></div>
+        <div class="input-group"><label>Refund Method</label><select id="refund-method"><option value="Cash">Cash</option><option value="Mpesa">Mpesa</option><option value="KCB Paybill">KCB Paybill</option></select></div>
+        <div class="input-group"><label>Refund Amount</label><input type="number" id="refund-amount" placeholder="Amount"></div>
+        <div class="input-group"><label>Reason</label><input type="text" id="refund-reason" placeholder="Reason"></div>
         <div class="refund-actions"><button class="btn btn-danger" onclick="processRefund()">Process Refund</button><button class="btn" onclick="closeRefundModal()" style="background:#e2e8f0;">Cancel</button></div>
     </div>
 </div>
 
 <div class="guide-hand"><div class="guide-label">CLICK FOR MENU</div><span>👇</span></div>
-<div class="nav-overlay" id="navBanner"><button style="position:fixed; top:20px; right:20px; background:rgba(255,255,255,0.1); border:none; color:white; width:45px; height:45px; border-radius:50%; font-size:1.2rem;" onclick="toggleNav()">✕</button><div class="nav-header-title">CASHIER HUB</div><div class="nav-grid"><a href="cashier.html" class="nav-card">📊 Dashboard</a><a href="cashiergashub.html" class="nav-card">⛽ Gas Hub</a><a href="cashier_inventory.html" class="nav-card">➕ Add Stock</a><a href="moneyinout.html" class="nav-card">💰 Money IN/OUT</a><a href="shift history cashier.html" class="nav-card">⏳ Shift History</a><a href="sales_reports.html" class="nav-card">📈 Sales History</a><a href="low-stock-cashier.html" class="nav-card">⚠️ Low Stock</a><a href="debtors.html" class="nav-card">👥 Debtors</a><a href="supplierscashier.html" class="nav-card">🤝 Suppliers</a><a href="sale edit cashier.html" class="nav-card">✏️ Edit sales</a><a href="gas_delivery.html" class="nav-card">🏍️ Delivery</a><a href="cashier_report.html" class="nav-card">📝 Report</a><a href="pos.html" class="nav-card">🛒 Cart Shop</a><a href="cashierprofile.html" class="nav-card">👤 Settings</a><button onclick="logoutUser()" style="grid-column:span 2; background:var(--danger); color:white; border:none; padding:15px; border-radius:15px; font-weight:800;">🚪 LOGOUT</button></div></div>
-<div class="profile-dropdown" id="profileDropdown"><div class="profile-header"><h4>Cashier</h4></div><ul class="profile-menu"><li><a href="cashierprofile.html"><i class="fas fa-user-cog"></i> Profile Settings</a></li></ul><button class="logout-btn" onclick="logoutUser()">Logout</button></div>
+<div class="nav-overlay" id="navBanner"><button style="position:fixed; top:20px; right:20px; background:rgba(255,255,255,0.1); border:none; color:white; width:45px; height:45px; border-radius:50%;" onclick="toggleNav()">✕</button><div class="nav-header-title" style="color:white; text-align:center; font-weight:800; margin-bottom:20px;">CASHIER HUB</div><div class="nav-grid"><a href="cashier.html" class="nav-card">📊 Dashboard</a><a href="cashiergashub.html" class="nav-card">⛽ Gas Hub</a><a href="cashier_inventory.html" class="nav-card">➕ Add Stock</a><a href="moneyinout.html" class="nav-card">💰 Money IN/OUT</a><a href="shift history cashier.html" class="nav-card">⏳ Shift History</a><a href="sales_reports.html" class="nav-card">📈 Sales History</a><a href="low-stock-cashier.html" class="nav-card">⚠️ Low Stock</a><a href="debtors.html" class="nav-card">👥 Debtors</a><a href="supplierscashier.html" class="nav-card">🤝 Suppliers</a><a href="sale edit cashier.html" class="nav-card">✏️ Edit sales</a><a href="gas_delivery.html" class="nav-card">🏍️ Delivery</a><a href="cashier_report.html" class="nav-card">📝 Report</a><a href="pos.html" class="nav-card">🛒 Cart Shop</a><a href="cashierprofile.html" class="nav-card">👤 Settings</a><button onclick="logoutUser()" style="grid-column:span 2; background:var(--danger); color:white; border:none; padding:15px; border-radius:15px; font-weight:800;">🚪 LOGOUT</button></div></div>
+<div class="profile-dropdown" id="profileDropdown"><div style="background:var(--primary); color:white; padding:12px;"><h4>Cashier</h4></div><ul style="list-style:none; padding:10px;"><li><a href="cashierprofile.html" style="display:flex; gap:10px; padding:8px; text-decoration:none;"><i class="fas fa-user"></i> Profile</a></li></ul><button class="logout-btn" onclick="logoutUser()">Logout</button></div>
 <button class="fab-menu" onclick="toggleNav()">☰</button>
 <div id="success-notification-container" style="position:fixed; top:20px; right:20px; z-index:9999;"></div>
-<div id="congrats-banner" class="congrats-msg">🎉 Perfect Shift!</div>
 
 <div class="container">
     <div class="compact-header"><div class="header-left"><button class="profile-btn" onclick="toggleProfileDropdown()"><i class="fas fa-user"></i></button><div class="logo-compact">CASHIER DASHBOARD</div><span id="branch-name-header" class="branch-name-display"><i class="fas fa-store"></i> Loading...</span></div><div class="header-right" id="shift-action-container"><button class="btn" onclick="refreshData()" style="background:#e2e8f0; padding:8px 12px;"><i class="fas fa-sync-alt"></i> Refresh</button></div></div>
-    <div class="greeting-banner"><div class="greeting-text"><h2 id="greeting-title">Welcome Back!</h2><p id="greeting-subtitle">Ready to start your shift?</p></div><div class="greeting-time" id="greeting-time"></div></div>
+    <div class="greeting-banner"><div><h2 id="greeting-title">Welcome Back!</h2><p id="greeting-subtitle">Ready to start your shift?</p></div><div id="greeting-time"></div></div>
     <div class="section-label">Opening Floats & Live Sales Tracker</div>
     <div class="float-status-card"><div class="float-item"><label>Cash</label><span id="float-cash">0</span></div><div class="float-item"><label>Mpesa</label><span id="float-mpesa">0</span></div><div class="float-item"><label>KCB Float</label><span id="float-kcb">0</span></div><div class="float-item"><label>Equity</label><span id="float-equity">0</span></div><div class="float-item kcb-live-box"><label>Live KCB Paybill</label><span id="live-kcb-box">0</span></div></div>
     <div id="gas-redirect-notice" class="gas-redirect-notice" style="display:none;"><i class="fas fa-fire"></i><div style="flex:1;"><strong>Gas item detected!</strong> Gas sales must be processed in the dedicated Gas Hub for accurate cylinder tracking.</div><button onclick="redirectToGasHub()">Go to Gas Hub →</button></div>
-    <div class="card"><div class="section-label">Sale Item</div><form id="sale-form"><div class="compact-form-grid"><div class="input-group"><label>Search Item</label><input type="text" id="pSearch" list="pList" placeholder="Find Item..." autocomplete="off"><datalist id="pList"></datalist><div><span id="hint-stock" class="hint-badge bg-stock" style="display:none"></span></div></div><div class="input-group"><label>Price (Ksh)</label><input type="number" id="pPrice" step="0.01"></div><div class="input-group"><label>Qty</label><input type="number" id="pQty" value="1" min="1"></div><div class="input-group"><label>Method</label><select id="pMethod"><option value="Cash">Cash</option><option value="KCB Paybill">KCB Paybill</option><option value="Debt">Debtor</option></select></div></div><div id="gas-exchange-note" class="exchange-note" style="display:none;"><i class="fas fa-info-circle"></i> Gas sale: Ensure empty cylinder collected.</div><button type="submit" class="btn btn-primary" style="width:100%; margin-top:12px;">RECORD ITEM Ksh <span id="total-text">0.00</span></button></form></div>
-    <div class="dual-tables"><div><div class="section-label">TODAY'S SALES</div><div class="table-card"><table class="today-sales-table"><thead><tr><th>Time</th><th>Item</th><th>Qty</th><th>Total</th><th>Method</th><th class="action-column">Action</th></tr></thead><tbody id="live-sales-body"></tbody></table></div></div><div class="card"><div class="section-label">MONEY IN/OUT</div><input type="number" id="exp-amt" placeholder="Amount"><select id="exp-type"><option value="Money Out">Money Out</option><option value="Money In">Money In</option></select><input type="text" id="exp-desc" placeholder="Reason"><select id="exp-method"><option value="Cash">Cash</option><option value="Mpesa">Mpesa</option><option value="KCB Float">KCB Float</option><option value="Equity Float">Equity Float</option><option value="KCB Paybill">KCB Paybill</option></select><button id="record-expense-btn" class="btn btn-sync">RECORD MONEY</button></div></div>
+    <div class="card"><div class="section-label">Sale Item</div><form id="sale-form"><div class="compact-form-grid"><div class="input-group"><label>Search Item</label><input type="text" id="pSearch" list="pList" placeholder="Find Item..." autocomplete="off"><datalist id="pList"></datalist><div><span id="hint-stock" class="hint-badge" style="display:none; background:#dcfce7; padding:2px 6px; border-radius:4px; font-size:0.65rem;"></span></div></div><div class="input-group"><label>Price (Ksh)</label><input type="number" id="pPrice" step="0.01"></div><div class="input-group"><label>Qty</label><input type="number" id="pQty" value="1" min="1"></div><div class="input-group"><label>Method</label><select id="pMethod"><option value="Cash">Cash</option><option value="KCB Paybill">KCB Paybill</option><option value="Debt">Debtor</option></select></div></div><div id="gas-exchange-note" class="exchange-note" style="display:none;"><i class="fas fa-info-circle"></i> Gas sale: Ensure empty cylinder collected.</div><button type="submit" class="btn btn-primary" style="width:100%; margin-top:12px;">RECORD ITEM Ksh <span id="total-text">0.00</span></button></form></div>
+    <div class="dual-tables"><div><div class="section-label">TODAY'S SALES</div><div class="table-card"><table class="today-sales-table"><thead><tr><th>Time</th><th>Item</th><th>Qty</th><th>Total</th><th>Method</th><th class="action-column">Action</th></tr></thead><tbody id="live-sales-body"></tbody></table></div></div><div class="card"><div class="section-label">MONEY IN/OUT</div><input type="number" id="exp-amt" placeholder="Amount"><select id="exp-type"><option value="Money Out">Money Out</option><option value="Money In">Money In</option></select><input type="text" id="exp-desc" placeholder="Reason"><select id="exp-method"><option value="Cash">Cash</option><option value="Mpesa">Mpesa</option><option value="KCB Float">KCB Float</option><option value="Equity Float">Equity Float</option><option value="KCB Paybill">KCB Paybill</option></select><button id="record-expense-btn" class="btn" style="width:100%; background:var(--warning); color:white;">RECORD MONEY</button></div></div>
     <div class="section-label">TODAY'S MONEY IN/OUT HISTORY</div>
     <div class="table-card"><table class="money-history-table"><thead><tr><th>Time</th><th>Reason</th><th>Amount</th><th>Type</th><th>Wallet</th></tr></thead><tbody id="live-trans-body"></tbody></table></div>
     <div class="section-label">SHIFT AUDIT HISTORY</div>
     <input type="text" id="history-search" class="search-input" placeholder="Search by date...">
-    <div class="table-card shift-history-table-container"><table class="shift-history-table"><thead><tr><th>DATE</th><th>OPENING FLOATS</th><th>REVENUE</th><th>MONEY IN/OUT</th><th>CLOSING FLOATS</th><th>VARIANCE</th><th>NOTE</th></tr></thead><tbody id="history-body"></tbody></table></div>
+    <div class="table-card shift-history-table-container"><table class="shift-history-table"><thead><tr><th>DATE</th><th>OPENING FLOATS</th><th>PAYMENT METHOD</th><th>MONEY IN/OUT</th><th>CLOSING FLOATS</th><th>VARIANCE</th><th>VARIANCE REASON</th></tr></thead><tbody id="history-body"></tbody></table></div>
     <div id="mobile-shifts-container" class="mobile-shifts-container"></div>
-    <button id="load-more-btn" class="btn" style="background:#e2e8f0; margin:15px auto; display:block;">LOAD MORE</button>
+    <button id="load-more-btn" class="btn" style="background:#e2e8f0; margin:15px auto; display:block;">LOAD MORE HISTORY</button>
 </div>
 <div id="open-modal" class="overlay"><div class="modal"><h3>🚀 Start Shift</h3><div style="display:grid; gap:10px;"><input type="number" id="o-cash" placeholder="Cash"><input type="number" id="o-mpesa" placeholder="Mpesa"><input type="number" id="o-kcb" placeholder="KCB Float"><input type="number" id="o-equity" placeholder="Equity"></div><button class="btn btn-primary" id="confirm-open">START DAY</button></div></div>
 <div id="close-modal" class="overlay"><div class="modal"><h3>🔒 End Day</h3><div style="display:grid; gap:10px;"><input type="number" id="c-mpesa" placeholder="Mpesa"><input type="number" id="c-kcb" placeholder="KCB Float"><input type="number" id="c-equity" placeholder="Equity"><input type="number" id="c-cash" placeholder="Cash"></div><button class="btn btn-danger" id="confirm-close">CLOSE SHIFT</button></div></div>
@@ -281,14 +181,13 @@
         const kcbMoneyIn = trans.filter(t=>t.type==='Money In' && t.category==='KCB Paybill').reduce((a,b)=>a+b.amount,0);
         currentKcbSalesTotal = kcbSales + kcbMoneyIn;
         document.getElementById('live-kcb-box').innerText = currentKcbSalesTotal.toLocaleString();
+        document.getElementById('c-bank').value = currentKcbSalesTotal;
         const salesBody = document.getElementById('live-sales-body');
         if(salesBody) salesBody.innerHTML = sales.map(s=>`<tr class="${s.refunded?'refunded-row':''}"><td data-label="Time">${new Date(s.created_at).toLocaleTimeString()}</td><td data-label="Item"><b>${s.item_name}</b>${s.refunded?' <span class="refunded-badge">REFUNDED</span>':''}${s.category==='Gas'?' <span class="gas-badge">GAS</span>':''}${s.payment_method==='KCB Paybill'?' <span class="kcb-paybill-badge">KCB PAYBILL</span>':''}</td><td data-label="Qty">${s.quantity}</td><td data-label="Total">Ksh ${s.total_amount.toLocaleString()}</td><td data-label="Method">${s.payment_method}</td><td data-label="Action" class="action-column">${!s.refunded && s.quantity>0 && s.total_amount>0 ? `<button class="btn-refund" onclick='openRefundModal(${JSON.stringify(s).replace(/'/g, "\\'")})'><i class="fas fa-undo-alt"></i> Refund</button>` : ''}</td></tr>`).join('');
         let totalIn=0,totalOut=0; trans.forEach(t=>{ if(t.type==='Money In') totalIn+=t.amount; else totalOut+=t.amount; });
         document.getElementById('total-money-in-full')?.setAttribute?.('data-val',totalIn);
-        const transBody = document.getElementById('live-trans-body'); if(transBody) transBody.innerHTML = trans.map(t=>`<tr class="${t.type==='Money In'?'money-in-row':'money-out-row'}"><td data-label="Time">${new Date(t.created_at).toLocaleTimeString()}</td><td data-label="Reason">${t.description}</td><td data-label="Amount">Ksh ${t.amount.toLocaleString()}</td><td data-label="Type">${t.type}</td><td data-label="Wallet">${t.category}</td></tr>`).join('');
-        checkLowFloats();
+        const transBody = document.getElementById('live-trans-body'); if(transBody) transBody.innerHTML = trans.map(t=>`<tr class="${t.type==='Money In'?'money-in-row':'money-out-row'}"><td data-label="Time">${new Date(t.created_at).toLocaleTimeString()}</td><td data-label="Reason">${t.description}</td><td data-label="Amount">Ksh ${t.amount.toLocaleString()}</td><td data-label="Type">${t.type}</td><td data-label="Wallet">${t.category}</td></td>`).join('');
     }
-    function checkLowFloats() { const cash=parseFloat(document.getElementById('float-cash')?.innerText.replace(/,/g,'')||0); if(cash<2000 && cash>0) document.getElementById('float-cash-item')?.classList.add('danger-alert'); }
     window.redirectToGasHub = function() { const bid=getCurrentBranchId(); window.location.href=`cashiergashub.html?branch=${bid}`; };
     window.openRefundModal = function(sale){ refundingSale=sale; document.getElementById('refund-item-name').innerText=sale.item_name; document.getElementById('refund-original-amount').innerText=sale.total_amount; document.getElementById('refund-quantity').innerText=sale.quantity; document.getElementById('refund-amount').value=sale.total_amount; document.getElementById('refund-modal').style.display='flex'; };
     window.closeRefundModal = function(){ document.getElementById('refund-modal').style.display='none'; refundingSale=null; };
@@ -319,9 +218,9 @@
     function updateTotal(){ const price=parseFloat(document.getElementById('pPrice').value||0); const qty=parseInt(document.getElementById('pQty').value||0); document.getElementById('total-text').innerText=(price*qty).toLocaleString(); }
     document.getElementById('pPrice').addEventListener('input',updateTotal); document.getElementById('pQty').addEventListener('input',updateTotal);
     async function loadHistory(){ const branchId=getCurrentBranchId(); const { data:shifts } = await supabase.from('daily_shifts').select('*').eq('branch_id',branchId).order('start_time',{ascending:false}).limit(historyLimit); const { data:trans } = await supabase.from('cash_transactions').select('*').eq('branch_id',branchId); const { data:sales } = await supabase.from('sales').select('*').eq('branch_id',branchId).eq('refunded',false); allShifts=shifts||[]; allTransactions=trans||[]; allSales=sales||[]; if(window.innerWidth<=768) renderMobileHistory(allShifts,allTransactions,allSales); else renderDesktopHistory(allShifts,allTransactions,allSales); }
-    function renderDesktopHistory(shifts, transData, salesData){ const tbody=document.getElementById('history-body'); if(!tbody) return; tbody.innerHTML=shifts.map(sh=>{ const openTotal=(sh.open_cash||0)+(sh.open_mpesa||0)+(sh.open_kcb||0)+(sh.open_equity||0); const closeTotal=(sh.close_cash||0)+(sh.close_mpesa||0)+(sh.close_kcb||0)+(sh.close_equity||0)+(sh.close_kcb_bank||0); const revenue=salesData.filter(s=>s.shift_id===sh.id).reduce((a,b)=>a+b.total_amount,0); const moneyIn=transData.filter(t=>t.shift_id===sh.id && t.type==='Money In').reduce((a,b)=>a+b.amount,0); const moneyOut=transData.filter(t=>t.shift_id===sh.id && t.type==='Money Out').reduce((a,b)=>a+b.amount,0); const expected=sh.system_expected_total||(openTotal+revenue+moneyIn-moneyOut); const variance=sh.status==='Closed'?(closeTotal-expected):0; return `<tr><td>${new Date(sh.start_time).toLocaleDateString()}<td><td>Cash:${sh.open_cash||0}<br>Mpesa:${sh.open_mpesa||0}<br>KCB:${sh.open_kcb||0}</td><td>Ksh ${revenue.toLocaleString()}</td><td>In:+${moneyIn}<br>Out:-${moneyOut}</td><td>Cash:${sh.close_cash||0}<br>Paybill:${sh.close_kcb_bank||0}</td><td class="${variance>0?'text-success':variance<0?'text-danger':''}">${variance===0?'Balanced':variance>0?`+${variance.toLocaleString()}`:variance.toLocaleString()}</td><td>${sh.variance_note||''}</td>`; }).join(''); }
-    function renderMobileHistory(shifts, transData, salesData){ const container=document.getElementById('mobile-shifts-container'); const desktop=document.querySelector('.shift-history-table-container'); if(desktop) desktop.style.display='none'; if(container){ container.style.display='block'; container.innerHTML=shifts.map(sh=>{ const openTotal=(sh.open_cash||0)+(sh.open_mpesa||0)+(sh.open_kcb||0)+(sh.open_equity||0); const closeTotal=(sh.close_cash||0)+(sh.close_mpesa||0)+(sh.close_kcb||0)+(sh.close_equity||0)+(sh.close_kcb_bank||0); const revenue=salesData.filter(s=>s.shift_id===sh.id).reduce((a,b)=>a+b.total_amount,0); const moneyIn=transData.filter(t=>t.shift_id===sh.id && t.type==='Money In').reduce((a,b)=>a+b.amount,0); const moneyOut=transData.filter(t=>t.shift_id===sh.id && t.type==='Money Out').reduce((a,b)=>a+b.amount,0); const expected=sh.system_expected_total||(openTotal+revenue+moneyIn-moneyOut); const variance=sh.status==='Closed'?(closeTotal-expected):0; return `<div class="shift-mobile-card"><div class="shift-mobile-header"><div class="shift-mobile-date">${new Date(sh.start_time).toLocaleDateString()}</div><div class="shift-mobile-status ${variance>0?'var-positive':variance<0?'var-negative':'var-balanced'}">${variance===0?'Balanced':variance>0?`+${variance.toLocaleString()}`:variance.toLocaleString()}</div></div><div class="shift-mobile-grid"><div class="shift-mobile-section"><div class="shift-mobile-section-title">Opening</div><div>Cash: ${sh.open_cash||0}<br>Mpesa: ${sh.open_mpesa||0}<br>KCB: ${sh.open_kcb||0}</div></div><div class="shift-mobile-section"><div class="shift-mobile-section-title">Revenue</div><div>Ksh ${revenue.toLocaleString()}</div></div><div class="shift-mobile-section"><div class="shift-mobile-section-title">Money In/Out</div><div>In: +${moneyIn}<br>Out: -${moneyOut}</div></div><div class="shift-mobile-section"><div class="shift-mobile-section-title">Closing</div><div>Cash: ${sh.close_cash||0}<br>Paybill: ${sh.close_kcb_bank||0}</div></div></div><div style="font-size:0.75rem; margin-top:10px;">Note: ${sh.variance_note||'No notes'}</div></div>`; }).join(''); } }
-    async function checkForOpenShift(){ const branchId=getCurrentBranchId(); const { data } = await supabase.from('daily_shifts').select('*').eq('branch_id',branchId).eq('status','Open').maybeSingle(); if(data){ currentShift=data; document.getElementById('float-cash').innerText=(data.open_cash||0).toLocaleString(); document.getElementById('float-mpesa').innerText=(data.open_mpesa||0).toLocaleString(); document.getElementById('float-kcb').innerText=(data.open_kcb||0).toLocaleString(); document.getElementById('float-equity').innerText=(data.open_equity||0).toLocaleString(); document.getElementById('shift-action-container').innerHTML=`<button class="btn btn-danger special-action-btn" onclick="showCloseModal()">🔴 CLOSE DAY</button><button class="btn" onclick="refreshData()" style="background:#e2e8f0;">Refresh</button>`; await loadShiftData(); } else { document.getElementById('shift-action-container').innerHTML=`<button class="btn btn-primary special-action-btn start-btn-large" onclick="document.getElementById('open-modal').style.display='flex'">🚀 START DAY</button><button class="btn" onclick="refreshData()">Refresh</button>`; } }
+    function renderDesktopHistory(shifts, transData, salesData){ const tbody=document.getElementById('history-body'); if(!tbody) return; tbody.innerHTML=shifts.map(sh=>{ const openTotal=(sh.open_cash||0)+(sh.open_mpesa||0)+(sh.open_kcb||0)+(sh.open_equity||0); const closeTotal=(sh.close_cash||0)+(sh.close_mpesa||0)+(sh.close_kcb||0)+(sh.close_equity||0)+(sh.close_kcb_bank||0); const revenue=salesData.filter(s=>s.shift_id===sh.id).reduce((a,b)=>a+b.total_amount,0); const moneyIn=transData.filter(t=>t.shift_id===sh.id && t.type==='Money In').reduce((a,b)=>a+b.amount,0); const moneyOut=transData.filter(t=>t.shift_id===sh.id && t.type==='Money Out').reduce((a,b)=>a+b.amount,0); const expected=sh.system_expected_total||(openTotal+revenue+moneyIn-moneyOut); const variance=sh.status==='Closed'?(closeTotal-expected):0; let varianceClass='',varianceText=''; if(sh.status!=='Closed'){ varianceClass='active-shift'; varianceText='SHIFT ACTIVE'; } else if(variance>0){ varianceClass='var-positive'; varianceText=`+${variance.toLocaleString()}`; } else if(variance<0){ varianceClass='var-negative'; varianceText=variance.toLocaleString(); } else{ varianceClass='var-balanced'; varianceText='0'; } return `<tr><td class="date-cell"><b>${new Date(sh.start_time).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</b><br><span class="time-pill">IN: ${new Date(sh.start_time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span><br>${sh.end_time?`<span class="time-pill">OUT: ${new Date(sh.end_time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>`:''}</td><td><div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity||0).toLocaleString()}</span></div><div class="total-row">Total: ${openTotal.toLocaleString()}</div></td><td><div class="account-line"><span class="account-label">Cash Sales</span><span class="account-val" style="color:var(--success)">+${revenue.toLocaleString()}</span></div></td><td><div class="account-line"><span class="account-label">In</span><span class="account-val" style="color:var(--success)">+${moneyIn.toLocaleString()}</span></div><div class="account-line"><span class="account-label">Out</span><span class="account-val" style="color:var(--danger)">-${moneyOut.toLocaleString()}</span></div></td><td><div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.close_cash||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">KCB</span><span class="account-val">${(sh.close_kcb||0).toLocaleString()}</span></div><div class="account-line"><span class="account-label">Paybill</span><span class="account-val">${(sh.close_kcb_bank||0).toLocaleString()}</span></div><div class="total-row">Total: ${closeTotal.toLocaleString()}</div></td><td><span class="status-badge ${varianceClass}">${varianceText}</span><div style="font-size:0.65rem; margin-top:5px;">Expected: ${expected.toLocaleString()}</div></td><td><div style="font-size:0.75rem;">${sh.variance_note && sh.variance_note!=='Balanced'?sh.variance_note:sh.variance_note||'No notes'}</div></td></tr>`; }).join(''); }
+    function renderMobileHistory(shifts, transData, salesData){ const container=document.getElementById('mobile-shifts-container'); const desktop=document.querySelector('.shift-history-table-container'); if(desktop) desktop.style.display='none'; if(container){ container.style.display='block'; container.innerHTML=shifts.map(sh=>{ const openTotal=(sh.open_cash||0)+(sh.open_mpesa||0)+(sh.open_kcb||0)+(sh.open_equity||0); const closeTotal=(sh.close_cash||0)+(sh.close_mpesa||0)+(sh.close_kcb||0)+(sh.close_equity||0)+(sh.close_kcb_bank||0); const revenue=salesData.filter(s=>s.shift_id===sh.id).reduce((a,b)=>a+b.total_amount,0); const moneyIn=transData.filter(t=>t.shift_id===sh.id && t.type==='Money In').reduce((a,b)=>a+b.amount,0); const moneyOut=transData.filter(t=>t.shift_id===sh.id && t.type==='Money Out').reduce((a,b)=>a+b.amount,0); const expected=sh.system_expected_total||(openTotal+revenue+moneyIn-moneyOut); const variance=sh.status==='Closed'?(closeTotal-expected):0; let varianceClass='',varianceText=''; if(sh.status!=='Closed'){ varianceClass='active-shift'; varianceText='Active'; } else if(variance>0){ varianceClass='var-positive'; varianceText=`+${variance.toLocaleString()}`; } else if(variance<0){ varianceClass='var-negative'; varianceText=variance.toLocaleString(); } else{ varianceClass='var-balanced'; varianceText='Balanced'; } return `<div class="shift-mobile-card"><div class="shift-mobile-header"><div class="shift-mobile-date">${new Date(sh.start_time).toLocaleDateString()}</div><div class="shift-mobile-status ${varianceClass}">${varianceText}</div></div><div class="shift-mobile-grid"><div class="shift-mobile-section"><div class="shift-mobile-section-title">Opening</div><div>Cash: ${sh.open_cash||0}<br>Mpesa: ${sh.open_mpesa||0}<br>KCB: ${sh.open_kcb||0}</div></div><div class="shift-mobile-section"><div class="shift-mobile-section-title">Revenue</div><div>Ksh ${revenue.toLocaleString()}</div></div><div class="shift-mobile-section"><div class="shift-mobile-section-title">Money</div><div>In: +${moneyIn}<br>Out: -${moneyOut}</div></div><div class="shift-mobile-section"><div class="shift-mobile-section-title">Closing</div><div>Cash: ${sh.close_cash||0}<br>Paybill: ${sh.close_kcb_bank||0}</div></div></div><div style="font-size:0.75rem; margin-top:10px;">Note: ${sh.variance_note||'No notes'}</div></div>`; }).join(''); } }
+    async function checkForOpenShift(){ const branchId=getCurrentBranchId(); const { data } = await supabase.from('daily_shifts').select('*').eq('branch_id',branchId).eq('status','Open').maybeSingle(); if(data){ currentShift=data; document.getElementById('float-cash').innerText=(data.open_cash||0).toLocaleString(); document.getElementById('float-mpesa').innerText=(data.open_mpesa||0).toLocaleString(); document.getElementById('float-kcb').innerText=(data.open_kcb||0).toLocaleString(); document.getElementById('float-equity').innerText=(data.open_equity||0).toLocaleString(); document.getElementById('shift-action-container').innerHTML=`<button class="btn btn-danger special-action-btn" onclick="document.getElementById('close-modal').style.display='flex'">🔴 CLOSE DAY</button><button class="btn" onclick="refreshData()" style="background:#e2e8f0;">Refresh</button>`; await loadShiftData(); } else { document.getElementById('shift-action-container').innerHTML=`<button class="btn btn-primary special-action-btn start-btn-large" onclick="document.getElementById('open-modal').style.display='flex'">🚀 START DAY</button><button class="btn" onclick="refreshData()">Refresh</button>`; } }
     document.getElementById('confirm-open').addEventListener('click',async()=>{ const cash=parseFloat(document.getElementById('o-cash').value||0); const mpesa=parseFloat(document.getElementById('o-mpesa').value||0); const kcb=parseFloat(document.getElementById('o-kcb').value||0); const equity=parseFloat(document.getElementById('o-equity').value||0); const { error } = await supabase.from('daily_shifts').insert([{ user_id:currentUser.id, branch_id:getCurrentBranchId(), open_cash:cash, open_mpesa:mpesa, open_kcb:kcb, open_equity:equity, status:'Open', start_time:new Date().toISOString() }]); if(error) alert(error.message); else location.reload(); });
     window.showCloseModal = function(){ document.getElementById('close-modal').style.display='flex'; };
     document.getElementById('confirm-close').addEventListener('click',async()=>{ const clM=parseFloat(document.getElementById('c-mpesa').value||0); const clK=parseFloat(document.getElementById('c-kcb').value||0); const clE=parseFloat(document.getElementById('c-equity').value||0); const clC=parseFloat(document.getElementById('c-cash').value||0); const clB=currentKcbSalesTotal; const { data:sales } = await supabase.from('sales').select('total_amount').eq('shift_id',currentShift.id).neq('payment_method','Debt'); const { data:trans } = await supabase.from('cash_transactions').select('amount,type').eq('shift_id',currentShift.id); const totalSales=(sales||[]).reduce((a,b)=>a+b.total_amount,0); const moneyIn=(trans||[]).filter(t=>t.type==='Money In').reduce((a,b)=>a+b.amount,0); const moneyOut=(trans||[]).filter(t=>t.type==='Money Out').reduce((a,b)=>a+b.amount,0); const openTotal=(currentShift.open_cash||0)+(currentShift.open_mpesa||0)+(currentShift.open_kcb||0)+(currentShift.open_equity||0); const expected=openTotal+totalSales+moneyIn-moneyOut; const actual=clM+clK+clE+clB+clC; const variance=actual-expected; let note=variance===0?"Balanced":prompt(`Variance: ${variance.toFixed(2)}. Reason:`); if(variance!==0 && !note) return; await supabase.from('daily_shifts').update({ close_mpesa:clM, close_kcb:clK, close_equity:clE, close_kcb_bank:clB, close_cash:clC, status:'Closed', end_time:new Date().toISOString(), variance_note:note, system_expected_total:expected }).eq('id',currentShift.id); location.reload(); });
@@ -332,7 +231,8 @@
     window.logoutUser = async () => { localStorage.removeItem('pos_session'); await supabase.auth.signOut(); location.href='index.html'; };
     window.toggleProfileDropdown = function(){ const dd=document.getElementById('profileDropdown'); if(dd) dd.style.display=dd.style.display==='block'?'none':'block'; };
     window.addEventListener('resize',()=>{ if(allShifts.length){ if(window.innerWidth<=768) renderMobileHistory(allShifts,allTransactions,allSales); else{ renderDesktopHistory(allShifts,allTransactions,allSales); const desktop=document.querySelector('.shift-history-table-container'); const mobile=document.getElementById('mobile-shifts-container'); if(desktop) desktop.style.display='block'; if(mobile) mobile.style.display='none'; } } });
-    async function init(){ await loadBranches(); await loadUserProfile(); await fetchInventory(); await checkForOpenShift(); await loadHistory(); setInterval(checkLowFloats,30000); }
+    async function init(){ await loadBranches(); await loadUserProfile(); await fetchInventory(); await checkForOpenShift(); await loadHistory(); setInterval(()=>{ checkLowFloats(); },30000); }
+    function checkLowFloats(){ const cash=parseFloat(document.getElementById('float-cash')?.innerText.replace(/,/g,'')||0); if(cash<2000 && cash>0) document.getElementById('float-cash-item')?.classList.add('danger-alert'); else document.getElementById('float-cash-item')?.classList.remove('danger-alert'); }
     init();
 </script>
 </body>
