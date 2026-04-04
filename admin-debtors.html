@@ -1,5 +1,3 @@
-Here is the updated admin debtors page with split payment methods and removal of Bank Transfer option.
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -249,9 +247,32 @@ Here is the updated admin debtors page with split payment methods and removal of
         .overlay.active { display: block; }
 
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 4000; padding: 20px; }
-        .modal-content { background: white; padding: 30px; border-radius: 20px; width: 100%; max-width: 400px; }
+        .modal-content { background: white; padding: 30px; border-radius: 20px; width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto; }
+
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         /* Split Payment Styles */
+        .split-mode-toggle {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 30px;
+            border: 1px solid var(--border);
+            background: white;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .mode-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
         .split-payment-section {
             background: #f8fafc;
             border-radius: 12px;
@@ -259,41 +280,32 @@ Here is the updated admin debtors page with split payment methods and removal of
             margin: 15px 0;
             border: 1px solid var(--border);
         }
-        
         .split-row {
             display: flex;
             gap: 10px;
             align-items: center;
             margin-bottom: 10px;
         }
-        
-        .split-row .method-select {
+        .split-row select {
             flex: 2;
             padding: 10px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
             font-size: 0.85rem;
         }
-        
-        .split-row .amount-input {
+        .split-row input {
             flex: 1;
             padding: 10px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
             font-size: 0.85rem;
         }
-        
-        .split-row .remove-split {
+        .split-row button {
             background: var(--danger);
             color: white;
             border: none;
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             border-radius: 8px;
             cursor: pointer;
             font-size: 1rem;
         }
-        
         .add-split-btn {
             background: var(--primary);
             color: white;
@@ -308,7 +320,6 @@ Here is the updated admin debtors page with split payment methods and removal of
             gap: 5px;
             margin-top: 10px;
         }
-        
         .split-total {
             font-size: 0.8rem;
             text-align: right;
@@ -316,19 +327,12 @@ Here is the updated admin debtors page with split payment methods and removal of
             padding-top: 8px;
             border-top: 1px dashed var(--border);
         }
-        
-        .split-total span {
-            font-weight: 800;
-            color: var(--primary);
-        }
-        
         .split-error {
             color: var(--danger);
             font-size: 0.7rem;
             margin-top: 5px;
             display: none;
         }
-        
         .kcb-badge {
             background: var(--kcb-paybill);
             color: white;
@@ -337,17 +341,6 @@ Here is the updated admin debtors page with split payment methods and removal of
             border-radius: 4px;
             margin-left: 5px;
         }
-
-        .spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 3px solid rgba(255,255,255,.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
 
         @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left: 0; top: 0; width: 100%; } }
 
@@ -359,8 +352,8 @@ Here is the updated admin debtors page with split payment methods and removal of
             td::before { content: attr(data-label); font-weight: 700; color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase; text-align: left; min-width: 100px; }
             .action-buttons { justify-content: flex-end; width: 100%; }
             .split-row { flex-wrap: wrap; }
-            .split-row .method-select { flex: 1 1 100%; }
-            .split-row .amount-input { flex: 1; }
+            .split-row select { flex: 1 1 100%; }
+            .split-row input { flex: 1; }
         }
         
         .delete-confirm-modal .modal-content { text-align: center; }
@@ -494,22 +487,20 @@ Here is the updated admin debtors page with split payment methods and removal of
     <\/div>
 <\/div>
 
-<!-- Settle Modal with Split Payment Support -->
+<!-- Settle Modal with Split Payment -->
 <div class="modal" id="settle-modal">
     <div class="modal-content">
         <h3 style="margin-top:0;"><i class="fas fa-hand-holding-usd" style="color: var(--success);"></i> Settle Debt<\/h3>
         <p id="modal-info" style="color: var(--text-dim); margin-bottom: 15px; font-size: 0.9rem;"><\/p>
         
-        <!-- Payment Method Selection -->
-        <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase;">Payment Method <span style="color: var(--primary);">(Single or Split)<\/span><\/label>
-        
-        <div style="display: flex; gap: 10px; margin: 10px 0;">
-            <button type="button" id="single-payment-btn" class="btn-primary" style="flex:1; padding: 10px; font-size:0.8rem; background: var(--success);">💳 Single Payment<\/button>
-            <button type="button" id="split-payment-btn" class="btn-primary" style="flex:1; padding: 10px; font-size:0.8rem; background: var(--primary);">🔀 Split Payment<\/button>
+        <div class="split-mode-toggle">
+            <button type="button" id="single-payment-btn" class="mode-btn active">💳 Single Payment<\/button>
+            <button type="button" id="split-payment-btn" class="mode-btn">🔀 Split Payment<\/button>
         <\/div>
         
         <!-- Single Payment Section -->
         <div id="single-payment-section">
+            <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase;">Payment Method<\/label>
             <select id="settle-method" style="margin: 10px 0 20px 0;">
                 <option value="Cash">💵 Cash<\/option>
                 <option value="Mpesa">📱 M-Pesa<\/option>
@@ -517,22 +508,22 @@ Here is the updated admin debtors page with split payment methods and removal of
             <\/select>
         <\/div>
         
-        <!-- Split Payment Section (hidden by default) -->
+        <!-- Split Payment Section -->
         <div id="split-payment-section" style="display: none;">
             <div class="split-payment-section">
                 <div id="split-entries-container">
                     <div class="split-row" data-index="0">
-                        <select class="method-select" data-method>
+                        <select class="split-method">
                             <option value="Cash">💵 Cash<\/option>
                             <option value="Mpesa">📱 M-Pesa<\/option>
                             <option value="KCB Paybill">🏦 KCB Paybill <span class="kcb-badge">LIVE<\/span><\/option>
                         <\/select>
-                        <input type="number" class="amount-input" data-amount placeholder="Amount" step="0.01" value="0">
+                        <input type="number" class="split-amount" placeholder="Amount" step="0.01" value="0" oninput="updateSplitTotal()">
                         <button type="button" class="remove-split" onclick="removeSplitEntry(this)" style="display: none;">✕<\/button>
                     <\/div>
                 <\/div>
                 <button type="button" class="add-split-btn" onclick="addSplitEntry()"><i class="fas fa-plus-circle"><\/i> Add Payment Method<\/button>
-                <div class="split-total">Total: Ksh <span id="split-total-amount">0.00<\/span> <span id="split-status"></span><\/div>
+                <div class="split-total">Total: Ksh <span id="split-total-amount">0.00<\/span><\/div>
                 <div id="split-error" class="split-error">⚠️ Total does not match debt amount!<\/div>
             <\/div>
         <\/div>
@@ -560,8 +551,7 @@ Here is the updated admin debtors page with split payment methods and removal of
 
     let allDebts = [], currentFilter = 'All', currentShift = null, selectedDebt = null, selectedDebtToDelete = null;
     let currentUser = null, currentBranchId = null, currentBranch = null, selectedBranchId = null, branches = {}, branchIdMap = {};
-    let isSplitPayment = false;
-    let splitEntries = [{ method: 'Cash', amount: 0 }];
+    let isSplitMode = false;
 
     window.toggleMenu = () => { document.getElementById('sidebar').classList.toggle('mobile-active'); document.getElementById('overlay').classList.toggle('active'); };
     window.confirmSwitchToCashier = (e) => { e.preventDefault(); if(confirm("Switch to Cashier Mode?")) window.location.href = "cashier.html"; };
@@ -670,19 +660,27 @@ Here is the updated admin debtors page with split payment methods and removal of
     function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m) { if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; return m; }); }
 
     // Split Payment Functions
+    function updateSplitTotal() {
+        let total = 0;
+        document.querySelectorAll('#split-entries-container .split-amount').forEach(input => { total += parseFloat(input.value) || 0; });
+        document.getElementById('split-total-amount').innerText = total.toFixed(2);
+        const debtAmount = selectedDebt ? selectedDebt.amt : 0;
+        const errorDiv = document.getElementById('split-error');
+        if (Math.abs(total - debtAmount) > 0.01 && debtAmount > 0) { errorDiv.style.display = 'block'; return false; } 
+        else { errorDiv.style.display = 'none'; return true; }
+    }
+    
     window.addSplitEntry = function() {
         const container = document.getElementById('split-entries-container');
-        const index = container.children.length;
         const newEntry = document.createElement('div');
         newEntry.className = 'split-row';
-        newEntry.setAttribute('data-index', index);
         newEntry.innerHTML = `
-            <select class="method-select" data-method>
+            <select class="split-method">
                 <option value="Cash">💵 Cash<\/option>
                 <option value="Mpesa">📱 M-Pesa<\/option>
                 <option value="KCB Paybill">🏦 KCB Paybill <span class="kcb-badge">LIVE<\/span><\/option>
             <\/select>
-            <input type="number" class="amount-input" data-amount placeholder="Amount" step="0.01" value="0">
+            <input type="number" class="split-amount" placeholder="Amount" step="0.01" value="0" oninput="updateSplitTotal()">
             <button type="button" class="remove-split" onclick="removeSplitEntry(this)">✕<\/button>
         `;
         container.appendChild(newEntry);
@@ -691,80 +689,48 @@ Here is the updated admin debtors page with split payment methods and removal of
     
     window.removeSplitEntry = function(btn) {
         const container = document.getElementById('split-entries-container');
-        if (container.children.length > 1) {
-            btn.closest('.split-row').remove();
-            updateSplitTotal();
-        } else {
-            alert("At least one payment method is required");
-        }
+        if (container.children.length > 1) btn.closest('.split-row').remove();
+        else alert("At least one payment method is required");
+        updateSplitTotal();
     };
-    
-    function updateSplitTotal() {
-        let total = 0;
-        const rows = document.querySelectorAll('#split-entries-container .split-row');
-        rows.forEach(row => {
-            const amountInput = row.querySelector('.amount-input');
-            const amount = parseFloat(amountInput.value) || 0;
-            total += amount;
-        });
-        document.getElementById('split-total-amount').innerText = total.toFixed(2);
-        const debtAmount = selectedDebt ? selectedDebt.amt : 0;
-        const errorDiv = document.getElementById('split-error');
-        const statusSpan = document.getElementById('split-status');
-        if (Math.abs(total - debtAmount) > 0.01) {
-            errorDiv.style.display = 'block';
-            statusSpan.innerHTML = '❌';
-            statusSpan.style.color = 'var(--danger)';
-            return false;
-        } else {
-            errorDiv.style.display = 'none';
-            statusSpan.innerHTML = '✅';
-            statusSpan.style.color = 'var(--success)';
-            return true;
-        }
-    }
     
     function getSplitPayments() {
         const payments = [];
-        const rows = document.querySelectorAll('#split-entries-container .split-row');
-        rows.forEach(row => {
-            const method = row.querySelector('.method-select').value;
-            const amount = parseFloat(row.querySelector('.amount-input').value) || 0;
-            if (amount > 0) {
-                payments.push({ method, amount });
-            }
+        document.querySelectorAll('#split-entries-container .split-row').forEach(row => {
+            const method = row.querySelector('.split-method').value;
+            const amount = parseFloat(row.querySelector('.split-amount').value) || 0;
+            if (amount > 0) payments.push({ method, amount });
         });
         return payments;
     }
 
-    // Modal Functions
     window.openSettleModal = (id, amt, name, item) => {
         selectedDebt = { id, amt, name, item };
         document.getElementById('modal-info').innerHTML = `Settling <b>Ksh ${amt.toLocaleString()}</b> for <b>${name}</b>`;
         
         // Reset to single payment mode
-        isSplitPayment = false;
+        isSplitMode = false;
         document.getElementById('single-payment-section').style.display = 'block';
         document.getElementById('split-payment-section').style.display = 'none';
-        document.getElementById('single-payment-btn').style.background = 'var(--success)';
-        document.getElementById('split-payment-btn').style.background = 'var(--primary)';
+        document.getElementById('single-payment-btn').classList.add('active');
+        document.getElementById('split-payment-btn').classList.remove('active');
         
         // Reset split entries
         const container = document.getElementById('split-entries-container');
         container.innerHTML = '';
         const defaultEntry = document.createElement('div');
         defaultEntry.className = 'split-row';
-        defaultEntry.setAttribute('data-index', '0');
         defaultEntry.innerHTML = `
-            <select class="method-select" data-method>
+            <select class="split-method">
                 <option value="Cash">💵 Cash<\/option>
                 <option value="Mpesa">📱 M-Pesa<\/option>
                 <option value="KCB Paybill">🏦 KCB Paybill <span class="kcb-badge">LIVE<\/span><\/option>
             <\/select>
-            <input type="number" class="amount-input" data-amount placeholder="Amount" step="0.01" value="${amt}">
+            <input type="number" class="split-amount" placeholder="Amount" step="0.01" value="${amt}" oninput="updateSplitTotal()">
             <button type="button" class="remove-split" onclick="removeSplitEntry(this)" style="display: none;">✕<\/button>
         `;
         container.appendChild(defaultEntry);
+        updateSplitTotal();
         
         document.getElementById('settle-modal').style.display = 'flex';
     };
@@ -779,43 +745,21 @@ Here is the updated admin debtors page with split payment methods and removal of
     };
 
     document.getElementById('single-payment-btn').onclick = () => {
-        isSplitPayment = false;
+        isSplitMode = false;
         document.getElementById('single-payment-section').style.display = 'block';
         document.getElementById('split-payment-section').style.display = 'none';
-        document.getElementById('single-payment-btn').style.background = 'var(--success)';
-        document.getElementById('split-payment-btn').style.background = 'var(--primary)';
+        document.getElementById('single-payment-btn').classList.add('active');
+        document.getElementById('split-payment-btn').classList.remove('active');
     };
     
     document.getElementById('split-payment-btn').onclick = () => {
-        isSplitPayment = true;
+        isSplitMode = true;
         document.getElementById('single-payment-section').style.display = 'none';
         document.getElementById('split-payment-section').style.display = 'block';
-        document.getElementById('single-payment-btn').style.background = 'var(--primary)';
-        document.getElementById('split-payment-btn').style.background = 'var(--success)';
-        // Reset split total with debt amount
-        const container = document.getElementById('split-entries-container');
-        container.innerHTML = '';
-        const defaultEntry = document.createElement('div');
-        defaultEntry.className = 'split-row';
-        defaultEntry.setAttribute('data-index', '0');
-        defaultEntry.innerHTML = `
-            <select class="method-select" data-method>
-                <option value="Cash">💵 Cash<\/option>
-                <option value="Mpesa">📱 M-Pesa<\/option>
-                <option value="KCB Paybill">🏦 KCB Paybill <span class="kcb-badge">LIVE<\/span><\/option>
-            <\/select>
-            <input type="number" class="amount-input" data-amount placeholder="Amount" step="0.01" value="${selectedDebt ? selectedDebt.amt : 0}">
-            <button type="button" class="remove-split" onclick="removeSplitEntry(this)" style="display: none;">✕<\/button>
-        `;
-        container.appendChild(defaultEntry);
+        document.getElementById('single-payment-btn').classList.remove('active');
+        document.getElementById('split-payment-btn').classList.add('active');
         updateSplitTotal();
     };
-    
-    document.getElementById('split-entries-container').addEventListener('input', function(e) {
-        if (e.target.classList && e.target.classList.contains('amount-input')) {
-            updateSplitTotal();
-        }
-    });
 
     document.getElementById('confirm-delete-btn').onclick = async () => {
         if (!selectedDebtToDelete) return;
@@ -833,22 +777,14 @@ Here is the updated admin debtors page with split payment methods and removal of
         finally { btn.innerHTML = originalText; btn.disabled = false; }
     };
 
-    // Process Settlement with Split Payment Support
     document.getElementById('confirm-settle-btn').onclick = async () => {
         if (!selectedDebt) return;
         
         let payments = [];
-        
-        if (isSplitPayment) {
-            if (!updateSplitTotal()) {
-                alert("❌ Split payment total does not match the debt amount. Please adjust amounts.");
-                return;
-            }
+        if (isSplitMode) {
+            if (!updateSplitTotal()) { alert("❌ Split payment total does not match the debt amount."); return; }
             payments = getSplitPayments();
-            if (payments.length === 0) {
-                alert("Please enter at least one payment amount");
-                return;
-            }
+            if (payments.length === 0) { alert("Please enter at least one payment amount"); return; }
         } else {
             const method = document.getElementById('settle-method').value;
             payments = [{ method, amount: selectedDebt.amt }];
@@ -857,22 +793,21 @@ Here is the updated admin debtors page with split payment methods and removal of
         const btn = document.getElementById('confirm-settle-btn');
         btn.innerHTML = '<span class="spinner"></span> Processing...';
         btn.disabled = true;
-        
         try {
             const branchId = selectedBranchId || currentBranchId;
             
-            // 1. Update debt status to Paid
+            // 1. Update debt status
             const { error: debtError } = await supabase.from('debtors').update({ status: 'Paid' }).eq('id', selectedDebt.id);
             if (debtError) throw debtError;
             
             // 2. Update sales record if exists
-            const paymentMethodsStr = payments.map(p => `${p.method}: Ksh ${p.amount.toLocaleString()}`).join(', ');
+            const paymentSummary = payments.map(p => `${p.method}: Ksh ${p.amount.toLocaleString()}`).join(', ');
             await supabase.from('sales').update({ 
-                payment_method: payments.length > 1 ? `Split (${paymentMethodsStr})` : payments[0].method, 
-                discount_reason: `Debt settled: ${selectedDebt.name} - ${paymentMethodsStr}`
+                payment_method: payments.length > 1 ? `Split (${paymentSummary})` : payments[0].method, 
+                discount_reason: `Debt settled: ${selectedDebt.name} - ${paymentSummary}`
             }).eq('payment_method', 'Debt').like('discount_reason', `%${selectedDebt.name}%`);
             
-            // 3. Record each payment as a separate cash transaction
+            // 3. Record each payment as a cash transaction
             for (const payment of payments) {
                 const transData = { 
                     type: 'Money In', 
@@ -974,7 +909,7 @@ Here is the updated admin debtors page with split payment methods and removal of
     initialize();
     document.getElementById('delete-modal').addEventListener('click', function(e){ if(e.target === this) closeDeleteModal(); });
     document.getElementById('settle-modal').addEventListener('click', function(e){ if(e.target === this) closeModal(); });
+    document.getElementById('split-entries-container').addEventListener('input', function(e) { if(e.target.classList && e.target.classList.contains('split-amount')) updateSplitTotal(); });
 <\/script>
 <\/body>
 <\/html>
-```
