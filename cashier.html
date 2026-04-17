@@ -7,1321 +7,1467 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-    :root { 
-        --primary: #4f46e5; 
-        --primary-dark: #3730a3;
-        --bg: #f1f5f9; 
-        --card-bg: #ffffff; 
-        --danger: #e11d48; 
-        --success: #10b981; 
-        --warning: #f59e0b;
-        --nav-btn-bg: #6366f1;
-        --text-main: #1e293b; 
-        --text-dim: #64748b;
-        --border: #e2e8f0; 
-        --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        --deep-blue: #1e3a8a;
-        --admin-dark: #0f172a;
-        --admin-accent: #1e3a8a;
-        --switch-btn: #0ea5e9;
-        --gas: #f59e0b;
-    }
+<style>
+        /* ALL YOUR EXISTING STYLES - KEPT INTACT WITH MOBILE FIXES */
+        :root { 
+            --primary: #4f46e5; 
+            --primary-dark: #3730a3;
+            --bg: #f1f5f9; 
+            --card-bg: #ffffff; 
+            --danger: #e11d48; 
+            --success: #10b981; 
+            --warning: #f59e0b;
+            --nav-btn-bg: #6366f1;
+            --text-main: #1e293b; 
+            --text-dim: #64748b;
+            --border: #e2e8f0; 
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --deep-blue: #1e3a8a;
+            --admin-dark: #0f172a;
+            --admin-accent: #1e3a8a;
+            --switch-btn: #0ea5e9;
+            --gas: #f59e0b;
+            --kcb-paybill: #2563eb;
+        }
 
-    * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
 
-    body { 
-        font-family: 'Plus Jakarta Sans', sans-serif; 
-        background-color: var(--bg);
-        padding: 10px; margin: 0; color: var(--text-main); line-height: 1.5; 
-        overflow-x: hidden;
-        width: 100%;
-    }
-
-    .container { max-width: 1450px; margin: auto; width: 100%; }
-    
-    /* Compact Header */
-    .compact-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
-        padding: 12px 15px;
-        background: #fff;
-        border-radius: 14px;
-        box-shadow: var(--shadow);
-        border: 1px solid var(--border);
-    }
-    
-    .header-left {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-    }
-    
-    .profile-btn {
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        background: var(--primary);
-        color: white;
-        border: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        font-size: 1.1rem;
-    }
-    
-    .logo-compact {
-        font-size: 1.1rem;
-        font-weight: 800;
-        letter-spacing: -0.5px;
-        color: #111827;
-    }
-    
-    .logo-compact span {
-        color: var(--primary);
-        font-weight: 500;
-        font-size: 0.75rem;
-        margin-left: 5px;
-        opacity: 0.8;
-    }
-    
-    .header-right {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-    
-    .special-action-btn {
-        font-size: 0.75rem !important;
-        padding: 8px 14px !important;
-        border-radius: 8px !important;
-        box-shadow: 0 0 8px rgba(79, 70, 229, 0.4) !important;
-        border: 2px solid white !important;
-    }
-    
-    /* Branch badge */
-    .branch-badge {
-        background: var(--primary);
-        color: white;
-        padding: 6px 12px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 700;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        border: 2px solid white;
-        box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
-    }
-    
-    /* Gas badge */
-    .gas-badge {
-        background: var(--gas);
-        color: white;
-        font-size: 0.65rem;
-        padding: 2px 6px;
-        border-radius: 4px;
-        margin-left: 5px;
-        font-weight: 700;
-    }
-    
-    /* Start button with larger font */
-    .start-btn-large {
-        font-size: 0.9rem !important;
-        padding: 10px 18px !important;
-        font-weight: 900 !important;
-        letter-spacing: 0.5px !important;
-    }
-
-    .float-status-card {
-        background: #fff; 
-        padding: 12px; 
-        border-radius: 14px; 
-        border: 1px solid var(--border);
-        margin-bottom: 15px; 
-        display: grid; 
-        grid-template-columns: repeat(2, 1fr);
-        gap: 8px; 
-        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-    }
-    
-    /* Low float warning */
-    .low-float-warning {
-        background: #fee2e2 !important;
-        color: #b91c1c !important;
-        border-color: #fecaca !important;
-    }
-    
-    /* Danger alert for very low floats */
-    .danger-alert {
-        border: 2px solid #ef4444 !important;
-        background: #fff1f2 !important;
-        animation: pulse-border 2s infinite;
-    }
-    
-    @keyframes pulse-border {
-        0% { border-color: #ef4444; }
-        50% { border-color: #fca5a5; }
-        100% { border-color: #ef4444; }
-    }
-
-    @media (min-width: 600px) { 
-        .float-status-card { 
-            grid-template-columns: repeat(5, 1fr); 
-            padding: 15px;
-            gap: 12px;
-        } 
-    }
-
-    .float-item { 
-        text-align: center; 
-        padding: 10px;
-        border-radius: 10px;
-        border: 1px solid var(--border);
-        transition: all 0.3s;
-        position: relative;
-    }
-    
-    .float-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    
-    .float-item label { 
-        display: block; 
-        font-size: 0.6rem; 
-        color: var(--text-dim); 
-        text-transform: uppercase; 
-        font-weight: 800; 
-        margin-bottom: 4px;
-    }
-    
-    .float-item span { 
-        font-size: 1rem; 
-        font-weight: 800; 
-        color: var(--primary); 
-        display: block;
-    }
-    
-    @media (min-width: 768px) {
-        .float-item span { font-size: 1.1rem; }
-        .float-item label { font-size: 0.65rem; }
-        .compact-header { padding: 15px 20px; margin-bottom: 20px; }
-        .logo-compact { font-size: 1.3rem; }
-        .logo-compact span { font-size: 0.85rem; }
-        .profile-btn { width: 42px; height: 42px; font-size: 1.3rem; }
-    }
-    
-    .kcb-live-box { 
-        border: 2px solid var(--primary); 
-        border-radius: 10px; 
-        background: #f5f3ff; 
-    }
-
-    .card { 
-        background: var(--card-bg); 
-        border-radius: 14px; 
-        border: 1px solid var(--border); 
-        padding: 15px; 
-        margin-bottom: 15px; 
-        box-shadow: var(--shadow);
-    }
-    
-    @media (min-width: 768px) {
-        .card {
-            padding: 22px;
-            margin-bottom: 22px;
-            border-radius: 20px;
-        }
-    }
-
-    .section-label { 
-        font-size: 0.7rem; 
-        text-transform: uppercase; 
-        letter-spacing: 0.08em; 
-        color: var(--primary); 
-        margin-bottom: 15px; 
-        font-weight: 800; 
-        display: flex; 
-        align-items: center; 
-        gap: 6px; 
-    }
-    
-    @media (min-width: 768px) {
-        .section-label {
-            font-size: 0.8rem;
-            margin-bottom: 20px;
-        }
-    }
-    
-    .section-label::after { 
-        content: ""; 
-        flex: 1; 
-        height: 1px; 
-        background: var(--border); 
-    }
-
-    .grid-inputs { display: grid; gap: 12px; }
-    .input-group { display: flex; flex-direction: column; }
-    label { 
-        margin-bottom: 5px; 
-        font-weight: 700; 
-        color: var(--text-main); 
-        font-size: 0.7rem; 
-    }
-    
-    @media (min-width: 768px) {
-        label { font-size: 0.8rem; }
-    }
-    
-    input, select { 
-        background: #f8fafc; 
-        border: 1px solid var(--border); 
-        padding: 12px; 
-        border-radius: 10px; 
-        font-size: 14px; 
-        font-family: inherit; 
-        transition: 0.2s; 
-        color: var(--text-main); 
-        width: 100%;
-    }
-    
-    @media (min-width: 768px) {
-        input, select {
-            padding: 16px;
-            font-size: 16px;
-            border-radius: 12px;
-        }
-    }
-    
-    .hint-badge { 
-        padding: 3px 8px; 
-        border-radius: 5px; 
-        font-size: 0.65rem; 
-        font-weight: 700; 
-        margin-top: 4px; 
-    }
-    
-    @media (min-width: 768px) {
-        .hint-badge {
-            font-size: 0.75rem;
-        }
-    }
-    
-    .bg-stock { background: #dcfce7; color: #166534; }
-    .bg-min { background: #fef9c3; color: #854d0e; }
-
-    .table-card { 
-        border-radius: 14px; 
-        margin-bottom: 15px; 
-        width: 100%; 
-        background: #fff; 
-        border: 1px solid var(--border); 
-        overflow-x: auto; 
-        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
-    }
-    
-    table { width: 100%; border-collapse: collapse; }
-    
-    .today-sales-table { 
-        min-width: 600px; 
-    }
-    
-    .money-history-table {
-        min-width: 700px;
-    }
-    
-    .shift-history-table {
-        min-width: 1250px;
-    }
-    
-    th { 
-        background: #f8fafc; 
-        padding: 12px 10px;
-        font-size: 0.7rem;
-        text-transform: uppercase; 
-        letter-spacing: 0.05em; 
-        color: var(--text-dim); 
-        border-bottom: 1px solid var(--border); 
-        text-align: left; 
-    }
-    
-    td { 
-        padding: 12px 10px;
-        border-bottom: 1px solid var(--border); 
-        font-size: 0.85rem;
-        vertical-align: top; 
-    }
-    
-    @media (min-width: 768px) {
-        .today-sales-table { 
-            min-width: 800px;
-        }
-        
-        .money-history-table {
-            min-width: 900px;
-        }
-        
-        th { 
-            padding: 16px 14px; 
-            font-size: 0.75rem;
-        }
-        
-        td { 
-            padding: 14px 14px; 
-            font-size: 0.9rem;
-        }
-    }
-    
-    @media (min-width: 1024px) {
-        .today-sales-table { 
-            min-width: 1000px;
-        }
-        
-        .money-history-table {
-            min-width: 100%;
-        }
-        
-        th { 
-            padding: 18px 15px; 
-            font-size: 0.8rem;
-        }
-        
-        td { 
-            padding: 16px 15px; 
-            font-size: 0.95rem;
-        }
-    }
-    
-    @media (max-width: 768px) {
-        .mobile-hide-header { display: none; }
-        tr { 
-            display: block; 
-            background: white; 
-            margin-bottom: 10px; 
-            padding: 10px; 
-            border-radius: 10px; 
-            border: 1px solid var(--border); 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.04); 
-        }
-        td { 
-            display: flex; 
-            justify-content: space-between; 
-            padding: 8px 0; 
-            border: none !important; 
-            border-bottom: 1px dashed #f1f5f9 !important; 
-            text-align: right; 
-            font-size: 0.8rem;
-        }
-        td::before { 
-            content: attr(data-label); 
-            font-weight: 800; 
-            color: var(--text-dim); 
-            font-size: 0.65rem; 
-            display: block; 
-            text-align: left; 
-        }
-        
-        .table-card {
-            margin-bottom: 12px;
-            border-radius: 12px;
-            max-height: none !important;
-        }
-        
-        /* Fix for money record button on mobile - centered */
-        #record-expense-btn {
-            font-size: 0.85rem !important;
-            padding: 14px !important;
-            margin: 0 auto;
-            width: 90%;
-            display: block;
-        }
-        
-        /* Fix for refresh button text on mobile */
-        .header-right .btn {
-            font-size: 0.75rem !important;
-            padding: 8px 12px !important;
-        }
-        
-        /* Remove slide indicator */
-        .slide-indicator {
-            display: none !important;
-        }
-        
-        /* Center the money record section on mobile */
-        .dual-tables > div:last-child .card {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        
-        .dual-tables > div:last-child .card input,
-        .dual-tables > div:last-child .card select {
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: var(--bg);
+            padding: 10px; margin: 0; color: var(--text-main); line-height: 1.5; 
+            overflow-x: hidden;
             width: 100%;
         }
-    }
 
-    .btn { 
-        padding: 14px 18px; 
-        border-radius: 10px; 
-        font-weight: 800; 
-        cursor: pointer; 
-        border: none; 
-        font-size: 0.85rem; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-        gap: 6px; 
-        text-transform: uppercase; 
-        transition: 0.3s opacity; 
-    }
-    
-    @media (min-width: 768px) {
-        .btn {
-            padding: 18px 24px;
-            font-size: 0.95rem;
-            border-radius: 12px;
-        }
-    }
-    
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-primary { background: var(--primary); color: white; }
-    .btn-danger { background: var(--danger); color: white; }
-    .btn-sync { background: var(--warning); color: white; }
-    
-    .btn-refund { 
-        background: #f59e0b; 
-        color: white; 
-        padding: 6px 12px !important;
-        font-size: 0.7rem !important;
-        border-radius: 6px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .overlay { 
-        position: fixed; 
-        inset: 0; 
-        background: rgba(15, 23, 42, 0.8); 
-        display: none; 
-        align-items: center; 
-        justify-content: center; 
-        z-index: 1000; 
-        backdrop-filter: blur(8px); 
-        padding: 15px; 
-    }
-    
-    .modal { 
-        background: #fff; 
-        padding: 22px; 
-        border-radius: 18px; 
-        width: 100%; 
-        max-width: 450px; 
-        max-height: 90vh; 
-        overflow-y: auto; 
-    }
-    
-    @media (min-width: 768px) {
-        .modal {
-            padding: 28px;
-            max-width: 500px;
-            border-radius: 24px;
-        }
-    }
-    
-    .dual-tables { 
-        display: grid; 
-        grid-template-columns: 1fr; 
-        gap: 15px; 
-        width: 100%; 
-    }
-    
-    @media (min-width: 1024px) { 
-        .dual-tables { 
-            grid-template-columns: 1.2fr 1fr; 
-            gap: 22px; 
-        }
-    }
-
-    .text-success { color: #15803d !important; font-weight: 700; }
-    .text-danger { color: #b91c1c !important; font-weight: 700; }
-    .variance-status { font-weight: 800; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; text-align: center; }
-    
-    .balanced { background: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; }
-    .mismatch { background: #fee2e2; color: #991b1b; }
-    .variance-positive { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-    .variance-negative { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
-
-    .search-input {
-        width: 100%;
-        padding: 16px 22px;
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        margin-bottom: 24px;
-        font-size: 1rem;
-        outline: none;
-        background: white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    }
-    
-    .search-input:focus { border-color: var(--primary); }
-
-    .account-line { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px dashed #f1f5f9; padding-bottom: 3px; }
-    .account-label { color: var(--text-dim); font-size: 0.8rem; font-weight: 500; }
-    .account-val { font-weight: 600; color: var(--text-main); font-size: 0.85rem; }
-
-    .total-row { font-weight: 800; margin-top: 12px; padding: 10px; background: #f5f3ff; color: var(--primary); border-radius: 8px; text-align: center; }
-    
-    .status-badge { font-weight: 800; padding: 8px 14px; border-radius: 10px; font-size: 0.8rem; display: block; text-align: center; min-width: 130px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid transparent; }
-    .active-shift { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
-    .var-positive { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
-    .var-negative { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
-    .var-balanced { background: #f1f5f9; color: var(--text-main); border-color: var(--border); }
-
-    .revenue-card { background: #fff; border: 1px solid var(--border); padding: 12px; border-radius: 10px; text-decoration: none; display: block; transition: 0.2s; }
-    .revenue-card:hover { border-color: var(--primary); transform: translateY(-2px); }
-    
-    .adj-box { padding: 14px; border-radius: 12px; background: #fafafa; border: 1px solid #f0f0f0; text-decoration: none; display: block; }
-
-    .date-cell b { display: block; margin-bottom: 8px; font-size: 0.95rem; }
-    .time-pill { background: #f1f5f9; padding: 3px 8px; border-radius: 5px; font-size: 0.7rem; font-weight: 700; color: var(--text-dim); display: inline-block; margin-top: 4px; }
-    
-    .clickable-link {
-        color: var(--primary);
-        text-decoration: none;
-        font-weight: 700;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: inline-block;
-        padding: 3px 10px;
-        border-radius: 5px;
-    }
-    
-    .clickable-link:hover {
-        background: #f1f5ff;
-        text-decoration: underline;
-        transform: translateY(-1px);
-    }
-    
-    .nav-overlay { 
-        position: fixed; 
-        inset: 0; 
-        background: rgba(15, 23, 42, 0.98); 
-        backdrop-filter: blur(15px); 
-        z-index: 3000; 
-        display: none; 
-        flex-direction: column; 
-        padding: 50px 15px 30px 15px; 
-        overflow-y: auto; 
-    }
-    
-    .nav-overlay.active { 
-        display: flex; 
-        animation: fadeIn 0.3s ease forwards; 
-    }
-    
-    @keyframes fadeIn { 
-        from { opacity: 0; transform: translateY(20px); } 
-        to { opacity: 1; transform: translateY(0); } 
-    }
-    
-    .nav-grid { 
-        display: grid; 
-        grid-template-columns: repeat(2, 1fr); 
-        gap: 10px; 
-        width: 100%; 
-        max-width: 500px; 
-        margin: 0 auto; 
-    }
-    
-    .nav-card { 
-        background: rgba(255, 255, 255, 0.08); 
-        border: 1px solid rgba(255, 255, 255, 0.1); 
-        border-radius: 14px; 
-        padding: 14px 8px; 
-        text-align: center; 
-        color: white; 
-        text-decoration: none; 
-        display: flex; 
-        flex-direction: column; 
-        align-items: center; 
-        gap: 5px; 
-    }
-    
-    @media (min-width: 768px) {
-        .nav-grid { gap: 12px; }
-        .nav-card { padding: 16px 10px; gap: 6px; }
-    }
-    
-    .nav-card span { font-size: 1.2rem; }
-    .nav-card small { font-size: 0.7rem; font-weight: 600; line-height: 1.3; }
-    .switch-card { background: var(--switch-btn); grid-column: span 2; margin-bottom: 10px; border: none; font-weight: 800; padding: 20px; }
-    .nav-header-title { color: white; text-align: center; font-weight: 800; font-size: 1.3rem; margin-bottom: 20px; letter-spacing: 1px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 12px; }
-    
-    @media (min-width: 768px) {
-        .nav-header-title { font-size: 1.5rem; margin-bottom: 25px; }
-        .nav-card span { font-size: 1.3rem; }
-        .nav-card small { font-size: 0.75rem; }
-    }
-
-    .fab-menu { 
-        position: fixed; 
-        bottom: 20px; 
-        left: 15px; 
-        width: 60px; 
-        height: 60px; 
-        background: var(--deep-blue); 
-        border-radius: 50%; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-        color: white; 
-        font-size: 1.4rem; 
-        box-shadow: 0 8px 25px rgba(30, 58, 138, 0.4); 
-        border: 4px solid white; 
-        cursor: pointer; 
-        z-index: 2000; 
-        animation: swing 3s infinite ease-in-out; 
-        transform-origin: center bottom; 
-    }
-    
-    @keyframes swing { 
-        0%, 100% { transform: rotate(0deg); } 
-        20% { transform: rotate(10deg); } 
-        40% { transform: rotate(-10deg); } 
-    }
-    
-    .guide-hand { 
-        position: fixed; 
-        bottom: 90px; 
-        left: 25px; 
-        z-index: 2500; 
-        display: flex; 
-        flex-direction: column; 
-        align-items: center; 
-        animation: bounce 1.5s infinite; 
-    }
-    
-    .guide-hand span { font-size: 1.5rem; }
-    .guide-label { 
-        background: var(--admin-dark); 
-        color: white; 
-        padding: 3px 6px; 
-        border-radius: 5px; 
-        font-size: 0.5rem; 
-        font-weight: 800; 
-        margin-bottom: 3px; 
-        border: 1px solid var(--admin-accent); 
-    }
-    
-    @keyframes bounce { 
-        0%, 100% { transform: translateY(0); } 
-        50% { transform: translateY(-8px); } 
-    }
-    
-    .congrats-msg { 
-        background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); 
-        color: #166534; 
-        padding: 10px 14px; 
-        border-radius: 10px; 
-        margin-bottom: 15px; 
-        text-align: center; 
-        font-weight: 700; 
-        font-size: 0.85rem; 
-        display: none; 
-        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
-        border: 2px solid #86efac;
-        letter-spacing: 0.5px;
-        animation: slideDown 0.5s ease;
-        max-width: 400px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-    
-    @keyframes slideDown {
-        from { opacity: 0; transform: translateY(-20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .greeting-banner {
-        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
-        color: white;
-        padding: 14px 18px;
-        border-radius: 16px;
-        margin-bottom: 18px;
-        box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-    
-    @media (min-width: 768px) {
-        .greeting-banner {
-            padding: 18px 22px;
-            margin-bottom: 22px;
-            gap: 15px;
-        }
-    }
-    
-    .greeting-text h2 {
-        margin: 0;
-        font-size: 1.2rem;
-        font-weight: 800;
-        letter-spacing: -0.5px;
-    }
-    
-    .greeting-text p {
-        margin: 3px 0 0 0;
-        font-size: 0.8rem;
-        opacity: 0.9;
-    }
-    
-    .greeting-time {
-        font-size: 0.8rem;
-        opacity: 0.9;
-        font-weight: 600;
-    }
-    
-    @media (min-width: 768px) {
-        .greeting-text h2 { font-size: 1.4rem; }
-        .greeting-text p { font-size: 0.9rem; }
-        .greeting-time { font-size: 0.85rem; }
-    }
-    
-    .low-stock-alert {
-        color: #ff4d4d !important;
-        font-weight: 800;
-        animation: pulse-red 1.5s infinite;
-        padding: 3px 8px;
-        border-radius: 5px;
-        background: rgba(255, 77, 77, 0.1);
-    }
-
-    @keyframes pulse-red {
-        0% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.05); opacity: 0.7; }
-        100% { transform: scale(1); opacity: 1; }
-    }
-    
-    .profile-dropdown {
-        position: absolute;
-        top: 60px;
-        left: 15px;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-        border: 1px solid var(--border);
-        width: 240px;
-        z-index: 1001;
-        display: none;
-        overflow: hidden;
-    }
-    
-    .profile-header {
-        padding: 15px;
-        background: var(--primary);
-        color: white;
-        text-align: center;
-    }
-    
-    .profile-header h4 {
-        margin: 0;
-        font-size: 1rem;
-    }
-    
-    .profile-header p {
-        margin: 4px 0 0 0;
-        font-size: 0.8rem;
-        opacity: 0.9;
-    }
-    
-    .profile-menu {
-        list-style: none;
-        margin: 0;
-        padding: 10px 0;
-    }
-    
-    .profile-menu li {
-        padding: 0;
-    }
-    
-    .profile-menu a {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 12px 15px;
-        text-decoration: none;
-        color: var(--text-main);
-        font-size: 0.9rem;
-        font-weight: 600;
-        transition: background 0.2s;
-    }
-    
-    .profile-menu a:hover {
-        background: #f8fafc;
-    }
-    
-    .profile-menu a i {
-        width: 20px;
-        text-align: center;
-        color: var(--primary);
-    }
-    
-    .profile-divider {
-        height: 1px;
-        background: var(--border);
-        margin: 5px 15px;
-    }
-    
-    .logout-btn {
-        width: 100%;
-        background: var(--danger);
-        color: white;
-        border: none;
-        padding: 12px 15px;
-        font-weight: 800;
-        font-size: 0.9rem;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-    }
-    
-    .logout-btn:hover {
-        background: #c1121f;
-    }
-    
-    .compact-form-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-        gap: 10px;
-    }
-    
-    @media (min-width: 768px) {
-        .compact-form-grid {
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 16px;
-        }
-    }
-    
-    .alert-indicator {
-        position: relative;
-    }
-    
-    @keyframes blink {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.3; }
-    }
-    
-    .refund-modal .modal {
-        max-width: 400px;
-    }
-    
-    .refund-item-info {
-        background: #f8fafc;
-        padding: 15px;
-        border-radius: 10px;
-        margin-bottom: 18px;
-        border-left: 4px solid var(--warning);
-    }
-    
-    .refund-warning {
-        background: #fff7ed;
-        border: 1px solid #fed7aa;
-        color: #9a3412;
-        padding: 12px;
-        border-radius: 8px;
-        font-size: 0.85rem;
-        margin-bottom: 18px;
-        text-align: center;
-    }
-    
-    .refund-warning i {
-        color: #ea580c;
-        margin-right: 5px;
-    }
-    
-    .refund-actions {
-        display: flex;
-        gap: 12px;
-        margin-top: 22px;
-    }
-    
-    .refund-actions .btn {
-        flex: 1;
-    }
-    
-    /* Mobile Slide Indicator - Hidden on mobile */
-    .slide-indicator { 
-        background: #0f172a; 
-        color: white; 
-        padding: 14px; 
-        border-radius: 12px; 
-        display: none; 
-        align-items: center; 
-        justify-content: center; 
-        gap: 12px; 
-        margin-bottom: 15px; 
-        font-size: 0.8rem; 
-        font-weight: 700;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-    .hand-icon { font-size: 1.2rem; animation: tapSide 1.5s infinite; }
-    @keyframes tapSide { 0%, 100% { transform: translateX(5px); } 50% { transform: translateX(-5px); } }
-    @media (max-width: 1024px) { .slide-indicator { display: none; } }
-    
-    .money-summary-cards {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-        margin-bottom: 18px;
-    }
-    
-    .money-summary-card {
-        padding: 12px;
-        border-radius: 10px;
-        text-align: center;
-    }
-    
-    .money-in-card {
-        background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-        border: 1px solid #86efac;
-    }
-    
-    .money-out-card {
-        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-        border: 1px solid #fca5a5;
-    }
-    
-    .money-summary-label {
-        font-size: 0.7rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        margin-bottom: 5px;
-    }
-    
-    .money-summary-amount {
-        font-size: 1.2rem;
-        font-weight: 800;
-    }
-    
-    .money-in-amount {
-        color: #166534;
-    }
-    
-    .money-out-amount {
-        color: #b91c1c;
-    }
-    
-    @media (max-width: 768px) {
-        .dual-tables > div:first-child {
-            order: 2;
-        }
+        .container { max-width: 1450px; margin: auto; width: 100%; }
         
-        .dual-tables > div:last-child {
-            order: 1;
-            margin-bottom: 18px;
-        }
-        
-        .card {
-            padding: 12px;
-        }
-        
-        .table-card {
-            max-height: 300px !important;
-        }
-        
-        .dual-tables > div:last-child .card {
-            padding: 18px;
-        }
-        
-        .money-inout-form input,
-        .money-inout-form select {
-            padding: 16px;
-            font-size: 16px;
-        }
-        
-        .money-inout-form .btn {
-            padding: 18px;
-            font-size: 1rem;
-        }
-    }
-    
-    @media (min-width: 769px) and (max-width: 1023px) {
-        .dual-tables {
-            grid-template-columns: 1fr;
-        }
-        
-        .dual-tables > div:first-child .table-card {
-            max-height: 350px;
-        }
-        
-        .dual-tables > div:last-child {
-            min-width: 100%;
-        }
-    }
-    
-    .action-btn-small {
-        padding: 5px 10px !important;
-        font-size: 0.75rem !important;
-        min-width: auto !important;
-    }
-    
-    .today-sales-container {
-        position: relative;
-    }
-    
-    .table-card::-webkit-scrollbar {
-        height: 8px;
-        width: 8px;
-    }
-    
-    .table-card::-webkit-scrollbar-track {
-        background: #f1f5f9;
-        border-radius: 10px;
-    }
-    
-    .table-card::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 10px;
-    }
-    
-    .table-card::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-    }
-    
-    .money-in-row {
-        background-color: rgba(16, 185, 129, 0.05);
-    }
-    
-    .money-out-row {
-        background-color: rgba(225, 29, 72, 0.05);
-    }
-    
-    .money-total-row {
-        background-color: #f8fafc;
-        font-weight: 800;
-        border-top: 2px solid var(--border);
-    }
-    
-    .refunded-row {
-        background-color: #fff7ed !important;
-        opacity: 0.8;
-    }
-    
-    .refunded-badge {
-        background: #f59e0b;
-        color: white;
-        padding: 3px 8px;
-        border-radius: 5px;
-        font-size: 0.7rem;
-        font-weight: 700;
-        margin-left: 5px;
-    }
-    
-    .action-column {
-        width: 80px;
-        text-align: center;
-    }
-    
-    @media (max-width: 768px) {
-        .shift-mobile-card {
-            background: white;
-            border-radius: 14px;
-            padding: 18px;
-            margin-bottom: 18px;
-            border: 1px solid var(--border);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        
-        .shift-mobile-header {
+        /* Compact Header */
+        .compact-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--border);
+            padding: 12px 15px;
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
         }
         
-        .shift-mobile-date {
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .profile-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+        
+        .logo-compact {
+            font-size: 1.1rem;
             font-weight: 800;
-            font-size: 0.95rem;
-            color: var(--text-main);
+            letter-spacing: -0.5px;
+            color: #111827;
         }
         
-        .shift-mobile-status {
+        .logo-compact span {
+            color: var(--primary);
+            font-weight: 500;
             font-size: 0.75rem;
-            padding: 5px 10px;
-            border-radius: 8px;
+            margin-left: 5px;
+            opacity: 0.8;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .special-action-btn {
+            font-size: 0.75rem !important;
+            padding: 8px 14px !important;
+            border-radius: 8px !important;
+            box-shadow: 0 0 8px rgba(79, 70, 229, 0.4) !important;
+            border: 2px solid white !important;
+        }
+        
+        /* Branch badge */
+        .branch-badge {
+            background: var(--primary);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+        }
+        
+        /* Gas badge */
+        .gas-badge {
+            background: var(--gas);
+            color: white;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 5px;
             font-weight: 700;
         }
         
-        .shift-mobile-grid {
+        /* KCB Paybill badge */
+        .kcb-paybill-badge {
+            background: var(--kcb-paybill);
+            color: white;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 5px;
+            font-weight: 700;
+        }
+        
+        /* Start button with larger font */
+        .start-btn-large {
+            font-size: 0.9rem !important;
+            padding: 10px 18px !important;
+            font-weight: 900 !important;
+            letter-spacing: 0.5px !important;
+        }
+
+        .float-status-card {
+            background: #fff; 
+            padding: 12px; 
+            border-radius: 14px; 
+            border: 1px solid var(--border);
+            margin-bottom: 15px; 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+        
+        /* Low float warning */
+        .low-float-warning {
+            background: #fee2e2 !important;
+            color: #b91c1c !important;
+            border-color: #fecaca !important;
+        }
+        
+        /* Danger alert for very low floats */
+        .danger-alert {
+            border: 2px solid #ef4444 !important;
+            background: #fff1f2 !important;
+            animation: pulse-border 2s infinite;
+        }
+        
+        @keyframes pulse-border {
+            0% { border-color: #ef4444; }
+            50% { border-color: #fca5a5; }
+            100% { border-color: #ef4444; }
+        }
+
+        @media (min-width: 600px) { 
+            .float-status-card { 
+                grid-template-columns: repeat(5, 1fr); 
+                padding: 15px;
+                gap: 12px;
+            } 
+        }
+
+        .float-item { 
+            text-align: center; 
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .float-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .float-item label { 
+            display: block; 
+            font-size: 0.6rem; 
+            color: var(--text-dim); 
+            text-transform: uppercase; 
+            font-weight: 800; 
+            margin-bottom: 4px;
+        }
+        
+        .float-item span { 
+            font-size: 1rem; 
+            font-weight: 800; 
+            color: var(--primary); 
+            display: block;
+        }
+        
+        @media (min-width: 768px) {
+            .float-item span { font-size: 1.1rem; }
+            .float-item label { font-size: 0.65rem; }
+            .compact-header { padding: 15px 20px; margin-bottom: 20px; }
+            .logo-compact { font-size: 1.3rem; }
+            .logo-compact span { font-size: 0.85rem; }
+            .profile-btn { width: 42px; height: 42px; font-size: 1.3rem; }
+        }
+        
+        .kcb-live-box { 
+            border: 2px solid var(--kcb-paybill); 
+            border-radius: 10px; 
+            background: #eff6ff; 
+        }
+
+        .card { 
+            background: var(--card-bg); 
+            border-radius: 14px; 
+            border: 1px solid var(--border); 
+            padding: 15px; 
+            margin-bottom: 15px; 
+            box-shadow: var(--shadow);
+        }
+        
+        @media (min-width: 768px) {
+            .card {
+                padding: 22px;
+                margin-bottom: 22px;
+                border-radius: 20px;
+            }
+        }
+
+        .section-label { 
+            font-size: 0.7rem; 
+            text-transform: uppercase; 
+            letter-spacing: 0.08em; 
+            color: var(--primary); 
+            margin-bottom: 15px; 
+            font-weight: 800; 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+        }
+        
+        @media (min-width: 768px) {
+            .section-label {
+                font-size: 0.8rem;
+                margin-bottom: 20px;
+            }
+        }
+        
+        .section-label::after { 
+            content: ""; 
+            flex: 1; 
+            height: 1px; 
+            background: var(--border); 
+        }
+
+        .grid-inputs { display: grid; gap: 12px; }
+        .input-group { display: flex; flex-direction: column; }
+        label { 
+            margin-bottom: 5px; 
+            font-weight: 700; 
+            color: var(--text-main); 
+            font-size: 0.7rem; 
+        }
+        
+        @media (min-width: 768px) {
+            label { font-size: 0.8rem; }
+        }
+        
+        input, select { 
+            background: #f8fafc; 
+            border: 1px solid var(--border); 
+            padding: 12px; 
+            border-radius: 10px; 
+            font-size: 14px; 
+            font-family: inherit; 
+            transition: 0.2s; 
+            color: var(--text-main); 
+            width: 100%;
+        }
+        
+        @media (min-width: 768px) {
+            input, select {
+                padding: 16px;
+                font-size: 16px;
+                border-radius: 12px;
+            }
+        }
+        
+        .hint-badge { 
+            padding: 3px 8px; 
+            border-radius: 5px; 
+            font-size: 0.65rem; 
+            font-weight: 700; 
+            margin-top: 4px; 
+        }
+        
+        @media (min-width: 768px) {
+            .hint-badge {
+                font-size: 0.75rem;
+            }
+        }
+        
+        .bg-stock { background: #dcfce7; color: #166534; }
+        .bg-min { background: #fef9c3; color: #854d0e; }
+
+        .table-card { 
+            border-radius: 14px; 
+            margin-bottom: 15px; 
+            width: 100%; 
+            background: #fff; 
+            border: 1px solid var(--border); 
+            overflow-x: auto; 
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+        }
+        
+        table { width: 100%; border-collapse: collapse; }
+        
+        .today-sales-table { 
+            min-width: 600px; 
+        }
+        
+        .money-history-table {
+            min-width: 700px;
+        }
+        
+        .shift-history-table {
+            min-width: 1250px;
+        }
+        
+        th { 
+            background: #f8fafc; 
+            padding: 12px 10px;
+            font-size: 0.7rem;
+            text-transform: uppercase; 
+            letter-spacing: 0.05em; 
+            color: var(--text-dim); 
+            border-bottom: 1px solid var(--border); 
+            text-align: left; 
+        }
+        
+        td { 
+            padding: 12px 10px;
+            border-bottom: 1px solid var(--border); 
+            font-size: 0.85rem;
+            vertical-align: top; 
+        }
+        
+        @media (min-width: 768px) {
+            .today-sales-table { 
+                min-width: 800px;
+            }
+            
+            .money-history-table {
+                min-width: 900px;
+            }
+            
+            th { 
+                padding: 16px 14px; 
+                font-size: 0.75rem;
+            }
+            
+            td { 
+                padding: 14px 14px; 
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .today-sales-table { 
+                min-width: 1000px;
+            }
+            
+            .money-history-table {
+                min-width: 100%;
+            }
+            
+            th { 
+                padding: 18px 15px; 
+                font-size: 0.8rem;
+            }
+            
+            td { 
+                padding: 16px 15px; 
+                font-size: 0.95rem;
+            }
+        }
+        
+        /* ============================================ */
+        /* ENHANCED MOBILE RESPONSIVE FIXES */
+        /* ============================================ */
+        @media (max-width: 768px) {
+            .mobile-hide-header { display: none; }
+            
+            /* Fix for sales table rows - make them display properly */
+            .today-sales-table tr { 
+                display: block; 
+                background: white; 
+                margin-bottom: 15px; 
+                padding: 12px; 
+                border-radius: 16px; 
+                border: 1px solid var(--border); 
+                box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+                position: relative;
+            }
+            
+            .today-sales-table td { 
+                display: flex; 
+                justify-content: space-between; 
+                align-items: center;
+                padding: 8px 0; 
+                border: none !important; 
+                border-bottom: 1px dashed #f1f5f9 !important; 
+                text-align: right; 
+                font-size: 0.8rem;
+                flex-wrap: wrap;
+            }
+            
+            .today-sales-table td::before { 
+                content: attr(data-label); 
+                font-weight: 800; 
+                color: var(--text-dim); 
+                font-size: 0.7rem; 
+                display: block; 
+                text-align: left; 
+                min-width: 100px;
+            }
+            
+            /* FIX: Make refund button visible and properly positioned on mobile */
+            .action-column {
+                display: flex;
+                justify-content: flex-end;
+                margin-top: 10px;
+                padding-top: 10px;
+                border-top: 1px solid var(--border);
+                width: 100%;
+            }
+            
+            .btn-refund { 
+                font-size: 0.8rem !important; 
+                padding: 10px 16px !important; 
+                width: auto;
+                min-width: 100px;
+                justify-content: center;
+            }
+            
+            /* Fix for badges to not wrap awkwardly */
+            .refunded-badge, .gas-badge, .kcb-paybill-badge { 
+                display: inline-block; 
+                margin-left: 8px; 
+                white-space: nowrap;
+            }
+            
+            /* Money history mobile view */
+            .money-history-table tr { 
+                display: block; 
+                margin-bottom: 12px; 
+                padding: 12px; 
+                border-radius: 14px; 
+                background: white; 
+                border: 1px solid var(--border); 
+            }
+            
+            .money-history-table td { 
+                display: flex; 
+                justify-content: space-between; 
+                align-items: center;
+                padding: 8px 0; 
+                border: none; 
+                border-bottom: 1px solid #f0f0f0; 
+            }
+            
+            .money-history-table td::before { 
+                content: attr(data-label); 
+                font-weight: 700; 
+                font-size: 0.7rem;
+                min-width: 90px;
+            }
+            
+            .table-card {
+                margin-bottom: 12px;
+                border-radius: 12px;
+                max-height: none !important;
+            }
+            
+            /* FIX: Money record button - prevent text cutoff and ensure full visibility */
+            #record-expense-btn {
+                font-size: 0.9rem !important;
+                padding: 16px !important;
+                margin: 10px auto 5px auto;
+                width: 100%;
+                display: block;
+                white-space: nowrap;
+                overflow: visible;
+                text-overflow: clip;
+                letter-spacing: 0.5px;
+            }
+            
+            /* Fix for refresh button text on mobile */
+            .header-right .btn {
+                font-size: 0.7rem !important;
+                padding: 8px 10px !important;
+                white-space: nowrap;
+            }
+            
+            /* Remove slide indicator */
+            .slide-indicator {
+                display: none !important;
+            }
+            
+            /* Fix money record section alignment */
+            .dual-tables > div:last-child .card {
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+                padding: 18px;
+            }
+            
+            .dual-tables > div:last-child .card input,
+            .dual-tables > div:last-child .card select {
+                width: 100%;
+                font-size: 14px;
+            }
+            
+            /* Fix for money summary cards */
+            .money-summary-cards {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            
+            .money-summary-card {
+                padding: 10px;
+            }
+            
+            .money-summary-amount {
+                font-size: 1rem;
+            }
+        }
+        
+        /* Extra small devices (phones under 480px) */
+        @media (max-width: 480px) {
+            .compact-header {
+                flex-direction: column;
+                gap: 10px;
+                align-items: stretch;
+            }
+            
+            .header-left {
+                justify-content: space-between;
+            }
+            
+            .header-right {
+                justify-content: center;
+            }
+            
+            #record-expense-btn {
+                font-size: 0.85rem !important;
+                padding: 14px !important;
+                white-space: normal;
+                word-break: keep-all;
+            }
+            
+            .btn-refund {
+                font-size: 0.75rem !important;
+                padding: 8px 12px !important;
+                min-width: 85px;
+            }
+            
+            .today-sales-table td {
+                flex-direction: column;
+                align-items: flex-start;
+                text-align: left;
+            }
+            
+            .today-sales-table td::before {
+                margin-bottom: 4px;
+            }
+            
+            .today-sales-table td[data-label="Action"] {
+                flex-direction: row;
+                justify-content: center;
+            }
+        }
+
+        .btn { 
+            padding: 14px 18px; 
+            border-radius: 10px; 
+            font-weight: 800; 
+            cursor: pointer; 
+            border: none; 
+            font-size: 0.85rem; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 6px; 
+            text-transform: uppercase; 
+            transition: 0.3s opacity; 
+        }
+        
+        @media (min-width: 768px) {
+            .btn {
+                padding: 18px 24px;
+                font-size: 0.95rem;
+                border-radius: 12px;
+            }
+        }
+        
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-sync { background: var(--warning); color: white; }
+        .btn-kcb { background: var(--kcb-paybill); color: white; }
+        
+        .btn-refund { 
+            background: #f59e0b; 
+            color: white; 
+            padding: 6px 12px !important;
+            font-size: 0.7rem !important;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .overlay { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(15, 23, 42, 0.8); 
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 1000; 
+            backdrop-filter: blur(8px); 
+            padding: 15px; 
+        }
+        
+        .modal { 
+            background: #fff; 
+            padding: 22px; 
+            border-radius: 18px; 
+            width: 100%; 
+            max-width: 450px; 
+            max-height: 90vh; 
+            overflow-y: auto; 
+        }
+        
+        @media (min-width: 768px) {
+            .modal {
+                padding: 28px;
+                max-width: 500px;
+                border-radius: 24px;
+            }
+        }
+        
+        .dual-tables { 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 15px; 
+            width: 100%; 
+        }
+        
+        @media (min-width: 1024px) { 
+            .dual-tables { 
+                grid-template-columns: 1.2fr 1fr; 
+                gap: 22px; 
+            }
+        }
+
+        .text-success { color: #15803d !important; font-weight: 700; }
+        .text-danger { color: #b91c1c !important; font-weight: 700; }
+        .variance-status { font-weight: 800; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; text-align: center; }
+        
+        .balanced { background: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; }
+        .mismatch { background: #fee2e2; color: #991b1b; }
+        .variance-positive { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .variance-negative { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+
+        .search-input {
+            width: 100%;
+            padding: 16px 22px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            margin-bottom: 24px;
+            font-size: 1rem;
+            outline: none;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        
+        .search-input:focus { border-color: var(--primary); }
+
+        .account-line { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px dashed #f1f5f9; padding-bottom: 3px; }
+        .account-label { color: var(--text-dim); font-size: 0.8rem; font-weight: 500; }
+        .account-val { font-weight: 600; color: var(--text-main); font-size: 0.85rem; }
+
+        .total-row { font-weight: 800; margin-top: 12px; padding: 10px; background: #f5f3ff; color: var(--primary); border-radius: 8px; text-align: center; }
+        
+        .status-badge { font-weight: 800; padding: 8px 14px; border-radius: 10px; font-size: 0.8rem; display: block; text-align: center; min-width: 130px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid transparent; }
+        .active-shift { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
+        .var-positive { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+        .var-negative { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+        .var-balanced { background: #f1f5f9; color: var(--text-main); border-color: var(--border); }
+
+        .revenue-card { background: #fff; border: 1px solid var(--border); padding: 12px; border-radius: 10px; text-decoration: none; display: block; transition: 0.2s; }
+        .revenue-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+        
+        .adj-box { padding: 14px; border-radius: 12px; background: #fafafa; border: 1px solid #f0f0f0; text-decoration: none; display: block; }
+
+        .date-cell b { display: block; margin-bottom: 8px; font-size: 0.95rem; }
+        .time-pill { background: #f1f5f9; padding: 3px 8px; border-radius: 5px; font-size: 0.7rem; font-weight: 700; color: var(--text-dim); display: inline-block; margin-top: 4px; }
+        
+        .clickable-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 5px;
+        }
+        
+        .clickable-link:hover {
+            background: #f1f5ff;
+            text-decoration: underline;
+            transform: translateY(-1px);
+        }
+        
+        .nav-overlay { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(15, 23, 42, 0.98); 
+            backdrop-filter: blur(15px); 
+            z-index: 3000; 
+            display: none; 
+            flex-direction: column; 
+            padding: 50px 15px 30px 15px; 
+            overflow-y: auto; 
+        }
+        
+        .nav-overlay.active { 
+            display: flex; 
+            animation: fadeIn 0.3s ease forwards; 
+        }
+        
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(20px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        
+        .nav-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 10px; 
+            width: 100%; 
+            max-width: 500px; 
+            margin: 0 auto; 
+        }
+        
+        .nav-card { 
+            background: rgba(255, 255, 255, 0.08); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            border-radius: 14px; 
+            padding: 14px 8px; 
+            text-align: center; 
+            color: white; 
+            text-decoration: none; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 5px; 
+        }
+        
+        @media (min-width: 768px) {
+            .nav-grid { gap: 12px; }
+            .nav-card { padding: 16px 10px; gap: 6px; }
+        }
+        
+        .nav-card span { font-size: 1.2rem; }
+        .nav-card small { font-size: 0.7rem; font-weight: 600; line-height: 1.3; }
+        .switch-card { background: var(--switch-btn); grid-column: span 2; margin-bottom: 10px; border: none; font-weight: 800; padding: 20px; }
+        .nav-header-title { color: white; text-align: center; font-weight: 800; font-size: 1.3rem; margin-bottom: 20px; letter-spacing: 1px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 12px; }
+        
+        @media (min-width: 768px) {
+            .nav-header-title { font-size: 1.5rem; margin-bottom: 25px; }
+            .nav-card span { font-size: 1.3rem; }
+            .nav-card small { font-size: 0.75rem; }
+        }
+
+        .fab-menu { 
+            position: fixed; 
+            bottom: 20px; 
+            left: 15px; 
+            width: 60px; 
+            height: 60px; 
+            background: var(--deep-blue); 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: white; 
+            font-size: 1.4rem; 
+            box-shadow: 0 8px 25px rgba(30, 58, 138, 0.4); 
+            border: 4px solid white; 
+            cursor: pointer; 
+            z-index: 2000; 
+            animation: swing 3s infinite ease-in-out; 
+            transform-origin: center bottom; 
+        }
+        
+        @keyframes swing { 
+            0%, 100% { transform: rotate(0deg); } 
+            20% { transform: rotate(10deg); } 
+            40% { transform: rotate(-10deg); } 
+        }
+        
+        .guide-hand { 
+            position: fixed; 
+            bottom: 90px; 
+            left: 25px; 
+            z-index: 2500; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            animation: bounce 1.5s infinite; 
+        }
+        
+        .guide-hand span { font-size: 1.5rem; }
+        .guide-label { 
+            background: var(--admin-dark); 
+            color: white; 
+            padding: 3px 6px; 
+            border-radius: 5px; 
+            font-size: 0.5rem; 
+            font-weight: 800; 
+            margin-bottom: 3px; 
+            border: 1px solid var(--admin-accent); 
+        }
+        
+        @keyframes bounce { 
+            0%, 100% { transform: translateY(0); } 
+            50% { transform: translateY(-8px); } 
+        }
+        
+        .congrats-msg { 
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); 
+            color: #166534; 
+            padding: 10px 14px; 
+            border-radius: 10px; 
+            margin-bottom: 15px; 
+            text-align: center; 
+            font-weight: 700; 
+            font-size: 0.85rem; 
+            display: none; 
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+            border: 2px solid #86efac;
+            letter-spacing: 0.5px;
+            animation: slideDown 0.5s ease;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .greeting-banner {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            color: white;
+            padding: 14px 18px;
+            border-radius: 16px;
+            margin-bottom: 18px;
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        @media (min-width: 768px) {
+            .greeting-banner {
+                padding: 18px 22px;
+                margin-bottom: 22px;
+                gap: 15px;
+            }
+        }
+        
+        .greeting-text h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        
+        .greeting-text p {
+            margin: 3px 0 0 0;
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+        
+        .greeting-time {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            font-weight: 600;
+        }
+        
+        @media (min-width: 768px) {
+            .greeting-text h2 { font-size: 1.4rem; }
+            .greeting-text p { font-size: 0.9rem; }
+            .greeting-time { font-size: 0.85rem; }
+        }
+        
+        .low-stock-alert {
+            color: #ff4d4d !important;
+            font-weight: 800;
+            animation: pulse-red 1.5s infinite;
+            padding: 3px 8px;
+            border-radius: 5px;
+            background: rgba(255, 77, 77, 0.1);
+        }
+
+        @keyframes pulse-red {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .profile-dropdown {
+            position: absolute;
+            top: 60px;
+            left: 15px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border: 1px solid var(--border);
+            width: 240px;
+            z-index: 1001;
+            display: none;
+            overflow: hidden;
+        }
+        
+        .profile-header {
+            padding: 15px;
+            background: var(--primary);
+            color: white;
+            text-align: center;
+        }
+        
+        .profile-header h4 {
+            margin: 0;
+            font-size: 1rem;
+        }
+        
+        .profile-header p {
+            margin: 4px 0 0 0;
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+        
+        .profile-menu {
+            list-style: none;
+            margin: 0;
+            padding: 10px 0;
+        }
+        
+        .profile-menu li {
+            padding: 0;
+        }
+        
+        .profile-menu a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            text-decoration: none;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        
+        .profile-menu a:hover {
+            background: #f8fafc;
+        }
+        
+        .profile-menu a i {
+            width: 20px;
+            text-align: center;
+            color: var(--primary);
+        }
+        
+        .profile-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 5px 15px;
+        }
+        
+        .logout-btn {
+            width: 100%;
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 12px 15px;
+            font-weight: 800;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .logout-btn:hover {
+            background: #c1121f;
+        }
+        
+        .compact-form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        
+        @media (min-width: 768px) {
+            .compact-form-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 16px;
+            }
+        }
+        
+        .alert-indicator {
+            position: relative;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        .refund-modal .modal {
+            max-width: 400px;
+        }
+        
+        .refund-item-info {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            border-left: 4px solid var(--warning);
+        }
+        
+        .refund-warning {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            color: #9a3412;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 18px;
+            text-align: center;
+        }
+        
+        .refund-warning i {
+            color: #ea580c;
+            margin-right: 5px;
+        }
+        
+        .refund-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 22px;
+        }
+        
+        .refund-actions .btn {
+            flex: 1;
+        }
+        
+        /* Mobile Slide Indicator - Hidden on mobile */
+        .slide-indicator { 
+            background: #0f172a; 
+            color: white; 
+            padding: 14px; 
+            border-radius: 12px; 
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 12px; 
+            margin-bottom: 15px; 
+            font-size: 0.8rem; 
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .hand-icon { font-size: 1.2rem; animation: tapSide 1.5s infinite; }
+        @keyframes tapSide { 0%, 100% { transform: translateX(5px); } 50% { transform: translateX(-5px); } }
+        @media (max-width: 1024px) { .slide-indicator { display: none; } }
+        
+        .money-summary-cards {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
             margin-bottom: 18px;
         }
         
-        .shift-mobile-section {
-            background: #f8fafc;
+        .money-summary-card {
             padding: 12px;
             border-radius: 10px;
-            border: 1px solid var(--border);
+            text-align: center;
         }
         
-        .shift-mobile-section-title {
-            font-size: 0.75rem;
-            color: var(--text-dim);
-            font-weight: 700;
-            margin-bottom: 6px;
+        .money-in-card {
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+            border: 1px solid #86efac;
+        }
+        
+        .money-out-card {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border: 1px solid #fca5a5;
+        }
+        
+        .money-summary-label {
+            font-size: 0.7rem;
+            font-weight: 800;
             text-transform: uppercase;
+            margin-bottom: 5px;
         }
         
-        .mobile-shifts-container {
-            display: block;
+        .money-summary-amount {
+            font-size: 1.2rem;
+            font-weight: 800;
         }
         
-        .shift-history-table-container {
-            display: none;
+        .money-in-amount {
+            color: #166534;
         }
-    }
-    
-    /* Exchange note for gas sales */
-    .exchange-note {
-        background: #fffbeb;
-        border-left: 4px solid var(--gas);
-        padding: 12px;
-        margin: 12px 0;
-        border-radius: 8px;
-        font-size: 0.85rem;
-    }
-    
-    /* Branch name display in header */
-    .branch-name-display {
-        background: var(--primary);
-        color: white;
-        padding: 6px 14px;
-        border-radius: 30px;
-        font-size: 0.85rem;
-        font-weight: 700;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        border: 2px solid white;
-        box-shadow: 0 2px 10px rgba(79, 70, 229, 0.3);
-        margin-right: 10px;
-    }
-    
-    .branch-name-display i {
-        font-size: 0.9rem;
-    }
-    
-    /* Gas redirect notice */
-    .gas-redirect-notice {
-        background: #fef3c7;
-        border-left: 4px solid var(--warning);
-        padding: 15px;
-        margin: 15px 0;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-weight: 600;
-        animation: pulse 2s infinite;
-    }
-    
-    .gas-redirect-notice i {
-        font-size: 1.5rem;
-        color: var(--warning);
-    }
-    
-    .gas-redirect-notice button {
-        background: var(--warning);
-        color: white;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 30px;
-        font-weight: 700;
-        cursor: pointer;
-        margin-left: auto;
-        transition: all 0.2s;
-    }
-    
-    .gas-redirect-notice button:hover {
-        background: #d97706;
-        transform: scale(1.05);
-    }
-    
-    @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.8; }
-        100% { opacity: 1; }
-    }
-    
-    /* Success notification */
-    .success-notification {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: var(--success);
-        color: white;
-        padding: 15px 25px;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
-        z-index: 9999;
-        animation: slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-weight: 700;
-        border-left: 5px solid #0f5c3e;
-        max-width: 350px;
-    }
-    
-    .success-notification i {
-        font-size: 1.5rem;
-    }
-    
-    @keyframes slideInRight {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    
-    @keyframes fadeOut {
-        to { opacity: 0; transform: translateX(100%); }
-    }
-    
-    /* Loading spinner */
-    .spinner {
-        display: inline-block;
-        width: 16px;
-        height: 16px;
-        border: 3px solid rgba(255,255,255,.3);
-        border-radius: 50%;
-        border-top-color: #fff;
-        animation: spin 1s ease-in-out infinite;
-    }
-    
-    @keyframes spin { to { transform: rotate(360deg); } }
-    
-    /* Cache indicator */
-    .cache-indicator {
-        font-size: 0.6rem;
-        color: var(--text-dim);
-        margin-left: 5px;
-    }
-</style>
+        
+        .money-out-amount {
+            color: #b91c1c;
+        }
+        
+        /* Mobile order adjustments */
+        @media (max-width: 768px) {
+            .dual-tables > div:first-child {
+                order: 2;
+            }
+            
+            .dual-tables > div:last-child {
+                order: 1;
+                margin-bottom: 18px;
+            }
+            
+            .card {
+                padding: 12px;
+            }
+            
+            .table-card {
+                max-height: 400px !important;
+                overflow-y: auto;
+            }
+            
+            .dual-tables > div:last-child .card {
+                padding: 18px;
+            }
+            
+            .money-inout-form input,
+            .money-inout-form select {
+                padding: 16px;
+                font-size: 16px;
+            }
+            
+            .money-inout-form .btn {
+                padding: 18px;
+                font-size: 1rem;
+            }
+        }
+        
+        @media (min-width: 769px) and (max-width: 1023px) {
+            .dual-tables {
+                grid-template-columns: 1fr;
+            }
+            
+            .dual-tables > div:first-child .table-card {
+                max-height: 350px;
+            }
+            
+            .dual-tables > div:last-child {
+                min-width: 100%;
+            }
+        }
+        
+        .action-btn-small {
+            padding: 5px 10px !important;
+            font-size: 0.75rem !important;
+            min-width: auto !important;
+        }
+        
+        .today-sales-container {
+            position: relative;
+        }
+        
+        .table-card::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        
+        .table-card::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+        
+        .table-card::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        
+        .table-card::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        .money-in-row {
+            background-color: rgba(16, 185, 129, 0.05);
+        }
+        
+        .money-out-row {
+            background-color: rgba(225, 29, 72, 0.05);
+        }
+        
+        .money-total-row {
+            background-color: #f8fafc;
+            font-weight: 800;
+            border-top: 2px solid var(--border);
+        }
+        
+        .refunded-row {
+            background-color: #fff7ed !important;
+            opacity: 0.8;
+        }
+        
+        .refunded-badge {
+            background: #f59e0b;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-left: 5px;
+        }
+        
+        .action-column {
+            width: 80px;
+            text-align: center;
+        }
+        
+        /* Shift History Mobile Styles */
+        @media (max-width: 768px) {
+            .shift-mobile-card {
+                background: white;
+                border-radius: 14px;
+                padding: 18px;
+                margin-bottom: 18px;
+                border: 1px solid var(--border);
+                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            }
+            
+            .shift-mobile-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 15px;
+                padding-bottom: 12px;
+                border-bottom: 1px solid var(--border);
+            }
+            
+            .shift-mobile-date {
+                font-weight: 800;
+                font-size: 0.95rem;
+                color: var(--text-main);
+            }
+            
+            .shift-mobile-status {
+                font-size: 0.75rem;
+                padding: 5px 10px;
+                border-radius: 8px;
+                font-weight: 700;
+            }
+            
+            .shift-mobile-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+                margin-bottom: 18px;
+            }
+            
+            .shift-mobile-section {
+                background: #f8fafc;
+                padding: 12px;
+                border-radius: 10px;
+                border: 1px solid var(--border);
+            }
+            
+            .shift-mobile-section-title {
+                font-size: 0.75rem;
+                color: var(--text-dim);
+                font-weight: 700;
+                margin-bottom: 6px;
+                text-transform: uppercase;
+            }
+            
+            .mobile-shifts-container {
+                display: block;
+            }
+            
+            .shift-history-table-container {
+                display: none;
+            }
+        }
+        
+        /* Exchange note for gas sales */
+        .exchange-note {
+            background: #fffbeb;
+            border-left: 4px solid var(--gas);
+            padding: 12px;
+            margin: 12px 0;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+        
+        /* Branch name display in header */
+        .branch-name-display {
+            background: var(--primary);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 2px solid white;
+            box-shadow: 0 2px 10px rgba(79, 70, 229, 0.3);
+            margin-right: 10px;
+        }
+        
+        .branch-name-display i {
+            font-size: 0.9rem;
+        }
+        
+        /* Gas redirect notice */
+        .gas-redirect-notice {
+            background: #fef3c7;
+            border-left: 4px solid var(--warning);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+        
+        .gas-redirect-notice i {
+            font-size: 1.5rem;
+            color: var(--warning);
+        }
+        
+        .gas-redirect-notice button {
+            background: var(--warning);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-left: auto;
+            transition: all 0.2s;
+        }
+        
+        .gas-redirect-notice button:hover {
+            background: #d97706;
+            transform: scale(1.05);
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+        
+        /* Success notification */
+        .success-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+            z-index: 9999;
+            animation: slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            border-left: 5px solid #0f5c3e;
+            max-width: 350px;
+        }
+        
+        .success-notification i {
+            font-size: 1.5rem;
+        }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes fadeOut {
+            to { opacity: 0; transform: translateX(100%); }
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* Cache indicator */
+        .cache-indicator {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            margin-left: 5px;
+        }
+    </style>
+```
 </head>
 <body>
 
@@ -1553,7 +1699,7 @@
             </div>
         </div>
 
-        <!-- MONEY IN/OUT RECORD SECTION -->
+        <!-- MONEY IN/OUT RECORD SECTION - UPDATED WITH KCB PAYBILL OPTION -->
         <div class="card">
             <div class="section-label">MONEY IN/OUT RECORD</div>
             <input type="number" id="exp-amt" placeholder="Amount" style="margin-bottom:12px; padding: 12px; border-radius: 8px;">
@@ -1565,8 +1711,9 @@
             <select id="exp-method" style="width:100%; margin-bottom:15px; padding: 12px; border-radius: 8px;">
                 <option value="Cash">Cash</option>
                 <option value="Mpesa">Mpesa</option>
-                <option value="KCB">KCB Float</option>
-                <option value="Equity">Equity Float</option>
+                <option value="KCB Float">KCB Float</option>
+                <option value="Equity Float">Equity Float</option>
+                <option value="KCB Paybill" style="color: #2563eb; font-weight: 700;">💰 KCB Paybill (Live Box)</option>
             </select>
             <button id="record-expense-btn" class="btn btn-sync" style="width: 100%; padding: 14px; font-size: 0.9rem;">RECORD MONEY</button>
         </div>
@@ -1693,6 +1840,9 @@
     let currentUserProfile = null;
     let currentBranchId = null;
     let branches = {};
+    
+    // Flag to prevent multiple gas redirect triggers
+    let gasRedirectActive = false;
 
     // ============================================
     // GET BRANCH ID FROM URL PARAMETER
@@ -1842,6 +1992,7 @@
         else if (message.includes('Money')) icon = '💰';
         else if (message.includes('Refund')) icon = '🔄';
         else if (message.includes('refreshed')) icon = '🔄';
+        else if (message.includes('Debt')) icon = '📝';
         
         notification.innerHTML = `
             <i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
@@ -1856,15 +2007,20 @@
     }
 
     // ============================================
-    // REDIRECT TO GAS HUB
+    // REDIRECT TO GAS HUB - SINGLE ENTRY POINT FOR GAS SALES
     // ============================================
     window.redirectToGasHub = function() {
+        // Prevent multiple redirects
+        if (gasRedirectActive) return;
+        gasRedirectActive = true;
+        
         const branchId = getCurrentBranchId();
-        if (branchId) {
-            window.location.href = `cashiergashub.html?branch=${branchId}`;
-        } else {
-            window.location.href = 'cashiergashub.html';
-        }
+        const targetUrl = branchId ? `cashiergashub.html?branch=${branchId}` : 'cashiergashub.html';
+        
+        // Small delay to ensure any pending operations are cancelled
+        setTimeout(() => {
+            window.location.href = targetUrl;
+        }, 100);
     };
 
     window.openRefundModal = function(sale) {
@@ -2295,6 +2451,9 @@
         const notice = document.getElementById('gas-redirect-notice');
         if (notice) notice.style.display = 'none';
         
+        // Reset gas redirect flag when searching new item
+        gasRedirectActive = false;
+        
         if (selectedItem) {
             const pPrice = document.getElementById('pPrice');
             const hintMin = document.getElementById('hint-min');
@@ -2309,15 +2468,44 @@
             updateStockDisplay(selectedItem);
             updateTotal();
             
-            // Show gas exchange note for gas products
+            // Show gas exchange note for gas products and enable redirect notice
             if (selectedItem.category === 'Gas') {
                 gasExchangeNote.style.display = 'block';
-                if (notice) notice.style.display = 'flex';
+                if (notice) {
+                    notice.style.display = 'flex';
+                    // Add a more prominent warning for gas items
+                    const noticeText = notice.querySelector('div');
+                    if (noticeText) {
+                        noticeText.innerHTML = '<strong>⛽ GAS ITEM DETECTED!</strong> Gas sales cannot be processed here. Use the Gas Hub for cylinder tracking.';
+                    }
+                }
+                // Disable the submit button when gas is selected
+                const submitBtn = document.getElementById('submit-sale-btn');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.style.opacity = '0.6';
+                    submitBtn.title = 'Gas items must be sold in Gas Hub';
+                }
             } else {
                 gasExchangeNote.style.display = 'none';
+                if (notice) notice.style.display = 'none';
+                // Re-enable submit button for non-gas items
+                const submitBtn = document.getElementById('submit-sale-btn');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.style.opacity = '1';
+                    submitBtn.title = '';
+                }
             }
         } else {
             document.getElementById('gas-exchange-note').style.display = 'none';
+            // Re-enable submit button when no gas selected
+            const submitBtn = document.getElementById('submit-sale-btn');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.title = '';
+            }
         }
     });
 
@@ -2349,18 +2537,30 @@
             return;
         }
 
-        // GAS ITEM DETECTED - SHOW REDIRECT NOTICE AND STOP
+        // ============================================
+        // CRITICAL FIX: GAS ITEM DETECTION - COMPLETE BLOCK
+        // No gas sale can be processed here - redirect to Gas Hub
+        // ============================================
         if (selectedItem.category === 'Gas') {
             const notice = document.getElementById('gas-redirect-notice');
             if (notice) {
                 notice.style.display = 'flex';
-                // Auto-hide after 5 seconds if not clicked
+                // Flash the notice for emphasis
+                notice.style.animation = 'pulse 0.5s ease-in-out 2';
                 setTimeout(() => {
-                    if (notice.style.display === 'flex') {
-                        notice.style.display = 'none';
-                    }
-                }, 5000);
+                    notice.style.animation = '';
+                }, 1000);
             }
+            
+            // Show an alert to inform the cashier
+            alert("⛽ GAS ITEMS CANNOT BE SOLD HERE!\n\nPlease use the GAS HUB for all gas sales to ensure proper cylinder tracking and avoid duplicate records.\n\nYou will be redirected to the Gas Hub.");
+            
+            // Reset the form and redirect
+            document.getElementById('pSearch').value = '';
+            selectedItem = null;
+            
+            // Redirect to Gas Hub
+            redirectToGasHub();
             return;
         }
 
@@ -2408,6 +2608,9 @@
         }
 
         try {
+            // ============================================
+            // 1. INSERT INTO SALES TABLE
+            // ============================================
             const { data: sData, error } = await supabase
                 .from('sales')
                 .insert(salesToInsert)
@@ -2415,6 +2618,9 @@
             
             if (error) throw error;
 
+            // ============================================
+            // 2. UPDATE PRODUCT STOCK
+            // ============================================
             const newStock = selectedItem.stock_quantity - qty;
             const { error: updateError } = await supabase
                 .from('products')
@@ -2423,26 +2629,37 @@
             
             if (updateError) throw updateError;
 
-            // Handle Debt payment method - record to debtors table with customer phone
+            // ============================================
+            // 3. DEBT HANDLING - RECORD TO DEBTORS TABLE
+            // ============================================
             if(method === "Debt") {
+                // Prompt for customer name (required)
                 const customerName = prompt("Customer Name (required):");
                 if(!customerName) {
-                    alert("Customer name is required for debt sales!");
-                    // Rollback the sale? For now just alert and continue
+                    alert("❌ Customer name is required for debt sales!");
+                    btn.disabled = false;
+                    btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
+                    return;
+                }
+                
+                // Prompt for customer phone (optional)
+                const customerPhone = prompt("Customer Phone (optional):", "");
+                
+                // Insert into debtors table with all required fields
+                const { error: debtError } = await supabase.from('debtors').insert([{ 
+                    customer_name: customerName,
+                    customer_phone: customerPhone || null,
+                    product_id: selectedItem.id,
+                    amount_owed: total,
+                    branch_id: branchId,
+                    status: 'Unpaid'
+                }]);
+                
+                if (debtError) {
+                    console.error("Error recording debt:", debtError);
+                    alert("⚠️ Sale recorded but debt entry failed: " + debtError.message);
                 } else {
-                    const customerPhone = prompt("Customer Phone (optional):", "");
-                    
-                    // Insert into debtors table with all required fields
-                    await supabase.from('debtors').insert([{ 
-                        customer_name: customerName,
-                        customer_phone: customerPhone || null,
-                        product_id: selectedItem.id,
-                        amount_owed: total,
-                        sale_id: sData[0]?.id,
-                        shift_id: currentShift.id,
-                        branch_id: branchId,
-                        status: 'Unpaid'
-                    }]);
+                    console.log("✅ Debt recorded successfully for:", customerName);
                 }
             }
 
@@ -2498,9 +2715,17 @@
             const sales = salesRes.data || [];
             const trans = transRes.data || [];
 
-            currentKcbSalesTotal = sales
+            // Calculate KCB Paybill sales including both regular sales and any Money In transactions to KCB Paybill
+            const kcbPaybillSales = sales
                 .filter(s => s.payment_method === 'KCB Paybill' && !s.refunded && s.total_amount > 0)
                 .reduce((a, b) => a + b.total_amount, 0);
+            
+            // Also include any Money In transactions that were added to KCB Paybill (like debt settlements)
+            const kcbPaybillMoneyIn = trans
+                .filter(t => t.type === 'Money In' && t.category === 'KCB Paybill')
+                .reduce((a, b) => a + b.amount, 0);
+            
+            currentKcbSalesTotal = kcbPaybillSales + kcbPaybillMoneyIn;
                 
             const liveKcbBox = document.getElementById('live-kcb-box');
             if (liveKcbBox) liveKcbBox.innerText = currentKcbSalesTotal.toLocaleString();
@@ -2518,6 +2743,8 @@
                             ${s.refunded ? '<span class="refunded-badge">REFUNDED</span>' : ''}
                             ${s.total_amount < 0 ? '<span class="refunded-badge" style="background:#b91c1c">REFUND</span>' : ''}
                             ${s.category === 'Gas' ? '<span class="gas-badge">GAS</span>' : ''}
+                            ${s.payment_method === 'Debt' ? '<span class="refunded-badge" style="background:var(--warning)">DEBT</span>' : ''}
+                            ${s.payment_method === 'KCB Paybill' ? '<span class="kcb-paybill-badge">KCB PAYBILL</span>' : ''}
                         </td>
                         <td data-label="Qty" class="${s.quantity < 0 ? 'text-danger' : ''}">
                             ${s.quantity < 0 ? `-${Math.abs(s.quantity)}` : s.quantity}
@@ -2558,17 +2785,27 @@
             
             const liveTransBody = document.getElementById('live-trans-body');
             if (liveTransBody) {
-                liveTransBody.innerHTML = trans.map(t => `
-                    <tr class="${t.type === 'Money In' ? 'money-in-row' : 'money-out-row'}">
-                        <td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
-                        <td data-label="Reason">${t.description}</td>
-                        <td data-label="Amount">Ksh ${t.amount.toLocaleString()}</td>
-                        <td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">
-                            ${t.type}
-                        </td>
-                        <td data-label="Wallet">${t.category}</td>
-                    </tr>
-                `).join('');
+                liveTransBody.innerHTML = trans.map(t => {
+                    // Highlight KCB Paybill transactions in the table
+                    const isKcbPaybill = t.category === 'KCB Paybill';
+                    return `
+                        <tr class="${t.type === 'Money In' ? 'money-in-row' : 'money-out-row'} ${isKcbPaybill ? 'kcb-live-box' : ''}">
+                            <td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
+                            <td data-label="Reason">
+                                ${t.description}
+                                ${isKcbPaybill ? '<span class="kcb-paybill-badge">LIVE KCB</span>' : ''}
+                            </td>
+                            <td data-label="Amount">Ksh ${t.amount.toLocaleString()}</td>
+                            <td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">
+                                ${t.type}
+                            </td>
+                            <td data-label="Wallet">
+                                ${t.category}
+                                ${isKcbPaybill ? '💰' : ''}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
             }
             
             checkLowFloats();
@@ -3122,7 +3359,10 @@
                 await loadShiftData();
                 this.disabled = false;
                 this.innerHTML = 'RECORD MONEY';
-                showSuccessNotification('Transaction recorded successfully!', `${document.getElementById('exp-type').value}: Ksh ${amt.toLocaleString()} - ${desc}`);
+                
+                // Show success message with method
+                const method = document.getElementById('exp-method').value;
+                showSuccessNotification('Transaction recorded successfully!', `${document.getElementById('exp-type').value}: Ksh ${amt.toLocaleString()} via ${method}`);
             } else {
                 throw error;
             }
@@ -3156,7 +3396,7 @@
                 clearInterval(timeCheckInterval);
             }
         });
-    });
+    }); 
 </script>
 </body>
 </html>
