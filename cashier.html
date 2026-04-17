@@ -7,8 +7,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* ALL YOUR EXISTING STYLES - KEEP THEM EXACTLY AS THEY WERE */
+<style>
+        /* ALL YOUR EXISTING STYLES - KEPT INTACT WITH MOBILE FIXES */
         :root { 
             --primary: #4f46e5; 
             --primary-dark: #3730a3;
@@ -411,33 +411,95 @@
             }
         }
         
+        /* ============================================ */
+        /* ENHANCED MOBILE RESPONSIVE FIXES */
+        /* ============================================ */
         @media (max-width: 768px) {
             .mobile-hide-header { display: none; }
-            tr { 
+            
+            /* Fix for sales table rows - make them display properly */
+            .today-sales-table tr { 
                 display: block; 
                 background: white; 
-                margin-bottom: 10px; 
-                padding: 10px; 
-                border-radius: 10px; 
+                margin-bottom: 15px; 
+                padding: 12px; 
+                border-radius: 16px; 
                 border: 1px solid var(--border); 
-                box-shadow: 0 2px 4px rgba(0,0,0,0.04); 
+                box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+                position: relative;
             }
-            td { 
+            
+            .today-sales-table td { 
                 display: flex; 
                 justify-content: space-between; 
+                align-items: center;
                 padding: 8px 0; 
                 border: none !important; 
                 border-bottom: 1px dashed #f1f5f9 !important; 
                 text-align: right; 
                 font-size: 0.8rem;
+                flex-wrap: wrap;
             }
-            td::before { 
+            
+            .today-sales-table td::before { 
                 content: attr(data-label); 
                 font-weight: 800; 
                 color: var(--text-dim); 
-                font-size: 0.65rem; 
+                font-size: 0.7rem; 
                 display: block; 
                 text-align: left; 
+                min-width: 100px;
+            }
+            
+            /* FIX: Make refund button visible and properly positioned on mobile */
+            .action-column {
+                display: flex;
+                justify-content: flex-end;
+                margin-top: 10px;
+                padding-top: 10px;
+                border-top: 1px solid var(--border);
+                width: 100%;
+            }
+            
+            .btn-refund { 
+                font-size: 0.8rem !important; 
+                padding: 10px 16px !important; 
+                width: auto;
+                min-width: 100px;
+                justify-content: center;
+            }
+            
+            /* Fix for badges to not wrap awkwardly */
+            .refunded-badge, .gas-badge, .kcb-paybill-badge { 
+                display: inline-block; 
+                margin-left: 8px; 
+                white-space: nowrap;
+            }
+            
+            /* Money history mobile view */
+            .money-history-table tr { 
+                display: block; 
+                margin-bottom: 12px; 
+                padding: 12px; 
+                border-radius: 14px; 
+                background: white; 
+                border: 1px solid var(--border); 
+            }
+            
+            .money-history-table td { 
+                display: flex; 
+                justify-content: space-between; 
+                align-items: center;
+                padding: 8px 0; 
+                border: none; 
+                border-bottom: 1px solid #f0f0f0; 
+            }
+            
+            .money-history-table td::before { 
+                content: attr(data-label); 
+                font-weight: 700; 
+                font-size: 0.7rem;
+                min-width: 90px;
             }
             
             .table-card {
@@ -446,19 +508,24 @@
                 max-height: none !important;
             }
             
-            /* Fix for money record button on mobile - centered */
+            /* FIX: Money record button - prevent text cutoff and ensure full visibility */
             #record-expense-btn {
-                font-size: 0.85rem !important;
-                padding: 14px !important;
-                margin: 0 auto;
-                width: 90%;
+                font-size: 0.9rem !important;
+                padding: 16px !important;
+                margin: 10px auto 5px auto;
+                width: 100%;
                 display: block;
+                white-space: nowrap;
+                overflow: visible;
+                text-overflow: clip;
+                letter-spacing: 0.5px;
             }
             
             /* Fix for refresh button text on mobile */
             .header-right .btn {
-                font-size: 0.75rem !important;
-                padding: 8px 12px !important;
+                font-size: 0.7rem !important;
+                padding: 8px 10px !important;
+                white-space: nowrap;
             }
             
             /* Remove slide indicator */
@@ -466,16 +533,77 @@
                 display: none !important;
             }
             
-            /* Center the money record section on mobile */
+            /* Fix money record section alignment */
             .dual-tables > div:last-child .card {
                 display: flex;
                 flex-direction: column;
-                align-items: center;
+                align-items: stretch;
+                padding: 18px;
             }
             
             .dual-tables > div:last-child .card input,
             .dual-tables > div:last-child .card select {
                 width: 100%;
+                font-size: 14px;
+            }
+            
+            /* Fix for money summary cards */
+            .money-summary-cards {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            
+            .money-summary-card {
+                padding: 10px;
+            }
+            
+            .money-summary-amount {
+                font-size: 1rem;
+            }
+        }
+        
+        /* Extra small devices (phones under 480px) */
+        @media (max-width: 480px) {
+            .compact-header {
+                flex-direction: column;
+                gap: 10px;
+                align-items: stretch;
+            }
+            
+            .header-left {
+                justify-content: space-between;
+            }
+            
+            .header-right {
+                justify-content: center;
+            }
+            
+            #record-expense-btn {
+                font-size: 0.85rem !important;
+                padding: 14px !important;
+                white-space: normal;
+                word-break: keep-all;
+            }
+            
+            .btn-refund {
+                font-size: 0.75rem !important;
+                padding: 8px 12px !important;
+                min-width: 85px;
+            }
+            
+            .today-sales-table td {
+                flex-direction: column;
+                align-items: flex-start;
+                text-align: left;
+            }
+            
+            .today-sales-table td::before {
+                margin-bottom: 4px;
+            }
+            
+            .today-sales-table td[data-label="Action"] {
+                flex-direction: row;
+                justify-content: center;
             }
         }
 
@@ -1037,6 +1165,7 @@
             color: #b91c1c;
         }
         
+        /* Mobile order adjustments */
         @media (max-width: 768px) {
             .dual-tables > div:first-child {
                 order: 2;
@@ -1052,7 +1181,8 @@
             }
             
             .table-card {
-                max-height: 300px !important;
+                max-height: 400px !important;
+                overflow-y: auto;
             }
             
             .dual-tables > div:last-child .card {
@@ -1148,6 +1278,7 @@
             text-align: center;
         }
         
+        /* Shift History Mobile Styles */
         @media (max-width: 768px) {
             .shift-mobile-card {
                 background: white;
@@ -1336,6 +1467,7 @@
             margin-left: 5px;
         }
     </style>
+```
 </head>
 <body>
 
@@ -1708,6 +1840,11 @@
     let currentUserProfile = null;
     let currentBranchId = null;
     let branches = {};
+    
+    // Flag to prevent multiple gas redirect triggers
+    let gasRedirectActive = false;
+    // Store processed sale IDs to prevent duplicates
+    let processedSaleIds = new Set();
 
     // ============================================
     // GET BRANCH ID FROM URL PARAMETER
@@ -1724,14 +1861,12 @@
     // ============================================
 
     function getCurrentBranchId() {
-        // First check if we have a branch from URL
         const urlBranchId = getBranchIdFromUrl();
         if (urlBranchId) {
             console.log("Using branch ID from URL:", urlBranchId);
             return urlBranchId;
         }
         
-        // Fallback to session or currentBranchId
         const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
         return session.branch?.id || currentBranchId;
     }
@@ -1741,7 +1876,6 @@
         return session.role === 'admin';
     }
 
-    // Load branches for name lookup
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
         branches = {};
@@ -1840,9 +1974,6 @@
         }
     }
 
-    // ============================================
-    // SUCCESS NOTIFICATION FUNCTION
-    // ============================================
     function showSuccessNotification(message, details = '') {
         const container = document.getElementById('success-notification-container');
         if (!container) return;
@@ -1872,15 +2003,34 @@
     }
 
     // ============================================
-    // REDIRECT TO GAS HUB
+    // REDIRECT TO GAS HUB - PREVENTS ANY BACKGROUND PROCESSING
     // ============================================
     window.redirectToGasHub = function() {
-        const branchId = getCurrentBranchId();
-        if (branchId) {
-            window.location.href = `cashiergashub.html?branch=${branchId}`;
-        } else {
-            window.location.href = 'cashiergashub.html';
+        if (gasRedirectActive) {
+            console.log("Gas redirect already active, ignoring...");
+            return;
         }
+        
+        gasRedirectActive = true;
+        const branchId = getCurrentBranchId();
+        
+        // Clear any pending form submissions
+        const submitBtn = document.getElementById('submit-sale-btn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+        }
+        
+        // Clear selected item to prevent any accidental processing
+        selectedItem = null;
+        
+        const targetUrl = branchId ? `cashiergashub.html?branch=${branchId}` : 'cashiergashub.html';
+        
+        showSuccessNotification('Redirecting to Gas Hub', 'Please process gas sales there');
+        
+        // Use a slight delay to ensure all pending operations are cancelled
+        setTimeout(() => {
+            window.location.href = targetUrl;
+        }, 300);
     };
 
     window.openRefundModal = function(sale) {
@@ -2227,7 +2377,6 @@
             const branchId = getCurrentBranchId();
             console.log("Current branch ID for cashier:", branchId);
 
-            // Update branch name display in header
             const branchNameHeader = document.getElementById('branch-name-header');
             if (branchNameHeader && branchId && branches[branchId]) {
                 branchNameHeader.innerHTML = `<i class="fas fa-store"></i> ${branches[branchId].name}`;
@@ -2307,9 +2456,10 @@
     document.getElementById('pSearch').addEventListener('input', (e) => {
         selectedItem = inventory.find(p => formatItemName(p) === e.target.value);
         
-        // Hide gas redirect notice when searching
         const notice = document.getElementById('gas-redirect-notice');
         if (notice) notice.style.display = 'none';
+        
+        gasRedirectActive = false;
         
         if (selectedItem) {
             const pPrice = document.getElementById('pPrice');
@@ -2325,15 +2475,39 @@
             updateStockDisplay(selectedItem);
             updateTotal();
             
-            // Show gas exchange note for gas products
             if (selectedItem.category === 'Gas') {
                 gasExchangeNote.style.display = 'block';
-                if (notice) notice.style.display = 'flex';
+                if (notice) {
+                    notice.style.display = 'flex';
+                    const noticeText = notice.querySelector('div');
+                    if (noticeText) {
+                        noticeText.innerHTML = '<strong>⛽ GAS ITEM DETECTED!</strong> Gas sales cannot be processed here. Use the Gas Hub for cylinder tracking.';
+                    }
+                }
+                const submitBtn = document.getElementById('submit-sale-btn');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.style.opacity = '0.6';
+                    submitBtn.title = 'Gas items must be sold in Gas Hub';
+                }
             } else {
                 gasExchangeNote.style.display = 'none';
+                if (notice) notice.style.display = 'none';
+                const submitBtn = document.getElementById('submit-sale-btn');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.style.opacity = '1';
+                    submitBtn.title = '';
+                }
             }
         } else {
             document.getElementById('gas-exchange-note').style.display = 'none';
+            const submitBtn = document.getElementById('submit-sale-btn');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.title = '';
+            }
         }
     });
 
@@ -2365,18 +2539,23 @@
             return;
         }
 
-        // GAS ITEM DETECTED - SHOW REDIRECT NOTICE AND STOP
+        // CRITICAL: GAS ITEM DETECTION - COMPLETE BLOCK - NO PROCESSING ALLOWED
         if (selectedItem.category === 'Gas') {
             const notice = document.getElementById('gas-redirect-notice');
             if (notice) {
                 notice.style.display = 'flex';
-                // Auto-hide after 5 seconds if not clicked
+                notice.style.animation = 'pulse 0.5s ease-in-out 2';
                 setTimeout(() => {
-                    if (notice.style.display === 'flex') {
-                        notice.style.display = 'none';
-                    }
-                }, 5000);
+                    notice.style.animation = '';
+                }, 1000);
             }
+            
+            alert("⛽ GAS ITEMS CANNOT BE SOLD HERE!\n\nPlease use the GAS HUB for all gas sales to ensure proper cylinder tracking and avoid duplicate records.\n\nYou will be redirected to the Gas Hub.");
+            
+            document.getElementById('pSearch').value = '';
+            selectedItem = null;
+            
+            redirectToGasHub();
             return;
         }
 
@@ -2424,9 +2603,6 @@
         }
 
         try {
-            // ============================================
-            // 1. INSERT INTO SALES TABLE
-            // ============================================
             const { data: sData, error } = await supabase
                 .from('sales')
                 .insert(salesToInsert)
@@ -2434,9 +2610,6 @@
             
             if (error) throw error;
 
-            // ============================================
-            // 2. UPDATE PRODUCT STOCK
-            // ============================================
             const newStock = selectedItem.stock_quantity - qty;
             const { error: updateError } = await supabase
                 .from('products')
@@ -2445,11 +2618,7 @@
             
             if (updateError) throw updateError;
 
-            // ============================================
-            // 3. DEBT HANDLING - RECORD TO DEBTORS TABLE
-            // ============================================
             if(method === "Debt") {
-                // Prompt for customer name (required)
                 const customerName = prompt("Customer Name (required):");
                 if(!customerName) {
                     alert("❌ Customer name is required for debt sales!");
@@ -2458,10 +2627,8 @@
                     return;
                 }
                 
-                // Prompt for customer phone (optional)
                 const customerPhone = prompt("Customer Phone (optional):", "");
                 
-                // Insert into debtors table with all required fields
                 const { error: debtError } = await supabase.from('debtors').insert([{ 
                     customer_name: customerName,
                     customer_phone: customerPhone || null,
@@ -2531,12 +2698,10 @@
             const sales = salesRes.data || [];
             const trans = transRes.data || [];
 
-            // Calculate KCB Paybill sales including both regular sales and any Money In transactions to KCB Paybill
             const kcbPaybillSales = sales
                 .filter(s => s.payment_method === 'KCB Paybill' && !s.refunded && s.total_amount > 0)
                 .reduce((a, b) => a + b.total_amount, 0);
             
-            // Also include any Money In transactions that were added to KCB Paybill (like debt settlements)
             const kcbPaybillMoneyIn = trans
                 .filter(t => t.type === 'Money In' && t.category === 'KCB Paybill')
                 .reduce((a, b) => a + b.amount, 0);
@@ -2602,7 +2767,6 @@
             const liveTransBody = document.getElementById('live-trans-body');
             if (liveTransBody) {
                 liveTransBody.innerHTML = trans.map(t => {
-                    // Highlight KCB Paybill transactions in the table
                     const isKcbPaybill = t.category === 'KCB Paybill';
                     return `
                         <tr class="${t.type === 'Money In' ? 'money-in-row' : 'money-out-row'} ${isKcbPaybill ? 'kcb-live-box' : ''}">
@@ -2689,12 +2853,10 @@
         }
     });
 
-    // Show close modal with cancel button
     window.showCloseModal = function() {
         document.getElementById('close-modal').style.display = 'flex';
     };
 
-    // Function to show confirmation card with entered values
     function showCloseConfirmation() {
         const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
         const clK = parseFloat(document.getElementById('c-kcb').value || 0);
@@ -2702,10 +2864,8 @@
         const clC = parseFloat(document.getElementById('c-cash').value || 0);
         const clB = currentKcbSalesTotal;
         
-        // Hide the close modal
         document.getElementById('close-modal').style.display = 'none';
         
-        // Create confirmation card
         const card = document.createElement('div');
         card.className = 'overlay';
         card.id = 'close-confirm-card';
@@ -2760,14 +2920,12 @@
         document.body.appendChild(card);
     }
 
-    // Function to close confirmation card
     window.closeConfirmationCard = function() {
         const card = document.getElementById('close-confirm-card');
         if (card) card.remove();
         document.getElementById('close-modal').style.display = 'flex';
     };
 
-    // Modified close handler - shows confirmation first
     document.getElementById('confirm-close').addEventListener('click', function() {
         const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
         const clK = parseFloat(document.getElementById('c-kcb').value || 0);
@@ -2779,11 +2937,9 @@
             return;
         }
         
-        // Show confirmation card with entered values
         showCloseConfirmation();
     });
 
-    // Process final close after confirmation
     window.processFinalClose = async function() {
         const card = document.getElementById('close-confirm-card');
         if (!card) return;
@@ -2801,8 +2957,9 @@
         btn.innerHTML = '<span class="spinner"></span> FINALIZING...';
         
         try {
+            // IMPORTANT: Fetch all sales for this shift including split payments
             const { data: sales } = await supabase.from('sales')
-                .select('total_amount')
+                .select('total_amount, payment_method, unit_price, cost_price, quantity')
                 .eq('shift_id', currentShift.id)
                 .neq('payment_method','Debt')
                 .eq('refunded', false)
@@ -2810,7 +2967,12 @@
                 
             const { data: trans } = await supabase.from('cash_transactions').select('amount, type').eq('shift_id', currentShift.id);
             
-            const totalSales = (sales || []).reduce((a,b) => a + b.total_amount, 0);
+            // Calculate cash sales (including split cash portions)
+            const cashSalesTotal = (sales || []).filter(s => s.payment_method === 'Cash').reduce((a,b) => a + b.total_amount, 0);
+            // Calculate KCB Paybill sales (including split online portions)
+            const kcbPaybillSalesTotal = (sales || []).filter(s => s.payment_method === 'KCB Paybill').reduce((a,b) => a + b.total_amount, 0);
+            
+            const totalSales = cashSalesTotal + kcbPaybillSalesTotal;
             const moneyIn = (trans || []).filter(t => t.type === 'Money In').reduce((a,b) => a + b.amount, 0);
             const moneyOut = (trans || []).filter(t => t.type === 'Money Out').reduce((a,b) => a + b.amount, 0);
 
@@ -2830,8 +2992,6 @@
                     btn.innerHTML = 'FINALIZE & CLOSE';
                     return;
                 }
-                // Store only the reason without the amount
-                note = note;
             }
 
             await supabase.from('daily_shifts').update({
@@ -2871,6 +3031,7 @@
                 .select('shift_id, amount, type')
                 .eq('branch_id', branchId);
                 
+            // IMPORTANT: Get ALL sales for each shift to calculate payment method totals correctly
             const { data: sales } = await supabase
                 .from('sales')
                 .select('shift_id, total_amount, payment_method')
@@ -2923,6 +3084,8 @@
 
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
+            
+            // CRITICAL FIX: Calculate cash sales and KCB Paybill sales correctly by filtering payment_method
             const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount || 0), 0);
 
@@ -2961,46 +3124,46 @@
                         <b>${startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'})}</b>
                         <span class="time-pill">IN: ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span><br>
                         <span class="time-pill">${sh.end_time ? 'OUT: '+new Date(sh.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'ACTIVE'}</span>
-                    </td>
-                    <td>
+                     </td>
+                     <td>
                         <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity||0).toLocaleString()}</span></div>
                         <div class="total-row">Total: ${openTotal.toLocaleString()}</div>
-                    </td>
-                    <td>
+                     </td>
+                     <td>
                         <a href="sales_reports.html" class="revenue-card">
                             <div class="account-line"><span class="account-label">Cash Sales</span><span class="account-val" style="color:var(--success)">+${cashSales.toLocaleString()}</span></div>
                             <div class="account-line"><span class="account-label">KCB Paybill</span><span class="account-val" style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span></div>
                             <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW ➔</div>
                         </a>
-                    </td>
-                    <td>
+                     </td>
+                     <td>
                         <a href="moneyinout.html" class="revenue-card">
                             <div class="account-line"><span class="account-label">In</span><span class="account-val" style="color:var(--success)">+${moneyIn.toLocaleString()}</span></div>
                             <div class="account-line"><span class="account-label">Out</span><span class="account-val" style="color:var(--danger)">-${moneyOut.toLocaleString()}</span></div>
                             <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW ➔</div>
                         </a>
-                    </td>
-                    <td>
+                     </td>
+                     <td>
                         <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.close_cash||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.close_kcb||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.close_equity||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">Paybill</span><span class="account-val">${(sh.close_kcb_bank||0).toLocaleString()}</span></div>
                         <div class="total-row" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>
-                    </td>
-                    <td>
+                     </td>
+                     <td>
                         <span class="status-badge ${varianceClass}">
                             ${varianceDisplay}
                         </span>
                         <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 8px; text-align: center;">
                             Expected: ${expected.toLocaleString()}
                         </div>
-                    </td>
-                    <td><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim); font-style: italic;">${sh.variance_note && sh.variance_note !== 'Balanced' ? sh.variance_note.split(' - ')[1] || sh.variance_note : sh.variance_note || 'No notes added.'}</div></td>
-                </tr>`;
+                     </td>
+                     <td><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim); font-style: italic;">${sh.variance_note && sh.variance_note !== 'Balanced' ? sh.variance_note.split(' - ')[1] || sh.variance_note : sh.variance_note || 'No notes added.'}</div></td>
+                 </tr>`;
         });
 
         desktopTbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.</td></tr>';
@@ -3028,6 +3191,8 @@
 
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
+            
+            // CRITICAL FIX: Calculate cash sales and KCB Paybill sales correctly for mobile
             const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount || 0), 0);
 
@@ -3176,7 +3341,6 @@
                 this.disabled = false;
                 this.innerHTML = 'RECORD MONEY';
                 
-                // Show success message with method
                 const method = document.getElementById('exp-method').value;
                 showSuccessNotification('Transaction recorded successfully!', `${document.getElementById('exp-type').value}: Ksh ${amt.toLocaleString()} via ${method}`);
             } else {
