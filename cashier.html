@@ -3044,12 +3044,15 @@
             allSales = sales || [];
             
             // Debug: Log sales data to verify payment_method values
+            console.log("=== SHIFT HISTORY DEBUG INFO ===");
             console.log("Sales data loaded:", allSales.length, "records");
             if (allSales.length > 0) {
-                console.log("Sample sale payment_method values:", [...new Set(allSales.map(s => s.payment_method))]);
-                // Log first 5 sales for inspection
-                console.log("First 5 sales:", allSales.slice(0, 5));
+                console.log("Unique payment_method values:", [...new Set(allSales.map(s => s.payment_method))]);
+                // Log first 3 sales for inspection
+                console.log("First 3 sales:", allSales.slice(0, 3));
             }
+            console.log("Current shift ID:", currentShift?.id);
+            console.log("Shifts loaded:", allShifts.length);
             
             const lastClosed = allShifts.find(s => s.status === 'Closed');
             if (lastClosed) {
@@ -3093,29 +3096,23 @@
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
             
-            // DEBUG: Log shift sales payment methods
-            console.log(`Shift ${sh.id} has ${shiftSales.length} sales`);
-            console.log("Payment methods in this shift:", [...new Set(shiftSales.map(s => s.payment_method))]);
-            
-            // CRITICAL FIX: Calculate cash sales - match exact string
+            // Calculate cash sales - using case-insensitive matching for safety
             const cashSales = shiftSales
-                .filter(s => s.payment_method === 'Cash')
-                .reduce((sum, sale) => {
-                    const amount = Number(sale.total_amount || 0);
-                    console.log(`Cash sale found: ${amount}`);
-                    return sum + amount;
-                }, 0);
+                .filter(s => {
+                    const method = (s.payment_method || '').toString().toLowerCase().trim();
+                    return method === 'cash';
+                })
+                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
             
-            // CRITICAL FIX: Calculate KCB Paybill sales - match exact string
+            // Calculate KCB Paybill sales - using case-insensitive matching for safety
             const kcbPaybillSales = shiftSales
-                .filter(s => s.payment_method === 'KCB Paybill')
-                .reduce((sum, sale) => {
-                    const amount = Number(sale.total_amount || 0);
-                    console.log(`KCB Paybill sale found: ${amount}`);
-                    return sum + amount;
-                }, 0);
+                .filter(s => {
+                    const method = (s.payment_method || '').toString().toLowerCase().trim();
+                    return method === 'kcb paybill';
+                })
+                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
             
-            console.log(`Shift ${sh.id} - Cash: ${cashSales}, KCB Paybill: ${kcbPaybillSales}`);
+            console.log(`Shift ${sh.id} (${sh.status}) - Cash: ${cashSales}, KCB Paybill: ${kcbPaybillSales}, Total Sales: ${shiftSales.length}`);
 
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
@@ -3152,46 +3149,46 @@
                         <b>${startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'})}</b>
                         <span class="time-pill">IN: ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span><br>
                         <span class="time-pill">${sh.end_time ? 'OUT: '+new Date(sh.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'ACTIVE'}</span>
-                     </td>
-                     <td>
+                      </td>
+                      <td>
                         <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity||0).toLocaleString()}</span></div>
                         <div class="total-row">Total: ${openTotal.toLocaleString()}</div>
-                     </td>
-                     <td>
+                      </td>
+                      <td>
                         <a href="sales_reports.html" class="revenue-card">
                             <div class="account-line"><span class="account-label">Cash Sales</span><span class="account-val" style="color:var(--success)">+${cashSales.toLocaleString()}</span></div>
                             <div class="account-line"><span class="account-label">KCB Paybill</span><span class="account-val" style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span></div>
                             <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW ➔</div>
                         </a>
-                     </td>
-                     <td>
+                      </td>
+                      <td>
                         <a href="moneyinout.html" class="revenue-card">
                             <div class="account-line"><span class="account-label">In</span><span class="account-val" style="color:var(--success)">+${moneyIn.toLocaleString()}</span></div>
                             <div class="account-line"><span class="account-label">Out</span><span class="account-val" style="color:var(--danger)">-${moneyOut.toLocaleString()}</span></div>
                             <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW ➔</div>
                         </a>
-                     </td>
-                     <td>
+                      </td>
+                      <td>
                         <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.close_cash||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.close_kcb||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.close_equity||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">Paybill</span><span class="account-val">${(sh.close_kcb_bank||0).toLocaleString()}</span></div>
                         <div class="total-row" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>
-                     </td>
-                     <td>
+                      </td>
+                      <td>
                         <span class="status-badge ${varianceClass}">
                             ${varianceDisplay}
                         </span>
                         <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 8px; text-align: center;">
                             Expected: ${expected.toLocaleString()}
                         </div>
-                     </td>
-                     <td><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim); font-style: italic;">${sh.variance_note && sh.variance_note !== 'Balanced' ? sh.variance_note.split(' - ')[1] || sh.variance_note : sh.variance_note || 'No notes added.'}</div></td>
-                 </tr>`;
+                      </td>
+                      <td><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim); font-style: italic;">${sh.variance_note && sh.variance_note !== 'Balanced' ? sh.variance_note.split(' - ')[1] || sh.variance_note : sh.variance_note || 'No notes added.'}</div></td>
+                </tr>`;
         });
 
         desktopTbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.</td></tr>';
@@ -3220,12 +3217,20 @@
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
             
-            // CRITICAL FIX: Calculate cash sales and KCB Paybill sales correctly for mobile
+            // Calculate cash sales - using case-insensitive matching for safety
             const cashSales = shiftSales
-                .filter(s => s.payment_method === 'Cash')
+                .filter(s => {
+                    const method = (s.payment_method || '').toString().toLowerCase().trim();
+                    return method === 'cash';
+                })
                 .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
+            
+            // Calculate KCB Paybill sales - using case-insensitive matching for safety
             const kcbPaybillSales = shiftSales
-                .filter(s => s.payment_method === 'KCB Paybill')
+                .filter(s => {
+                    const method = (s.payment_method || '').toString().toLowerCase().trim();
+                    return method === 'kcb paybill';
+                })
                 .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
 
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
