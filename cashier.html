@@ -1843,6 +1843,8 @@
     
     // Flag to prevent multiple gas redirect triggers
     let gasRedirectActive = false;
+    // Store processed sale IDs to prevent duplicates
+    let processedSaleIds = new Set();
 
     // ============================================
     // GET BRANCH ID FROM URL PARAMETER
@@ -1859,14 +1861,12 @@
     // ============================================
 
     function getCurrentBranchId() {
-        // First check if we have a branch from URL
         const urlBranchId = getBranchIdFromUrl();
         if (urlBranchId) {
             console.log("Using branch ID from URL:", urlBranchId);
             return urlBranchId;
         }
         
-        // Fallback to session or currentBranchId
         const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
         return session.branch?.id || currentBranchId;
     }
@@ -1876,7 +1876,6 @@
         return session.role === 'admin';
     }
 
-    // Load branches for name lookup
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
         branches = {};
@@ -1975,9 +1974,6 @@
         }
     }
 
-    // ============================================
-    // SUCCESS NOTIFICATION FUNCTION
-    // ============================================
     function showSuccessNotification(message, details = '') {
         const container = document.getElementById('success-notification-container');
         if (!container) return;
@@ -2007,20 +2003,34 @@
     }
 
     // ============================================
-    // REDIRECT TO GAS HUB - SINGLE ENTRY POINT FOR GAS SALES
+    // REDIRECT TO GAS HUB - PREVENTS ANY BACKGROUND PROCESSING
     // ============================================
     window.redirectToGasHub = function() {
-        // Prevent multiple redirects
-        if (gasRedirectActive) return;
-        gasRedirectActive = true;
+        if (gasRedirectActive) {
+            console.log("Gas redirect already active, ignoring...");
+            return;
+        }
         
+        gasRedirectActive = true;
         const branchId = getCurrentBranchId();
+        
+        // Clear any pending form submissions
+        const submitBtn = document.getElementById('submit-sale-btn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+        }
+        
+        // Clear selected item to prevent any accidental processing
+        selectedItem = null;
+        
         const targetUrl = branchId ? `cashiergashub.html?branch=${branchId}` : 'cashiergashub.html';
         
-        // Small delay to ensure any pending operations are cancelled
+        showSuccessNotification('Redirecting to Gas Hub', 'Please process gas sales there');
+        
+        // Use a slight delay to ensure all pending operations are cancelled
         setTimeout(() => {
             window.location.href = targetUrl;
-        }, 100);
+        }, 300);
     };
 
     window.openRefundModal = function(sale) {
@@ -2367,7 +2377,6 @@
             const branchId = getCurrentBranchId();
             console.log("Current branch ID for cashier:", branchId);
 
-            // Update branch name display in header
             const branchNameHeader = document.getElementById('branch-name-header');
             if (branchNameHeader && branchId && branches[branchId]) {
                 branchNameHeader.innerHTML = `<i class="fas fa-store"></i> ${branches[branchId].name}`;
@@ -2447,11 +2456,9 @@
     document.getElementById('pSearch').addEventListener('input', (e) => {
         selectedItem = inventory.find(p => formatItemName(p) === e.target.value);
         
-        // Hide gas redirect notice when searching
         const notice = document.getElementById('gas-redirect-notice');
         if (notice) notice.style.display = 'none';
         
-        // Reset gas redirect flag when searching new item
         gasRedirectActive = false;
         
         if (selectedItem) {
@@ -2468,18 +2475,15 @@
             updateStockDisplay(selectedItem);
             updateTotal();
             
-            // Show gas exchange note for gas products and enable redirect notice
             if (selectedItem.category === 'Gas') {
                 gasExchangeNote.style.display = 'block';
                 if (notice) {
                     notice.style.display = 'flex';
-                    // Add a more prominent warning for gas items
                     const noticeText = notice.querySelector('div');
                     if (noticeText) {
                         noticeText.innerHTML = '<strong>⛽ GAS ITEM DETECTED!</strong> Gas sales cannot be processed here. Use the Gas Hub for cylinder tracking.';
                     }
                 }
-                // Disable the submit button when gas is selected
                 const submitBtn = document.getElementById('submit-sale-btn');
                 if (submitBtn) {
                     submitBtn.disabled = true;
@@ -2489,7 +2493,6 @@
             } else {
                 gasExchangeNote.style.display = 'none';
                 if (notice) notice.style.display = 'none';
-                // Re-enable submit button for non-gas items
                 const submitBtn = document.getElementById('submit-sale-btn');
                 if (submitBtn) {
                     submitBtn.disabled = false;
@@ -2499,7 +2502,6 @@
             }
         } else {
             document.getElementById('gas-exchange-note').style.display = 'none';
-            // Re-enable submit button when no gas selected
             const submitBtn = document.getElementById('submit-sale-btn');
             if (submitBtn) {
                 submitBtn.disabled = false;
@@ -2537,29 +2539,22 @@
             return;
         }
 
-        // ============================================
-        // CRITICAL FIX: GAS ITEM DETECTION - COMPLETE BLOCK
-        // No gas sale can be processed here - redirect to Gas Hub
-        // ============================================
+        // CRITICAL: GAS ITEM DETECTION - COMPLETE BLOCK - NO PROCESSING ALLOWED
         if (selectedItem.category === 'Gas') {
             const notice = document.getElementById('gas-redirect-notice');
             if (notice) {
                 notice.style.display = 'flex';
-                // Flash the notice for emphasis
                 notice.style.animation = 'pulse 0.5s ease-in-out 2';
                 setTimeout(() => {
                     notice.style.animation = '';
                 }, 1000);
             }
             
-            // Show an alert to inform the cashier
             alert("⛽ GAS ITEMS CANNOT BE SOLD HERE!\n\nPlease use the GAS HUB for all gas sales to ensure proper cylinder tracking and avoid duplicate records.\n\nYou will be redirected to the Gas Hub.");
             
-            // Reset the form and redirect
             document.getElementById('pSearch').value = '';
             selectedItem = null;
             
-            // Redirect to Gas Hub
             redirectToGasHub();
             return;
         }
@@ -2608,9 +2603,6 @@
         }
 
         try {
-            // ============================================
-            // 1. INSERT INTO SALES TABLE
-            // ============================================
             const { data: sData, error } = await supabase
                 .from('sales')
                 .insert(salesToInsert)
@@ -2618,9 +2610,6 @@
             
             if (error) throw error;
 
-            // ============================================
-            // 2. UPDATE PRODUCT STOCK
-            // ============================================
             const newStock = selectedItem.stock_quantity - qty;
             const { error: updateError } = await supabase
                 .from('products')
@@ -2629,11 +2618,7 @@
             
             if (updateError) throw updateError;
 
-            // ============================================
-            // 3. DEBT HANDLING - RECORD TO DEBTORS TABLE
-            // ============================================
             if(method === "Debt") {
-                // Prompt for customer name (required)
                 const customerName = prompt("Customer Name (required):");
                 if(!customerName) {
                     alert("❌ Customer name is required for debt sales!");
@@ -2642,10 +2627,8 @@
                     return;
                 }
                 
-                // Prompt for customer phone (optional)
                 const customerPhone = prompt("Customer Phone (optional):", "");
                 
-                // Insert into debtors table with all required fields
                 const { error: debtError } = await supabase.from('debtors').insert([{ 
                     customer_name: customerName,
                     customer_phone: customerPhone || null,
@@ -2715,12 +2698,10 @@
             const sales = salesRes.data || [];
             const trans = transRes.data || [];
 
-            // Calculate KCB Paybill sales including both regular sales and any Money In transactions to KCB Paybill
             const kcbPaybillSales = sales
                 .filter(s => s.payment_method === 'KCB Paybill' && !s.refunded && s.total_amount > 0)
                 .reduce((a, b) => a + b.total_amount, 0);
             
-            // Also include any Money In transactions that were added to KCB Paybill (like debt settlements)
             const kcbPaybillMoneyIn = trans
                 .filter(t => t.type === 'Money In' && t.category === 'KCB Paybill')
                 .reduce((a, b) => a + b.amount, 0);
@@ -2786,7 +2767,6 @@
             const liveTransBody = document.getElementById('live-trans-body');
             if (liveTransBody) {
                 liveTransBody.innerHTML = trans.map(t => {
-                    // Highlight KCB Paybill transactions in the table
                     const isKcbPaybill = t.category === 'KCB Paybill';
                     return `
                         <tr class="${t.type === 'Money In' ? 'money-in-row' : 'money-out-row'} ${isKcbPaybill ? 'kcb-live-box' : ''}">
@@ -2873,12 +2853,10 @@
         }
     });
 
-    // Show close modal with cancel button
     window.showCloseModal = function() {
         document.getElementById('close-modal').style.display = 'flex';
     };
 
-    // Function to show confirmation card with entered values
     function showCloseConfirmation() {
         const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
         const clK = parseFloat(document.getElementById('c-kcb').value || 0);
@@ -2886,10 +2864,8 @@
         const clC = parseFloat(document.getElementById('c-cash').value || 0);
         const clB = currentKcbSalesTotal;
         
-        // Hide the close modal
         document.getElementById('close-modal').style.display = 'none';
         
-        // Create confirmation card
         const card = document.createElement('div');
         card.className = 'overlay';
         card.id = 'close-confirm-card';
@@ -2944,14 +2920,12 @@
         document.body.appendChild(card);
     }
 
-    // Function to close confirmation card
     window.closeConfirmationCard = function() {
         const card = document.getElementById('close-confirm-card');
         if (card) card.remove();
         document.getElementById('close-modal').style.display = 'flex';
     };
 
-    // Modified close handler - shows confirmation first
     document.getElementById('confirm-close').addEventListener('click', function() {
         const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
         const clK = parseFloat(document.getElementById('c-kcb').value || 0);
@@ -2963,11 +2937,9 @@
             return;
         }
         
-        // Show confirmation card with entered values
         showCloseConfirmation();
     });
 
-    // Process final close after confirmation
     window.processFinalClose = async function() {
         const card = document.getElementById('close-confirm-card');
         if (!card) return;
@@ -2986,7 +2958,7 @@
         
         try {
             const { data: sales } = await supabase.from('sales')
-                .select('total_amount')
+                .select('total_amount, payment_method, unit_price, cost_price, quantity')
                 .eq('shift_id', currentShift.id)
                 .neq('payment_method','Debt')
                 .eq('refunded', false)
@@ -2994,7 +2966,11 @@
                 
             const { data: trans } = await supabase.from('cash_transactions').select('amount, type').eq('shift_id', currentShift.id);
             
-            const totalSales = (sales || []).reduce((a,b) => a + b.total_amount, 0);
+            // Calculate sales by payment method for display
+            const cashSalesTotal = (sales || []).filter(s => s.payment_method === 'Cash').reduce((a,b) => a + b.total_amount, 0);
+            const kcbPaybillSalesTotal = (sales || []).filter(s => s.payment_method === 'KCB Paybill').reduce((a,b) => a + b.total_amount, 0);
+            
+            const totalSales = cashSalesTotal + kcbPaybillSalesTotal;
             const moneyIn = (trans || []).filter(t => t.type === 'Money In').reduce((a,b) => a + b.amount, 0);
             const moneyOut = (trans || []).filter(t => t.type === 'Money Out').reduce((a,b) => a + b.amount, 0);
 
@@ -3014,8 +2990,6 @@
                     btn.innerHTML = 'FINALIZE & CLOSE';
                     return;
                 }
-                // Store only the reason without the amount
-                note = note;
             }
 
             await supabase.from('daily_shifts').update({
@@ -3057,7 +3031,7 @@
                 
             const { data: sales } = await supabase
                 .from('sales')
-                .select('shift_id, total_amount, payment_method')
+                .select('shift_id, total_amount, payment_method, unit_price, cost_price, quantity')
                 .eq('branch_id', branchId)
                 .eq('refunded', false)
                 .gt('total_amount', 0);
@@ -3107,6 +3081,8 @@
 
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
+            
+            // FIX: Calculate cash sales and KCB Paybill sales correctly
             const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount || 0), 0);
 
@@ -3212,6 +3188,8 @@
 
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
+            
+            // FIX: Calculate cash sales and KCB Paybill sales correctly for mobile
             const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount || 0), 0);
 
@@ -3360,7 +3338,6 @@
                 this.disabled = false;
                 this.innerHTML = 'RECORD MONEY';
                 
-                // Show success message with method
                 const method = document.getElementById('exp-method').value;
                 showSuccessNotification('Transaction recorded successfully!', `${document.getElementById('exp-type').value}: Ksh ${amt.toLocaleString()} via ${method}`);
             } else {
@@ -3396,7 +3373,7 @@
                 clearInterval(timeCheckInterval);
             }
         });
-    }); 
+    });
 </script>
 </body>
 </html>
