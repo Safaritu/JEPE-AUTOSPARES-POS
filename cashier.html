@@ -2783,7 +2783,7 @@
                                 ${t.category}
                                 ${isKcbPaybill ? '💰' : ''}
                             </td>
-                        </table>
+                        </tr>
                     `;
                 }).join('');
             }
@@ -3043,9 +3043,13 @@
             allTransactions = transactions || [];
             allSales = sales || [];
             
-            // Debug: Log sales data to verify
+            // Debug: Log sales data to verify payment_method values
             console.log("Sales data loaded:", allSales.length, "records");
-            console.log("Sample sale:", allSales[0]);
+            if (allSales.length > 0) {
+                console.log("Sample sale payment_method values:", [...new Set(allSales.map(s => s.payment_method))]);
+                // Log first 5 sales for inspection
+                console.log("First 5 sales:", allSales.slice(0, 5));
+            }
             
             const lastClosed = allShifts.find(s => s.status === 'Closed');
             if (lastClosed) {
@@ -3089,15 +3093,29 @@
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
             
-            // CRITICAL FIX: Calculate cash sales by filtering payment_method === 'Cash'
+            // DEBUG: Log shift sales payment methods
+            console.log(`Shift ${sh.id} has ${shiftSales.length} sales`);
+            console.log("Payment methods in this shift:", [...new Set(shiftSales.map(s => s.payment_method))]);
+            
+            // CRITICAL FIX: Calculate cash sales - match exact string
             const cashSales = shiftSales
                 .filter(s => s.payment_method === 'Cash')
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
+                .reduce((sum, sale) => {
+                    const amount = Number(sale.total_amount || 0);
+                    console.log(`Cash sale found: ${amount}`);
+                    return sum + amount;
+                }, 0);
             
-            // CRITICAL FIX: Calculate KCB Paybill sales by filtering payment_method === 'KCB Paybill'
+            // CRITICAL FIX: Calculate KCB Paybill sales - match exact string
             const kcbPaybillSales = shiftSales
                 .filter(s => s.payment_method === 'KCB Paybill')
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
+                .reduce((sum, sale) => {
+                    const amount = Number(sale.total_amount || 0);
+                    console.log(`KCB Paybill sale found: ${amount}`);
+                    return sum + amount;
+                }, 0);
+            
+            console.log(`Shift ${sh.id} - Cash: ${cashSales}, KCB Paybill: ${kcbPaybillSales}`);
 
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
