@@ -2783,7 +2783,7 @@
                                 ${t.category}
                                 ${isKcbPaybill ? '💰' : ''}
                             </td>
-                        </tr>
+                        </table>
                     `;
                 }).join('');
             }
@@ -3031,7 +3031,7 @@
                 .select('shift_id, amount, type')
                 .eq('branch_id', branchId);
                 
-            // IMPORTANT: Get ALL sales for each shift to calculate payment method totals correctly
+            // CRITICAL FIX: Get ALL sales with correct payment_method filtering
             const { data: sales } = await supabase
                 .from('sales')
                 .select('shift_id, total_amount, payment_method')
@@ -3042,6 +3042,10 @@
             allShifts = shifts || [];
             allTransactions = transactions || [];
             allSales = sales || [];
+            
+            // Debug: Log sales data to verify
+            console.log("Sales data loaded:", allSales.length, "records");
+            console.log("Sample sale:", allSales[0]);
             
             const lastClosed = allShifts.find(s => s.status === 'Closed');
             if (lastClosed) {
@@ -3085,15 +3089,21 @@
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
             
-            // CRITICAL FIX: Calculate cash sales and KCB Paybill sales correctly by filtering payment_method
-            const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount || 0), 0);
-            const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            // CRITICAL FIX: Calculate cash sales by filtering payment_method === 'Cash'
+            const cashSales = shiftSales
+                .filter(s => s.payment_method === 'Cash')
+                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
+            
+            // CRITICAL FIX: Calculate KCB Paybill sales by filtering payment_method === 'KCB Paybill'
+            const kcbPaybillSales = shiftSales
+                .filter(s => s.payment_method === 'KCB Paybill')
+                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
 
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
             const isClosed = sh.status === 'Closed';
-            const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            const totalRevenue = shiftSales.reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             
             let varianceVal = isClosed ? (closeTotal - expected) : 0;
@@ -3193,14 +3203,18 @@
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
             
             // CRITICAL FIX: Calculate cash sales and KCB Paybill sales correctly for mobile
-            const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount || 0), 0);
-            const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            const cashSales = shiftSales
+                .filter(s => s.payment_method === 'Cash')
+                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
+            const kcbPaybillSales = shiftSales
+                .filter(s => s.payment_method === 'KCB Paybill')
+                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
 
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
             const isClosed = sh.status === 'Closed';
-            const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            const totalRevenue = shiftSales.reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             const varianceVal = isClosed ? (closeTotal - expected) : 0;
             
