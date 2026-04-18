@@ -2783,7 +2783,7 @@
                                 ${t.category}
                                 ${isKcbPaybill ? '💰' : ''}
                             </td>
-                        </tr>
+                        </table>
                     `;
                 }).join('');
             }
@@ -2940,6 +2940,9 @@
         showCloseConfirmation();
     });
 
+    // ============================================
+    // UPDATED processFinalClose - Saves payment method totals to new columns
+    // ============================================
     window.processFinalClose = async function() {
         const card = document.getElementById('close-confirm-card');
         if (!card) return;
@@ -2957,27 +2960,67 @@
         btn.innerHTML = '<span class="spinner"></span> FINALIZING...';
         
         try {
-            // IMPORTANT: Fetch all sales for this shift including split payments
+            // Fetch all sales for this shift to calculate payment method totals
             const { data: sales } = await supabase.from('sales')
-                .select('total_amount, payment_method, unit_price, cost_price, quantity')
+                .select('total_amount, payment_method, item_name')
                 .eq('shift_id', currentShift.id)
-                .neq('payment_method','Debt')
                 .eq('refunded', false)
                 .gt('total_amount', 0);
+            
+            console.log("Sales for shift being closed:", sales);
+            
+            // Calculate totals by payment method
+            let totalCashSales = 0;
+            let totalKcbPaybillSales = 0;
+            let totalMpesaSales = 0;
+            let totalDebtSales = 0;
+            let totalSplitCash = 0;
+            let totalSplitOnline = 0;
+            
+            (sales || []).forEach(sale => {
+                const amount = Number(sale.total_amount || 0);
+                const method = (sale.payment_method || '').toString();
+                const itemName = (sale.item_name || '').toString();
                 
-            const { data: trans } = await supabase.from('cash_transactions').select('amount, type').eq('shift_id', currentShift.id);
+                // Regular payment methods
+                if (method === 'Cash') {
+                    totalCashSales += amount;
+                } else if (method === 'KCB Paybill') {
+                    totalKcbPaybillSales += amount;
+                } else if (method === 'Mpesa') {
+                    totalMpesaSales += amount;
+                } else if (method === 'Debt') {
+                    totalDebtSales += amount;
+                }
+                
+                // Split payments detection (for reference only)
+                if (itemName.includes('(Split-C)')) {
+                    totalSplitCash += amount;
+                }
+                if (itemName.includes('(Split-O)')) {
+                    totalSplitOnline += amount;
+                }
+            });
             
-            // Calculate cash sales (including split cash portions)
-            const cashSalesTotal = (sales || []).filter(s => s.payment_method === 'Cash').reduce((a,b) => a + b.total_amount, 0);
-            // Calculate KCB Paybill sales (including split online portions)
-            const kcbPaybillSalesTotal = (sales || []).filter(s => s.payment_method === 'KCB Paybill').reduce((a,b) => a + b.total_amount, 0);
+            console.log("Calculated payment totals:", {
+                totalCashSales,
+                totalKcbPaybillSales,
+                totalMpesaSales,
+                totalDebtSales,
+                totalSplitCash,
+                totalSplitOnline
+            });
             
-            const totalSales = cashSalesTotal + kcbPaybillSalesTotal;
+            const { data: trans } = await supabase.from('cash_transactions')
+                .select('amount, type')
+                .eq('shift_id', currentShift.id);
+            
             const moneyIn = (trans || []).filter(t => t.type === 'Money In').reduce((a,b) => a + b.amount, 0);
             const moneyOut = (trans || []).filter(t => t.type === 'Money Out').reduce((a,b) => a + b.amount, 0);
 
             const opTotal = currentShift.open_cash + currentShift.open_mpesa + currentShift.open_kcb + currentShift.open_equity;
-            const expected = (opTotal + totalSales + moneyIn) - moneyOut;
+            const totalSalesAmount = totalCashSales + totalKcbPaybillSales + totalMpesaSales;
+            const expected = (opTotal + totalSalesAmount + moneyIn) - moneyOut;
             const actual = clM + clK + clE + clB + clC;
             const variance = actual - expected;
 
@@ -2994,6 +3037,7 @@
                 }
             }
 
+            // Update shift with all calculated totals including payment method columns
             await supabase.from('daily_shifts').update({
                 close_mpesa: clM, 
                 close_kcb: clK, 
@@ -3003,12 +3047,20 @@
                 status: 'Closed',
                 end_time: new Date().toISOString(), 
                 variance_note: note, 
-                system_expected_total: expected
+                system_expected_total: expected,
+                // NEW: Store payment method totals in the new columns
+                total_cash_sales: totalCashSales,
+                total_kcb_paybill_sales: totalKcbPaybillSales,
+                total_mpesa_sales: totalMpesaSales,
+                total_debt_sales: totalDebtSales,
+                total_split_cash: totalSplitCash,
+                total_split_online: totalSplitOnline
             }).eq('id', currentShift.id);
             
             showSuccessNotification('Shift closed successfully!', `Variance: ${variance === 0 ? 'Balanced' : variance.toFixed(2)}`);
             setTimeout(() => location.reload(), 1500);
         } catch (error) {
+            console.error("Error closing shift:", error);
             alert("Error closing shift: " + error.message);
             btn.disabled = false;
             btn.innerHTML = 'FINALIZE & CLOSE';
