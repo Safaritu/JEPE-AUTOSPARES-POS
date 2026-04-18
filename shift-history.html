@@ -419,6 +419,7 @@
             color: #4338ca; 
             border: 1px solid #c7d2fe; 
         }
+        /* Variance specific classes */
         .var-positive { 
             background: #dcfce7; 
             color: #15803d; 
@@ -668,6 +669,10 @@
             .shift-mobile-action-btn i {
                 font-size: 0.9rem;
             }
+            
+            .mobile-header {
+                display: none;
+            }
         }
         
         /* Desktop specific */
@@ -778,7 +783,6 @@
         <a href="gas_hub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
         <a href="spares_hub.html" class="nav-link"><i class="fas fa-cogs"></i> <span>Spare Parts Hub</span></a>
         <a href="motorbike_hub.html" class="nav-link"><i class="fas fa-motorcycle"></i> <span>Motorbike Hub</span></a>
-        <a href="tuktuk_hub.html" class="nav-link"><i class="fas fa-car-side"></i> <span>TUKTUK Hub</span></a>
 
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
 
@@ -815,6 +819,8 @@
             <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
             <select id="branchSelector" class="branch-select" onchange="handleBranchChange()">
                 <option value="all">🏢 ALL BRANCHES (Consolidated)</option>
+                <option value="MUT">🏪 MUTOMO BRANCH</option>
+                <option value="KIT">🏪 KITUI BRANCH</option>
             </select>
         </div>
         <div class="branch-badge" id="currentBranchBadge">
@@ -834,7 +840,7 @@
     <!-- Desktop Table View -->
     <div class="table-outer">
         <div class="table-container" id="scrollContainer">
-            <table id="shift-table">
+            <table>
                 <thead>
                     <tr>
                         <th width="160">DATE</th>
@@ -853,7 +859,9 @@
     </div>
     
     <!-- Mobile Card View -->
-    <div id="mobile-shifts-container" class="mobile-shifts-container"></div>
+    <div id="mobile-shifts-container" class="mobile-shifts-container">
+        <!-- Mobile cards will be inserted here by JavaScript -->
+    </div>
     
     <!-- Loading Spinner -->
     <div id="loadingSpinner" class="loading-spinner" style="display: none;">
@@ -876,9 +884,7 @@
 <script type="module">
     import { supabase } from './auth.js';
     
-    let allShifts = [];
-    let allTransactions = [];
-    let allSales = [];
+    let allShifts = [], allTransactions = [], allSales = [];
     let isMobile = window.innerWidth <= 768;
     let currentUser = null;
     let currentBranchId = null;
@@ -909,15 +915,7 @@
             branches[b.id] = b;
             branchIdMap[b.code] = b.id;
         });
-        
-        // Populate branch selector
-        const selector = document.getElementById('branchSelector');
-        let options = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>';
-        data?.forEach(b => {
-            options += `<option value="${b.code}">🏪 ${b.name}</option>`;
-        });
-        selector.innerHTML = options;
-        
+        console.log("✅ Branches loaded:", branches);
         return branches;
     }
 
@@ -982,6 +980,9 @@
         const branchDisplay = document.getElementById('currentBranchDisplay');
         const dateRange = document.getElementById('dateRange');
         
+        console.log("========== BRANCH CHANGE ==========");
+        console.log("Selected code:", selectedCode);
+        
         if (selectedCode === 'all') {
             branchDisplay.textContent = 'ALL BRANCHES';
             selectedBranchId = null;
@@ -992,6 +993,7 @@
                 selectedBranchId = branchId;
                 branchDisplay.textContent = branches[branchId].name;
                 dateRange.textContent = `Showing ${branches[branchId].name} only`;
+                console.log(`Selected branch: ${branches[branchId].name} (ID: ${branchId})`);
             }
         }
         
@@ -1013,6 +1015,8 @@
         showLoading(true);
         
         try {
+            console.log("Fetching shifts for branch ID:", selectedBranchId || 'ALL');
+            
             // Build shifts query
             let shiftsQuery = supabase
                 .from('daily_shifts')
@@ -1023,7 +1027,7 @@
                 shiftsQuery = shiftsQuery.eq('branch_id', selectedBranchId);
             }
             
-            // Build transactions query - for Money In/Out
+            // Build transactions query
             let transQuery = supabase
                 .from('cash_transactions')
                 .select('shift_id, amount, type');
@@ -1032,12 +1036,10 @@
                 transQuery = transQuery.eq('branch_id', selectedBranchId);
             }
             
-            // Build sales query - for payment methods
+            // Build sales query
             let salesQuery = supabase
                 .from('sales')
-                .select('shift_id, total_amount, payment_method')
-                .eq('refunded', false)
-                .gt('total_amount', 0);
+                .select('shift_id, total_amount, payment_method');
             
             if (selectedBranchId) {
                 salesQuery = salesQuery.eq('branch_id', selectedBranchId);
@@ -1053,11 +1055,7 @@
             allTransactions = transRes.data || [];
             allSales = salesRes.data || [];
             
-            console.log(`Loaded ${allShifts.length} shifts, ${allSales.length} sales records`);
-            
-            // Debug: Log unique payment methods found
-            const uniqueMethods = [...new Set(allSales.map(s => s.payment_method))];
-            console.log("Unique payment methods in sales:", uniqueMethods);
+            console.log(`Loaded ${allShifts.length} shifts`);
             
             render();
         } catch (error) {
@@ -1083,6 +1081,7 @@
             renderDesktop(data);
         }
         
+        // Show/hide no results message
         const noResultsEl = document.getElementById('noResults');
         if (noResultsEl) {
             noResultsEl.style.display = data.length === 0 ? 'block' : 'none';
@@ -1100,38 +1099,16 @@
             const shiftLogs = allTransactions.filter(t => t.shift_id === sh.id);
             const shiftSales = allSales.filter(s => s.shift_id === sh.id);
 
-            // Calculate Money In/Out
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
-            
-            // FIXED: Calculate payment methods correctly
-            // Cash Sales - match exactly 'Cash'
-            const cashSales = shiftSales
-                .filter(s => s.payment_method === 'Cash')
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            // KCB Paybill Sales - match exactly 'KCB Paybill'
-            const kcbPaybillSales = shiftSales
-                .filter(s => s.payment_method === 'KCB Paybill')
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            // Also check for split payments that might have 'Cash' or 'KCB Paybill' as method
-            const splitCashSales = shiftSales
-                .filter(s => s.payment_method === 'Cash' && s.item_name && s.item_name.includes('(Split-C)'))
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            const splitKcbSales = shiftSales
-                .filter(s => s.payment_method === 'KCB Paybill' && s.item_name && s.item_name.includes('(Split-O)'))
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            const totalCashDisplay = cashSales + splitCashSales;
-            const totalKcbDisplay = kcbPaybillSales + splitKcbSales;
+            const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount || 0), 0);
 
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
             const isClosed = sh.status === 'Closed';
-            const totalRevenue = shiftSales.reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
+            const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             
             let varianceVal = isClosed ? (closeTotal - expected) : 0;
@@ -1172,10 +1149,8 @@
                     </td>
                     <td>
                         <a href="sales-history.html" class="revenue-card">
-                            <div class="account-line"><span class="account-label">Cash Sales</span><span class="account-val" style="color:var(--success)">+${totalCashDisplay.toLocaleString()}</span></div>
-                            <div class="account-line"><span class="account-label">KCB Paybill</span><span class="account-val" style="color:var(--success)">+${totalKcbDisplay.toLocaleString()}</span></div>
-                            ${splitCashSales > 0 ? `<div class="account-line"><span class="account-label">(Split Cash)</span><span class="account-val" style="color:var(--success)">+${splitCashSales.toLocaleString()}</span></div>` : ''}
-                            ${splitKcbSales > 0 ? `<div class="account-line"><span class="account-label">(Split Online)</span><span class="account-val" style="color:var(--success)">+${splitKcbSales.toLocaleString()}</span></div>` : ''}
+                            <div class="account-line"><span class="account-label">Cash Sales</span><span class="account-val" style="color:var(--success)">+${cashSales.toLocaleString()}</span></div>
+                            <div class="account-line"><span class="account-label">KCB Paybill</span><span class="account-val" style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span></div>
                             <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW ➔</div>
                         </a>
                     </td>
@@ -1223,32 +1198,14 @@
 
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
-            
-            // FIXED: Calculate payment methods correctly for mobile
-            const cashSales = shiftSales
-                .filter(s => s.payment_method === 'Cash')
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            const kcbPaybillSales = shiftSales
-                .filter(s => s.payment_method === 'KCB Paybill')
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            const splitCashSales = shiftSales
-                .filter(s => s.payment_method === 'Cash' && s.item_name && s.item_name.includes('(Split-C)'))
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            const splitKcbSales = shiftSales
-                .filter(s => s.payment_method === 'KCB Paybill' && s.item_name && s.item_name.includes('(Split-O)'))
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            const totalCashDisplay = cashSales + splitCashSales;
-            const totalKcbDisplay = kcbPaybillSales + splitKcbSales;
+            const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount || 0), 0);
 
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
             const isClosed = sh.status === 'Closed';
-            const totalRevenue = shiftSales.reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
+            const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             const varianceVal = isClosed ? (closeTotal - expected) : 0;
             
@@ -1323,11 +1280,11 @@
                             <div class="shift-mobile-details">
                                 <div class="shift-mobile-detail-line">
                                     <span class="shift-mobile-detail-label">Cash Sales</span>
-                                    <span class="shift-mobile-detail-value" style="color:var(--success)">+${totalCashDisplay.toLocaleString()}</span>
+                                    <span class="shift-mobile-detail-value" style="color:var(--success)">+${cashSales.toLocaleString()}</span>
                                 </div>
                                 <div class="shift-mobile-detail-line">
                                     <span class="shift-mobile-detail-label">KCB Paybill</span>
-                                    <span class="shift-mobile-detail-value" style="color:var(--success)">+${totalKcbDisplay.toLocaleString()}</span>
+                                    <span class="shift-mobile-detail-value" style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span>
                                 </div>
                             </div>
                         </div>
@@ -1433,6 +1390,7 @@
         
         btn.innerHTML = originalHtml;
         
+        // Show success feedback
         btn.style.background = '#10b981';
         setTimeout(() => {
             btn.style.background = '';
@@ -1467,6 +1425,12 @@
         
         // Check if we're on mobile initially
         isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+            const desktopTable = document.querySelector('.table-outer');
+            const mobileContainer = document.getElementById('mobile-shifts-container');
+            if (desktopTable) desktopTable.style.display = 'none';
+            if (mobileContainer) mobileContainer.style.display = 'block';
+        }
     });
 </script>
 </body>
