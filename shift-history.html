@@ -20,12 +20,10 @@
             --dim: #64748b; 
             --border: #e2e8f0; 
             --sidebar-width: 260px;
-            --sidebar-collapsed: 70px; 
             --sidebar-bg: #0f172a; 
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
             background: var(--bg); 
@@ -36,49 +34,31 @@
             overflow-x: hidden;
         }
 
-        /* --- SIDEBAR - Collapsible like Motorbike Hub --- */
+        /* --- SIDEBAR --- */
         .sidebar { 
-            width: var(--sidebar-collapsed); 
-            height: 100vh; 
+            width: var(--sidebar-width); 
             background: var(--sidebar-bg); 
             position: fixed; 
             left: 0; 
             top: 0; 
+            height: 100vh; 
             z-index: 3000; 
-            overflow-x: hidden; 
-            transition: width 0.3s ease;
-            padding: 20px 10px; 
-            display: flex;
-            flex-direction: column;
+            overflow-y: auto; 
+            transition: transform 0.3s ease;
         }
-        
-        .sidebar:hover, .sidebar.mobile-active { 
-            width: var(--sidebar-width); 
-        }
-        
         .sidebar-header { 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            margin-bottom: 30px; 
-            padding: 0 10px; 
-            min-height: 40px;
-        }
-        
-        .sidebar h2 { 
+            padding: 25px; 
+            font-weight: 800; 
+            color: white; 
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
             font-size: 1.2rem; 
-            margin: 0; 
-            white-space: nowrap; 
-            opacity: 0; 
-            transition: opacity 0.2s; 
-            color: white;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
         }
+        .sidebar-header i { color: var(--primary); margin-right: 10px; }
         
-        .sidebar:hover h2, .sidebar.mobile-active h2 { 
-            opacity: 1; 
-        }
-        
-        .close-btn { 
+        .close-menu { 
             display: none; 
             background: none; 
             border: none; 
@@ -89,88 +69,60 @@
         
         /* Branch Info in Sidebar */
         .branch-info {
-            padding: 10px;
-            margin: 10px 0 20px;
+            padding: 15px;
+            margin: 10px 15px 20px;
             background: rgba(79, 70, 229, 0.2);
-            border-radius: 8px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.1);
-            white-space: nowrap;
         }
         
         .branch-label {
-            font-size: 0.6rem;
+            font-size: 0.65rem;
             text-transform: uppercase;
             color: #94a3b8;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        
-        .sidebar:hover .branch-label, .sidebar.mobile-active .branch-label {
-            opacity: 1;
+            letter-spacing: 0.5px;
         }
         
         .branch-name {
             font-weight: 800;
             color: white;
-            font-size: 0.85rem;
+            font-size: 0.95rem;
             margin-top: 3px;
             display: flex;
             align-items: center;
             gap: 6px;
         }
         
-        .branch-name i { 
-            color: var(--primary); 
-            min-width: 20px;
-        }
-        
-        .branch-name span {
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        
-        .sidebar:hover .branch-name span, .sidebar.mobile-active .branch-name span {
-            opacity: 1;
-        }
+        .branch-name i { color: var(--primary); }
         
         .nav-list { 
-            flex: 1;
+            padding: 15px; 
             list-style: none; 
-            padding: 0; 
             margin: 0; 
         }
-        
-        .nav-link { 
+        .nav-item { 
             display: flex; 
             align-items: center; 
-            padding: 12px; 
-            color: #94a3b8; 
+            padding: 12px 15px; 
             text-decoration: none; 
-            border-radius: 8px; 
-            margin-bottom: 5px; 
-            transition: 0.3s; 
-            white-space: nowrap;
+            color: #94a3b8; 
+            font-weight: 600; 
+            border-radius: 10px; 
+            margin-bottom: 4px; 
+            transition: 0.2s; 
+            font-size: 0.9rem; 
         }
-        
-        .nav-link i { 
-            min-width: 30px; 
-            font-size: 1.2rem; 
-            text-align: center; 
-            margin-right: 15px;
+        .nav-item i { 
+            width: 24px; 
+            font-size: 1.1rem; 
+            margin-right: 12px;
+            text-align: center;
         }
-        
-        .nav-link span { 
-            opacity: 0; 
-            white-space: nowrap; 
-            transition: opacity 0.2s; 
+        .nav-item:hover { 
+            background: rgba(255,255,255,0.05); 
+            color: white; 
         }
-        
-        .sidebar:hover .nav-link span, 
-        .sidebar.mobile-active .nav-link span { 
-            opacity: 1; 
-        }
-        
-        .nav-link:hover, .nav-link.active { 
+        .nav-item.active { 
             background: var(--primary); 
             color: white; 
         }
@@ -198,19 +150,17 @@
             flex-grow: 1; 
             padding: 25px; 
             width: 100%; 
-            margin-left: var(--sidebar-collapsed); 
+            margin-left: var(--sidebar-width); 
             position: relative; 
             background: var(--bg);
             min-height: 100vh;
-            transition: margin-left 0.3s ease;
         }
         
         @media (max-width: 1024px) { 
             .sidebar { 
                 transform: translateX(-100%); 
-                width: var(--sidebar-width);
             }
-            .sidebar.mobile-active { 
+            .sidebar.active { 
                 transform: translateX(0); 
             }
             .main-content { 
@@ -221,11 +171,8 @@
             .menu-trigger { 
                 display: block; 
             }
-            .close-btn { 
+            .close-menu { 
                 display: block; 
-            }
-            .sidebar:hover { 
-                width: var(--sidebar-width); 
             }
         }
         
@@ -366,7 +313,6 @@
             color: var(--dim); 
             border-bottom: 1px solid var(--border); 
             text-align: left; 
-            font-weight: 800;
         }
         td { 
             padding: 20px 15px; 
@@ -419,6 +365,7 @@
             color: #4338ca; 
             border: 1px solid #c7d2fe; 
         }
+        /* Variance specific classes */
         .var-positive { 
             background: #dcfce7; 
             color: #15803d; 
@@ -668,6 +615,35 @@
             .shift-mobile-action-btn i {
                 font-size: 0.9rem;
             }
+            
+            .mobile-header {
+                display: flex;
+                align-items: center;
+                padding: 15px;
+                background: var(--sidebar-bg);
+                color: white;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 2000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
+            
+            .mobile-header button {
+                background: none;
+                border: none;
+                color: white;
+                font-size: 1.5rem;
+                cursor: pointer;
+                padding: 5px;
+                margin-right: 10px;
+            }
+            
+            .mobile-header span {
+                font-weight: 700;
+                font-size: 1.1rem;
+            }
         }
         
         /* Desktop specific */
@@ -745,7 +721,7 @@
         
         @media (max-width: 768px) {
             .refresh-btn {
-                bottom: 20px;
+                bottom: 80px;
                 right: 15px;
                 width: 45px;
                 height: 45px;
@@ -759,8 +735,8 @@
 
 <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <h2>JEPE ADMIN</h2>
-        <button class="close-btn" onclick="toggleMenu()">×</button>
+        <i class="fas fa-store"></i> JEPE ADMIN
+        <button class="close-menu" onclick="toggleMenu()">×</button>
     </div>
     
     <!-- Branch Info Display -->
@@ -772,35 +748,34 @@
         </div>
     </div>
     
-    <nav class="nav-list">
-        <a href="#" onclick="confirmSwitchToCashier(event)" class="nav-link"><i class="fas fa-exchange-alt"></i> <span>SWITCH TO CASHIER</span></a>
-        <a href="admin.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
-        <a href="gas_hub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
-        <a href="spares_hub.html" class="nav-link"><i class="fas fa-cogs"></i> <span>Spare Parts Hub</span></a>
-        <a href="motorbike_hub.html" class="nav-link"><i class="fas fa-motorcycle"></i> <span>Motorbike Hub</span></a>
-        <a href="tuktuk_hub.html" class="nav-link"><i class="fas fa-car-side"></i> <span>TUKTUK Hub</span></a>
+    <div class="nav-list">
+        <a href="#" onclick="confirmSwitchToCashier(event)" class="nav-item"><i class="fas fa-exchange-alt"></i> SWITCH TO CASHIER</a>
+        <a href="admin.html" class="nav-item"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        <a href="gas_hub.html" class="nav-item"><i class="fas fa-fire"></i> Gas Hub</a>
+        <a href="spares_hub.html" class="nav-item"><i class="fas fa-cogs"></i> Spare Parts Hub</a>
+        <a href="motorbike_hub.html" class="nav-item"><i class="fas fa-motorcycle"></i> Motorbike Hub</a>
 
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
 
-        <a href="shift-history.html" class="nav-link active"><i class="fas fa-history"></i> <span>Daily Shifts</span></a>
-        <a href="money-history.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
-        <a href="sales-history.html" class="nav-link"><i class="fas fa-chart-line"></i> <span>Sales History</span></a>
+        <a href="shift-history.html" class="nav-item active"><i class="fas fa-history"></i> Daily Shifts</a>
+        <a href="money-history.html" class="nav-item"><i class="fas fa-money-bill-wave"></i> Money IN/OUT</a>
+        <a href="sales-history.html" class="nav-item"><i class="fas fa-chart-line"></i> Sales History</a>
 
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
 
-        <a href="inventory.html" class="nav-link"><i class="fas fa-plus-circle"></i> <span>Add Stock</span></a>
-        <a href="sales_editor.html" class="nav-link"><i class="fas fa-edit"></i> <span>Edit Stock</span></a>
-        <a href="admin-debtors.html" class="nav-link"><i class="fas fa-users"></i> <span>Debtors</span></a>
-        <a href="low_stock.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
-        <a href="audit_trail.html" class="nav-link"><i class="fas fa-search"></i> <span>Inventory Track</span></a>
+        <a href="inventory.html" class="nav-item"><i class="fas fa-plus-circle"></i> Add Stock</a>
+        <a href="sales_editor.html" class="nav-item"><i class="fas fa-edit"></i> Edit Stock</a>
+        <a href="admin-debtors.html" class="nav-item"><i class="fas fa-users"></i> Debtors</a>
+        <a href="low_stock.html" class="nav-item"><i class="fas fa-exclamation-triangle"></i> Low Stock</a>
+        <a href="audit_trail.html" class="nav-item"><i class="fas fa-search"></i> Inventory Track</a>
 
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
 
-        <a href="reports.html" class="nav-link"><i class="fas fa-file-alt"></i> <span>Reports</span></a>
-        <a href="price_audits.html" class="nav-link"><i class="fas fa-tags"></i> <span>Underpriced</span></a>
-        <a href="suppliers.html" class="nav-link"><i class="fas fa-handshake"></i> <span>Suppliers</span></a>
-        <a href="admin.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
-    </nav>
+        <a href="reports.html" class="nav-item"><i class="fas fa-file-alt"></i> Reports</a>
+        <a href="price_audits.html" class="nav-item"><i class="fas fa-tags"></i> Underpriced</a>
+        <a href="suppliers.html" class="nav-item"><i class="fas fa-handshake"></i> Suppliers</a>
+        <a href="admin.html" class="nav-item"><i class="fas fa-home"></i> HOME</a>
+    </div>
 </nav>
 
 <main class="main-content">
@@ -815,6 +790,8 @@
             <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
             <select id="branchSelector" class="branch-select" onchange="handleBranchChange()">
                 <option value="all">🏢 ALL BRANCHES (Consolidated)</option>
+                <option value="MUT">🏪 MUTOMO BRANCH</option>
+                <option value="KIT">🏪 KITUI BRANCH</option>
             </select>
         </div>
         <div class="branch-badge" id="currentBranchBadge">
@@ -834,7 +811,7 @@
     <!-- Desktop Table View -->
     <div class="table-outer">
         <div class="table-container" id="scrollContainer">
-            <table id="shift-table">
+            <table>
                 <thead>
                     <tr>
                         <th width="160">DATE</th>
@@ -853,7 +830,9 @@
     </div>
     
     <!-- Mobile Card View -->
-    <div id="mobile-shifts-container" class="mobile-shifts-container"></div>
+    <div id="mobile-shifts-container" class="mobile-shifts-container">
+        <!-- Mobile cards will be inserted here by JavaScript -->
+    </div>
     
     <!-- Loading Spinner -->
     <div id="loadingSpinner" class="loading-spinner" style="display: none;">
@@ -876,9 +855,7 @@
 <script type="module">
     import { supabase } from './auth.js';
     
-    let allShifts = [];
-    let allTransactions = [];
-    let allSales = [];
+    let allShifts = [], allTransactions = [], allSales = [];
     let isMobile = window.innerWidth <= 768;
     let currentUser = null;
     let currentBranchId = null;
@@ -886,18 +863,6 @@
     let selectedBranchId = null;
     let branches = {};
     let branchIdMap = {};
-
-    // ==================== SIDEBAR FUNCTION ====================
-    window.toggleMenu = function() {
-        document.getElementById('sidebar').classList.toggle('mobile-active');
-    };
-
-    window.confirmSwitchToCashier = (e) => {
-        e.preventDefault();
-        if(confirm("Switch to Cashier Mode?")) {
-            window.location.href = "cashier.html";
-        }
-    };
 
     // ==================== BRANCH FUNCTIONS ====================
 
@@ -909,15 +874,7 @@
             branches[b.id] = b;
             branchIdMap[b.code] = b.id;
         });
-        
-        // Populate branch selector
-        const selector = document.getElementById('branchSelector');
-        let options = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>';
-        data?.forEach(b => {
-            options += `<option value="${b.code}">🏪 ${b.name}</option>`;
-        });
-        selector.innerHTML = options;
-        
+        console.log("✅ Branches loaded:", branches);
         return branches;
     }
 
@@ -975,12 +932,26 @@
         }
     }
 
+    window.toggleMenu = function() {
+        document.getElementById('sidebar').classList.toggle('active');
+    };
+
+    window.confirmSwitchToCashier = (e) => {
+        e.preventDefault();
+        if(confirm("Switch to Cashier Mode?")) {
+            window.location.href = "cashier.html";
+        }
+    };
+
     window.handleBranchChange = async function() {
         const selector = document.getElementById('branchSelector');
         const selectedCode = selector.value;
         
         const branchDisplay = document.getElementById('currentBranchDisplay');
         const dateRange = document.getElementById('dateRange');
+        
+        console.log("========== BRANCH CHANGE ==========");
+        console.log("Selected code:", selectedCode);
         
         if (selectedCode === 'all') {
             branchDisplay.textContent = 'ALL BRANCHES';
@@ -992,6 +963,7 @@
                 selectedBranchId = branchId;
                 branchDisplay.textContent = branches[branchId].name;
                 dateRange.textContent = `Showing ${branches[branchId].name} only`;
+                console.log(`Selected branch: ${branches[branchId].name} (ID: ${branchId})`);
             }
         }
         
@@ -1013,6 +985,8 @@
         showLoading(true);
         
         try {
+            console.log("Fetching shifts for branch ID:", selectedBranchId || 'ALL');
+            
             // Build shifts query
             let shiftsQuery = supabase
                 .from('daily_shifts')
@@ -1023,7 +997,7 @@
                 shiftsQuery = shiftsQuery.eq('branch_id', selectedBranchId);
             }
             
-            // Build transactions query - for Money In/Out
+            // Build transactions query
             let transQuery = supabase
                 .from('cash_transactions')
                 .select('shift_id, amount, type');
@@ -1032,12 +1006,10 @@
                 transQuery = transQuery.eq('branch_id', selectedBranchId);
             }
             
-            // Build sales query - for payment methods
+            // Build sales query
             let salesQuery = supabase
                 .from('sales')
-                .select('shift_id, total_amount, payment_method')
-                .eq('refunded', false)
-                .gt('total_amount', 0);
+                .select('shift_id, total_amount, payment_method');
             
             if (selectedBranchId) {
                 salesQuery = salesQuery.eq('branch_id', selectedBranchId);
@@ -1053,11 +1025,7 @@
             allTransactions = transRes.data || [];
             allSales = salesRes.data || [];
             
-            console.log(`Loaded ${allShifts.length} shifts, ${allSales.length} sales records`);
-            
-            // Debug: Log unique payment methods found
-            const uniqueMethods = [...new Set(allSales.map(s => s.payment_method))];
-            console.log("Unique payment methods in sales:", uniqueMethods);
+            console.log(`Loaded ${allShifts.length} shifts`);
             
             render();
         } catch (error) {
@@ -1083,6 +1051,7 @@
             renderDesktop(data);
         }
         
+        // Show/hide no results message
         const noResultsEl = document.getElementById('noResults');
         if (noResultsEl) {
             noResultsEl.style.display = data.length === 0 ? 'block' : 'none';
@@ -1100,40 +1069,19 @@
             const shiftLogs = allTransactions.filter(t => t.shift_id === sh.id);
             const shiftSales = allSales.filter(s => s.shift_id === sh.id);
 
-            // Calculate Money In/Out
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
-            
-            // FIXED: Calculate payment methods correctly
-            // Cash Sales - match exactly 'Cash'
-            const cashSales = shiftSales
-                .filter(s => s.payment_method === 'Cash')
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            // KCB Paybill Sales - match exactly 'KCB Paybill'
-            const kcbPaybillSales = shiftSales
-                .filter(s => s.payment_method === 'KCB Paybill')
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            // Also check for split payments that might have 'Cash' or 'KCB Paybill' as method
-            const splitCashSales = shiftSales
-                .filter(s => s.payment_method === 'Cash' && s.item_name && s.item_name.includes('(Split-C)'))
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            const splitKcbSales = shiftSales
-                .filter(s => s.payment_method === 'KCB Paybill' && s.item_name && s.item_name.includes('(Split-O)'))
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            const totalCashDisplay = cashSales + splitCashSales;
-            const totalKcbDisplay = kcbPaybillSales + splitKcbSales;
+            const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount || 0), 0);
 
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
             const isClosed = sh.status === 'Closed';
-            const totalRevenue = shiftSales.reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
+            const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             
+            // LOGIC FOR VARIANCE DISPLAY
             let varianceVal = isClosed ? (closeTotal - expected) : 0;
             let varianceDisplay = '';
             let varianceClass = '';
@@ -1172,10 +1120,8 @@
                     </td>
                     <td>
                         <a href="sales-history.html" class="revenue-card">
-                            <div class="account-line"><span class="account-label">Cash Sales</span><span class="account-val" style="color:var(--success)">+${totalCashDisplay.toLocaleString()}</span></div>
-                            <div class="account-line"><span class="account-label">KCB Paybill</span><span class="account-val" style="color:var(--success)">+${totalKcbDisplay.toLocaleString()}</span></div>
-                            ${splitCashSales > 0 ? `<div class="account-line"><span class="account-label">(Split Cash)</span><span class="account-val" style="color:var(--success)">+${splitCashSales.toLocaleString()}</span></div>` : ''}
-                            ${splitKcbSales > 0 ? `<div class="account-line"><span class="account-label">(Split Online)</span><span class="account-val" style="color:var(--success)">+${splitKcbSales.toLocaleString()}</span></div>` : ''}
+                            <div class="account-line"><span class="account-label">Cash Sales</span><span class="account-val" style="color:var(--success)">+${cashSales.toLocaleString()}</span></div>
+                            <div class="account-line"><span class="account-label">KCB Paybill</span><span class="account-val" style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span></div>
                             <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW ➔</div>
                         </a>
                     </td>
@@ -1223,32 +1169,14 @@
 
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
-            
-            // FIXED: Calculate payment methods correctly for mobile
-            const cashSales = shiftSales
-                .filter(s => s.payment_method === 'Cash')
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            const kcbPaybillSales = shiftSales
-                .filter(s => s.payment_method === 'KCB Paybill')
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            const splitCashSales = shiftSales
-                .filter(s => s.payment_method === 'Cash' && s.item_name && s.item_name.includes('(Split-C)'))
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            const splitKcbSales = shiftSales
-                .filter(s => s.payment_method === 'KCB Paybill' && s.item_name && s.item_name.includes('(Split-O)'))
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            const totalCashDisplay = cashSales + splitCashSales;
-            const totalKcbDisplay = kcbPaybillSales + splitKcbSales;
+            const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount || 0), 0);
 
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
             const isClosed = sh.status === 'Closed';
-            const totalRevenue = shiftSales.reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
+            const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             const varianceVal = isClosed ? (closeTotal - expected) : 0;
             
@@ -1323,11 +1251,11 @@
                             <div class="shift-mobile-details">
                                 <div class="shift-mobile-detail-line">
                                     <span class="shift-mobile-detail-label">Cash Sales</span>
-                                    <span class="shift-mobile-detail-value" style="color:var(--success)">+${totalCashDisplay.toLocaleString()}</span>
+                                    <span class="shift-mobile-detail-value" style="color:var(--success)">+${cashSales.toLocaleString()}</span>
                                 </div>
                                 <div class="shift-mobile-detail-line">
                                     <span class="shift-mobile-detail-label">KCB Paybill</span>
-                                    <span class="shift-mobile-detail-value" style="color:var(--success)">+${totalKcbDisplay.toLocaleString()}</span>
+                                    <span class="shift-mobile-detail-value" style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span>
                                 </div>
                             </div>
                         </div>
@@ -1433,6 +1361,7 @@
         
         btn.innerHTML = originalHtml;
         
+        // Show success feedback
         btn.style.background = '#10b981';
         setTimeout(() => {
             btn.style.background = '';
@@ -1467,6 +1396,12 @@
         
         // Check if we're on mobile initially
         isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+            const desktopTable = document.querySelector('.table-outer');
+            const mobileContainer = document.getElementById('mobile-shifts-container');
+            if (desktopTable) desktopTable.style.display = 'none';
+            if (mobileContainer) mobileContainer.style.display = 'block';
+        }
     });
 </script>
 </body>
