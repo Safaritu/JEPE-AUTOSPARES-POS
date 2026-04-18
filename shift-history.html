@@ -36,6 +36,7 @@
             overflow-x: hidden;
         }
 
+        /* --- SIDEBAR - Collapsible like Motorbike Hub --- */
         .sidebar { 
             width: var(--sidebar-collapsed); 
             height: 100vh; 
@@ -86,6 +87,7 @@
             cursor: pointer; 
         }
         
+        /* Branch Info in Sidebar */
         .branch-info {
             padding: 10px;
             margin: 10px 0 20px;
@@ -173,6 +175,7 @@
             color: white; 
         }
 
+        /* --- MENU TRIGGER --- */
         .menu-trigger {
             display: none; 
             position: fixed; 
@@ -190,6 +193,7 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
+        /* --- MAIN CONTENT --- */
         .main-content { 
             flex-grow: 1; 
             padding: 25px; 
@@ -220,6 +224,9 @@
             .close-btn { 
                 display: block; 
             }
+            .sidebar:hover { 
+                width: var(--sidebar-width); 
+            }
         }
         
         .page-header { 
@@ -231,6 +238,7 @@
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); 
         }
 
+        /* --- BRANCH SELECTOR --- */
         .branch-selector-container {
             background: white;
             border: 1px solid var(--border);
@@ -283,6 +291,7 @@
             font-weight: 500;
         }
 
+        /* --- MOBILE SLIDE INDICATOR --- */
         .slide-indicator { 
             background: #0f172a; 
             color: white; 
@@ -410,6 +419,7 @@
             color: #4338ca; 
             border: 1px solid #c7d2fe; 
         }
+        /* Variance specific classes */
         .var-positive { 
             background: #dcfce7; 
             color: #15803d; 
@@ -440,6 +450,15 @@
             transform: translateY(-2px); 
         }
         
+        .adj-box { 
+            padding: 12px; 
+            border-radius: 10px; 
+            background: #fafafa; 
+            border: 1px solid #f0f0f0; 
+            text-decoration: none; 
+            display: block; 
+        }
+
         .date-cell b { 
             display: block; 
             margin-bottom: 8px; 
@@ -467,6 +486,7 @@
             margin-left: 5px;
         }
         
+        /* --- MOBILE CARD STYLES --- */
         .mobile-shifts-container {
             display: none;
             margin-top: 15px;
@@ -484,6 +504,8 @@
                 margin-bottom: 20px;
                 border: 1px solid var(--border);
                 box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+                position: relative;
+                overflow: hidden;
             }
             
             .shift-mobile-header {
@@ -548,6 +570,10 @@
                 display: flex;
                 align-items: center;
                 gap: 6px;
+            }
+            
+            .shift-mobile-section-title i {
+                font-size: 0.9rem;
             }
             
             .shift-mobile-details {
@@ -634,8 +660,33 @@
                 color: white;
                 border: 1px solid #0d9664;
             }
+            
+            .shift-mobile-action-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            }
+            
+            .shift-mobile-action-btn i {
+                font-size: 0.9rem;
+            }
+            
+            .mobile-header {
+                display: none;
+            }
         }
         
+        /* Desktop specific */
+        @media (min-width: 769px) {
+            .mobile-shifts-container {
+                display: none !important;
+            }
+            
+            .table-outer {
+                display: block;
+            }
+        }
+        
+        /* Loading Spinner */
         .loading-spinner {
             display: flex;
             justify-content: center;
@@ -657,6 +708,7 @@
             100% { transform: rotate(360deg); }
         }
         
+        /* No results message */
         .no-results {
             text-align: center;
             padding: 40px 20px;
@@ -664,6 +716,13 @@
             font-size: 0.9rem;
         }
         
+        .no-results i {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: #cbd5e1;
+        }
+        
+        /* Refresh button */
         .refresh-btn {
             position: fixed;
             bottom: 20px;
@@ -688,6 +747,15 @@
             transform: rotate(45deg);
             background: var(--primary-dark);
         }
+        
+        @media (max-width: 768px) {
+            .refresh-btn {
+                bottom: 20px;
+                right: 15px;
+                width: 45px;
+                height: 45px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -700,6 +768,7 @@
         <button class="close-btn" onclick="toggleMenu()">×</button>
     </div>
     
+    <!-- Branch Info Display -->
     <div class="branch-info" id="sidebarBranchInfo">
         <div class="branch-label">Your Assigned Branch</div>
         <div class="branch-name" id="sidebarBranchName">
@@ -745,11 +814,14 @@
         <p style="margin:6px 0 0; color: var(--dim);">Comprehensive reconciliation of all physical and system balances.</p>
     </div>
 
+    <!-- Branch Selector -->
     <div class="branch-selector-container">
         <div class="branch-filter">
             <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
             <select id="branchSelector" class="branch-select" onchange="handleBranchChange()">
                 <option value="all">🏢 ALL BRANCHES (Consolidated)</option>
+                <option value="MUT">🏪 MUTOMO BRANCH</option>
+                <option value="KIT">🏪 KITUI BRANCH</option>
             </select>
         </div>
         <div class="branch-badge" id="currentBranchBadge">
@@ -766,9 +838,10 @@
 
     <input type="text" id="auditSearch" class="search-input" placeholder="Search by date (e.g. 10 Jan 2026)...">
 
+    <!-- Desktop Table View -->
     <div class="table-outer">
         <div class="table-container" id="scrollContainer">
-            <table id="shift-table">
+            <table>
                 <thead>
                     <tr>
                         <th width="160">DATE</th>
@@ -786,12 +859,17 @@
         </div>
     </div>
     
-    <div id="mobile-shifts-container" class="mobile-shifts-container"></div>
+    <!-- Mobile Card View -->
+    <div id="mobile-shifts-container" class="mobile-shifts-container">
+        <!-- Mobile cards will be inserted here by JavaScript -->
+    </div>
     
+    <!-- Loading Spinner -->
     <div id="loadingSpinner" class="loading-spinner" style="display: none;">
         <div class="spinner"></div>
     </div>
     
+    <!-- No Results Message -->
     <div id="noResults" class="no-results" style="display: none;">
         <i class="fas fa-search"></i>
         <p>No shift records found</p>
@@ -799,6 +877,7 @@
     </div>
 </main>
 
+<!-- Refresh Button -->
 <button class="refresh-btn" onclick="refreshData()" id="refreshBtn">
     <i class="fas fa-sync-alt"></i>
 </button>
@@ -806,9 +885,7 @@
 <script type="module">
     import { supabase } from './auth.js';
     
-    let allShifts = [];
-    let allTransactions = [];
-    let allSales = [];
+    let allShifts = [], allTransactions = [], allSales = [];
     let isMobile = window.innerWidth <= 768;
     let currentUser = null;
     let currentBranchId = null;
@@ -817,6 +894,7 @@
     let branches = {};
     let branchIdMap = {};
 
+    // ==================== SIDEBAR FUNCTION ====================
     window.toggleMenu = function() {
         document.getElementById('sidebar').classList.toggle('mobile-active');
     };
@@ -828,6 +906,8 @@
         }
     };
 
+    // ==================== BRANCH FUNCTIONS ====================
+
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
         branches = {};
@@ -836,14 +916,7 @@
             branches[b.id] = b;
             branchIdMap[b.code] = b.id;
         });
-        
-        const selector = document.getElementById('branchSelector');
-        let options = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>';
-        data?.forEach(b => {
-            options += `<option value="${b.code}">🏪 ${b.name}</option>`;
-        });
-        selector.innerHTML = options;
-        
+        console.log("✅ Branches loaded:", branches);
         return branches;
     }
 
@@ -888,6 +961,7 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
+            // Update sidebar with user's assigned branch
             const sidebarBranchName = document.querySelector('#sidebarBranchName span');
             if (profile.branches && sidebarBranchName) {
                 sidebarBranchName.textContent = profile.branches.name;
@@ -895,7 +969,7 @@
             
             return profile;
         } catch (error) {
-            console.error("Error loading profile:", error);
+            console.error("❌ Error loading profile:", error);
             return null;
         }
     }
@@ -907,6 +981,9 @@
         const branchDisplay = document.getElementById('currentBranchDisplay');
         const dateRange = document.getElementById('dateRange');
         
+        console.log("========== BRANCH CHANGE ==========");
+        console.log("Selected code:", selectedCode);
+        
         if (selectedCode === 'all') {
             branchDisplay.textContent = 'ALL BRANCHES';
             selectedBranchId = null;
@@ -917,6 +994,7 @@
                 selectedBranchId = branchId;
                 branchDisplay.textContent = branches[branchId].name;
                 dateRange.textContent = `Showing ${branches[branchId].name} only`;
+                console.log(`Selected branch: ${branches[branchId].name} (ID: ${branchId})`);
             }
         }
         
@@ -938,6 +1016,9 @@
         showLoading(true);
         
         try {
+            console.log("Fetching shifts for branch ID:", selectedBranchId || 'ALL');
+            
+            // Build shifts query
             let shiftsQuery = supabase
                 .from('daily_shifts')
                 .select('*')
@@ -947,6 +1028,7 @@
                 shiftsQuery = shiftsQuery.eq('branch_id', selectedBranchId);
             }
             
+            // Build transactions query
             let transQuery = supabase
                 .from('cash_transactions')
                 .select('shift_id, amount, type');
@@ -955,12 +1037,10 @@
                 transQuery = transQuery.eq('branch_id', selectedBranchId);
             }
             
-            // IMPORTANT: Fetch ALL sales to calculate payment method totals
+            // Build sales query
             let salesQuery = supabase
                 .from('sales')
-                .select('shift_id, total_amount, payment_method')
-                .eq('refunded', false)
-                .gt('total_amount', 0);
+                .select('shift_id, total_amount, payment_method');
             
             if (selectedBranchId) {
                 salesQuery = salesQuery.eq('branch_id', selectedBranchId);
@@ -976,9 +1056,7 @@
             allTransactions = transRes.data || [];
             allSales = salesRes.data || [];
             
-            console.log("Shifts loaded:", allShifts.length);
-            console.log("Sales loaded:", allSales.length);
-            console.log("Sample sale:", allSales[0]);
+            console.log(`Loaded ${allShifts.length} shifts`);
             
             render();
         } catch (error) {
@@ -991,7 +1069,10 @@
 
     function showLoading(show) {
         const loadingEl = document.getElementById('loadingSpinner');
+        const refreshBtn = document.getElementById('refreshBtn');
+        
         if (loadingEl) loadingEl.style.display = show ? 'flex' : 'none';
+        if (refreshBtn) refreshBtn.disabled = show;
     }
 
     function render(data = allShifts) {
@@ -1001,6 +1082,7 @@
             renderDesktop(data);
         }
         
+        // Show/hide no results message
         const noResultsEl = document.getElementById('noResults');
         if (noResultsEl) {
             noResultsEl.style.display = data.length === 0 ? 'block' : 'none';
@@ -1020,34 +1102,14 @@
 
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
-            
-            // CRITICAL FIX: Calculate cash sales correctly
-            const cashSales = shiftSales
-                .filter(s => s.payment_method === 'Cash')
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            // CRITICAL FIX: Calculate KCB Paybill sales correctly
-            const kcbPaybillSales = shiftSales
-                .filter(s => s.payment_method === 'KCB Paybill')
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            // Also check for split payments
-            const splitCashSales = shiftSales
-                .filter(s => s.payment_method === 'Cash' && s.item_name && s.item_name.includes('(Split-C)'))
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            const splitKcbSales = shiftSales
-                .filter(s => s.payment_method === 'KCB Paybill' && s.item_name && s.item_name.includes('(Split-O)'))
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            const totalCashDisplay = cashSales + splitCashSales;
-            const totalKcbDisplay = kcbPaybillSales + splitKcbSales;
+            const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount || 0), 0);
 
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
             const isClosed = sh.status === 'Closed';
-            const totalRevenue = cashSales + kcbPaybillSales;
+            const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             
             let varianceVal = isClosed ? (closeTotal - expected) : 0;
@@ -1059,13 +1121,13 @@
                 varianceClass = 'active-shift';
             } else {
                 if (varianceVal > 0) {
-                    varianceDisplay = '+' + varianceVal.toLocaleString();
+                    varianceDisplay = 'VAR: +' + varianceVal.toLocaleString();
                     varianceClass = 'var-positive';
                 } else if (varianceVal < 0) {
-                    varianceDisplay = varianceVal.toLocaleString();
+                    varianceDisplay = 'VAR: ' + varianceVal.toLocaleString();
                     varianceClass = 'var-negative';
                 } else {
-                    varianceDisplay = '0';
+                    varianceDisplay = 'VAR: 0';
                     varianceClass = 'var-balanced';
                 }
             }
@@ -1087,14 +1149,18 @@
                         <div class="total-row">Total: ${openTotal.toLocaleString()}</div>
                     </td>
                     <td>
-                        <div class="account-line"><span class="account-label">Cash Sales</span><span class="account-val" style="color:var(--success)">+${totalCashDisplay.toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">KCB Paybill</span><span class="account-val" style="color:var(--success)">+${totalKcbDisplay.toLocaleString()}</span></div>
-                        ${splitCashSales > 0 ? `<div class="account-line"><span class="account-label">(Split Cash)</span><span class="account-val" style="color:var(--success)">+${splitCashSales.toLocaleString()}</span></div>` : ''}
-                        ${splitKcbSales > 0 ? `<div class="account-line"><span class="account-label">(Split Online)</span><span class="account-val" style="color:var(--success)">+${splitKcbSales.toLocaleString()}</span></div>` : ''}
+                        <a href="sales-history.html" class="revenue-card">
+                            <div class="account-line"><span class="account-label">Cash Sales</span><span class="account-val" style="color:var(--success)">+${cashSales.toLocaleString()}</span></div>
+                            <div class="account-line"><span class="account-label">KCB Paybill</span><span class="account-val" style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span></div>
+                            <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW ➔</div>
+                        </a>
                     </td>
                     <td>
-                        <div class="account-line"><span class="account-label">In</span><span class="account-val" style="color:var(--success)">+${moneyIn.toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">Out</span><span class="account-val" style="color:var(--danger)">-${moneyOut.toLocaleString()}</span></div>
+                        <a href="money-history.html" class="revenue-card">
+                            <div class="account-line"><span class="account-label">In</span><span class="account-val" style="color:var(--success)">+${moneyIn.toLocaleString()}</span></div>
+                            <div class="account-line"><span class="account-label">Out</span><span class="account-val" style="color:var(--danger)">-${moneyOut.toLocaleString()}</span></div>
+                            <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW ➔</div>
+                        </a>
                     </td>
                     <td>
                         <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.close_cash||0).toLocaleString()}</span></div>
@@ -1133,31 +1199,14 @@
 
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
-            
-            const cashSales = shiftSales
-                .filter(s => s.payment_method === 'Cash')
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            const kcbPaybillSales = shiftSales
-                .filter(s => s.payment_method === 'KCB Paybill')
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            const splitCashSales = shiftSales
-                .filter(s => s.payment_method === 'Cash' && s.item_name && s.item_name.includes('(Split-C)'))
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            const splitKcbSales = shiftSales
-                .filter(s => s.payment_method === 'KCB Paybill' && s.item_name && s.item_name.includes('(Split-O)'))
-                .reduce((sum, sale) => sum + Number(sale.total_amount || 0), 0);
-            
-            const totalCashDisplay = cashSales + splitCashSales;
-            const totalKcbDisplay = kcbPaybillSales + splitKcbSales;
+            const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount || 0), 0);
 
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
             const isClosed = sh.status === 'Closed';
-            const totalRevenue = cashSales + kcbPaybillSales;
+            const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             const varianceVal = isClosed ? (closeTotal - expected) : 0;
             
@@ -1232,11 +1281,11 @@
                             <div class="shift-mobile-details">
                                 <div class="shift-mobile-detail-line">
                                     <span class="shift-mobile-detail-label">Cash Sales</span>
-                                    <span class="shift-mobile-detail-value" style="color:var(--success)">+${totalCashDisplay.toLocaleString()}</span>
+                                    <span class="shift-mobile-detail-value" style="color:var(--success)">+${cashSales.toLocaleString()}</span>
                                 </div>
                                 <div class="shift-mobile-detail-line">
                                     <span class="shift-mobile-detail-label">KCB Paybill</span>
-                                    <span class="shift-mobile-detail-value" style="color:var(--success)">+${totalKcbDisplay.toLocaleString()}</span>
+                                    <span class="shift-mobile-detail-value" style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span>
                                 </div>
                             </div>
                         </div>
@@ -1342,12 +1391,14 @@
         
         btn.innerHTML = originalHtml;
         
+        // Show success feedback
         btn.style.background = '#10b981';
         setTimeout(() => {
             btn.style.background = '';
         }, 1000);
     }
 
+    // Handle window resize
     window.addEventListener('resize', function() {
         const newIsMobile = window.innerWidth <= 768;
         if (newIsMobile !== isMobile) {
@@ -1356,21 +1407,31 @@
         }
     });
 
+    // Initialize on load
     document.addEventListener('DOMContentLoaded', async function() {
         await loadBranches();
         await loadUserProfile();
         
+        // Set today's date
         const today = new Date();
         document.getElementById('dateRange').textContent = today.toLocaleDateString('en-GB', { 
             day: 'numeric', month: 'long', year: 'numeric' 
         });
         
+        // Set default branch selector
         document.getElementById('branchSelector').value = 'all';
         selectedBranchId = null;
         
         await fetchData();
         
+        // Check if we're on mobile initially
         isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+            const desktopTable = document.querySelector('.table-outer');
+            const mobileContainer = document.getElementById('mobile-shifts-container');
+            if (desktopTable) desktopTable.style.display = 'none';
+            if (mobileContainer) mobileContainer.style.display = 'block';
+        }
     });
 </script>
 </body>
