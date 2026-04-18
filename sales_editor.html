@@ -815,7 +815,7 @@
     };
 
     function renderTable(data) {
-        if (!data.length) { document.getElementById('product-list-body').innerHTML = `<tr><td colspan="8" style="text-align:center; padding:40px;">No products found</td></tr>`; return; }
+        if (!data.length) { document.getElementById('product-list-body').innerHTML = `<tr><td colspan="8" style="text-align:center; padding:40px;">No products found</td>`; return; }
         document.getElementById('product-list-body').innerHTML = data.map(p => {
             const isGas = p.category === 'Gas';
             const branchCode = p.branches?.code || branches[p.branch_id]?.code || '--';
@@ -890,6 +890,8 @@
         if (!branchToUse) { alert("Branch missing"); return; }
         const category = document.getElementById('prod-category').value;
         const isGas = category === 'Gas';
+        
+        // Prepare base data
         const data = {
             name: document.getElementById('prod-name').value,
             supplier_id: document.getElementById('prod-supplier').value || null,
@@ -903,23 +905,41 @@
             empty_quantity: isGas ? (parseInt(document.getElementById('prod-empty').value) || 0) : 0,
             branch_id: branchToUse
         };
+        
         if (isGas) {
             const completePrice = parseFloat(document.getElementById('prod-complete-price').value) || 0;
             const completeCost = parseFloat(document.getElementById('prod-complete-cost').value) || 0;
             if (!completePrice && data.name) alert("Complete Price is recommended for gas products");
             data.complete_price = completePrice;
             data.complete_cost = completeCost;
-            data.cylinder_price = completePrice - data.selling_price;
+            // Calculate cylinder_price (new cylinder without gas)
+            // cylinder_price = complete_price - selling_price (gas refill price)
+            const cylinderPrice = completePrice - data.selling_price;
+            // Ensure cylinder_price is not negative, default to 0 if calculation fails
+            data.cylinder_price = cylinderPrice > 0 ? cylinderPrice : 0;
         } else {
+            // CRITICAL FIX: For non-gas products, explicitly set cylinder_price to 0 or null
+            // to avoid NOT NULL constraint violation
             data.complete_price = null;
             data.complete_cost = null;
-            data.cylinder_price = null;
+            data.cylinder_price = 0;  // Set to 0 for non-gas products instead of null
         }
+        
         let error;
-        if (id) ({ error } = await supabase.from('products').update(data).eq('id', id));
-        else ({ error } = await supabase.from('products').insert([data]));
-        if (error) alert("Error: " + error.message);
-        else { closeModal(); await fetchProducts(); alert(id ? "✅ Updated!" : "✅ Added!"); }
+        if (id) {
+            ({ error } = await supabase.from('products').update(data).eq('id', id));
+        } else {
+            ({ error } = await supabase.from('products').insert([data]));
+        }
+        
+        if (error) {
+            console.error("Save error:", error);
+            alert("Error: " + error.message);
+        } else {
+            closeModal(); 
+            await fetchProducts(); 
+            alert(id ? "✅ Updated!" : "✅ Added!");
+        }
     };
 
     window.deleteProduct = async (id) => {
