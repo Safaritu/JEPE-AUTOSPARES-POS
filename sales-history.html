@@ -3,1451 +3,583 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JEPE POS | WELCOME BACK CASHIER</title>
+    <title>Sales History | JEPE ADMIN - Multi-Branch</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<style>
-        /* ALL YOUR EXISTING STYLES - KEPT INTACT WITH MOBILE FIXES */
+    <style>
         :root { 
-            --primary: #4f46e5; 
-            --primary-dark: #3730a3;
-            --bg: #f1f5f9; 
-            --card-bg: #ffffff; 
-            --danger: #e11d48; 
-            --success: #10b981; 
-            --warning: #f59e0b;
-            --nav-btn-bg: #6366f1;
-            --text-main: #1e293b; 
+            --admin-dark: #0f172a; 
+            --admin-accent: #4f46e5; 
+            --bg: #f8fafc;
+            --white: #ffffff; 
+            --text: #1e293b; 
             --text-dim: #64748b;
             --border: #e2e8f0; 
-            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            --deep-blue: #1e3a8a;
-            --admin-dark: #0f172a;
-            --admin-accent: #1e3a8a;
-            --switch-btn: #0ea5e9;
+            --success: #10b981; 
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --sidebar-width: 260px;
+            --sidebar-collapsed: 70px;
+            --primary: #4f46e5;
             --gas: #f59e0b;
-            --kcb-paybill: #2563eb;
         }
 
-        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
-
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
-            background-color: var(--bg);
-            padding: 10px; margin: 0; color: var(--text-main); line-height: 1.5; 
-            overflow-x: hidden;
-            width: 100%;
+            background: var(--bg); 
+            margin: 0; 
+            color: var(--text); 
+            display: flex; 
+            min-height: 100vh; 
+            overflow-x: hidden; 
         }
 
-        .container { max-width: 1450px; margin: auto; width: 100%; }
-        
-        /* Compact Header */
-        .compact-header {
+        .sidebar { 
+            width: var(--sidebar-collapsed); 
+            height: 100vh; 
+            background: var(--admin-dark); 
+            position: fixed; 
+            left: 0; 
+            top: 0; 
+            z-index: 3000; 
+            overflow-x: hidden; 
+            transition: width 0.3s ease;
+            padding: 20px 10px; 
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding: 12px 15px;
-            background: #fff;
-            border-radius: 14px;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
-        }
-        
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        
-        .profile-btn {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            background: var(--primary);
+            flex-direction: column;
             color: white;
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 1.1rem;
         }
         
-        .logo-compact {
-            font-size: 1.1rem;
+        .sidebar:hover, .sidebar.mobile-active { 
+            width: var(--sidebar-width); 
+        }
+        
+        .sidebar-header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            margin-bottom: 30px; 
+            padding: 0 10px; 
+            min-height: 40px;
+        }
+        
+        .sidebar h2 { 
+            font-size: 1.2rem; 
+            margin: 0; 
+            white-space: nowrap; 
+            opacity: 0; 
+            transition: opacity 0.2s; 
+            color: white;
+        }
+        
+        .sidebar:hover h2, .sidebar.mobile-active h2 { 
+            opacity: 1; 
+        }
+        
+        .close-btn { 
+            display: none; 
+            background: none; 
+            border: none; 
+            color: white; 
+            font-size: 1.5rem; 
+            cursor: pointer; 
+        }
+
+        .branch-info {
+            padding: 10px;
+            margin: 10px 0 20px;
+            background: rgba(79, 70, 229, 0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            white-space: nowrap;
+        }
+        
+        .branch-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            color: #94a3b8;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .sidebar:hover .branch-label, .sidebar.mobile-active .branch-label {
+            opacity: 1;
+        }
+        
+        .branch-name {
             font-weight: 800;
-            letter-spacing: -0.5px;
-            color: #111827;
-        }
-        
-        .logo-compact span {
-            color: var(--primary);
-            font-weight: 500;
-            font-size: 0.75rem;
-            margin-left: 5px;
-            opacity: 0.8;
-        }
-        
-        .header-right {
+            color: white;
+            font-size: 0.85rem;
+            margin-top: 3px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+        }
+        
+        .branch-name i { 
+            color: var(--primary); 
+            min-width: 20px;
+        }
+        
+        .branch-name span {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .sidebar:hover .branch-name span, .sidebar.mobile-active .branch-name span {
+            opacity: 1;
+        }
+        
+        .nav-list { 
+            flex: 1;
+            list-style: none; 
+            padding: 0; 
+            margin: 0; 
+        }
+        
+        .nav-link { 
+            display: flex; 
+            align-items: center; 
+            padding: 12px; 
+            color: #94a3b8; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            margin-bottom: 5px; 
+            transition: 0.3s; 
+            white-space: nowrap;
+            font-weight: 600;
+        }
+        
+        .nav-link i { 
+            min-width: 30px; 
+            font-size: 1.2rem; 
+            text-align: center; 
+            margin-right: 15px;
+        }
+        
+        .nav-link span { 
+            opacity: 0; 
+            white-space: nowrap; 
+            transition: opacity 0.2s; 
+        }
+        
+        .sidebar:hover .nav-link span, 
+        .sidebar.mobile-active .nav-link span { 
+            opacity: 1; 
+        }
+        
+        .nav-link:hover, .nav-link.active { 
+            background: var(--primary); 
+            color: white; 
+        }
+
+        .menu-trigger {
+            display: none; 
+            position: fixed; 
+            top: 15px; 
+            left: 15px; 
+            z-index: 2500;
+            background: var(--admin-dark); 
+            color: white; 
+            border: none; 
+            padding: 10px 15px;
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 0.9rem; 
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .main-wrapper { 
+            width: 100%; 
+            margin-left: var(--sidebar-collapsed); 
+            transition: margin-left 0.3s ease;
+            min-height: 100vh;
+        }
+        
+        @media (min-width: 1024px) {
+            .main-wrapper { 
+                margin-left: var(--sidebar-collapsed); 
+            }
+        }
+
+        .mobile-header {
+            display: none; 
+            background: var(--admin-dark); 
+            color: white; 
+            padding: 0 20px;
+            align-items: center; 
+            justify-content: space-between;
+            position: fixed; 
+            top: 0; 
+            width: 100%; 
+            height: 64px; 
+            z-index: 2000;
+        }
+
+        .container { 
+            padding: 40px 30px; 
+            max-width: 1400px; 
+            margin: auto; 
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar { 
+                transform: translateX(-100%); 
+                width: var(--sidebar-width);
+            }
+            .sidebar.mobile-active { 
+                transform: translateX(0); 
+            }
+            .main-wrapper { 
+                margin-left: 0; 
+                padding-top: 64px;
+            }
+            .menu-trigger { 
+                display: block; 
+            }
+            .mobile-header { 
+                display: flex; 
+            }
+            .close-btn { 
+                display: block; 
+            }
+            .container {
+                padding: 20px 15px;
+            }
+        }
+
+        .branch-selector-container {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        
+        .branch-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
             flex-wrap: wrap;
         }
         
-        .special-action-btn {
-            font-size: 0.75rem !important;
-            padding: 8px 14px !important;
-            border-radius: 8px !important;
-            box-shadow: 0 0 8px rgba(79, 70, 229, 0.4) !important;
-            border: 2px solid white !important;
+        .branch-select {
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 2px solid var(--primary);
+            background: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text);
+            cursor: pointer;
+            min-width: 220px;
+            outline: none;
         }
         
-        /* Branch badge */
         .branch-badge {
             background: var(--primary);
             color: white;
-            padding: 6px 12px;
-            border-radius: 20px;
+            padding: 6px 16px;
+            border-radius: 30px;
             font-size: 0.8rem;
             font-weight: 700;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            border: 2px solid white;
-            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+            gap: 8px;
         }
         
-        /* Gas badge */
-        .gas-badge {
-            background: var(--gas);
-            color: white;
-            font-size: 0.65rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-left: 5px;
-            font-weight: 700;
-        }
-        
-        /* KCB Paybill badge */
-        .kcb-paybill-badge {
-            background: var(--kcb-paybill);
-            color: white;
-            font-size: 0.65rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-left: 5px;
-            font-weight: 700;
-        }
-        
-        /* Start button with larger font */
-        .start-btn-large {
-            font-size: 0.9rem !important;
-            padding: 10px 18px !important;
-            font-weight: 900 !important;
-            letter-spacing: 0.5px !important;
+        .date-range {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            font-weight: 500;
         }
 
-        .float-status-card {
-            background: #fff; 
-            padding: 12px; 
-            border-radius: 14px; 
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .summary-card {
+            background: white;
             border: 1px solid var(--border);
-            margin-bottom: 15px; 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-        }
-        
-        /* Low float warning */
-        .low-float-warning {
-            background: #fee2e2 !important;
-            color: #b91c1c !important;
-            border-color: #fecaca !important;
-        }
-        
-        /* Danger alert for very low floats */
-        .danger-alert {
-            border: 2px solid #ef4444 !important;
-            background: #fff1f2 !important;
-            animation: pulse-border 2s infinite;
-        }
-        
-        @keyframes pulse-border {
-            0% { border-color: #ef4444; }
-            50% { border-color: #fca5a5; }
-            100% { border-color: #ef4444; }
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
 
-        @media (min-width: 600px) { 
-            .float-status-card { 
-                grid-template-columns: repeat(5, 1fr); 
-                padding: 15px;
-                gap: 12px;
-            } 
+        .summary-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
         }
 
-        .float-item { 
-            text-align: center; 
-            padding: 10px;
-            border-radius: 10px;
+        .summary-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .summary-value.success {
+            color: var(--success);
+        }
+
+        .summary-value.primary {
+            color: var(--primary);
+        }
+
+        .summary-value.warning {
+            color: var(--warning);
+        }
+
+        .summary-value.danger {
+            color: var(--danger);
+        }
+
+        .summary-detail {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin-top: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .filter-bar {
+            background: white;
             border: 1px solid var(--border);
-            transition: all 0.3s;
-            position: relative;
-        }
-        
-        .float-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        
-        .float-item label { 
-            display: block; 
-            font-size: 0.6rem; 
-            color: var(--text-dim); 
-            text-transform: uppercase; 
-            font-weight: 800; 
-            margin-bottom: 4px;
-        }
-        
-        .float-item span { 
-            font-size: 1rem; 
-            font-weight: 800; 
-            color: var(--primary); 
-            display: block;
-        }
-        
-        @media (min-width: 768px) {
-            .float-item span { font-size: 1.1rem; }
-            .float-item label { font-size: 0.65rem; }
-            .compact-header { padding: 15px 20px; margin-bottom: 20px; }
-            .logo-compact { font-size: 1.3rem; }
-            .logo-compact span { font-size: 0.85rem; }
-            .profile-btn { width: 42px; height: 42px; font-size: 1.3rem; }
-        }
-        
-        .kcb-live-box { 
-            border: 2px solid var(--kcb-paybill); 
-            border-radius: 10px; 
-            background: #eff6ff; 
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
         }
 
-        .card { 
-            background: var(--card-bg); 
-            border-radius: 14px; 
-            border: 1px solid var(--border); 
-            padding: 15px; 
-            margin-bottom: 15px; 
-            box-shadow: var(--shadow);
-        }
-        
-        @media (min-width: 768px) {
-            .card {
-                padding: 22px;
-                margin-bottom: 22px;
-                border-radius: 20px;
-            }
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 200px;
         }
 
-        .section-label { 
-            font-size: 0.7rem; 
-            text-transform: uppercase; 
-            letter-spacing: 0.08em; 
-            color: var(--primary); 
-            margin-bottom: 15px; 
-            font-weight: 800; 
-            display: flex; 
-            align-items: center; 
-            gap: 6px; 
-        }
-        
-        @media (min-width: 768px) {
-            .section-label {
-                font-size: 0.8rem;
-                margin-bottom: 20px;
-            }
-        }
-        
-        .section-label::after { 
-            content: ""; 
-            flex: 1; 
-            height: 1px; 
-            background: var(--border); 
+        .filter-group i {
+            color: var(--text-dim);
+            width: 20px;
         }
 
-        .grid-inputs { display: grid; gap: 12px; }
-        .input-group { display: flex; flex-direction: column; }
-        label { 
-            margin-bottom: 5px; 
-            font-weight: 700; 
-            color: var(--text-main); 
-            font-size: 0.7rem; 
-        }
-        
-        @media (min-width: 768px) {
-            label { font-size: 0.8rem; }
-        }
-        
-        input, select { 
-            background: #f8fafc; 
-            border: 1px solid var(--border); 
-            padding: 12px; 
-            border-radius: 10px; 
-            font-size: 14px; 
-            font-family: inherit; 
-            transition: 0.2s; 
-            color: var(--text-main); 
+        .filter-select, .filter-input {
+            padding: 10px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            background: white;
             width: 100%;
+            outline: none;
+            transition: border-color 0.2s;
         }
-        
-        @media (min-width: 768px) {
-            input, select {
-                padding: 16px;
-                font-size: 16px;
-                border-radius: 12px;
-            }
-        }
-        
-        .hint-badge { 
-            padding: 3px 8px; 
-            border-radius: 5px; 
-            font-size: 0.65rem; 
-            font-weight: 700; 
-            margin-top: 4px; 
-        }
-        
-        @media (min-width: 768px) {
-            .hint-badge {
-                font-size: 0.75rem;
-            }
-        }
-        
-        .bg-stock { background: #dcfce7; color: #166534; }
-        .bg-min { background: #fef9c3; color: #854d0e; }
 
-        .table-card { 
-            border-radius: 14px; 
-            margin-bottom: 15px; 
+        .filter-select:focus, .filter-input:focus {
+            border-color: var(--primary);
+        }
+
+        .reset-btn {
+            background: #f1f5f9;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .reset-btn:hover {
+            background: #e2e8f0;
+        }
+
+        .search-input {
             width: 100%; 
-            background: #fff; 
-            border: 1px solid var(--border); 
-            overflow-x: auto; 
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+            padding: 16px; 
+            border-radius: 14px; 
+            border: 1px solid var(--border);
+            font-size: 16px; 
+            margin-bottom: 20px; 
+            outline: none; 
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        }
+        .search-input:focus {
+            border-color: var(--primary);
+        }
+
+        .data-card-container { 
+            width: 100%; 
         }
         
-        table { width: 100%; border-collapse: collapse; }
-        
-        .today-sales-table { 
-            min-width: 600px; 
-        }
-        
-        .money-history-table {
-            min-width: 700px;
-        }
-        
-        .shift-history-table {
-            min-width: 1250px;
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            background: white; 
+            border-radius: 16px; 
+            overflow: hidden; 
+            border: 1px solid var(--border);
+            min-width: 900px;
         }
         
         th { 
-            background: #f8fafc; 
-            padding: 12px 10px;
-            font-size: 0.7rem;
-            text-transform: uppercase; 
-            letter-spacing: 0.05em; 
-            color: var(--text-dim); 
-            border-bottom: 1px solid var(--border); 
             text-align: left; 
+            padding: 15px; 
+            background: #f8fafc; 
+            font-size: 0.7rem; 
+            color: var(--text-dim); 
+            text-transform: uppercase; 
+            font-weight: 800;
         }
         
         td { 
-            padding: 12px 10px;
-            border-bottom: 1px solid var(--border); 
-            font-size: 0.85rem;
-            vertical-align: top; 
+            padding: 15px; 
+            border-bottom: 1px solid #f1f5f9; 
+            font-size: 0.85rem; 
+            vertical-align: middle;
         }
-        
-        @media (min-width: 768px) {
-            .today-sales-table { 
-                min-width: 800px;
-            }
-            
-            .money-history-table {
-                min-width: 900px;
-            }
-            
-            th { 
-                padding: 16px 14px; 
-                font-size: 0.75rem;
-            }
-            
-            td { 
-                padding: 14px 14px; 
-                font-size: 0.9rem;
-            }
+
+        .branch-pill {
+            background: #f1f5f9;
+            color: var(--text-dim);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: inline-block;
+            margin-left: 5px;
         }
-        
-        @media (min-width: 1024px) {
-            .today-sales-table { 
-                min-width: 1000px;
+
+        @media (max-width: 1024px) {
+            .container { 
+                padding-top: 20px; 
             }
-            
-            .money-history-table {
-                min-width: 100%;
-            }
-            
-            th { 
-                padding: 18px 15px; 
-                font-size: 0.8rem;
-            }
-            
-            td { 
-                padding: 16px 15px; 
-                font-size: 0.95rem;
-            }
-        }
-        
-        /* ============================================ */
-        /* ENHANCED MOBILE RESPONSIVE FIXES */
-        /* ============================================ */
-        @media (max-width: 768px) {
-            .mobile-hide-header { display: none; }
-            
-            /* Fix for sales table rows - make them display properly */
-            .today-sales-table tr { 
+            table, thead, tbody, th, td, tr { 
                 display: block; 
-                background: white; 
-                margin-bottom: 15px; 
-                padding: 12px; 
-                border-radius: 16px; 
-                border: 1px solid var(--border); 
-                box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-                position: relative;
             }
-            
-            .today-sales-table td { 
+            thead { 
+                display: none; 
+            }
+            tr { 
+                background: white; 
+                border: 1px solid var(--border); 
+                border-radius: 16px; 
+                margin-bottom: 15px; 
+                padding: 15px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            }
+            td { 
                 display: flex; 
                 justify-content: space-between; 
-                align-items: center;
+                align-items: center; 
                 padding: 8px 0; 
-                border: none !important; 
-                border-bottom: 1px dashed #f1f5f9 !important; 
-                text-align: right; 
-                font-size: 0.8rem;
-                flex-wrap: wrap;
+                border: none; 
+                text-align: right;
             }
-            
-            .today-sales-table td::before { 
+            td::before { 
                 content: attr(data-label); 
                 font-weight: 800; 
                 color: var(--text-dim); 
                 font-size: 0.7rem; 
-                display: block; 
-                text-align: left; 
-                min-width: 100px;
-            }
-            
-            /* FIX: Make refund button visible and properly positioned on mobile */
-            .action-column {
-                display: flex;
-                justify-content: flex-end;
-                margin-top: 10px;
-                padding-top: 10px;
-                border-top: 1px solid var(--border);
-                width: 100%;
-            }
-            
-            .btn-refund { 
-                font-size: 0.8rem !important; 
-                padding: 10px 16px !important; 
-                width: auto;
-                min-width: 100px;
-                justify-content: center;
-            }
-            
-            /* Fix for badges to not wrap awkwardly */
-            .refunded-badge, .gas-badge, .kcb-paybill-badge { 
-                display: inline-block; 
-                margin-left: 8px; 
-                white-space: nowrap;
-            }
-            
-            /* Money history mobile view */
-            .money-history-table tr { 
-                display: block; 
-                margin-bottom: 12px; 
-                padding: 12px; 
-                border-radius: 14px; 
-                background: white; 
-                border: 1px solid var(--border); 
-            }
-            
-            .money-history-table td { 
-                display: flex; 
-                justify-content: space-between; 
-                align-items: center;
-                padding: 8px 0; 
-                border: none; 
-                border-bottom: 1px solid #f0f0f0; 
-            }
-            
-            .money-history-table td::before { 
-                content: attr(data-label); 
-                font-weight: 700; 
-                font-size: 0.7rem;
-                min-width: 90px;
-            }
-            
-            .table-card {
-                margin-bottom: 12px;
-                border-radius: 12px;
-                max-height: none !important;
-            }
-            
-            /* FIX: Money record button - prevent text cutoff and ensure full visibility */
-            #record-expense-btn {
-                font-size: 0.9rem !important;
-                padding: 16px !important;
-                margin: 10px auto 5px auto;
-                width: 100%;
-                display: block;
-                white-space: nowrap;
-                overflow: visible;
-                text-overflow: clip;
-                letter-spacing: 0.5px;
-            }
-            
-            /* Fix for refresh button text on mobile */
-            .header-right .btn {
-                font-size: 0.7rem !important;
-                padding: 8px 10px !important;
-                white-space: nowrap;
-            }
-            
-            /* Remove slide indicator */
-            .slide-indicator {
-                display: none !important;
-            }
-            
-            /* Fix money record section alignment */
-            .dual-tables > div:last-child .card {
-                display: flex;
-                flex-direction: column;
-                align-items: stretch;
-                padding: 18px;
-            }
-            
-            .dual-tables > div:last-child .card input,
-            .dual-tables > div:last-child .card select {
-                width: 100%;
-                font-size: 14px;
-            }
-            
-            /* Fix for money summary cards */
-            .money-summary-cards {
-                grid-template-columns: 1fr 1fr;
-                gap: 10px;
-            }
-            
-            .money-summary-card {
-                padding: 10px;
-            }
-            
-            .money-summary-amount {
-                font-size: 1rem;
-            }
-        }
-        
-        /* Extra small devices (phones under 480px) */
-        @media (max-width: 480px) {
-            .compact-header {
-                flex-direction: column;
-                gap: 10px;
-                align-items: stretch;
-            }
-            
-            .header-left {
-                justify-content: space-between;
-            }
-            
-            .header-right {
-                justify-content: center;
-            }
-            
-            #record-expense-btn {
-                font-size: 0.85rem !important;
-                padding: 14px !important;
-                white-space: normal;
-                word-break: keep-all;
-            }
-            
-            .btn-refund {
-                font-size: 0.75rem !important;
-                padding: 8px 12px !important;
-                min-width: 85px;
-            }
-            
-            .today-sales-table td {
-                flex-direction: column;
-                align-items: flex-start;
+                text-transform: uppercase; 
                 text-align: left;
             }
-            
-            .today-sales-table td::before {
-                margin-bottom: 4px;
+            td[data-label="Item Details"] { 
+                flex-direction: column; 
+                align-items: flex-start; 
+                border-bottom: 1px solid #f1f5f9; 
+                margin-bottom: 8px; 
+                padding-bottom: 12px;
             }
-            
-            .today-sales-table td[data-label="Action"] {
-                flex-direction: row;
-                justify-content: center;
+            td[data-label="Item Details"]::before { 
+                margin-bottom: 5px; 
+            }
+            td[data-label="Item Details"] div { 
+                text-align: left; 
+                width: 100%; 
+                font-size: 1.1rem; 
             }
         }
 
-        .btn { 
-            padding: 14px 18px; 
-            border-radius: 10px; 
+        .badge { 
+            padding: 5px 10px; 
+            border-radius: 8px; 
+            font-size: 0.65rem; 
             font-weight: 800; 
-            cursor: pointer; 
-            border: none; 
-            font-size: 0.85rem; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 6px; 
-            text-transform: uppercase; 
-            transition: 0.3s opacity; 
+            background: #e0e7ff; 
+            color: #3730a3; 
+            display: inline-block;
         }
         
-        @media (min-width: 768px) {
-            .btn {
-                padding: 18px 24px;
-                font-size: 0.95rem;
-                border-radius: 12px;
-            }
+        .badge-cash { background: #dcfce7; color: #166534; }
+        .badge-mpesa { background: #fee2e2; color: #991b1b; }
+        .badge-kcb { background: #e0e7ff; color: #4338ca; }
+        .badge-bank { background: #fef3c7; color: #92400e; }
+        .badge-debt { background: #f1f5f9; color: #475569; }
+        .badge-gas-refill { background: #ffedd5; color: #9a3412; }
+        .badge-gas-complete { background: #fed7aa; color: #7b341e; }
+        .badge-split { background: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; }
+        
+        .profit-positive {
+            color: var(--success);
+            font-weight: 700;
         }
         
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-sync { background: var(--warning); color: white; }
-        .btn-kcb { background: var(--kcb-paybill); color: white; }
-        
-        .btn-refund { 
-            background: #f59e0b; 
-            color: white; 
-            padding: 6px 12px !important;
-            font-size: 0.7rem !important;
-            border-radius: 6px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
+        .profit-negative {
+            color: var(--danger);
+            font-weight: 700;
         }
-
+        
         .overlay { 
             position: fixed; 
             inset: 0; 
-            background: rgba(15, 23, 42, 0.8); 
+            background: rgba(0,0,0,0.5); 
             display: none; 
-            align-items: center; 
-            justify-content: center; 
-            z-index: 1000; 
-            backdrop-filter: blur(8px); 
-            padding: 15px; 
-        }
-        
-        .modal { 
-            background: #fff; 
-            padding: 22px; 
-            border-radius: 18px; 
-            width: 100%; 
-            max-width: 450px; 
-            max-height: 90vh; 
-            overflow-y: auto; 
-        }
-        
-        @media (min-width: 768px) {
-            .modal {
-                padding: 28px;
-                max-width: 500px;
-                border-radius: 24px;
-            }
-        }
-        
-        .dual-tables { 
-            display: grid; 
-            grid-template-columns: 1fr; 
-            gap: 15px; 
-            width: 100%; 
-        }
-        
-        @media (min-width: 1024px) { 
-            .dual-tables { 
-                grid-template-columns: 1.2fr 1fr; 
-                gap: 22px; 
-            }
-        }
-
-        .text-success { color: #15803d !important; font-weight: 700; }
-        .text-danger { color: #b91c1c !important; font-weight: 700; }
-        .variance-status { font-weight: 800; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; text-align: center; }
-        
-        .balanced { background: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; }
-        .mismatch { background: #fee2e2; color: #991b1b; }
-        .variance-positive { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-        .variance-negative { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
-
-        .search-input {
-            width: 100%;
-            padding: 16px 22px;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            margin-bottom: 24px;
-            font-size: 1rem;
-            outline: none;
-            background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        }
-        
-        .search-input:focus { border-color: var(--primary); }
-
-        .account-line { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px dashed #f1f5f9; padding-bottom: 3px; }
-        .account-label { color: var(--text-dim); font-size: 0.8rem; font-weight: 500; }
-        .account-val { font-weight: 600; color: var(--text-main); font-size: 0.85rem; }
-
-        .total-row { font-weight: 800; margin-top: 12px; padding: 10px; background: #f5f3ff; color: var(--primary); border-radius: 8px; text-align: center; }
-        
-        .status-badge { font-weight: 800; padding: 8px 14px; border-radius: 10px; font-size: 0.8rem; display: block; text-align: center; min-width: 130px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid transparent; }
-        .active-shift { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
-        .var-positive { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
-        .var-negative { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
-        .var-balanced { background: #f1f5f9; color: var(--text-main); border-color: var(--border); }
-
-        .revenue-card { background: #fff; border: 1px solid var(--border); padding: 12px; border-radius: 10px; text-decoration: none; display: block; transition: 0.2s; }
-        .revenue-card:hover { border-color: var(--primary); transform: translateY(-2px); }
-        
-        .adj-box { padding: 14px; border-radius: 12px; background: #fafafa; border: 1px solid #f0f0f0; text-decoration: none; display: block; }
-
-        .date-cell b { display: block; margin-bottom: 8px; font-size: 0.95rem; }
-        .time-pill { background: #f1f5f9; padding: 3px 8px; border-radius: 5px; font-size: 0.7rem; font-weight: 700; color: var(--text-dim); display: inline-block; margin-top: 4px; }
-        
-        .clickable-link {
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 5px;
-        }
-        
-        .clickable-link:hover {
-            background: #f1f5ff;
-            text-decoration: underline;
-            transform: translateY(-1px);
-        }
-        
-        .nav-overlay { 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(15, 23, 42, 0.98); 
-            backdrop-filter: blur(15px); 
-            z-index: 3000; 
-            display: none; 
-            flex-direction: column; 
-            padding: 50px 15px 30px 15px; 
-            overflow-y: auto; 
-        }
-        
-        .nav-overlay.active { 
-            display: flex; 
-            animation: fadeIn 0.3s ease forwards; 
-        }
-        
-        @keyframes fadeIn { 
-            from { opacity: 0; transform: translateY(20px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
-        
-        .nav-grid { 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); 
-            gap: 10px; 
-            width: 100%; 
-            max-width: 500px; 
-            margin: 0 auto; 
-        }
-        
-        .nav-card { 
-            background: rgba(255, 255, 255, 0.08); 
-            border: 1px solid rgba(255, 255, 255, 0.1); 
-            border-radius: 14px; 
-            padding: 14px 8px; 
-            text-align: center; 
-            color: white; 
-            text-decoration: none; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            gap: 5px; 
-        }
-        
-        @media (min-width: 768px) {
-            .nav-grid { gap: 12px; }
-            .nav-card { padding: 16px 10px; gap: 6px; }
-        }
-        
-        .nav-card span { font-size: 1.2rem; }
-        .nav-card small { font-size: 0.7rem; font-weight: 600; line-height: 1.3; }
-        .switch-card { background: var(--switch-btn); grid-column: span 2; margin-bottom: 10px; border: none; font-weight: 800; padding: 20px; }
-        .nav-header-title { color: white; text-align: center; font-weight: 800; font-size: 1.3rem; margin-bottom: 20px; letter-spacing: 1px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 12px; }
-        
-        @media (min-width: 768px) {
-            .nav-header-title { font-size: 1.5rem; margin-bottom: 25px; }
-            .nav-card span { font-size: 1.3rem; }
-            .nav-card small { font-size: 0.75rem; }
-        }
-
-        .fab-menu { 
-            position: fixed; 
-            bottom: 20px; 
-            left: 15px; 
-            width: 60px; 
-            height: 60px; 
-            background: var(--deep-blue); 
-            border-radius: 50%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            color: white; 
-            font-size: 1.4rem; 
-            box-shadow: 0 8px 25px rgba(30, 58, 138, 0.4); 
-            border: 4px solid white; 
-            cursor: pointer; 
-            z-index: 2000; 
-            animation: swing 3s infinite ease-in-out; 
-            transform-origin: center bottom; 
-        }
-        
-        @keyframes swing { 
-            0%, 100% { transform: rotate(0deg); } 
-            20% { transform: rotate(10deg); } 
-            40% { transform: rotate(-10deg); } 
-        }
-        
-        .guide-hand { 
-            position: fixed; 
-            bottom: 90px; 
-            left: 25px; 
             z-index: 2500; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            animation: bounce 1.5s infinite; 
+            backdrop-filter: blur(4px); 
         }
+        .overlay.active { display: block; }
         
-        .guide-hand span { font-size: 1.5rem; }
-        .guide-label { 
-            background: var(--admin-dark); 
-            color: white; 
-            padding: 3px 6px; 
-            border-radius: 5px; 
-            font-size: 0.5rem; 
+        .btn-load { 
+            width: 100%; 
+            margin-top: 20px; 
+            background: white; 
+            border: 2px solid var(--primary); 
+            color: var(--primary); 
+            padding: 15px; 
+            border-radius: 14px; 
             font-weight: 800; 
-            margin-bottom: 3px; 
-            border: 1px solid var(--admin-accent); 
-        }
-        
-        @keyframes bounce { 
-            0%, 100% { transform: translateY(0); } 
-            50% { transform: translateY(-8px); } 
-        }
-        
-        .congrats-msg { 
-            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); 
-            color: #166534; 
-            padding: 10px 14px; 
-            border-radius: 10px; 
-            margin-bottom: 15px; 
-            text-align: center; 
-            font-weight: 700; 
-            font-size: 0.85rem; 
-            display: none; 
-            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
-            border: 2px solid #86efac;
-            letter-spacing: 0.5px;
-            animation: slideDown 0.5s ease;
-            max-width: 400px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .greeting-banner {
-            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
-            color: white;
-            padding: 14px 18px;
-            border-radius: 16px;
-            margin-bottom: 18px;
-            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
-        @media (min-width: 768px) {
-            .greeting-banner {
-                padding: 18px 22px;
-                margin-bottom: 22px;
-                gap: 15px;
-            }
-        }
-        
-        .greeting-text h2 {
-            margin: 0;
-            font-size: 1.2rem;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-        }
-        
-        .greeting-text p {
-            margin: 3px 0 0 0;
-            font-size: 0.8rem;
-            opacity: 0.9;
-        }
-        
-        .greeting-time {
-            font-size: 0.8rem;
-            opacity: 0.9;
-            font-weight: 600;
-        }
-        
-        @media (min-width: 768px) {
-            .greeting-text h2 { font-size: 1.4rem; }
-            .greeting-text p { font-size: 0.9rem; }
-            .greeting-time { font-size: 0.85rem; }
-        }
-        
-        .low-stock-alert {
-            color: #ff4d4d !important;
-            font-weight: 800;
-            animation: pulse-red 1.5s infinite;
-            padding: 3px 8px;
-            border-radius: 5px;
-            background: rgba(255, 77, 77, 0.1);
-        }
-
-        @keyframes pulse-red {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.7; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        
-        .profile-dropdown {
-            position: absolute;
-            top: 60px;
-            left: 15px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-            border: 1px solid var(--border);
-            width: 240px;
-            z-index: 1001;
-            display: none;
-            overflow: hidden;
-        }
-        
-        .profile-header {
-            padding: 15px;
-            background: var(--primary);
-            color: white;
-            text-align: center;
-        }
-        
-        .profile-header h4 {
-            margin: 0;
-            font-size: 1rem;
-        }
-        
-        .profile-header p {
-            margin: 4px 0 0 0;
-            font-size: 0.8rem;
-            opacity: 0.9;
-        }
-        
-        .profile-menu {
-            list-style: none;
-            margin: 0;
-            padding: 10px 0;
-        }
-        
-        .profile-menu li {
-            padding: 0;
-        }
-        
-        .profile-menu a {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 15px;
-            text-decoration: none;
-            color: var(--text-main);
-            font-size: 0.9rem;
-            font-weight: 600;
-            transition: background 0.2s;
-        }
-        
-        .profile-menu a:hover {
-            background: #f8fafc;
-        }
-        
-        .profile-menu a i {
-            width: 20px;
-            text-align: center;
-            color: var(--primary);
-        }
-        
-        .profile-divider {
-            height: 1px;
-            background: var(--border);
-            margin: 5px 15px;
-        }
-        
-        .logout-btn {
-            width: 100%;
-            background: var(--danger);
-            color: white;
-            border: none;
-            padding: 12px 15px;
-            font-weight: 800;
-            font-size: 0.9rem;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            transition: 0.2s;
         }
-        
-        .logout-btn:hover {
-            background: #c1121f;
-        }
-        
-        .compact-form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 10px;
-        }
-        
-        @media (min-width: 768px) {
-            .compact-form-grid {
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-                gap: 16px;
-            }
-        }
-        
-        .alert-indicator {
-            position: relative;
-        }
-        
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-        
-        .refund-modal .modal {
-            max-width: 400px;
-        }
-        
-        .refund-item-info {
-            background: #f8fafc;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 18px;
-            border-left: 4px solid var(--warning);
-        }
-        
-        .refund-warning {
-            background: #fff7ed;
-            border: 1px solid #fed7aa;
-            color: #9a3412;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            margin-bottom: 18px;
-            text-align: center;
-        }
-        
-        .refund-warning i {
-            color: #ea580c;
-            margin-right: 5px;
-        }
-        
-        .refund-actions {
-            display: flex;
-            gap: 12px;
-            margin-top: 22px;
-        }
-        
-        .refund-actions .btn {
-            flex: 1;
-        }
-        
-        /* Mobile Slide Indicator - Hidden on mobile */
-        .slide-indicator { 
-            background: #0f172a; 
+        .btn-load:hover { 
+            background: var(--primary); 
             color: white; 
-            padding: 14px; 
-            border-radius: 12px; 
-            display: none; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 12px; 
-            margin-bottom: 15px; 
-            font-size: 0.8rem; 
-            font-weight: 700;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        .hand-icon { font-size: 1.2rem; animation: tapSide 1.5s infinite; }
-        @keyframes tapSide { 0%, 100% { transform: translateX(5px); } 50% { transform: translateX(-5px); } }
-        @media (max-width: 1024px) { .slide-indicator { display: none; } }
-        
-        .money-summary-cards {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 18px;
         }
         
-        .money-summary-card {
-            padding: 12px;
-            border-radius: 10px;
-            text-align: center;
-        }
-        
-        .money-in-card {
-            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-            border: 1px solid #86efac;
-        }
-        
-        .money-out-card {
-            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-            border: 1px solid #fca5a5;
-        }
-        
-        .money-summary-label {
-            font-size: 0.7rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-        }
-        
-        .money-summary-amount {
-            font-size: 1.2rem;
-            font-weight: 800;
-        }
-        
-        .money-in-amount {
-            color: #166534;
-        }
-        
-        .money-out-amount {
-            color: #b91c1c;
-        }
-        
-        /* Mobile order adjustments */
-        @media (max-width: 768px) {
-            .dual-tables > div:first-child {
-                order: 2;
-            }
-            
-            .dual-tables > div:last-child {
-                order: 1;
-                margin-bottom: 18px;
-            }
-            
-            .card {
-                padding: 12px;
-            }
-            
-            .table-card {
-                max-height: 400px !important;
-                overflow-y: auto;
-            }
-            
-            .dual-tables > div:last-child .card {
-                padding: 18px;
-            }
-            
-            .money-inout-form input,
-            .money-inout-form select {
-                padding: 16px;
-                font-size: 16px;
-            }
-            
-            .money-inout-form .btn {
-                padding: 18px;
-                font-size: 1rem;
-            }
-        }
-        
-        @media (min-width: 769px) and (max-width: 1023px) {
-            .dual-tables {
-                grid-template-columns: 1fr;
-            }
-            
-            .dual-tables > div:first-child .table-card {
-                max-height: 350px;
-            }
-            
-            .dual-tables > div:last-child {
-                min-width: 100%;
-            }
-        }
-        
-        .action-btn-small {
-            padding: 5px 10px !important;
-            font-size: 0.75rem !important;
-            min-width: auto !important;
-        }
-        
-        .today-sales-container {
-            position: relative;
-        }
-        
-        .table-card::-webkit-scrollbar {
-            height: 8px;
-            width: 8px;
-        }
-        
-        .table-card::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 10px;
-        }
-        
-        .table-card::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 10px;
-        }
-        
-        .table-card::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-        
-        .money-in-row {
-            background-color: rgba(16, 185, 129, 0.05);
-        }
-        
-        .money-out-row {
-            background-color: rgba(225, 29, 72, 0.05);
-        }
-        
-        .money-total-row {
-            background-color: #f8fafc;
-            font-weight: 800;
-            border-top: 2px solid var(--border);
-        }
-        
-        .refunded-row {
-            background-color: #fff7ed !important;
-            opacity: 0.8;
-        }
-        
-        .refunded-badge {
-            background: #f59e0b;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 5px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            margin-left: 5px;
-        }
-        
-        .action-column {
-            width: 80px;
-            text-align: center;
-        }
-        
-        /* Shift History Mobile Styles */
-        @media (max-width: 768px) {
-            .shift-mobile-card {
-                background: white;
-                border-radius: 14px;
-                padding: 18px;
-                margin-bottom: 18px;
-                border: 1px solid var(--border);
-                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            }
-            
-            .shift-mobile-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 15px;
-                padding-bottom: 12px;
-                border-bottom: 1px solid var(--border);
-            }
-            
-            .shift-mobile-date {
-                font-weight: 800;
-                font-size: 0.95rem;
-                color: var(--text-main);
-            }
-            
-            .shift-mobile-status {
-                font-size: 0.75rem;
-                padding: 5px 10px;
-                border-radius: 8px;
-                font-weight: 700;
-            }
-            
-            .shift-mobile-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 12px;
-                margin-bottom: 18px;
-            }
-            
-            .shift-mobile-section {
-                background: #f8fafc;
-                padding: 12px;
-                border-radius: 10px;
-                border: 1px solid var(--border);
-            }
-            
-            .shift-mobile-section-title {
-                font-size: 0.75rem;
-                color: var(--text-dim);
-                font-weight: 700;
-                margin-bottom: 6px;
-                text-transform: uppercase;
-            }
-            
-            .mobile-shifts-container {
-                display: block;
-            }
-            
-            .shift-history-table-container {
-                display: none;
-            }
-        }
-        
-        /* Exchange note for gas sales */
-        .exchange-note {
-            background: #fffbeb;
-            border-left: 4px solid var(--gas);
-            padding: 12px;
-            margin: 12px 0;
-            border-radius: 8px;
-            font-size: 0.85rem;
-        }
-        
-        /* Branch name display in header */
-        .branch-name-display {
-            background: var(--primary);
-            color: white;
-            padding: 6px 14px;
-            border-radius: 30px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            border: 2px solid white;
-            box-shadow: 0 2px 10px rgba(79, 70, 229, 0.3);
-            margin-right: 10px;
-        }
-        
-        .branch-name-display i {
-            font-size: 0.9rem;
-        }
-        
-        /* Gas redirect notice */
-        .gas-redirect-notice {
-            background: #fef3c7;
-            border-left: 4px solid var(--warning);
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-weight: 600;
-            animation: pulse 2s infinite;
-        }
-        
-        .gas-redirect-notice i {
-            font-size: 1.5rem;
-            color: var(--warning);
-        }
-        
-        .gas-redirect-notice button {
-            background: var(--warning);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 30px;
-            font-weight: 700;
-            cursor: pointer;
-            margin-left: auto;
-            transition: all 0.2s;
-        }
-        
-        .gas-redirect-notice button:hover {
-            background: #d97706;
-            transform: scale(1.05);
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.8; }
-            100% { opacity: 1; }
-        }
-        
-        /* Success notification */
-        .success-notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: var(--success);
-            color: white;
-            padding: 15px 25px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
-            z-index: 9999;
-            animation: slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 700;
-            border-left: 5px solid #0f5c3e;
-            max-width: 350px;
-        }
-        
-        .success-notification i {
-            font-size: 1.5rem;
-        }
-        
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        
-        @keyframes fadeOut {
-            to { opacity: 0; transform: translateX(100%); }
-        }
-        
-        /* Loading spinner */
         .spinner {
             display: inline-block;
             width: 16px;
@@ -1457,465 +589,303 @@
             border-top-color: #fff;
             animation: spin 1s ease-in-out infinite;
         }
-        
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        /* Cache indicator */
-        .cache-indicator {
-            font-size: 0.6rem;
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
             color: var(--text-dim);
+        }
+
+        .gas-badge {
+            background: var(--gas);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.6rem;
+            font-weight: 700;
             margin-left: 5px;
         }
+        
+        .sale-type-badge {
+            background: #e2e8f0;
+            color: #334155;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            margin-left: 5px;
+        }
+        .sale-type-refill {
+            background: #ffedd5;
+            color: #9a3412;
+        }
+        .sale-type-complete {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .split-details-container {
+            margin-top: 5px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
     </style>
-```
 </head>
 <body>
 
-<!-- Refund Modal -->
-<div id="refund-modal" class="overlay refund-modal">
-    <div class="modal">
-        <h3 style="margin-top:0; font-size:1.2rem;">🔄 Process Refund</h3>
-        <div class="refund-item-info">
-            <div style="margin-bottom:5px;"><strong>Item:</strong> <span id="refund-item-name"></span></div>
-            <div style="margin-bottom:5px;"><strong>Original Amount:</strong> Ksh <span id="refund-original-amount"></span></div>
-            <div><strong>Quantity to Refund:</strong> <span id="refund-quantity"></span></div>
-        </div>
-        
-        <div class="refund-warning">
-            <i class="fas fa-exclamation-triangle"></i>
-            Please check the returned item's condition before processing refund.
-        </div>
-        
-        <div class="input-group">
-            <label style="font-size:0.8rem;">Refund Method</label>
-            <select id="refund-method" style="font-size:0.9rem;">
-                <option value="Cash">Cash</option>
-                <option value="Mpesa">Mpesa</option>
-                <option value="KCB Paybill">KCB Paybill</option>
-                <option value="KCB">KCB Float</option>
-                <option value="Equity">Equity Float</option>
-            </select>
-        </div>
-        
-        <div class="input-group">
-            <label style="font-size:0.8rem;">Refund Amount (Ksh)</label>
-            <input type="number" id="refund-amount" placeholder="Enter refund amount" style="font-size:0.9rem;">
-        </div>
-        
-        <div class="input-group">
-            <label style="font-size:0.8rem;">Refund Reason (Optional)</label>
-            <input type="text" id="refund-reason" placeholder="e.g., Damaged item, Wrong item" style="font-size:0.9rem;">
-        </div>
-        
-        <div class="refund-actions">
-            <button class="btn btn-danger" onclick="processRefund()">Process Refund</button>
-            <button class="btn" onclick="closeRefundModal()" style="background: #e2e8f0;">Cancel</button>
-        </div>
-    </div>
-</div>
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+<button class="menu-trigger" onclick="toggleMenu()">☰ MENU</button>
 
-<div class="guide-hand" id="onboardingHand">
-    <div class="guide-label">CLICK FOR MENU</div>
-    <span>👇</span>
-</div>
-
-<div class="nav-overlay" id="navBanner">
-    <button style="position:fixed; top:20px; right:20px; background:rgba(255,255,255,0.1); border:none; color:white; width:45px; height:45px; border-radius:50%; font-size:1.2rem; z-index: 3100;" onclick="toggleNav()">✕</button>
-    <div class="nav-header-title">CASHIER HUB</div>
-    <div class="nav-grid">
-        <a href="cashier.html" class="nav-card" style="background: var(--admin-accent)"><span>📊</span><small>Dashboard</small></a>
-        <a href="cashiergashub.html" class="nav-card"><span>⛽</span><small>Gas Hub</small></a>
-        <a href="cashier_inventory.html" class="nav-card"><span>➕</span><small>Add Stock</small></a>
-        <a href="moneyinout.html" class="nav-card"><span>💸</span><small>MONEY IN/OUT</small></a>
-        <a href="shift history cashier.html" class="nav-card"><span>⏳</span><small>Daily Shift History</small></a>
-        <a href="sales_reports.html" class="nav-card"><span>📈</span><small>Sales History</small></a>
-        <a href="low-stock-cashier.html" class="nav-card"><span>⚠️</span><small>View Low Stock</small></a>
-        <a href="debtors.html" class="nav-card"><span>👥</span><small>Record Debtors</small></a>
-        <a href="supplierscashier.html" class="nav-card"><span>🤝</span><small>Pay/View Suppliers</small></a>
-        <a href="sale edit cashier.html" class="nav-card"><span>✏️</span><small>Edit sales</small></a>
-        <a href="gas_delivery.html" class="nav-card"><span>🏍️</span><small>Delivery</small></a>
-        <a href="cashier_report.html" class="nav-card"><span>📝</span><small>Today's Report</small></a>
-          <a href="pos.html" class="nav-card"><span>🛒</span><small>Cart Shop</small></a>
-         <a href="cashierprofile.html" class="nav-card"><span>👤</span><small>Settings</small></a>
-        <a href="cashier.html" class="nav-card"><span>🏠</span><small>HOME</small></a>
-        <button onclick="logoutUser()" style="grid-column: span 2; margin-top:20px; background:var(--danger); color:white; border:none; padding:18px; border-radius:15px; font-weight:800;">🚪 LOGOUT SYSTEM</button>
-    </div>
-</div>
-
-<!-- Profile Dropdown -->
-<div class="profile-dropdown" id="profileDropdown">
-    <div class="profile-header">
-        <h4 id="profileUserName">Cashier</h4>
-        <p id="profileUserEmail">user@example.com</p>
-    </div>
-    <ul class="profile-menu">
-        <li><a href="cashierprofile.html"><i class="fas fa-user-cog"></i> Profile Settings</a></li>
-        <li><a href="#"><i class="fas fa-bell"></i> Notifications</a></li>
-        <li><a href="#"><i class="fas fa-history"></i> Activity Log</a></li>
-        <div class="profile-divider"></div>
-        <li><a href="#"><i class="fas fa-question-circle"></i> Help & Support</a></li>
-        <li><a href="#"><i class="fas fa-shield-alt"></i> Privacy & Security</a></li>
-    </ul>
-    <button class="logout-btn" onclick="logoutUser()">
-        <i class="fas fa-sign-out-alt"></i> Logout
-    </button>
-</div>
-
-<button class="fab-menu" onclick="toggleNav()">☰</button>
-
-<!-- Success Notification Container -->
-<div id="success-notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
-
-<div id="congrats-banner" class="congrats-msg">🎉 Perfect Shift!</div>
-
-<div class="container">
-    <!-- Compact Header with Branch Name -->
-    <div class="compact-header">
-        <div class="header-left">
-            <button class="profile-btn" id="profileBtn" onclick="toggleProfileDropdown()">
-                <i class="fas fa-user"></i>
-            </button>
-            <div class="logo-compact">CASHIER DASHBOARD</div>
-            <span id="branch-name-header" class="branch-name-display">
-                <i class="fas fa-store"></i> Loading...
-            </span>
-        </div>
-        <div class="header-right" id="shift-action-container">
-            <button class="btn" onclick="refreshData()" style="background: #e2e8f0; padding: 8px 12px; font-size: 0.8rem;">
-                <i class="fas fa-sync-alt"></i> Refresh
-            </button>
-        </div>
-    </div>
-
-    <div class="greeting-banner" id="greeting-banner">
-        <div class="greeting-text">
-            <h2 id="greeting-title">Welcome Back!</h2>
-            <p id="greeting-subtitle">Ready to start your shift?</p>
-        </div>
-        <div class="greeting-time" id="greeting-time"></div>
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h2>JEPE ADMIN</h2>
+        <button class="close-btn" onclick="toggleMenu()">×</button>
     </div>
     
-    <!-- OPENING FLOATS & LIVE SALES TRACKER -->
-    <div class="section-label">
-        <span style="display: flex; align-items: center; gap: 8px;">
-            Opening Floats & Live Sales Tracker
-        </span>
+    <div class="branch-info" id="sidebarBranchInfo">
+        <div class="branch-label">Your Assigned Branch</div>
+        <div class="branch-name" id="sidebarBranchName">
+            <i class="fas fa-store"></i>
+            <span>Loading...</span>
+        </div>
     </div>
     
-    <div class="float-status-card" id="float-status-card">
-        <div class="float-item" id="float-cash-item">
-            <label>Cash</label>
-            <span id="float-cash">0</span>
+    <nav class="nav-list">
+        <a href="admin.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+        <a href="gas_hub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
+        <a href="spares_hub.html" class="nav-link"><i class="fas fa-cogs"></i> <span>Spare Parts Hub</span></a>
+        <a href="motorbike_hub.html" class="nav-link"><i class="fas fa-motorcycle"></i> <span>Motorbike Hub</span></a>
+        <a href="tuktuk_hub.html" class="nav-link"><i class="fas fa-car-side"></i> <span>TUKTUK Hub</span></a>
+
+        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+
+        <a href="shift-history.html" class="nav-link"><i class="fas fa-history"></i> <span>Daily Shifts</span></a>
+        <a href="money-history.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
+        <a href="sales-history.html" class="nav-link active"><i class="fas fa-chart-line"></i> <span>Sales History</span></a>
+
+        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+
+        <a href="inventory.html" class="nav-link"><i class="fas fa-plus-circle"></i> <span>Add Stock</span></a>
+        <a href="sales_editor.html" class="nav-link"><i class="fas fa-edit"></i> <span>Edit Stock</span></a>
+        <a href="admin-debtors.html" class="nav-link"><i class="fas fa-users"></i> <span>Debtors</span></a>
+        <a href="low_stock.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
+        <a href="audit_trail.html" class="nav-link"><i class="fas fa-search"></i> <span>Inventory Track</span></a>
+
+        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
+
+        <a href="reports.html" class="nav-link"><i class="fas fa-file-alt"></i> <span>Reports</span></a>
+        <a href="price_audits.html" class="nav-link"><i class="fas fa-tags"></i> <span>Underpriced</span></a>
+        <a href="suppliers.html" class="nav-link"><i class="fas fa-handshake"></i> <span>Suppliers</span></a>
+        <a href="admin.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
+        
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <a href="#" onclick="handleLogout()" class="nav-link" style="color: var(--danger);">
+                <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+            </a>
         </div>
-        <div class="float-item" id="float-mpesa-item">
-            <label>Mpesa</label>
-            <span id="float-mpesa">0</span>
-        </div>
-        <div class="float-item" id="float-kcb-item">
-            <label>KCB Float</label>
-            <span id="float-kcb">0</span>
-        </div>
-        <div class="float-item" id="float-equity-item">
-            <label>Equity Float</label>
-            <span id="float-equity">0</span>
-        </div>
-        <div class="float-item kcb-live-box" id="kcb-live-item">
-            <label>Live KCB Paybill</label>
-            <span id="live-kcb-box">0</span>
-        </div>
+    </nav>
+</div>
+
+<div class="main-wrapper">
+    <div class="mobile-header">
+        <button onclick="toggleMenu()" style="background:none; border:none; color:white; font-size:1.5rem;">☰</button>
+        <div style="font-weight:800;">SALES HISTORY</div>
+        <div style="width:24px;"></div>
     </div>
 
-    <!-- Gas Redirect Notice (hidden by default) -->
-    <div id="gas-redirect-notice" class="gas-redirect-notice" style="display: none;">
-        <i class="fas fa-fire"></i>
-        <div style="flex: 1;">
-            <strong>Gas item detected!</strong> Gas sales must be processed in the dedicated Gas Hub for accurate cylinder tracking.
+    <div class="container">
+        <div style="margin-bottom: 25px;">
+            <h2 style="margin:0; font-weight:800; font-size: 1.5rem; letter-spacing: -1px;">Sales Transactions</h2>
+            <p style="color:var(--text-dim); margin-top:5px;">Complete history of all sales across all branches</p>
         </div>
-        <button onclick="redirectToGasHub()">
-            <i class="fas fa-arrow-right"></i> Go to Gas Hub
-        </button>
-    </div>
 
-    <div class="card">
-        <div class="section-label">Sale Item</div>
-        <form id="sale-form">
-            <div class="compact-form-grid">
-                <div class="input-group">
-                    <label>Search Item</label>
-                    <input type="text" id="pSearch" list="pList" placeholder="Find Item..." required autocomplete="off">
-                    <datalist id="pList"></datalist>
-                    <div style="display: flex; gap: 5px;">
-                        <span id="hint-stock" class="hint-badge bg-stock" style="display:none"></span>
-                        <span id="hint-min" class="hint-badge bg-min" style="display:none"></span>
-                    </div>
-                </div>
-                <div class="input-group"><label>Price (Ksh)</label><input type="number" id="pPrice" step="0.01" required></div>
-                <div class="input-group"><label>Qty</label><input type="number" id="pQty" value="1" min="1"></div>
-                <div class="input-group">
-                    <label>Method</label>
-                    <select id="pMethod" onchange="toggleSplitFields()">
-                        <option value="Cash">Cash (Shop)</option>
-                        <option value="KCB Paybill">KCB Paybill</option>
-                        <option value="Split">Split: Cash + KCB Paybill</option>
-                        <option value="Debt">Debtor (Owed)</option>
-                    </select>
+        <div class="branch-selector-container">
+            <div class="branch-filter">
+                <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
+                <select id="branchSelector" class="branch-select" onchange="handleBranchChange()">
+                    <option value="all">🏢 ALL BRANCHES (Consolidated)</option>
+                </select>
+            </div>
+            <div class="branch-badge" id="currentBranchBadge">
+                <i class="fas fa-store"></i>
+                <span id="currentBranchDisplay">ALL BRANCHES</span>
+            </div>
+            <span class="date-range" id="dateRange"></span>
+        </div>
+
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="summary-label">Total Sales</div>
+                <div class="summary-value primary" id="totalSales">Ksh 0</div>
+                <div class="summary-detail">
+                    <span>All transactions</span>
+                    <span id="totalTransactions">0</span>
                 </div>
             </div>
-
-            <!-- Exchange note for gas sales (initially hidden) -->
-            <div id="gas-exchange-note" class="exchange-note" style="display:none;">
-                <i class="fas fa-info-circle"></i> <strong>Gas Sale:</strong> Please ensure you collect empty cylinder from customer.
+            <div class="summary-card">
+                <div class="summary-label">Total Profit</div>
+                <div class="summary-value success" id="totalProfit">Ksh 0</div>
+                <div class="summary-detail">
+                    <span>Average margin</span>
+                    <span id="avgMargin">0%</span>
+                </div>
             </div>
-
-            <div id="split-fields" style="display: none; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; padding: 10px; background: #f8fafc; border-radius: 8px; border: 1px dashed var(--primary);">
-                <div class="input-group"><label>Cash Paid</label><input type="number" id="split-cash" placeholder="0.00" oninput="calculateSplit()"></div>
-                <div class="input-group"><label>Paybill Balance</label><input type="number" id="split-online" readonly style="background: #e2e8f0;"></div>
+            <div class="summary-card">
+                <div class="summary-label">Cash Sales</div>
+                <div class="summary-value" id="cashSales">Ksh 0</div>
+                <div class="summary-detail">
+                    <span>Transactions</span>
+                    <span id="cashCount">0</span>
+                </div>
             </div>
+            <div class="summary-card">
+                <div class="summary-label">KCB Paybill</div>
+                <div class="summary-value" id="kcbSales">Ksh 0</div>
+                <div class="summary-detail">
+                    <span>Transactions</span>
+                    <span id="kcbCount">0</span>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">M-Pesa</div>
+                <div class="summary-value" id="mpesaSales">Ksh 0</div>
+                <div class="summary-detail">
+                    <span>Transactions</span>
+                    <span id="mpesaCount">0</span>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Split Payments</div>
+                <div class="summary-value" id="splitSales">Ksh 0</div>
+                <div class="summary-detail">
+                    <span>Transactions</span>
+                    <span id="splitCount">0</span>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Items Sold</div>
+                <div class="summary-value warning" id="totalItems">0</div>
+                <div class="summary-detail">
+                    <span>Avg per sale</span>
+                    <span id="avgItems">0</span>
+                </div>
+            </div>
+        </div>
 
-            <button type="submit" id="submit-sale-btn" class="btn btn-primary" style="margin-top: 15px; width: 100%;">
-                RECORD ITEM Ksh <span id="total-text">0.00</span>
+        <div class="filter-bar">
+            <div class="filter-group">
+                <i class="fas fa-calendar"></i>
+                <input type="text" id="dateSearch" class="filter-input" placeholder="Search by date (e.g. 16 Feb 2026)">
+            </div>
+            <div class="filter-group">
+                <i class="fas fa-filter"></i>
+                <select id="paymentFilter" class="filter-select">
+                    <option value="all">All Payment Methods</option>
+                    <option value="Cash">Cash</option>
+                    <option value="KCB Paybill">KCB Paybill</option>
+                    <option value="Mpesa">M-Pesa</option>
+                    <option value="Bank">Bank</option>
+                    <option value="Debt">Debt</option>
+                    <option value="Split">Split</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <i class="fas fa-search"></i>
+                <input type="text" id="itemSearch" class="filter-input" placeholder="Search by item name...">
+            </div>
+            <button id="resetFilters" class="reset-btn">
+                <i class="fas fa-undo"></i> Reset
             </button>
-        </form>
-    </div>
-
-    <!-- DUAL TABLES SECTION -->
-    <div class="dual-tables">
-        <div>
-            <div class="section-label">TODAY'S SALES</div>
-            <div class="table-card" style="max-height: 350px; overflow-y: auto;">
-                <table class="today-sales-table">
-                    <thead class="mobile-hide-header">
-                        <tr>
-                            <th>Time</th>
-                            <th>Item</th>
-                            <th>Qty</th>
-                            <th>Total</th>
-                            <th>Method</th>
-                            <th class="action-column">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="live-sales-body"></tbody>
-                </table>
-            </div>
         </div>
 
-        <!-- MONEY IN/OUT RECORD SECTION - UPDATED WITH KCB PAYBILL OPTION -->
-        <div class="card">
-            <div class="section-label">MONEY IN/OUT RECORD</div>
-            <input type="number" id="exp-amt" placeholder="Amount" style="margin-bottom:12px; padding: 12px; border-radius: 8px;">
-            <select id="exp-type" style="margin-bottom:12px; padding: 12px; border-radius: 8px;">
-                <option value="Money Out">Money Out</option>
-                <option value="Money In">Money In</option>
-            </select>
-            <input type="text" id="exp-desc" placeholder="Reason (e.g. Loading Fee, Lunch)" style="width:100%; margin-bottom:12px; padding: 12px; border-radius: 8px;">
-            <select id="exp-method" style="width:100%; margin-bottom:15px; padding: 12px; border-radius: 8px;">
-                <option value="Cash">Cash</option>
-                <option value="Mpesa">Mpesa</option>
-                <option value="KCB Float">KCB Float</option>
-                <option value="Equity Float">Equity Float</option>
-                <option value="KCB Paybill" style="color: #2563eb; font-weight: 700;">💰 KCB Paybill (Live Box)</option>
-            </select>
-            <button id="record-expense-btn" class="btn btn-sync" style="width: 100%; padding: 14px; font-size: 0.9rem;">RECORD MONEY</button>
-        </div>
-    </div>
+        <input type="text" id="salesSearch" class="search-input" placeholder="🔍 Quick search by item, category, or payment method...">
 
-    <div class="section-label">TODAY'S MONEY IN/OUT HISTORY</div>
-    
-    <!-- Money In/Out Summary -->
-    <div id="money-summary-container">
-        <div class="money-summary-cards" id="money-summary-cards-full">
-            <div class="money-summary-card money-in-card">
-                <div class="money-summary-label">Total Money In</div>
-                <div class="money-summary-amount money-in-amount" id="total-money-in-full">Ksh 0</div>
-            </div>
-            <div class="money-summary-card money-out-card">
-                <div class="money-summary-label">Total Money Out</div>
-                <div class="money-summary-amount money-out-amount" id="total-money-out-full">Ksh 0</div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- MONEY IN/OUT HISTORY TABLE -->
-    <div class="table-card">
-        <table class="money-history-table">
-            <thead class="mobile-hide-header">
-                <tr>
-                    <th width="120">Time</th>
-                    <th width="200">Reason</th>
-                    <th width="120">Amount</th>
-                    <th width="100">Type</th>
-                    <th width="120">Wallet</th>
-                </tr>
-            </thead>
-            <tbody id="live-trans-body"></tbody>
-        </table>
-    </div>
-
-    <!-- BOTTOM SHIFT HISTORY TABLE -->
-    <div class="section-label">SHIFT AUDIT HISTORY</div>
-    
-    <div class="slide-indicator" id="scrollHint">
-        <span class="hand-icon">👉</span>
-        <span style="letter-spacing: 1px;">SWIPE/SLIDE TABLE BELOW TO VIEW ALL SHIFT DETAILS</span>
-    </div>
-
-    <input type="text" id="history-search" class="search-input" placeholder="Search by date (e.g. 10 Jan 2026)...">
-
-    <!-- Desktop Table View -->
-    <div class="table-card shift-history-table-container">
-        <div class="table-container" id="scrollContainer">
-            <table class="shift-history-table">
+        <div class="data-card-container">
+            <table id="sales-table">
                 <thead>
                     <tr>
-                        <th width="160">DATE</th>
-                        <th width="210">OPENING FLOATS</th>
-                        <th width="210">PAYMENT METHOD</th>
-                        <th width="190">MONEY IN/OUT</th>
-                        <th width="210">CLOSING FLOATS</th>
-                        <th width="190">VARIANCE</th>
-                        <th width="200">VARIANCE REASON</th>
+                        <th>Date & Time</th>
+                        <th>Item Details</th>
+                        <th>Qty</th>
+                        <th>Total Amount</th>
+                        <th>Cost</th>
+                        <th>Profit</th>
+                        <th>Method</th>
+                        <th>Branch</th>
                     </tr>
                 </thead>
-                <tbody id="history-body"></tbody>
+                <tbody id="data-body">
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px;">
+                            <div class="spinner" style="margin: 0 auto;"></div>
+                            Loading transactions...
+                        </td>
+                    </tr>
+                </tbody>
             </table>
+            <button id="loadMore" class="btn-load">LOAD MORE TRANSACTIONS</button>
         </div>
-    </div>
-
-    <!-- Mobile Card View Container -->
-    <div id="mobile-shifts-container" class="mobile-shifts-container"></div>
-
-    <div style="text-align: center; padding: 15px;">
-        <button id="load-more-btn" class="btn" style="background: #e2e8f0; color: #1e293b; margin: auto; font-size: 0.85rem;">LOAD MORE HISTORY</button>
-    </div>
-</div>
-
-<!-- Start Shift Modal -->
-<div id="open-modal" class="overlay">
-    <div class="modal">
-        <h3 style="margin-top:0; font-size:1.3rem;">🚀 Start Shift</h3>
-        <div class="grid-inputs" style="grid-template-columns: 1fr 1fr;">
-            <div class="input-group"><label>Actual Cash</label><input type="number" id="o-cash" value="0"></div>
-            <div class="input-group"><label>Mpesa Float</label><input type="number" id="o-mpesa" value="0"></div>
-            <div class="input-group"><label>KCB Float</label><input type="number" id="o-kcb" value="0"></div>
-            <div class="input-group"><label>Equity Float</label><input type="number" id="o-equity" value="0"></div>
-        </div>
-        <button class="btn btn-primary start-btn-large" style="margin-top:20px; width:100%" id="confirm-open">🚀 START DAY</button>
-    </div>
-</div>
-
-<!-- Close Shift Modal -->
-<div id="close-modal" class="overlay">
-    <div class="modal">
-        <h3 style="color:var(--danger); margin-top:0; font-size:1.3rem;">🔒 End Day</h3>
-        <div class="grid-inputs" style="grid-template-columns: 1fr 1fr;">
-            <div class="input-group"><label>Actual Mpesa</label><input type="number" id="c-mpesa" value="0"></div>
-            <div class="input-group"><label>Actual KCB Float</label><input type="number" id="c-kcb" value="0"></div>
-            <div class="input-group"><label>Actual Equity</label><input type="number" id="c-equity" value="0"></div>
-            <div class="input-group">
-                <label>Actual KCB Paybill</label>
-                <input type="number" id="c-bank" value="0" readonly style="background:#f1f5f9; font-weight:bold; color:var(--primary);">
-            </div>
-            <div class="input-group" style="grid-column: span 2;"><label>Actual Cash</label><input type="number" id="c-cash" value="0"></div>
-        </div>
-        <button class="btn btn-danger" style="margin-top:20px; width:100%" id="confirm-close">FINALIZE & CLOSE</button>
     </div>
 </div>
 
 <script type="module">
     import { supabase } from './auth.js';
-
-    let inventory = [];
-    let currentShift = null;
-    let selectedItem = null;
-    let historyLimit = 10;
-    let allShifts = [];
-    let allTransactions = [];
-    let allSales = [];
-    let currentKcbSalesTotal = 0;
-    let currentUser = null;
-    let timeCheckInterval = null;
-    let alertSoundPlayed = false;
-    let audioContext = null;
-    let refundingSale = null;
-    let currentUserProfile = null;
-    let currentBranchId = null;
-    let branches = {};
     
-    // Flag to prevent multiple gas redirect triggers
-    let gasRedirectActive = false;
-    // Store processed sale IDs to prevent duplicates
-    let processedSaleIds = new Set();
+    let limit = 50;
+    let allSales = [];
+    let filteredSales = [];
+    let currentUser = null;
+    let currentBranchId = null;
+    let currentBranch = null;
+    let selectedBranchId = null;
+    let branches = {};
+    let branchIdMap = {};
+    let productsMap = {};
 
-    // ============================================
-    // GET BRANCH ID FROM URL PARAMETER
-    // ============================================
-    function getBranchIdFromUrl() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const branchId = urlParams.get('branch');
-        console.log("Branch ID from URL:", branchId);
-        return branchId;
-    }
+    let paymentFilter = 'all';
+    let dateSearchTerm = '';
+    let itemSearchTerm = '';
+    let quickSearchTerm = '';
 
-    // ============================================
-    // BRANCH-AWARE HELPER FUNCTIONS
-    // ============================================
-
-    function getCurrentBranchId() {
-        const urlBranchId = getBranchIdFromUrl();
-        if (urlBranchId) {
-            console.log("Using branch ID from URL:", urlBranchId);
-            return urlBranchId;
-        }
-        
-        const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
-        return session.branch?.id || currentBranchId;
-    }
-
-    function isAdmin() {
-        const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
-        return session.role === 'admin';
-    }
+    window.toggleMenu = function() {
+        document.getElementById('sidebar').classList.toggle('mobile-active');
+        document.getElementById('overlay').classList.toggle('active');
+    };
 
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
         branches = {};
+        branchIdMap = {};
+        
+        const selector = document.getElementById('branchSelector');
+        let options = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>';
         data?.forEach(b => {
             branches[b.id] = b;
+            branchIdMap[b.code] = b.id;
+            options += `<option value="${b.code}">🏪 ${b.name}</option>`;
         });
+        selector.innerHTML = options;
+        
         return branches;
+    }
+
+    function getBranchIdFromCode(code) {
+        return branchIdMap[code] || null;
     }
 
     async function loadUserProfile() {
         try {
-            const { data: { user }, error } = await supabase.auth.getUser();
-            
-            if (error || !user) {
-                console.log("No authenticated user found, but checking for existing session");
-                
-                const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
-                if (session.user && session.profile) {
-                    console.log("Using session from localStorage");
-                    currentUser = session.user;
-                    currentUserProfile = session.profile;
-                    
-                    const urlBranchId = getBranchIdFromUrl();
-                    if (urlBranchId) {
-                        currentBranchId = urlBranchId;
-                    } else {
-                        currentBranchId = session.branch?.id || session.profile.branch_id;
-                    }
-                    
-                    return session.profile;
-                }
-                
-                console.log("No session found, redirecting to login");
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
                 window.location.href = 'index.html';
                 return null;
             }
             
             currentUser = user;
             
-            const { data: profile, error: profileError } = await supabase
+            const { data: profile, error } = await supabase
                 .from('profiles')
                 .select(`
                     *,
@@ -1927,20 +897,12 @@
                     )
                 `)
                 .eq('id', user.id)
-                .single();
+                .maybeSingle();
             
-            if (profileError) throw profileError;
+            if (error) throw error;
             
-            currentUserProfile = profile;
-            
-            const urlBranchId = getBranchIdFromUrl();
-            if (urlBranchId) {
-                currentBranchId = urlBranchId;
-                console.log("Using branch from URL for cashier:", currentBranchId);
-            } else {
-                currentBranchId = profile.branch_id;
-                console.log("Using user's assigned branch:", currentBranchId);
-            }
+            currentBranchId = profile.branch_id;
+            currentBranch = profile.branches;
             
             const session = {
                 user: user,
@@ -1950,1431 +912,489 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
-            return profile;
-        } catch (error) {
-            console.error("Error loading profile:", error);
-            
-            const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
-            if (session.user && session.profile) {
-                console.log("Using session from localStorage after error");
-                currentUser = session.user;
-                currentUserProfile = session.profile;
-                
-                const urlBranchId = getBranchIdFromUrl();
-                if (urlBranchId) {
-                    currentBranchId = urlBranchId;
-                } else {
-                    currentBranchId = session.branch?.id || session.profile.branch_id;
-                }
-                
-                return session.profile;
+            const sidebarBranchName = document.querySelector('#sidebarBranchName span');
+            if (profile.branches && sidebarBranchName) {
+                sidebarBranchName.textContent = profile.branches.name;
             }
             
+            return profile;
+        } catch (error) {
+            console.error("❌ Error loading profile:", error);
             return null;
         }
     }
 
-    function showSuccessNotification(message, details = '') {
-        const container = document.getElementById('success-notification-container');
-        if (!container) return;
+    window.handleBranchChange = async function() {
+        const selector = document.getElementById('branchSelector');
+        const selectedCode = selector.value;
         
-        const notification = document.createElement('div');
-        notification.className = 'success-notification';
+        const branchDisplay = document.getElementById('currentBranchDisplay');
+        const dateRange = document.getElementById('dateRange');
         
-        let icon = '✅';
-        if (message.includes('Shift started')) icon = '🚀';
-        else if (message.includes('Shift closed')) icon = '🔒';
-        else if (message.includes('Gas')) icon = '⛽';
-        else if (message.includes('Money')) icon = '💰';
-        else if (message.includes('Refund')) icon = '🔄';
-        else if (message.includes('refreshed')) icon = '🔄';
-        else if (message.includes('Debt')) icon = '📝';
-        
-        notification.innerHTML = `
-            <i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
-            <div style="flex: 1;">
-                <div style="font-weight: 800;">${icon} ${message}</div>
-                ${details ? `<div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">${details}</div>` : ''}
-            </div>
-        `;
-        
-        container.appendChild(notification);
-        setTimeout(() => notification.remove(), 3000);
-    }
-
-    // ============================================
-    // REDIRECT TO GAS HUB - PREVENTS ANY BACKGROUND PROCESSING
-    // ============================================
-    window.redirectToGasHub = function() {
-        if (gasRedirectActive) {
-            console.log("Gas redirect already active, ignoring...");
-            return;
+        if (selectedCode === 'all') {
+            branchDisplay.textContent = 'ALL BRANCHES';
+            selectedBranchId = null;
+            dateRange.textContent = 'Showing all branches';
+        } else {
+            const branchId = getBranchIdFromCode(selectedCode);
+            if (branchId) {
+                selectedBranchId = branchId;
+                branchDisplay.textContent = branches[branchId].name;
+                dateRange.textContent = `Showing ${branches[branchId].name} only`;
+            }
         }
         
-        gasRedirectActive = true;
-        const branchId = getCurrentBranchId();
-        
-        // Clear any pending form submissions
-        const submitBtn = document.getElementById('submit-sale-btn');
-        if (submitBtn) {
-            submitBtn.disabled = true;
-        }
-        
-        // Clear selected item to prevent any accidental processing
-        selectedItem = null;
-        
-        const targetUrl = branchId ? `cashiergashub.html?branch=${branchId}` : 'cashiergashub.html';
-        
-        showSuccessNotification('Redirecting to Gas Hub', 'Please process gas sales there');
-        
-        // Use a slight delay to ensure all pending operations are cancelled
-        setTimeout(() => {
-            window.location.href = targetUrl;
-        }, 300);
+        await fetchSales();
     };
 
-    window.openRefundModal = function(sale) {
-        refundingSale = sale;
-        document.getElementById('refund-item-name').textContent = sale.item_name || 'Unknown Item';
-        document.getElementById('refund-original-amount').textContent = sale.total_amount.toLocaleString();
-        document.getElementById('refund-quantity').textContent = sale.quantity;
-        document.getElementById('refund-amount').value = sale.total_amount;
-        document.getElementById('refund-reason').value = '';
-        document.getElementById('refund-modal').style.display = 'flex';
-    };
-
-    window.closeRefundModal = function() {
-        document.getElementById('refund-modal').style.display = 'none';
-        refundingSale = null;
-    };
-
-    window.processRefund = async function() {
-        if (!refundingSale || !currentShift) return;
-        
-        const refundMethod = document.getElementById('refund-method').value;
-        const refundAmount = parseFloat(document.getElementById('refund-amount').value);
-        const refundReason = document.getElementById('refund-reason').value || 'Item return';
-        const branchId = getCurrentBranchId();
-        
-        if (!refundAmount || refundAmount <= 0) {
-            alert("Please enter a valid refund amount");
-            return;
-        }
-        
-        if (refundAmount > refundingSale.total_amount) {
-            alert("Refund amount cannot exceed original sale amount");
-            return;
-        }
-        
-        const confirmed = confirm(
-            `Confirm Refund:\n\n` +
-            `Item: ${refundingSale.item_name}\n` +
-            `Amount: Ksh ${refundAmount.toLocaleString()}\n` +
-            `Method: ${refundMethod}\n\n` +
-            `This will deduct from ${refundMethod} and return stock.`
-        );
-        
-        if (!confirmed) return;
-        
-        const submitBtn = document.querySelector('#refund-modal .btn-danger');
-        const originalBtnText = submitBtn.innerHTML;
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner"></span> PROCESSING...';
-        
+    async function fetchProducts() {
         try {
-            const { error: saleError } = await supabase.from('sales').insert([{
-                shift_id: currentShift.id,
-                product_id: refundingSale.product_id,
-                item_name: `REFUND: ${refundingSale.item_name}`,
-                part_type: refundingSale.part_type,
-                quantity: -refundingSale.quantity,
-                unit_price: refundingSale.unit_price,
-                total_amount: -refundAmount,
-                payment_method: refundMethod,
-                cost_price: refundingSale.cost_price || 0,
-                amount: -refundAmount,
-                category: refundingSale.category,
-                user_id: currentUser.id,
-                weight_category: refundingSale.weight_category,
-                discount_reason: refundReason,
-                refunded: true,
-                refund_method: refundMethod,
-                refund_reason: refundReason,
-                refunded_at: new Date().toISOString(),
-                branch_id: branchId
-            }]);
-            
-            if (saleError) throw saleError;
-            
-            const { error: updateError } = await supabase.from('sales')
-                .update({ 
-                    refunded: true,
-                    refund_method: refundMethod,
-                    refund_reason: refundReason,
-                    refunded_at: new Date().toISOString()
-                })
-                .eq('id', refundingSale.id);
-            
-            if (updateError) throw updateError;
-            
-            const { error: transError } = await supabase.from('cash_transactions').insert([{
-                shift_id: currentShift.id,
-                type: 'Money Out',
-                category: refundMethod,
-                amount: refundAmount,
-                description: `Refund: ${refundingSale.item_name}${refundReason ? ' - ' + refundReason : ''}`,
-                branch_id: branchId,
-                user_id: currentUser.id
-            }]);
-            
-            if (transError) throw transError;
-            
-            const { data: product } = await supabase.from('products')
-                .select('stock_quantity')
-                .eq('id', refundingSale.product_id)
-                .single();
-            
-            if (product) {
-                const newStock = product.stock_quantity + refundingSale.quantity;
-                const { error: stockError } = await supabase.from('products')
-                    .update({ stock_quantity: newStock })
-                    .eq('id', refundingSale.product_id);
-                
-                if (stockError) throw stockError;
-            }
-            
-            closeRefundModal();
-            await fetchInventory();
-            await loadShiftData();
-            
-            showSuccessNotification('Refund processed successfully!', `Ksh ${refundAmount.toLocaleString()} refunded via ${refundMethod}`);
-            
-        } catch (error) {
-            console.error("Refund error:", error);
-            alert("Error processing refund: " + error.message);
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalBtnText;
-        }
-    };
-
-    window.toggleProfileDropdown = function() {
-        const dropdown = document.getElementById('profileDropdown');
-        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-    };
-
-    document.addEventListener('click', function(event) {
-        const dropdown = document.getElementById('profileDropdown');
-        const profileBtn = document.getElementById('profileBtn');
-        
-        if (profileBtn && !profileBtn.contains(event.target) && dropdown && !dropdown.contains(event.target)) {
-            dropdown.style.display = 'none';
-        }
-    });
-
-    function checkLowFloats() {
-        const floatItems = [
-            { id: 'float-cash-item', element: document.getElementById('float-cash'), value: parseFloat(document.getElementById('float-cash')?.innerText.replace(/,/g, '')) || 0 },
-            { id: 'float-mpesa-item', element: document.getElementById('float-mpesa'), value: parseFloat(document.getElementById('float-mpesa')?.innerText.replace(/,/g, '')) || 0 },
-            { id: 'float-kcb-item', element: document.getElementById('float-kcb'), value: parseFloat(document.getElementById('float-kcb')?.innerText.replace(/,/g, '')) || 0 },
-            { id: 'float-equity-item', element: document.getElementById('float-equity'), value: parseFloat(document.getElementById('float-equity')?.innerText.replace(/,/g, '')) || 0 }
-        ];
-
-        floatItems.forEach(item => {
-            const floatItemElement = document.getElementById(item.id);
-            
-            if (floatItemElement) {
-                floatItemElement.classList.remove('low-float-warning', 'danger-alert');
-                
-                if (item.value < 2000 && item.value > 0) {
-                    floatItemElement.classList.add('danger-alert');
-                } else if (item.value < 5000 && item.value > 0) {
-                    floatItemElement.classList.add('low-float-warning');
-                }
-            }
-        });
-    }
-
-    window.refreshData = async function() {
-        const btn = event.target.closest('button');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="spinner"></span>';
-        btn.disabled = true;
-        
-        await Promise.all([
-            fetchInventory(),
-            loadShiftData(),
-            loadHistory()
-        ]);
-        
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-        showSuccessNotification('Data refreshed successfully!');
-    };
-
-    const productSubscription = supabase
-        .channel('inventory-sync')
-        .on('postgres_changes', { 
-            event: '*', 
-            schema: 'public', 
-            table: 'products',
-            filter: `branch_id=eq.${getCurrentBranchId()}`
-        }, (payload) => {
-            console.log("Database Change Detected. Syncing...");
-            fetchInventory(); 
-        })
-        .subscribe();
-
-    async function fetchInventory() {
-        try {
-            const branchId = getCurrentBranchId();
-            if (!branchId) {
-                console.error("No branch ID found");
-                return;
-            }
-            
-            console.log("Fetching inventory for branch:", branchId);
-            
             const { data } = await supabase
                 .from('products')
-                .select('*')
-                .eq('branch_id', branchId);
-                
-            if (data) {
-                inventory = data;
-                refreshProductDatalist();
-                
-                if (selectedItem) {
-                    const updated = inventory.find(p => p.id === selectedItem.id);
-                    if (updated) {
-                        selectedItem = updated;
-                        updateStockDisplay(updated);
-                    }
-                }
-            }
-        } catch (error) {
-            console.error("Error fetching inventory:", error);
-        }
-    }
-
-    function updateStockDisplay(item) {
-        const hStock = document.getElementById('hint-stock');
-        if (hStock) {
-            if (item.category === 'Gas') {
-                hStock.innerText = `Full: ${item.stock_quantity} | Empty: ${item.empty_quantity || 0}`;
-            } else {
-                hStock.innerText = `Stock: ${item.stock_quantity}`;
-            }
-            hStock.style.display = 'inline-block';
-
-            if (item.stock_quantity <= 0) {
-                hStock.innerText = item.category === 'Gas' ? "OUT OF FULL STOCK" : "OUT OF STOCK";
-                hStock.classList.add('low-stock-alert');
-            } else if (item.stock_quantity < 5) {
-                hStock.classList.add('low-stock-alert');
-            } else {
-                hStock.classList.remove('low-stock-alert');
-            }
-        }
-    }
-
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            init();
-            checkLowFloats();
-        }
-    });
-
-    window.toggleNav = () => {
-        document.getElementById('navBanner').classList.toggle('active');
-        const onboardingHand = document.getElementById('onboardingHand');
-        if (onboardingHand) onboardingHand.style.display = 'none';
-        sessionStorage.setItem('menuClicked', 'true');
-        
-        const dropdown = document.getElementById('profileDropdown');
-        if (dropdown) dropdown.style.display = 'none';
-    };
-
-    window.logoutUser = async () => { 
-        localStorage.removeItem('pos_session');
-        await supabase.auth.signOut(); 
-        location.href = 'index.html'; 
-    };
-
-    window.toggleSplitFields = () => {
-        const method = document.getElementById('pMethod').value;
-        const splitFields = document.getElementById('split-fields');
-        if (splitFields) {
-            splitFields.style.display = (method === 'Split') ? 'grid' : 'none';
-        }
-        if(method === 'Split') calculateSplit();
-    };
-
-    window.calculateSplit = () => {
-        const total = parseFloat(document.getElementById('pPrice').value || 0) * parseInt(document.getElementById('pQty').value || 0);
-        const cash = parseFloat(document.getElementById('split-cash').value || 0);
-        const splitOnline = document.getElementById('split-online');
-        if (splitOnline) {
-            splitOnline.value = (total - cash).toFixed(2);
-        }
-    };
-
-    function updateGreeting() {
-        const hour = new Date().getHours();
-        const greetingTitle = document.getElementById('greeting-title');
-        const greetingSubtitle = document.getElementById('greeting-subtitle');
-        const greetingTime = document.getElementById('greeting-time');
-        
-        let greeting = '';
-        if (hour < 12) {
-            greeting = 'Good Morning';
-        } else if (hour < 17) {
-            greeting = 'Good Afternoon';
-        } else {
-            greeting = 'Good Evening';
-        }
-        
-        if (greetingTitle) greetingTitle.textContent = greeting + '!';
-        if (greetingSubtitle) {
-            if (currentShift) {
-                greetingSubtitle.textContent = 'Your shift is active. Keep up the great work!';
-            } else {
-                greetingSubtitle.textContent = 'Ready to start your shift?';
-            }
-        }
-        if (greetingTime) {
-            greetingTime.textContent = new Date().toLocaleString('en-GB', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
+                .select('id, cost_price, complete_cost, category, name, weight_category');
+            
+            productsMap = {};
+            data?.forEach(p => {
+                productsMap[p.id] = p;
             });
-        }
-    }
-
-    async function checkForOpenShift(branchId) {
-        const { data } = await supabase
-            .from('daily_shifts')
-            .select('*')
-            .eq('branch_id', branchId)
-            .eq('status', 'Open')
-            .maybeSingle();
-        
-        return data;
-    }
-
-    async function init() {
-        try {
-            await loadBranches();
-            
-            const profile = await loadUserProfile();
-            if (!profile) {
-                return;
-            }
-            
-            const branchId = getCurrentBranchId();
-            console.log("Current branch ID for cashier:", branchId);
-
-            const branchNameHeader = document.getElementById('branch-name-header');
-            if (branchNameHeader && branchId && branches[branchId]) {
-                branchNameHeader.innerHTML = `<i class="fas fa-store"></i> ${branches[branchId].name}`;
-            }
-
-            updateGreeting();
-            setInterval(updateGreeting, 60000);
-
-            try {
-                const [prodRes, shiftRes] = await Promise.all([
-                    supabase.from('products').select('*').eq('branch_id', branchId),
-                    supabase.from('daily_shifts')
-                        .select('*')
-                        .eq('branch_id', branchId)
-                        .eq('status', 'Open')
-                        .maybeSingle()
-                ]);
-
-                inventory = prodRes.data || [];
-                refreshProductDatalist();
-
-                const actionBtnContainer = document.getElementById('shift-action-container');
-                if (shiftRes.data) {
-                    currentShift = shiftRes.data;
-                    actionBtnContainer.innerHTML = `
-                        <button class="btn btn-danger special-action-btn" onclick="showCloseModal()">🔴 CLOSE DAY</button>
-                        <button class="btn" onclick="refreshData()" style="background: #e2e8f0; padding: 8px 12px; font-size: 0.8rem;">
-                            <i class="fas fa-sync-alt"></i> Refresh
-                        </button>
-                    `;
-                    
-                    const floatCash = document.getElementById('float-cash');
-                    const floatMpesa = document.getElementById('float-mpesa');
-                    const floatKcb = document.getElementById('float-kcb');
-                    const floatEquity = document.getElementById('float-equity');
-                    
-                    if (floatCash) floatCash.innerText = (currentShift.open_cash || 0).toLocaleString();
-                    if (floatMpesa) floatMpesa.innerText = (currentShift.open_mpesa || 0).toLocaleString();
-                    if (floatKcb) floatKcb.innerText = (currentShift.open_kcb || 0).toLocaleString();
-                    if (floatEquity) floatEquity.innerText = (currentShift.open_equity || 0).toLocaleString();
-                    
-                    await loadShiftData();
-                    updateGreeting();
-                    
-                    setTimeout(checkLowFloats, 500);
-                } else {
-                    actionBtnContainer.innerHTML = `
-                        <button class="btn btn-primary special-action-btn start-btn-large" onclick="document.getElementById('open-modal').style.display='flex'">🚀 START DAY</button>
-                        <button class="btn" onclick="refreshData()" style="background: #e2e8f0; padding: 8px 12px; font-size: 0.8rem;">
-                            <i class="fas fa-sync-alt"></i> Refresh
-                        </button>
-                    `;
-                }
-                await loadHistory();
-            } catch (error) {
-                console.error("Error initializing:", error);
-            }
         } catch (error) {
-            console.error("Error in init:", error);
+            console.error("Error fetching products:", error);
         }
     }
 
-    function refreshProductDatalist() {
-        const pList = document.getElementById('pList');
-        if (pList) {
-            pList.innerHTML = inventory.map(p => `<option value="${formatItemName(p)}">`).join('');
-        }
-    }
-
-    function formatItemName(p) {
-        let name = p.name;
-        if (p.category === 'Gas' && p.weight_category) name += ` (${p.weight_category})`;
-        if (p.part_type && p.part_type !== 'N/A') name += ` [${p.part_type}]`;
-        return name;
-    }
-
-    document.getElementById('pSearch').addEventListener('input', (e) => {
-        selectedItem = inventory.find(p => formatItemName(p) === e.target.value);
+    function groupSplitSales(sales) {
+        const groups = {};
+        const regularSales = [];
         
-        const notice = document.getElementById('gas-redirect-notice');
-        if (notice) notice.style.display = 'none';
-        
-        gasRedirectActive = false;
-        
-        if (selectedItem) {
-            const pPrice = document.getElementById('pPrice');
-            const hintMin = document.getElementById('hint-min');
-            const gasExchangeNote = document.getElementById('gas-exchange-note');
-            
-            if (pPrice) pPrice.value = selectedItem.selling_price;
-            if (hintMin) {
-                hintMin.innerText = `Min: ${selectedItem.min_price || 0}`;
-                hintMin.style.display = 'inline-block';
-            }
-            
-            updateStockDisplay(selectedItem);
-            updateTotal();
-            
-            if (selectedItem.category === 'Gas') {
-                gasExchangeNote.style.display = 'block';
-                if (notice) {
-                    notice.style.display = 'flex';
-                    const noticeText = notice.querySelector('div');
-                    if (noticeText) {
-                        noticeText.innerHTML = '<strong>⛽ GAS ITEM DETECTED!</strong> Gas sales cannot be processed here. Use the Gas Hub for cylinder tracking.';
-                    }
+        sales.forEach(sale => {
+            if (sale.item_name && sale.item_name.includes('(Split-')) {
+                const baseName = sale.item_name.replace(/\s*\(Split-[^)]+\)/g, '');
+                const key = sale.created_at + '-' + baseName;
+                if (!groups[key]) {
+                    groups[key] = [];
                 }
-                const submitBtn = document.getElementById('submit-sale-btn');
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.style.opacity = '0.6';
-                    submitBtn.title = 'Gas items must be sold in Gas Hub';
-                }
+                groups[key].push(sale);
             } else {
-                gasExchangeNote.style.display = 'none';
-                if (notice) notice.style.display = 'none';
-                const submitBtn = document.getElementById('submit-sale-btn');
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.style.opacity = '1';
-                    submitBtn.title = '';
-                }
+                regularSales.push(sale);
             }
-        } else {
-            document.getElementById('gas-exchange-note').style.display = 'none';
-            const submitBtn = document.getElementById('submit-sale-btn');
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.style.opacity = '1';
-                submitBtn.title = '';
-            }
-        }
-    });
+        });
 
-    function updateTotal() {
-        const price = parseFloat(document.getElementById('pPrice').value || 0);
-        const qty = parseInt(document.getElementById('pQty').value || 0);
-        const totalText = document.getElementById('total-text');
-        if (totalText) {
-            totalText.innerText = (price * qty).toLocaleString();
-        }
-        if (document.getElementById('pMethod').value === 'Split') calculateSplit();
+        return { groups, regularSales };
     }
 
-    document.getElementById('pPrice').addEventListener('input', updateTotal);
-    document.getElementById('pQty').addEventListener('input', updateTotal);
-
-    document.getElementById('sale-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('submit-sale-btn');
-        const branchId = getCurrentBranchId();
-        
-        if (!currentShift) {
-            alert("❌ You must open a shift first before making sales!");
-            return;
-        }
-        
-        if (!selectedItem) {
-            alert("Select a valid item.");
-            return;
-        }
-
-        // CRITICAL: GAS ITEM DETECTION - COMPLETE BLOCK - NO PROCESSING ALLOWED
-        if (selectedItem.category === 'Gas') {
-            const notice = document.getElementById('gas-redirect-notice');
-            if (notice) {
-                notice.style.display = 'flex';
-                notice.style.animation = 'pulse 0.5s ease-in-out 2';
-                setTimeout(() => {
-                    notice.style.animation = '';
-                }, 1000);
-            }
-            
-            alert("⛽ GAS ITEMS CANNOT BE SOLD HERE!\n\nPlease use the GAS HUB for all gas sales to ensure proper cylinder tracking and avoid duplicate records.\n\nYou will be redirected to the Gas Hub.");
-            
-            document.getElementById('pSearch').value = '';
-            selectedItem = null;
-            
-            redirectToGasHub();
-            return;
-        }
-
-        const price = parseFloat(document.getElementById('pPrice').value);
-        const qty = parseInt(document.getElementById('pQty').value);
-        const total = price * qty;
-        const method = document.getElementById('pMethod').value;
-
-        if (price < (selectedItem.min_price || 0)) {
-            const discReason = prompt(`Price below Min. Reason:`);
-            if (!discReason) return;
-            selectedItem.tempReason = discReason;
-        }
-
-        if (qty > selectedItem.stock_quantity) {
-            alert("Insufficient stock!");
-            return;
-        }
-
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> RECORDING...';
-
-        let salesToInsert = [];
-        const baseSale = {
-            shift_id: currentShift.id,
-            product_id: selectedItem.id,
-            quantity: qty, 
-            unit_price: price, 
-            cost_price: selectedItem.cost_price || 0,
-            part_type: selectedItem.part_type || 'N/A', 
-            discount_reason: selectedItem.tempReason || "",
-            user_id: currentUser.id,
-            category: selectedItem.category,
-            weight_category: selectedItem.weight_category,
-            branch_id: branchId
-        };
-
-        if (method === 'Split') {
-            const cashAmt = parseFloat(document.getElementById('split-cash').value || 0);
-            const onlineAmt = total - cashAmt;
-            salesToInsert.push({ ...baseSale, item_name: `${formatItemName(selectedItem)} (Split-C)`, total_amount: cashAmt, payment_method: 'Cash' });
-            salesToInsert.push({ ...baseSale, item_name: `${formatItemName(selectedItem)} (Split-O)`, quantity: 0, total_amount: onlineAmt, payment_method: 'KCB Paybill' });
-        } else {
-            salesToInsert.push({ ...baseSale, item_name: formatItemName(selectedItem), total_amount: total, payment_method: method });
-        }
-
-        try {
-            const { data: sData, error } = await supabase
-                .from('sales')
-                .insert(salesToInsert)
-                .select();
-            
-            if (error) throw error;
-
-            const newStock = selectedItem.stock_quantity - qty;
-            const { error: updateError } = await supabase
-                .from('products')
-                .update({ stock_quantity: newStock })
-                .eq('id', selectedItem.id);
-            
-            if (updateError) throw updateError;
-
-            if(method === "Debt") {
-                const customerName = prompt("Customer Name (required):");
-                if(!customerName) {
-                    alert("❌ Customer name is required for debt sales!");
-                    btn.disabled = false;
-                    btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
-                    return;
-                }
-                
-                const customerPhone = prompt("Customer Phone (optional):", "");
-                
-                const { error: debtError } = await supabase.from('debtors').insert([{ 
-                    customer_name: customerName,
-                    customer_phone: customerPhone || null,
-                    product_id: selectedItem.id,
-                    amount_owed: total,
-                    branch_id: branchId,
-                    status: 'Unpaid'
-                }]);
-                
-                if (debtError) {
-                    console.error("Error recording debt:", debtError);
-                    alert("⚠️ Sale recorded but debt entry failed: " + debtError.message);
-                } else {
-                    console.log("✅ Debt recorded successfully for:", customerName);
-                }
-            }
-
-            await fetchInventory(); 
-            await loadShiftData();
-            
-            document.getElementById('sale-form').reset();
-            document.getElementById('pSearch').value = '';
-            
-            const hintStock = document.getElementById('hint-stock');
-            const hintMin = document.getElementById('hint-min');
-            const totalText = document.getElementById('total-text');
-            const gasExchangeNote = document.getElementById('gas-exchange-note');
-            
-            if (hintStock) hintStock.style.display = 'none';
-            if (hintMin) hintMin.style.display = 'none';
-            if (totalText) totalText.innerText = '0';
-            if (gasExchangeNote) gasExchangeNote.style.display = 'none';
-            
-            selectedItem = null;
-            
-            btn.disabled = false;
-            btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
-            
-            showSuccessNotification('Sale recorded successfully!', `Ksh ${total.toLocaleString()} - ${method}`);
-        } catch (error) { 
-            console.error("Sale Error:", error);
-            alert("❌ Error: " + error.message); 
-            btn.disabled = false;
-            btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
-        }
-    });
-
-    async function loadShiftData() {
-        try {
-            if (!currentShift) return;
-            
-            const branchId = getCurrentBranchId();
-            
-            const [salesRes, transRes] = await Promise.all([
-                supabase.from('sales')
-                    .select('*')
-                    .eq('shift_id', currentShift.id)
-                    .eq('branch_id', branchId)
-                    .order('created_at', {ascending:false}),
-                supabase.from('cash_transactions')
-                    .select('*')
-                    .eq('shift_id', currentShift.id)
-                    .eq('branch_id', branchId)
-                    .order('created_at', {ascending:false})
-            ]);
-
-            const sales = salesRes.data || [];
-            const trans = transRes.data || [];
-
-            const kcbPaybillSales = sales
-                .filter(s => s.payment_method === 'KCB Paybill' && !s.refunded && s.total_amount > 0)
-                .reduce((a, b) => a + b.total_amount, 0);
-            
-            const kcbPaybillMoneyIn = trans
-                .filter(t => t.type === 'Money In' && t.category === 'KCB Paybill')
-                .reduce((a, b) => a + b.amount, 0);
-            
-            currentKcbSalesTotal = kcbPaybillSales + kcbPaybillMoneyIn;
-                
-            const liveKcbBox = document.getElementById('live-kcb-box');
-            if (liveKcbBox) liveKcbBox.innerText = currentKcbSalesTotal.toLocaleString();
-            
-            const closeKcbInput = document.getElementById('c-bank');
-            if (closeKcbInput) closeKcbInput.value = currentKcbSalesTotal;
-
-            const liveSalesBody = document.getElementById('live-sales-body');
-            if (liveSalesBody) {
-                liveSalesBody.innerHTML = sales.map(s => `
-                    <tr class="${s.refunded ? 'refunded-row' : ''}">
-                        <td data-label="Time">${new Date(s.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
-                        <td data-label="Item">
-                            <b>${s.item_name}</b>
-                            ${s.refunded ? '<span class="refunded-badge">REFUNDED</span>' : ''}
-                            ${s.total_amount < 0 ? '<span class="refunded-badge" style="background:#b91c1c">REFUND</span>' : ''}
-                            ${s.category === 'Gas' ? '<span class="gas-badge">GAS</span>' : ''}
-                            ${s.payment_method === 'Debt' ? '<span class="refunded-badge" style="background:var(--warning)">DEBT</span>' : ''}
-                            ${s.payment_method === 'KCB Paybill' ? '<span class="kcb-paybill-badge">KCB PAYBILL</span>' : ''}
-                        </td>
-                        <td data-label="Qty" class="${s.quantity < 0 ? 'text-danger' : ''}">
-                            ${s.quantity < 0 ? `-${Math.abs(s.quantity)}` : s.quantity}
-                        </td>
-                        <td data-label="Total" class="${s.total_amount < 0 ? 'text-danger' : ''}">
-                            Ksh ${s.total_amount.toLocaleString()}
-                        </td>
-                        <td data-label="Method">
-                            ${s.refunded ? 'Refund via ' : ''}${s.payment_method}
-                        </td>
-                        <td data-label="Action" class="action-column">
-                            ${!s.refunded && s.quantity > 0 && s.total_amount > 0 ? `
-                                <button class="btn-refund" onclick='openRefundModal(${JSON.stringify(s).replace(/'/g, "\\'")})'>
-                                    <i class="fas fa-undo-alt"></i> Refund
-                                </button>
-                            ` : ''}
-                        </td>
-                    </tr>
-                `).join('');
-            }
-
-            let totalMoneyIn = 0;
-            let totalMoneyOut = 0;
-            
-            trans.forEach(t => {
-                if (t.type === 'Money In') {
-                    totalMoneyIn += t.amount;
-                } else if (t.type === 'Money Out') {
-                    totalMoneyOut += t.amount;
-                }
-            });
-            
-            const totalMoneyInFullEl = document.getElementById('total-money-in-full');
-            const totalMoneyOutFullEl = document.getElementById('total-money-out-full');
-            
-            if (totalMoneyInFullEl) totalMoneyInFullEl.textContent = `Ksh ${totalMoneyIn.toLocaleString()}`;
-            if (totalMoneyOutFullEl) totalMoneyOutFullEl.textContent = `Ksh ${totalMoneyOut.toLocaleString()}`;
-            
-            const liveTransBody = document.getElementById('live-trans-body');
-            if (liveTransBody) {
-                liveTransBody.innerHTML = trans.map(t => {
-                    const isKcbPaybill = t.category === 'KCB Paybill';
-                    return `
-                        <tr class="${t.type === 'Money In' ? 'money-in-row' : 'money-out-row'} ${isKcbPaybill ? 'kcb-live-box' : ''}">
-                            <td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
-                            <td data-label="Reason">
-                                ${t.description}
-                                ${isKcbPaybill ? '<span class="kcb-paybill-badge">LIVE KCB</span>' : ''}
-                            </td>
-                            <td data-label="Amount">Ksh ${t.amount.toLocaleString()}</td>
-                            <td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">
-                                ${t.type}
-                            </td>
-                            <td data-label="Wallet">
-                                ${t.category}
-                                ${isKcbPaybill ? '💰' : ''}
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-            }
-            
-            checkLowFloats();
-        } catch (error) {
-            console.error("Error loading shift data:", error);
-        }
-    }
-
-    document.getElementById('confirm-open').addEventListener('click', async function() {
-        const branchId = getCurrentBranchId();
-        
-        const existingOpenShift = await checkForOpenShift(branchId);
-        
-        if (existingOpenShift) {
-            alert("❌ There is already an open shift for this branch. Please close the existing shift before starting a new one.");
-            this.disabled = false;
-            this.innerHTML = 'START DAY';
-            document.getElementById('open-modal').style.display = 'none';
-            return;
-        }
-        
-        const cash = parseFloat(document.getElementById('o-cash').value || 0);
-        const mpesa = parseFloat(document.getElementById('o-mpesa').value || 0);
-        const kcb = parseFloat(document.getElementById('o-kcb').value || 0);
-        const equity = parseFloat(document.getElementById('o-equity').value || 0);
-        const total = cash + mpesa + kcb + equity;
-        
-        const confirmed = confirm(
-            `Are these the correct opening floats? Please confirm before starting your shift.\n\n` +
-            `Cash: Ksh ${cash.toLocaleString()}\n` +
-            `Mpesa: Ksh ${mpesa.toLocaleString()}\n` +
-            `KCB Float: Ksh ${kcb.toLocaleString()}\n` +
-            `Equity Float: Ksh ${equity.toLocaleString()}\n\n` +
-            `Total: Ksh ${total.toLocaleString()}`
-        );
-        
-        if (!confirmed) {
-            return;
-        }
-        
-        this.disabled = true;
-        this.innerHTML = '<span class="spinner"></span> STARTING...';
-        
-        const openData = {
-            user_id: currentUser.id,
-            branch_id: branchId,
-            open_cash: cash,
-            open_mpesa: mpesa,
-            open_kcb: kcb,
-            open_equity: equity,
-            status: 'Open',
-            start_time: new Date().toISOString()
-        };
-        
-        try {
-            const { error } = await supabase.from('daily_shifts').insert([openData]);
-            if (error) throw error;
-            
-            showSuccessNotification('Shift started successfully!', `Cash: Ksh ${cash} | Mpesa: Ksh ${mpesa}`);
-            setTimeout(() => location.reload(), 1500);
-        } catch (error) {
-            alert("Error starting shift: " + error.message);
-            this.disabled = false;
-            this.innerHTML = 'START DAY';
-        }
-    });
-
-    window.showCloseModal = function() {
-        document.getElementById('close-modal').style.display = 'flex';
-    };
-
-    function showCloseConfirmation() {
-        const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
-        const clK = parseFloat(document.getElementById('c-kcb').value || 0);
-        const clE = parseFloat(document.getElementById('c-equity').value || 0);
-        const clC = parseFloat(document.getElementById('c-cash').value || 0);
-        const clB = currentKcbSalesTotal;
-        
-        document.getElementById('close-modal').style.display = 'none';
-        
-        const card = document.createElement('div');
-        card.className = 'overlay';
-        card.id = 'close-confirm-card';
-        card.style.display = 'flex';
-        card.innerHTML = `
-            <div class="modal" style="max-width: 500px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="color: var(--danger); margin: 0;">🔒 Confirm Closing Amounts</h3>
-                    <button onclick="closeConfirmationCard()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-dim);">✕</button>
-                </div>
-                
-                <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin: 15px 0;">
-                    <h4 style="margin: 0 0 15px 0; font-size: 0.9rem; color: var(--text);">Please verify the closing amounts:</h4>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                        <div style="background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
-                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase;">Mpesa</small>
-                            <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">Ksh ${clM.toLocaleString()}</span>
-                        </div>
-                        <div style="background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
-                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase;">KCB Float</small>
-                            <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">Ksh ${clK.toLocaleString()}</span>
-                        </div>
-                        <div style="background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
-                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase;">Equity</small>
-                            <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">Ksh ${clE.toLocaleString()}</span>
-                        </div>
-                        <div style="background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
-                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase;">Cash</small>
-                            <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">Ksh ${clC.toLocaleString()}</span>
-                        </div>
-                        <div style="grid-column: span 2; background: #f0f9ff; padding: 15px; border-radius: 10px; border: 1px solid #bae6fd;">
-                            <small style="display: block; color: #0369a1; font-size: 0.7rem; text-transform: uppercase;">KCB Paybill</small>
-                            <span style="font-weight: 800; font-size: 1.3rem; color: var(--primary);">Ksh ${clB.toLocaleString()}</span>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-top: 15px; padding: 12px; background: #fff7ed; border-radius: 8px; border-left: 4px solid var(--warning);">
-                        <small style="color: #9a3412; font-weight: 600;">
-                            <i class="fas fa-info-circle"></i> Please verify all amounts are correct before proceeding.
-                        </small>
-                    </div>
-                </div>
-                
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn btn-danger" style="flex: 1;" onclick="processFinalClose()">✅ CONFIRM & CLOSE</button>
-                    <button class="btn" style="flex: 1; background: #e2e8f0;" onclick="closeConfirmationCard()">✕ CANCEL</button>
-                </div>
-            </div>
+    async function fetchSales() {
+        document.getElementById('data-body').innerHTML = `
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 40px;">
+                    <div class="spinner" style="margin: 0 auto;"></div>
+                    Loading transactions...
+                </td>
+            </tr>
         `;
-        
-        document.body.appendChild(card);
-    }
 
-    window.closeConfirmationCard = function() {
-        const card = document.getElementById('close-confirm-card');
-        if (card) card.remove();
-        document.getElementById('close-modal').style.display = 'flex';
-    };
-
-    document.getElementById('confirm-close').addEventListener('click', function() {
-        const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
-        const clK = parseFloat(document.getElementById('c-kcb').value || 0);
-        const clE = parseFloat(document.getElementById('c-equity').value || 0);
-        const clC = parseFloat(document.getElementById('c-cash').value || 0);
-        
-        if (clM === 0 && clK === 0 && clE === 0 && clC === 0) {
-            alert("❌ Please enter closing amounts for all floats before closing the shift.");
-            return;
-        }
-        
-        showCloseConfirmation();
-    });
-
-    window.processFinalClose = async function() {
-        const card = document.getElementById('close-confirm-card');
-        if (!card) return;
-        
-        const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
-        const clK = parseFloat(document.getElementById('c-kcb').value || 0);
-        const clE = parseFloat(document.getElementById('c-equity').value || 0);
-        const clC = parseFloat(document.getElementById('c-cash').value || 0);
-        const clB = currentKcbSalesTotal;
-        
-        card.remove();
-        
-        const btn = document.getElementById('confirm-close');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> FINALIZING...';
-        
         try {
-            // IMPORTANT: Fetch all sales for this shift including split payments
-            const { data: sales } = await supabase.from('sales')
-                .select('total_amount, payment_method, unit_price, cost_price, quantity')
-                .eq('shift_id', currentShift.id)
-                .neq('payment_method','Debt')
-                .eq('refunded', false)
-                .gt('total_amount', 0);
-                
-            const { data: trans } = await supabase.from('cash_transactions').select('amount, type').eq('shift_id', currentShift.id);
-            
-            // Calculate cash sales (including split cash portions)
-            const cashSalesTotal = (sales || []).filter(s => s.payment_method === 'Cash').reduce((a,b) => a + b.total_amount, 0);
-            // Calculate KCB Paybill sales (including split online portions)
-            const kcbPaybillSalesTotal = (sales || []).filter(s => s.payment_method === 'KCB Paybill').reduce((a,b) => a + b.total_amount, 0);
-            
-            const totalSales = cashSalesTotal + kcbPaybillSalesTotal;
-            const moneyIn = (trans || []).filter(t => t.type === 'Money In').reduce((a,b) => a + b.amount, 0);
-            const moneyOut = (trans || []).filter(t => t.type === 'Money Out').reduce((a,b) => a + b.amount, 0);
+            await fetchProducts();
 
-            const opTotal = currentShift.open_cash + currentShift.open_mpesa + currentShift.open_kcb + currentShift.open_equity;
-            const expected = (opTotal + totalSales + moneyIn) - moneyOut;
-            const actual = clM + clK + clE + clB + clC;
-            const variance = actual - expected;
-
-            let note = "";
-            if (Math.abs(variance) < 1) {
-                note = "Balanced";
-            } else {
-                const sign = variance > 0 ? "+" : "-";
-                note = prompt(`Variance: ${sign}${Math.abs(variance).toFixed(2)}. Please enter reason:`);
-                if (!note) {
-                    btn.disabled = false;
-                    btn.innerHTML = 'FINALIZE & CLOSE';
-                    return;
-                }
-            }
-
-            await supabase.from('daily_shifts').update({
-                close_mpesa: clM, 
-                close_kcb: clK, 
-                close_equity: clE, 
-                close_kcb_bank: clB, 
-                close_cash: clC,
-                status: 'Closed',
-                end_time: new Date().toISOString(), 
-                variance_note: note, 
-                system_expected_total: expected
-            }).eq('id', currentShift.id);
-            
-            showSuccessNotification('Shift closed successfully!', `Variance: ${variance === 0 ? 'Balanced' : variance.toFixed(2)}`);
-            setTimeout(() => location.reload(), 1500);
-        } catch (error) {
-            alert("Error closing shift: " + error.message);
-            btn.disabled = false;
-            btn.innerHTML = 'FINALIZE & CLOSE';
-        }
-    };
-
-    async function loadHistory(searchQuery = "") {
-        try {
-            const branchId = getCurrentBranchId();
-            
-            const { data: shifts } = await supabase
-                .from('daily_shifts')
-                .select('*')
-                .eq('branch_id', branchId)
-                .order('start_time', { ascending: false })
-                .limit(historyLimit);
-
-            const { data: transactions } = await supabase
-                .from('cash_transactions')
-                .select('shift_id, amount, type')
-                .eq('branch_id', branchId);
-                
-            const { data: sales } = await supabase
+            let query = supabase
                 .from('sales')
-                .select('shift_id, total_amount, payment_method, unit_price, cost_price, quantity')
-                .eq('branch_id', branchId)
-                .eq('refunded', false)
-                .gt('total_amount', 0);
+                .select('*')
+                .order('created_at', { ascending: false });
 
-            allShifts = shifts || [];
-            allTransactions = transactions || [];
-            allSales = sales || [];
-            
-            const lastClosed = allShifts.find(s => s.status === 'Closed');
-            if (lastClosed) {
-                const clT = (lastClosed.close_cash||0) + (lastClosed.close_mpesa||0) + (lastClosed.close_kcb||0) + (lastClosed.close_equity||0) + (lastClosed.close_kcb_bank || 0);
-                if (Math.abs(clT - (lastClosed.system_expected_total || 0)) < 1) {
-                    const banner = document.getElementById('congrats-banner');
-                    if(banner) {
-                        banner.style.display = 'block';
-                        setTimeout(() => {
-                            banner.style.display = 'none';
-                        }, 5000);
-                    }
-                }
+            if (selectedBranchId) {
+                query = query.eq('branch_id', selectedBranchId);
             }
+
+            const { data, error } = await query;
+
+            if (error) throw error;
+
+            allSales = data || [];
             
-            if (window.innerWidth <= 768) {
-                renderMobileHistory(allShifts, allTransactions, allSales, searchQuery);
-            } else {
-                renderDesktopHistory(allShifts, allTransactions, allSales, searchQuery);
-            }
+            // Process split groups for summary
+            const { groups, regularSales } = groupSplitSales(allSales);
+            
+            filteredSales = [...allSales];
+            
+            updateSummary();
+            applyFilters();
+            
         } catch (error) {
-            console.error("Fetch Error:", error);
+            console.error("Error fetching sales:", error);
+            document.getElementById('data-body').innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 40px; color: var(--danger);">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        Error loading transactions: ${error.message}
+                    </td>
+                </tr>
+            `;
         }
     }
 
-    function renderDesktopHistory(shifts, transData, salesData, query = "") {
-        const desktopTbody = document.getElementById('history-body');
-        if(!desktopTbody) return;
+    function calculateProfit(sale) {
+        const revenue = Number(sale.total_amount || 0);
+        const quantity = sale.quantity || 1;
         
-        const filtered = shifts.filter(sh => {
-            const dateStr = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }).toLowerCase();
-            return dateStr.includes(query.toLowerCase());
+        if (sale.category === 'Gas') {
+            const product = productsMap[sale.product_id];
+            
+            if (sale.item_name && (sale.item_name.includes('NEW CYLINDER') || sale.item_name.includes('COMPLETE'))) {
+                const completeCost = Number(product?.complete_cost || sale.cost_price || 0);
+                const totalCost = completeCost * quantity;
+                return revenue - totalCost;
+            } else {
+                const refillCost = Number(sale.cost_price || product?.cost_price || 0);
+                const totalCost = refillCost * quantity;
+                return revenue - totalCost;
+            }
+        } else {
+            const cost = Number(sale.cost_price || 0) * quantity;
+            return revenue - cost;
+        }
+    }
+
+    function updateSummary() {
+        let totalAmount = 0;
+        let totalProfit = 0;
+        let cashTotal = 0;
+        let kcbTotal = 0;
+        let mpesaTotal = 0;
+        let splitTotal = 0;
+        let totalItems = 0;
+        let cashCount = 0;
+        let kcbCount = 0;
+        let mpesaCount = 0;
+        let splitCount = 0;
+
+        const { groups, regularSales } = groupSplitSales(allSales);
+        
+        // Process split groups
+        Object.values(groups).forEach(group => {
+            const totalRevenue = group.reduce((sum, s) => sum + Number(s.total_amount || 0), 0);
+            const totalQuantity = group.reduce((sum, s) => sum + (s.quantity || 0), 0);
+            
+            // Use the main sale for profit calculation (they all have same cost price)
+            const mainSale = group.find(s => s.quantity > 0) || group[0];
+            const profit = calculateProfit({...mainSale, total_amount: totalRevenue, quantity: totalQuantity});
+            
+            totalAmount += totalRevenue;
+            totalProfit += profit;
+            totalItems += totalQuantity;
+            splitTotal += totalRevenue;
+            splitCount++;
         });
         
-        let tableHtml = '';
-
-        filtered.forEach(sh => {
-            const shiftLogs = transData.filter(t => t.shift_id === sh.id);
-            const shiftSales = salesData.filter(s => s.shift_id === sh.id);
-
-            const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
-            const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
+        // Process regular sales
+        regularSales.forEach(sale => {
+            const amount = Number(sale.total_amount || 0);
+            const profit = calculateProfit(sale);
             
-            // FIX: Calculate cash sales and KCB Paybill sales correctly
-            const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount || 0), 0);
-            const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            totalAmount += amount;
+            totalProfit += profit;
+            totalItems += sale.quantity || 0;
 
-            const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
-            const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
+            switch(sale.payment_method) {
+                case 'Cash':
+                    cashTotal += amount;
+                    cashCount++;
+                    break;
+                case 'KCB Paybill':
+                    kcbTotal += amount;
+                    kcbCount++;
+                    break;
+                case 'Mpesa':
+                    mpesaTotal += amount;
+                    mpesaCount++;
+                    break;
+            }
+        });
 
-            const isClosed = sh.status === 'Closed';
-            const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
-            const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
-            
-            let varianceVal = isClosed ? (closeTotal - expected) : 0;
-            let varianceDisplay = '';
-            let varianceClass = '';
+        const avgMargin = totalAmount > 0 ? ((totalProfit / totalAmount) * 100).toFixed(1) : 0;
+        const avgItems = allSales.length > 0 ? (totalItems / allSales.length).toFixed(1) : 0;
 
-            if (!isClosed) {
-                varianceDisplay = 'SHIFT ACTIVE';
-                varianceClass = 'active-shift';
+        document.getElementById('totalSales').textContent = `Ksh ${totalAmount.toLocaleString()}`;
+        document.getElementById('totalProfit').textContent = `Ksh ${totalProfit.toLocaleString()}`;
+        document.getElementById('avgMargin').textContent = `${avgMargin}%`;
+        document.getElementById('totalTransactions').textContent = allSales.length;
+        
+        document.getElementById('cashSales').textContent = `Ksh ${cashTotal.toLocaleString()}`;
+        document.getElementById('cashCount').textContent = cashCount;
+        
+        document.getElementById('kcbSales').textContent = `Ksh ${kcbTotal.toLocaleString()}`;
+        document.getElementById('kcbCount').textContent = kcbCount;
+        
+        document.getElementById('mpesaSales').textContent = `Ksh ${mpesaTotal.toLocaleString()}`;
+        document.getElementById('mpesaCount').textContent = mpesaCount;
+        
+        document.getElementById('splitSales').textContent = `Ksh ${splitTotal.toLocaleString()}`;
+        document.getElementById('splitCount').textContent = splitCount;
+        
+        document.getElementById('totalItems').textContent = totalItems;
+        document.getElementById('avgItems').textContent = avgItems;
+    }
+
+    function applyFilters() {
+        const { groups, regularSales } = groupSplitSales(allSales);
+        
+        // Create processed sales array for filtering
+        const processedSales = [];
+        
+        // Add regular sales
+        regularSales.forEach(s => processedSales.push(s));
+        
+        // Add combined split groups
+        Object.values(groups).forEach(group => {
+            if (group.length >= 2) {
+                const mainSale = group.find(s => s.quantity > 0) || group[0];
+                const otherSales = group.filter(s => s !== mainSale);
+                
+                const totalRevenue = group.reduce((sum, s) => sum + Number(s.total_amount || 0), 0);
+                const totalQuantity = group.reduce((sum, s) => sum + (s.quantity || 0), 0);
+                
+                const combinedSale = {
+                    ...mainSale,
+                    quantity: totalQuantity,
+                    total_amount: totalRevenue,
+                    payment_method: 'Split',
+                    split_details: otherSales.map(s => ({
+                        method: s.payment_method,
+                        amount: s.total_amount
+                    }))
+                };
+                processedSales.push(combinedSale);
             } else {
-                if (varianceVal > 0) {
-                    varianceDisplay = '+' + varianceVal.toLocaleString();
-                    varianceClass = 'var-positive';
-                } else if (varianceVal < 0) {
-                    varianceDisplay = varianceVal.toLocaleString();
-                    varianceClass = 'var-negative';
-                } else {
-                    varianceDisplay = '0';
-                    varianceClass = 'var-balanced';
+                group.forEach(s => processedSales.push(s));
+            }
+        });
+
+        // Apply filters to processed sales
+        filteredSales = processedSales.filter(sale => {
+            if (paymentFilter !== 'all') {
+                if (paymentFilter === 'Split') {
+                    if (sale.payment_method !== 'Split') {
+                        return false;
+                    }
+                } else if (sale.payment_method !== paymentFilter) {
+                    return false;
                 }
             }
-
-            const startD = new Date(sh.start_time);
             
-            tableHtml += `
-                <tr>
-                    <td class="date-cell">
-                        <b>${startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'})}</b>
-                        <span class="time-pill">IN: ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span><br>
-                        <span class="time-pill">${sh.end_time ? 'OUT: '+new Date(sh.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'ACTIVE'}</span>
-                    </td>
-                    <td>
-                        <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity||0).toLocaleString()}</span></div>
-                        <div class="total-row">Total: ${openTotal.toLocaleString()}</div>
-                    </td>
-                    <td>
-                        <a href="sales_reports.html" class="revenue-card">
-                            <div class="account-line"><span class="account-label">Cash Sales</span><span class="account-val" style="color:var(--success)">+${cashSales.toLocaleString()}</span></div>
-                            <div class="account-line"><span class="account-label">KCB Paybill</span><span class="account-val" style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span></div>
-                            <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW ➔</div>
-                        </a>
-                    </td>
-                    <td>
-                        <a href="moneyinout.html" class="revenue-card">
-                            <div class="account-line"><span class="account-label">In</span><span class="account-val" style="color:var(--success)">+${moneyIn.toLocaleString()}</span></div>
-                            <div class="account-line"><span class="account-label">Out</span><span class="account-val" style="color:var(--danger)">-${moneyOut.toLocaleString()}</span></div>
-                            <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW ➔</div>
-                        </a>
-                    </td>
-                    <td>
-                        <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.close_cash||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.close_kcb||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.close_equity||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">Paybill</span><span class="account-val">${(sh.close_kcb_bank||0).toLocaleString()}</span></div>
-                        <div class="total-row" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>
-                    </td>
-                    <td>
-                        <span class="status-badge ${varianceClass}">
-                            ${varianceDisplay}
-                        </span>
-                        <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 8px; text-align: center;">
-                            Expected: ${expected.toLocaleString()}
-                        </div>
-                    </td>
-                    <td><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim); font-style: italic;">${sh.variance_note && sh.variance_note !== 'Balanced' ? sh.variance_note.split(' - ')[1] || sh.variance_note : sh.variance_note || 'No notes added.'}</div></td>
-                </tr>`;
-        });
-
-        desktopTbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.</td></tr>';
-    }
-
-    function renderMobileHistory(shifts, transData, salesData, query = "") {
-        const mobileContainer = document.getElementById('mobile-shifts-container');
-        const desktopContainer = document.querySelector('.shift-history-table-container');
-        
-        if (!mobileContainer) return;
-        
-        if (desktopContainer) desktopContainer.style.display = 'none';
-        mobileContainer.style.display = 'block';
-        
-        const filtered = shifts.filter(sh => {
-            const dateStr = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }).toLowerCase();
-            return dateStr.includes(query.toLowerCase());
-        });
-        
-        let mobileHtml = '';
-
-        filtered.forEach(sh => {
-            const shiftLogs = transData.filter(t => t.shift_id === sh.id);
-            const shiftSales = salesData.filter(s => s.shift_id === sh.id);
-
-            const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
-            const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
-            
-            // FIX: Calculate cash sales and KCB Paybill sales correctly for mobile
-            const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount || 0), 0);
-            const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount || 0), 0);
-
-            const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
-            const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
-
-            const isClosed = sh.status === 'Closed';
-            const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
-            const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
-            const varianceVal = isClosed ? (closeTotal - expected) : 0;
-            
-            const startD = new Date(sh.start_time);
-            
-            let varianceClass = '';
-            if (!isClosed) {
-                varianceClass = 'active-shift';
-            } else if (varianceVal > 0) {
-                varianceClass = 'var-positive';
-            } else if (varianceVal < 0) {
-                varianceClass = 'var-negative';
-            } else {
-                varianceClass = 'var-balanced';
+            if (dateSearchTerm) {
+                const saleDate = new Date(sale.created_at).toLocaleDateString('en-GB', { 
+                    day: '2-digit', 
+                    month: 'short', 
+                    year: 'numeric' 
+                }).toLowerCase();
+                if (!saleDate.includes(dateSearchTerm.toLowerCase())) {
+                    return false;
+                }
             }
             
-            const varianceNote = sh.variance_note && sh.variance_note !== 'Balanced' ? 
-                (sh.variance_note.split(' - ')[1] || sh.variance_note) : sh.variance_note;
-            
-            mobileHtml += `
-                <div class="shift-mobile-card">
-                    <div class="shift-mobile-header">
-                        <div class="shift-mobile-date">
-                            ${startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'})}
-                        </div>
-                        <div class="shift-mobile-status ${varianceClass}">
-                            ${isClosed ? (varianceVal > 0 ? `+${varianceVal.toLocaleString()}` : varianceVal < 0 ? varianceVal.toLocaleString() : 'Balanced') : 'Active'}
-                        </div>
-                    </div>
-                    
-                    <div class="shift-mobile-grid">
-                        <div class="shift-mobile-section">
-                            <div class="shift-mobile-section-title">Opening Floats</div>
-                            <div style="font-size: 0.8rem;">
-                                <div>Cash: ${(sh.open_cash||0).toLocaleString()}</div>
-                                <div>Mpesa: ${(sh.open_mpesa||0).toLocaleString()}</div>
-                                <div>KCB: ${(sh.open_kcb||0).toLocaleString()}</div>
-                                <div style="font-weight:700; margin-top:5px;">Total: ${openTotal.toLocaleString()}</div>
-                            </div>
-                        </div>
-                        
-                        <div class="shift-mobile-section">
-                            <div class="shift-mobile-section-title">Sales</div>
-                            <div style="font-size: 0.8rem;">
-                                <div>Cash: ${cashSales.toLocaleString()}</div>
-                                <div>Paybill: ${kcbPaybillSales.toLocaleString()}</div>
-                            </div>
-                        </div>
-                        
-                        <div class="shift-mobile-section">
-                            <div class="shift-mobile-section-title">Money In/Out</div>
-                            <div style="font-size: 0.8rem;">
-                                <div style="color:var(--success)">In: ${moneyIn.toLocaleString()}</div>
-                                <div style="color:var(--danger)">Out: ${moneyOut.toLocaleString()}</div>
-                            </div>
-                        </div>
-                        
-                        <div class="shift-mobile-section">
-                            <div class="shift-mobile-section-title">Closing Floats</div>
-                            <div style="font-size: 0.8rem;">
-                                <div>Cash: ${(sh.close_cash||0).toLocaleString()}</div>
-                                <div>Mpesa: ${(sh.close_mpesa||0).toLocaleString()}</div>
-                                <div>KCB: ${(sh.close_kcb||0).toLocaleString()}</div>
-                                <div style="font-weight:700; margin-top:5px;">Total: ${closeTotal.toLocaleString()}</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 10px;">
-                        <div>Expected: ${expected.toLocaleString()}</div>
-                        <div>Variance Note: ${varianceNote || 'No notes'}</div>
-                    </div>
-                </div>
-            `;
-        });
-
-        mobileContainer.innerHTML = mobileHtml || '<div style="text-align:center; padding:50px;">No records found.</div>';
-    }
-
-    const scrollContainer = document.getElementById('scrollContainer');
-    const scrollHint = document.getElementById('scrollHint');
-    if (scrollContainer && scrollHint) {
-        scrollContainer.addEventListener('scroll', () => {
-            if (scrollContainer.scrollLeft > 20) {
-                scrollHint.style.opacity = '0';
-                setTimeout(() => scrollHint.style.display = 'none', 500);
+            if (itemSearchTerm) {
+                const itemName = (sale.item_name || '').toLowerCase();
+                if (!itemName.includes(itemSearchTerm.toLowerCase())) {
+                    return false;
+                }
             }
-        });
-    }
-
-    document.getElementById('history-search').addEventListener('input', (e) => {
-        const term = e.target.value.toLowerCase();
-        const filtered = allShifts.filter(sh => {
-            const dateStr = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }).toLowerCase();
-            return dateStr.includes(term);
+            
+            if (quickSearchTerm) {
+                const itemName = (sale.item_name || '').toLowerCase();
+                const category = (sale.category || '').toLowerCase();
+                const payment = (sale.payment_method || '').toLowerCase();
+                const searchTerm = quickSearchTerm.toLowerCase();
+                
+                if (!itemName.includes(searchTerm) && 
+                    !category.includes(searchTerm) && 
+                    !payment.includes(searchTerm)) {
+                    return false;
+                }
+            }
+            
+            return true;
         });
         
-        if (window.innerWidth <= 768) {
-            renderMobileHistory(filtered, allTransactions, allSales, term);
-        } else {
-            renderDesktopHistory(filtered, allTransactions, allSales, term);
+        renderSales(filteredSales.slice(0, limit));
+    }
+
+    function getPaymentBadgeClass(method) {
+        switch(method) {
+            case 'Cash': return 'badge-cash';
+            case 'Mpesa': return 'badge-mpesa';
+            case 'KCB Paybill': return 'badge-kcb';
+            case 'Bank': return 'badge-bank';
+            case 'Debt': return 'badge-debt';
+            case 'Split': return 'badge-split';
+            default: return '';
         }
-    });
-    
-    document.getElementById('load-more-btn').addEventListener('click', () => { 
-        historyLimit += 10; 
-        loadHistory(); 
-    });
-    
-    document.getElementById('record-expense-btn').addEventListener('click', async function() {
-        const amt = parseFloat(document.getElementById('exp-amt').value);
-        const desc = document.getElementById('exp-desc').value;
-        const branchId = getCurrentBranchId();
+    }
+
+    function getSaleTypeBadge(itemName) {
+        if (!itemName) return '';
+        if (itemName.includes('REFILL')) {
+            return '<span class="sale-type-badge sale-type-refill">REFILL</span>';
+        } else if (itemName.includes('NEW CYLINDER') || itemName.includes('COMPLETE')) {
+            return '<span class="sale-type-badge sale-type-complete">NEW CYL</span>';
+        }
+        return '';
+    }
+
+    function renderSales(data) {
+        const tbody = document.getElementById('data-body');
         
-        if (!amt || !desc || !currentShift) {
-            alert("❌ Please fill all fields and make sure a shift is active");
+        if (data.length === 0) {
+            const branchName = selectedBranchId ? branches[selectedBranchId]?.name : 'All Branches';
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-dim);">
+                        <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        No sales found for ${branchName}
+                    </td>
+                </tr>
+            `;
+            document.getElementById('loadMore').style.display = 'none';
             return;
         }
-        
-        this.disabled = true;
-        this.innerHTML = '<span class="spinner"></span> RECORDING...';
-        
-        try {
-            const { error } = await supabase.from('cash_transactions').insert([{
-                shift_id: currentShift.id, 
-                type: document.getElementById('exp-type').value,
-                category: document.getElementById('exp-method').value, 
-                amount: amt, 
-                description: desc,
-                branch_id: branchId,
-                user_id: currentUser.id
-            }]);
 
-            if(!error) {
-                document.getElementById('exp-amt').value = '';
-                document.getElementById('exp-desc').value = '';
-                await loadShiftData();
-                this.disabled = false;
-                this.innerHTML = 'RECORD MONEY';
+        tbody.innerHTML = data.map(s => {
+            const revenue = s.total_amount || 0;
+            const profit = calculateProfit(s);
+            const profitClass = profit >= 0 ? 'profit-positive' : 'profit-negative';
+            const date = new Date(s.created_at);
+            const branch = branches[s.branch_id] || { code: '--', name: 'Unknown' };
+            const paymentClass = getPaymentBadgeClass(s.payment_method);
+            const saleTypeBadge = getSaleTypeBadge(s.item_name);
+            
+            let methodDisplay = s.payment_method;
+            let splitDetailsHtml = '';
+            
+            if (s.split_details) {
+                methodDisplay = 'Split';
+                splitDetailsHtml = '<div class="split-details-container">';
+                s.split_details.forEach(detail => {
+                    const detailClass = getPaymentBadgeClass(detail.method);
+                    splitDetailsHtml += `<span class="badge ${detailClass}" style="margin-right:4px;">${detail.method}: Ksh ${detail.amount.toLocaleString()}</span>`;
+                });
+                splitDetailsHtml += '</div>';
+            }
+            
+            let costDisplay = '';
+            if (s.category === 'Gas') {
+                const product = productsMap[s.product_id];
+                const gasCost = Number(s.cost_price || product?.cost_price || 0);
                 
-                const method = document.getElementById('exp-method').value;
-                showSuccessNotification('Transaction recorded successfully!', `${document.getElementById('exp-type').value}: Ksh ${amt.toLocaleString()} via ${method}`);
-            } else {
-                throw error;
+                if (s.item_name && (s.item_name.includes('NEW CYLINDER') || s.item_name.includes('COMPLETE'))) {
+                    const completeCost = Number(product?.complete_cost || s.cost_price || 0);
+                    costDisplay = `<small style="color: var(--text-dim); display:block;">Complete Cost: Ksh ${(completeCost * (s.quantity || 1)).toLocaleString()}</small>`;
+                } else {
+                    costDisplay = `<small style="color: var(--text-dim); display:block;">Refill Cost: Ksh ${(gasCost * (s.quantity || 1)).toLocaleString()}</small>`;
+                }
             }
-        } catch (error) {
-            alert("❌ Error recording transaction: " + error.message);
-            this.disabled = false;
-            this.innerHTML = 'RECORD MONEY';
-        }
-    });
-
-    window.addEventListener('resize', function() {
-        if (allShifts.length > 0) {
-            if (window.innerWidth <= 768) {
-                renderMobileHistory(allShifts, allTransactions, allSales);
-            } else {
-                renderDesktopHistory(allShifts, allTransactions, allSales);
-                const desktopContainer = document.querySelector('.shift-history-table-container');
-                const mobileContainer = document.getElementById('mobile-shifts-container');
-                if (desktopContainer) desktopContainer.style.display = 'block';
-                if (mobileContainer) mobileContainer.style.display = 'none';
-            }
-        }
-    });
-
-    document.addEventListener('DOMContentLoaded', function() {
-        init();
-        setInterval(checkLowFloats, 30000);
+            
+            return `
+                <tr>
+                    <td data-label="Date & Time">
+                        <span style="font-weight:700;">${date.toLocaleDateString()}</span>
+                        <small style="color:var(--text-dim); display:block;">${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
+                    </td>
+                    <td data-label="Item Details">
+                        <div style="font-weight:700; color:var(--admin-dark); display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+                            ${s.item_name ? s.item_name.replace(/\s*\(Split-[^)]+\)/g, '') : 'Unknown'}
+                            ${saleTypeBadge}
+                            ${s.category === 'Gas' ? '<span class="gas-badge">GAS</span>' : ''}
+                            ${s.payment_method === 'Split' ? '<span class="badge badge-split" style="margin-left:4px;">SPLIT</span>' : ''}
+                        </div>
+                        <div style="font-size:0.7rem; color:var(--text-dim)">
+                            <i class="fas fa-tag"></i> ${s.category || 'General'}
+                        </div>
+                        ${splitDetailsHtml}
+                    </td>
+                    <td data-label="Quantity" style="font-weight:700;">${s.quantity}</td>
+                    <td data-label="Total Amount" style="font-weight:800;">Ksh ${revenue.toLocaleString()}</td>
+                    <td data-label="Cost" style="font-size:0.8rem;">
+                        Ksh ${(Number(s.cost_price || 0) * (s.quantity || 1)).toLocaleString()}
+                        ${costDisplay}
+                    </td>
+                    <td data-label="Est. Profit">
+                        <span class="${profitClass}">${profit >= 0 ? '+' : ''}Ksh ${profit.toLocaleString()}</span>
+                        <div style="font-size:0.65rem; color:var(--text-dim);">
+                            ${((profit / revenue) * 100).toFixed(1)}% margin
+                        </div>
+                    </td>
+                    <td data-label="Method">
+                        <span class="badge ${paymentClass}">${methodDisplay}</span>
+                    </td>
+                    <td data-label="Branch">
+                        <span class="branch-pill" title="${branch.name}">
+                            <i class="fas fa-store"></i> ${branch.code}
+                        </span>
+                    </td>
+                </tr>
+            `;
+        }).join('');
         
-        window.addEventListener('beforeunload', function() {
-            if (timeCheckInterval) {
-                clearInterval(timeCheckInterval);
-            }
+        document.getElementById('loadMore').style.display = data.length < filteredSales.length ? 'block' : 'none';
+    }
+
+    document.getElementById('paymentFilter').addEventListener('change', (e) => {
+        paymentFilter = e.target.value;
+        applyFilters();
+    });
+
+    document.getElementById('dateSearch').addEventListener('input', (e) => {
+        dateSearchTerm = e.target.value;
+        applyFilters();
+    });
+
+    document.getElementById('itemSearch').addEventListener('input', (e) => {
+        itemSearchTerm = e.target.value;
+        applyFilters();
+    });
+
+    document.getElementById('salesSearch').addEventListener('input', (e) => {
+        quickSearchTerm = e.target.value;
+        applyFilters();
+    });
+
+    document.getElementById('resetFilters').addEventListener('click', () => {
+        paymentFilter = 'all';
+        dateSearchTerm = '';
+        itemSearchTerm = '';
+        quickSearchTerm = '';
+        
+        document.getElementById('paymentFilter').value = 'all';
+        document.getElementById('dateSearch').value = '';
+        document.getElementById('itemSearch').value = '';
+        document.getElementById('salesSearch').value = '';
+        
+        applyFilters();
+    });
+
+    document.getElementById('loadMore').addEventListener('click', () => { 
+        limit += 50;
+        renderSales(filteredSales.slice(0, limit));
+    });
+
+    window.handleLogout = async () => {
+        if(confirm("Are you sure you want to logout?")) {
+            localStorage.removeItem('pos_session');
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', async function() {
+        await loadBranches();
+        await loadUserProfile();
+        
+        const today = new Date();
+        document.getElementById('dateRange').textContent = today.toLocaleDateString('en-GB', { 
+            day: 'numeric', month: 'long', year: 'numeric' 
         });
+        
+        document.getElementById('branchSelector').value = 'all';
+        selectedBranchId = null;
+        
+        await fetchSales();
     });
 </script>
 </body>
