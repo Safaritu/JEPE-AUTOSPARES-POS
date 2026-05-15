@@ -376,6 +376,9 @@
         </div>
 
         <div id="register-fields" class="hidden">
+            <!-- NEW: Full Name field for registration -->
+            <input type="text" id="full-name" placeholder="Full Name *" autocomplete="name">
+            
             <select id="role" class="branch-selector">
                 <option value="" disabled selected>Select Role *</option>
                 <option value="cashier">👤 Cashier</option>
@@ -484,6 +487,12 @@
                 ? 'New staff? <b>Create Account</b>' 
                 : 'Already have an account? <b>Sign In</b>';
         }
+        
+        // Clear full name field when toggling to login mode (optional, keeps UI clean)
+        if (!isLogin) {
+            const fullNameInput = safeGetElement('full-name');
+            if (fullNameInput) fullNameInput.value = '';
+        }
     };
 
     // Update branch note based on role selection
@@ -507,12 +516,14 @@
     window.handleAuth = async () => {
         const emailInput = safeGetElement('email');
         const passwordInput = safeGetElement('password');
+        const fullNameInput = safeGetElement('full-name');
         const roleSelect = safeGetElement('role');
         const branchSelect = safeGetElement('branch');
         const btn = safeGetElement('main-btn');
         
         const email = emailInput ? emailInput.value.trim() : '';
         const password = passwordInput ? passwordInput.value : '';
+        const fullName = fullNameInput ? fullNameInput.value.trim() : '';
         const role = roleSelect ? roleSelect.value : null;
         const branchId = branchSelect ? branchSelect.value : null;
 
@@ -562,6 +573,15 @@
                 
             } else {
                 // SIGN UP
+                if (!fullName) {
+                    showMessage("Please enter your full name", 'error');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-user-plus"></i> Register Now';
+                    }
+                    return;
+                }
+                
                 if (!role) {
                     showMessage("Please select your role", 'error');
                     if (btn) {
@@ -586,6 +606,7 @@
                     password,
                     options: {
                         data: { 
+                            full_name: fullName,
                             role: role, 
                             branch_id: branchId 
                         },
@@ -605,6 +626,7 @@
                     // Clear form
                     if (emailInput) emailInput.value = '';
                     if (passwordInput) passwordInput.value = '';
+                    if (fullNameInput) fullNameInput.value = '';
                     
                     // Switch back to login mode after 3 seconds
                     setTimeout(() => {
