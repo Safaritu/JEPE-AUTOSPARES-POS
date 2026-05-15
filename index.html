@@ -423,8 +423,19 @@
 
     let isLogin = true;
 
+    // Helper function for safe DOM access
+    function safeGetElement(id) {
+        const element = document.getElementById(id);
+        if (!element) {
+            console.warn(`DOM element with id '${id}' not found`);
+        }
+        return element;
+    }
+
     function showMessage(text, type = 'error') {
         const container = document.getElementById('message-container');
+        if (!container) return;
+        
         const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
         const bgClass = type === 'success' ? 'success-message' : 'error-message';
         
@@ -435,61 +446,85 @@
         `;
         
         setTimeout(() => {
-            container.innerHTML = '';
+            if (container) {
+                container.innerHTML = '';
+            }
         }, 5000);
     }
 
     window.toggleMode = () => {
         isLogin = !isLogin;
-        document.getElementById('auth-title').innerText = isLogin ? "Staff Sign In" : "Staff Registration";
-        document.getElementById('register-fields').classList.toggle('hidden', isLogin);
-        document.getElementById('forgot-link').classList.toggle('hidden', !isLogin);
         
-        const btnIcon = document.getElementById('main-btn').querySelector('i');
-        const btnSpan = document.getElementById('main-btn').querySelector('span');
+        const authTitle = safeGetElement('auth-title');
+        if (authTitle) authTitle.innerText = isLogin ? "Staff Sign In" : "Staff Registration";
         
-        if (isLogin) {
-            btnIcon.className = 'fas fa-sign-in-alt';
-            btnSpan.innerText = 'Sign In';
-        } else {
-            btnIcon.className = 'fas fa-user-plus';
-            btnSpan.innerText = 'Register Now';
+        const registerFields = safeGetElement('register-fields');
+        if (registerFields) registerFields.classList.toggle('hidden', isLogin);
+        
+        const forgotLink = safeGetElement('forgot-link');
+        if (forgotLink) forgotLink.classList.toggle('hidden', !isLogin);
+        
+        const mainBtn = safeGetElement('main-btn');
+        if (mainBtn) {
+            const btnIcon = mainBtn.querySelector('i');
+            const btnSpan = mainBtn.querySelector('span');
+            
+            if (isLogin) {
+                if (btnIcon) btnIcon.className = 'fas fa-sign-in-alt';
+                if (btnSpan) btnSpan.innerText = 'Sign In';
+            } else {
+                if (btnIcon) btnIcon.className = 'fas fa-user-plus';
+                if (btnSpan) btnSpan.innerText = 'Register Now';
+            }
         }
         
-        document.getElementById('toggle-text').innerHTML = isLogin 
-            ? 'New staff? <b>Create Account</b>' 
-            : 'Already have an account? <b>Sign In</b>';
+        const toggleText = safeGetElement('toggle-text');
+        if (toggleText) {
+            toggleText.innerHTML = isLogin 
+                ? 'New staff? <b>Create Account</b>' 
+                : 'Already have an account? <b>Sign In</b>';
+        }
     };
 
     // Update branch note based on role selection
-    document.getElementById('role').addEventListener('change', (e) => {
-        const role = e.target.value;
-        const noteText = document.getElementById('branch-note-text');
-        const branchHint = document.getElementById('branch-hint');
-        
-        if (role === 'admin') {
-            noteText.innerText = 'Administrators can access all branches. Branch selection is for reference only.';
-            branchHint.innerHTML = '<i class="fas fa-globe"></i> Branch is for reference - you will have access to all branches';
-        } else {
-            noteText.innerText = 'Cashiers must select their branch. You will only have access to this branch.';
-            branchHint.innerHTML = '<i class="fas fa-store"></i> You will be assigned to this branch';
-        }
-    });
+    const roleElement = safeGetElement('role');
+    if (roleElement) {
+        roleElement.addEventListener('change', (e) => {
+            const role = e.target.value;
+            const noteText = safeGetElement('branch-note-text');
+            const branchHint = safeGetElement('branch-hint');
+            
+            if (role === 'admin') {
+                if (noteText) noteText.innerText = 'Administrators can access all branches. Branch selection is for reference only.';
+                if (branchHint) branchHint.innerHTML = '<i class="fas fa-globe"></i> Branch is for reference - you will have access to all branches';
+            } else {
+                if (noteText) noteText.innerText = 'Cashiers must select their branch. You will only have access to this branch.';
+                if (branchHint) branchHint.innerHTML = '<i class="fas fa-store"></i> You will be assigned to this branch';
+            }
+        });
+    }
 
     window.handleAuth = async () => {
-        const email = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value;
-        const role = document.getElementById('role')?.value;
-        const branchId = document.getElementById('branch')?.value;
-        const btn = document.getElementById('main-btn');
+        const emailInput = safeGetElement('email');
+        const passwordInput = safeGetElement('password');
+        const roleSelect = safeGetElement('role');
+        const branchSelect = safeGetElement('branch');
+        const btn = safeGetElement('main-btn');
+        
+        const email = emailInput ? emailInput.value.trim() : '';
+        const password = passwordInput ? passwordInput.value : '';
+        const role = roleSelect ? roleSelect.value : null;
+        const branchId = branchSelect ? branchSelect.value : null;
 
         if (!email || !password) {
             showMessage("Please fill all fields", 'error');
             return;
         }
 
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> PROCESSING...';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> PROCESSING...';
+        }
 
         try {
             if (isLogin) {
@@ -516,8 +551,10 @@
                 
                 if (profileError || !profile) {
                     showMessage("Profile not found. Please contact admin.", 'error');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+                    }
                     return;
                 }
                 
@@ -527,15 +564,19 @@
                 // SIGN UP
                 if (!role) {
                     showMessage("Please select your role", 'error');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-user-plus"></i> Register Now';
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-user-plus"></i> Register Now';
+                    }
                     return;
                 }
                 
                 if (!branchId) {
                     showMessage("Please select your branch", 'error');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-user-plus"></i> Register Now';
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-user-plus"></i> Register Now';
+                    }
                     return;
                 }
 
@@ -562,8 +603,8 @@
                     );
                     
                     // Clear form
-                    document.getElementById('email').value = '';
-                    document.getElementById('password').value = '';
+                    if (emailInput) emailInput.value = '';
+                    if (passwordInput) passwordInput.value = '';
                     
                     // Switch back to login mode after 3 seconds
                     setTimeout(() => {
@@ -574,12 +615,14 @@
         } catch (err) {
             showMessage(err.message, 'error');
         } finally {
-            if (!isLogin) {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-user-plus"></i> Register Now';
-            } else {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+            if (btn) {
+                if (!isLogin) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-user-plus"></i> Register Now';
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+                }
             }
         }
     };
@@ -605,16 +648,21 @@
         }
         
         if (profile) {
-            const overlay = document.getElementById('welcome-overlay');
-            overlay.classList.remove('hidden');
+            const overlay = safeGetElement('welcome-overlay');
+            if (overlay) overlay.classList.remove('hidden');
             
             const branchName = profile.branches?.name || '';
             const roleUpper = profile.role.toUpperCase();
             
-            document.getElementById('welcome-name').innerText = `WELCOME ${roleUpper}!`;
-            document.getElementById('welcome-role').innerText = profile.role === 'admin' 
-                ? 'Administrator Access - All Branches' 
-                : (branchName ? `Assigned to ${branchName}` : 'Loading workspace...');
+            const welcomeName = safeGetElement('welcome-name');
+            if (welcomeName) welcomeName.innerText = `WELCOME ${roleUpper}!`;
+            
+            const welcomeRole = safeGetElement('welcome-role');
+            if (welcomeRole) {
+                welcomeRole.innerText = profile.role === 'admin' 
+                    ? 'Administrator Access - All Branches' 
+                    : (branchName ? `Assigned to ${branchName}` : 'Loading workspace...');
+            }
             
             // Store session in localStorage for cross-page access
             const session = {
