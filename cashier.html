@@ -2556,7 +2556,7 @@
             if (liveSalesBody) {
                 liveSalesBody.innerHTML = sales.map(s => `
                     <tr class="${s.refunded ? 'refunded-row' : ''}">
-                        <td data-label="Time">${new Date(s.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}侧
+                        <td data-label="Time">${new Date(s.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
                         <td data-label="Item">
                             <b>${s.item_name}</b>
                             ${s.refunded ? '<span class="refunded-badge">REFUNDED</span>' : ''}
@@ -2564,23 +2564,23 @@
                             ${s.category === 'Gas' ? '<span class="gas-badge">GAS</span>' : ''}
                             ${s.payment_method === 'Debt' ? '<span class="refunded-badge" style="background:var(--warning)">DEBT</span>' : ''}
                             ${s.payment_method === 'KCB Paybill' ? '<span class="kcb-paybill-badge">KCB PAYBILL</span>' : ''}
-                        侧
+                        </td>
                         <td data-label="Qty" class="${s.quantity < 0 ? 'text-danger' : ''}">
                             ${s.quantity < 0 ? `-${Math.abs(s.quantity)}` : s.quantity}
-                        侧
+                        </td>
                         <td data-label="Total" class="${s.total_amount < 0 ? 'text-danger' : ''}">
                             Ksh ${s.total_amount.toLocaleString()}
-                        侧
+                        </td>
                         <td data-label="Method">
                             ${s.refunded ? 'Refund via ' : ''}${s.payment_method}
-                        侧
+                        </td>
                         <td data-label="Action" class="action-column">
                             ${!s.refunded && s.quantity > 0 && s.total_amount > 0 ? `
                                 <button class="btn-refund" onclick='openRefundModal(${JSON.stringify(s).replace(/'/g, "\\'")})'>
                                     <i class="fas fa-undo-alt"></i> Refund
                                 </button>
                             ` : ''}
-                        侧
+                        </td>
                     </table>
                 `).join('');
             }
@@ -2608,19 +2608,19 @@
                     const isKcbPaybill = t.category === 'KCB Paybill';
                     return `
                         <tr class="${t.type === 'Money In' ? 'money-in-row' : 'money-out-row'} ${isKcbPaybill ? 'kcb-live-box' : ''}">
-                            <td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}侧
+                            <td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
                             <td data-label="Reason">
                                 ${t.description}
                                 ${isKcbPaybill ? '<span class="kcb-paybill-badge">LIVE KCB</span>' : ''}
-                            侧
-                            <td data-label="Amount">Ksh ${t.amount.toLocaleString()}侧
+                            </td>
+                            <td data-label="Amount">Ksh ${t.amount.toLocaleString()}</td>
                             <td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">
                                 ${t.type}
-                            侧
+                            </td>
                             <td data-label="Wallet">
                                 ${t.category}
                                 ${isKcbPaybill ? '💰' : ''}
-                            侧
+                            </td>
                         </table>
                     `;
                 }).join('');
@@ -3004,7 +3004,7 @@
                 </tr>`;
         });
 
-        desktopTbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.侧</td>';
+        desktopTbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.</td></td>';
     }
 
     function renderMobileHistory(shifts, transData, query = "") {
