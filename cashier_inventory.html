@@ -439,6 +439,52 @@
             vertical-align: middle; 
         }
 
+        /* Quick Restock Button Styles - VISIBLE AND CLEAR */
+        .restock-container {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .restock-input {
+            width: 70px;
+            padding: 10px 8px;
+            text-align: center;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .restock-btn {
+            background: var(--green);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        .restock-btn:hover {
+            background: #0d9488;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+        }
+        
+        .restock-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         @media (max-width: 1024px) {
             .table-wrap { 
                 border: none; 
@@ -461,25 +507,30 @@
                 display: flex; 
                 justify-content: space-between; 
                 border: none; 
-                padding: 8px 0; 
-                font-size: 0.9rem; 
+                padding: 10px 0; 
+                font-size: 0.85rem; 
                 align-items: center;
             }
             td:before { 
                 content: attr(data-label); 
                 font-weight: 700; 
                 color: var(--text-dim); 
+                min-width: 120px;
+            }
+            .restock-container {
+                justify-content: flex-end;
             }
         }
 
         .badge { 
-            padding: 4px 8px; 
+            padding: 4px 10px; 
             border-radius: 6px; 
-            font-size: 0.65rem; 
+            font-size: 0.7rem; 
             font-weight: 700; 
             text-transform: uppercase; 
-            display: inline-block;
-            margin-right: 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
         }
         .badge-gas { 
             background: #fee2e2; 
@@ -501,55 +552,28 @@
         .sup-badge { 
             background: #fef3c7; 
             color: #92400e; 
-            padding: 4px 8px; 
+            padding: 4px 10px; 
             border-radius: 6px; 
             font-size: 0.75rem; 
             font-weight: 600; 
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
         }
         
         .low-stock { 
-            background: #fffcf0 !important; 
+            background: #fffcf0; 
         }
         .low-stock-text { 
             color: var(--danger); 
             font-weight: 800; 
         }
         
-        .onetouch-flex { 
-            display: flex; 
-            gap: 8px; 
-        }
-        .onetouch-input { 
-            width: 70px !important; 
-            text-align: center; 
-            padding: 8px; 
-        }
-        .btn-touch { 
-            background: var(--success); 
-            color: white; 
-            border: none; 
-            padding: 8px 15px; 
-            border-radius: 8px; 
-            font-weight: 700; 
-            cursor: pointer; 
-            font-size: 0.8rem; 
-        }
-
-        .overlay { 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(15,23,42,0.5); 
-            backdrop-filter: blur(4px); 
-            display: none; 
-            z-index: 2500; 
-        }
-        .overlay.active { display: block; }
-        
         .spinner {
             display: inline-block;
             width: 16px;
             height: 16px;
-            border: 3px solid rgba(255,255,255,.3);
+            border: 2px solid rgba(255,255,255,.3);
             border-radius: 50%;
             border-top-color: #fff;
             animation: spin 1s ease-in-out infinite;
@@ -574,7 +598,6 @@
         <button class="close-btn" onclick="toggleMenu()">×</button>
     </div>
     
-    <!-- Branch Info Display -->
     <div class="branch-info" id="sidebarBranchInfo">
         <div class="branch-label">Your Assigned Branch</div>
         <div class="branch-name" id="sidebarBranchName">
@@ -586,24 +609,19 @@
     <nav class="nav-list">
         <a href="cashier.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
         <a href="cashiergashub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
-                <a href="moneyinout.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
+        <a href="moneyinout.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
         <a href="shift history cashier.html" class="nav-link"><i class="fas fa-history"></i> <span>Shift History</span></a>
         <a href="sales_reports.html" class="nav-link"><i class="fas fa-chart-line"></i> <span>Sales History</span></a>
         <a href="cashier_inventory.html" class="nav-link active"><i class="fas fa-plus-circle"></i> <span>Add Stock</span></a>
-       
         <a href="sale edit cashier.html" class="nav-link"><i class="fas fa-edit"></i> <span>Edit Sales</span></a>
-
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
-        
-         <a href="low-stock-cashier.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
+        <a href="low-stock-cashier.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
         <a href="debtors.html" class="nav-link"><i class="fas fa-users"></i> <span>Debtors</span></a>
         <a href="supplierscashier.html" class="nav-link"><i class="fas fa-handshake"></i> <span>Suppliers</span></a>
         <a href="gas_delivery.html" class="nav-link"><i class="fas fa-truck"></i> <span>Delivery</span></a>
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
-       <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
-
         <a href="cashier_report.html" class="nav-link"><i class="fas fa-file-alt"></i> <span>Today's Report</span></a>
-         <a href="pos.html" class="nav-link"><i class="fas fa-shopping-cart"></i> <span>Cart Shop</span></a>
+        <a href="pos.html" class="nav-link"><i class="fas fa-shopping-cart"></i> <span>Cart Shop</span></a>
         <a href="cashierprofile.html" class="nav-link"><i class="fas fa-user"></i> <span>Settings</span></a>
         <a href="cashier.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
         
@@ -623,7 +641,6 @@
     </div>
 
     <div class="container">
-        <!-- Branch Header (Simplified) -->
         <div class="branch-header">
             <div style="display: flex; align-items: center; gap: 10px;">
                 <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
@@ -676,7 +693,6 @@
                         <option value="50kg">50 KG</option>
                     </select>
                 </div>
-                <!-- TUKTUK specific fields -->
                 <div class="form-row" id="tuktuk-row" style="display:none;">
                     <select id="tuktuk_type">
                         <option value="Passenger">Passenger Tuktuk</option>
@@ -733,21 +749,16 @@
     let currentBranch = null;
     let currentUserProfile = null;
 
-    // ==================== SIDEBAR FUNCTIONS ====================
     window.toggleMenu = () => {
         document.getElementById('sidebar').classList.toggle('mobile-active');
         document.getElementById('overlay').classList.toggle('active');
     };
 
-    // ==================== BRANCH FUNCTIONS ====================
-
-    // Get current user's branch ID from session
     function getCurrentBranchId() {
         const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
         return session.branch?.id || currentBranchId;
     }
 
-    // Load user profile with branch info
     async function loadUserProfile() {
         try {
             const { data: { user } } = await supabase.auth.getUser();
@@ -758,7 +769,6 @@
             
             currentUser = user;
             
-            // Get profile with branch info
             const { data: profile, error } = await supabase
                 .from('profiles')
                 .select(`
@@ -779,7 +789,6 @@
             currentBranchId = profile.branch_id;
             currentBranch = profile.branches;
             
-            // Store in session for other functions
             const session = {
                 user: user,
                 profile: profile,
@@ -788,13 +797,11 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
-            // Update sidebar with user's assigned branch
             const sidebarBranchName = document.querySelector('#sidebarBranchName span');
             if (profile.branches && sidebarBranchName) {
                 sidebarBranchName.textContent = profile.branches.name;
             }
             
-            // Update branch display
             const branchDisplay = document.getElementById('currentBranchDisplay');
             if (branchDisplay && profile.branches) {
                 branchDisplay.textContent = profile.branches.name;
@@ -818,7 +825,6 @@
         document.getElementById('gas-row').style.display = (category === 'Gas') ? 'grid' : 'none';
         document.getElementById('tuktuk-row').style.display = (category === 'Tuktuk') ? 'grid' : 'none';
         
-        // For TUKTUK, set part type
         if (category === 'Tuktuk') {
             document.getElementById('type').value = 'N/A';
         }
@@ -851,7 +857,7 @@
             document.getElementById('inv-body').innerHTML = `
                 <tr>
                     <td colspan="8" style="text-align: center; padding: 40px; color: var(--danger);">
-                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i><br>
                         Error: Could not determine your branch. Please log out and log in again.
                     </td>
                 </tr>
@@ -860,7 +866,6 @@
         }
 
         try {
-            // Load suppliers for this branch
             const { data: sups } = await supabase
                 .from('suppliers')
                 .select('id, name')
@@ -870,7 +875,6 @@
             document.getElementById('prod-supplier').innerHTML = '<option value="">-- No Supplier --</option>' + 
                 (sups || []).map(s => `<option value="${s.id}">${s.name}</option>`).join('');
 
-            // Load products for this branch
             const { data, error } = await supabase
                 .from('products')
                 .select('*, suppliers(name)')
@@ -880,14 +884,13 @@
             if (error) throw error;
             
             allProducts = data || [];
-            console.log(`Loaded ${allProducts.length} products`);
             render();
         } catch (error) {
             console.error("Error loading data:", error);
             document.getElementById('inv-body').innerHTML = `
                 <tr>
                     <td colspan="8" style="text-align: center; padding: 40px; color: var(--danger);">
-                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i><br>
                         Error: ${error.message}
                     </td>
                 </tr>
@@ -900,7 +903,7 @@
             document.getElementById('inv-body').innerHTML = `
                 <tr>
                     <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-dim);">
-                        <i class="fas fa-box-open" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        <i class="fas fa-box-open" style="font-size: 2rem; margin-bottom: 10px;"></i><br>
                         No products found for this branch
                     </td>
                 </tr>
@@ -913,7 +916,6 @@
             const isTuktuk = p.category === 'Tuktuk';
             const isLow = p.stock_quantity < 7;
             
-            // Determine display type
             let typeDisplay = p.part_type;
             if (isTuktuk && ['Passenger', 'Cargo', 'Spare Part'].includes(p.part_type)) {
                 typeDisplay = p.part_type;
@@ -923,10 +925,12 @@
             
             const badgeClass = getCategoryBadgeClass(p.category);
             const categoryIcon = getCategoryIcon(p.category);
+            const productId = p.id;
+            const productName = p.name.replace(/'/g, "\\'");
             
             return `
                 <tr class="${isLow ? 'low-stock' : ''}">
-                    <td>
+                    <td data-label="Item Details">
                         <div style="font-weight:800; color:var(--text);">${p.name}</div>
                         <div style="margin-top:4px;">
                             <span class="badge ${badgeClass}">
@@ -939,17 +943,23 @@
                             <i class="fas ${categoryIcon}"></i> ${p.category}
                         </span>
                     </td>
-                    <td data-label="Supplier"><span class="sup-badge">${p.suppliers?.name || 'Manual'}</span></td>
+                    <td data-label="Supplier">
+                        <span class="sup-badge">
+                            <i class="fas fa-building"></i> ${p.suppliers?.name || 'Manual'}
+                        </span>
+                    </td>
                     <td data-label="Buying">Ksh ${p.cost_price?.toLocaleString() || '0'}</td>
                     <td data-label="Selling" style="font-weight:700; color:var(--primary)">Ksh ${p.selling_price?.toLocaleString() || '0'}</td>
                     <td data-label="Min. Price">Ksh ${p.min_selling_price?.toLocaleString() || p.min_price?.toLocaleString() || '0'}</td>
                     <td data-label="Stock Level" class="${isLow ? 'low-stock-text' : ''}" style="font-weight:800">
-                        ${p.stock_quantity || 0} ${isLow ? '⚠️' : ''}
+                        ${p.stock_quantity || 0} ${isLow ? '⚠️ Low Stock' : ''}
                     </td>
-                    <td data-label="Restock">
-                        <div class="onetouch-flex">
-                            <input type="number" id="add-${p.id}" class="onetouch-input" value="10" min="1">
-                            <button class="btn-touch" onclick="quickAdd('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${p.stock_quantity || 0})">ADD</button>
+                    <td data-label="Quick Restock">
+                        <div class="restock-container">
+                            <input type="number" id="add-${productId}" class="restock-input" value="10" min="1" step="1">
+                            <button class="restock-btn" onclick="quickAdd('${productId}', '${productName}', ${p.stock_quantity || 0})">
+                                <i class="fas fa-plus-circle"></i> ADD
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -960,12 +970,15 @@
     window.quickAdd = async (id, name, current) => {
         const input = document.getElementById(`add-${id}`);
         const val = parseInt(input.value);
-        if (isNaN(val) || val < 1) return;
+        if (isNaN(val) || val < 1) {
+            alert("Please enter a valid quantity");
+            return;
+        }
         
-        if (!confirm(`Add ${val} items to ${name}?`)) return;
+        if (!confirm(`Add ${val} item(s) to "${name}"?`)) return;
         
-        const btn = event.target;
-        const originalText = btn.innerText;
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
         btn.innerHTML = '<span class="spinner"></span>';
         btn.disabled = true;
 
@@ -975,11 +988,12 @@
             .eq('id', id)
             .eq('branch_id', getCurrentBranchId());
 
-        if(!error) {
+        if (!error) {
             await loadData(); 
+            alert(`✅ Added ${val} items to ${name}`);
         } else {
             alert("Update failed: " + error.message);
-            btn.innerText = originalText;
+            btn.innerHTML = originalText;
             btn.disabled = false;
         }
     };
@@ -1012,7 +1026,6 @@
             branch_id: branchId
         };
 
-        // Add TUKTUK specific fields if category is Tuktuk
         if (category === 'Tuktuk') {
             payload.tuktuk_type = document.getElementById('tuktuk_type').value;
             payload.name = `${document.getElementById('tuktuk_model').value} ${document.getElementById('tuktuk_type').value} - ${document.getElementById('name').value}`;
@@ -1042,7 +1055,6 @@
         ));
     };
 
-    // Initialize when page loads
     document.addEventListener('DOMContentLoaded', async function() {
         const profile = await loadUserProfile();
         if (profile) {
