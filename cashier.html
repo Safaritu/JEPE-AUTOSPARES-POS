@@ -2581,7 +2581,7 @@
                                 </button>
                             ` : ''}
                         </td>
-                    </table>
+                    </tr>
                 `).join('');
             }
 
@@ -2621,7 +2621,7 @@
                                 ${t.category}
                                 ${isKcbPaybill ? '💰' : ''}
                             </td>
-                        </table>
+                        </tr>
                     `;
                 }).join('');
             }
@@ -2918,6 +2918,9 @@
             const kcbPaybillSales = sh.total_kcb_paybill_sales || 0;
             const totalRevenue = sh.total_sales_amount || 0;
             
+            // Format the date for the URL (YYYY-MM-DD)
+            const shiftDate = new Date(sh.start_time).toISOString().split('T')[0];
+            
             // Calculate totals
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
@@ -2947,6 +2950,29 @@
 
             const startD = new Date(sh.start_time);
             
+            // Build payment methods HTML with clickable TOTAL SALES
+            let paymentMethodsHtml = `
+                <div class="payment-method-item">
+                    <span class="payment-label">Cash Sales</span>
+                    <span class="payment-amount positive">+${cashSales.toLocaleString()}</span>
+                </div>
+                <div class="payment-method-item">
+                    <span class="payment-label">🏦 KCB Paybill</span>
+                    <span class="payment-amount positive">+${kcbPaybillSales.toLocaleString()}</span>
+                </div>
+            `;
+            
+            // Add total revenue at the bottom, wrapped in a link
+            paymentMethodsHtml += `
+                <a href="sales_reports.html?date=${shiftDate}" class="revenue-card" style="display: block; text-decoration: none; margin-top: 8px;">
+                    <div class="payment-method-item" style="margin-top:8px; padding-top:8px; border-top:2px solid var(--border);">
+                        <span class="payment-label" style="font-weight:800;">TOTAL SALES</span>
+                        <span class="payment-amount" style="font-weight:800; color:var(--primary);">+${totalRevenue.toLocaleString()}</span>
+                    </div>
+                    <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:4px; text-align:right">CLICK TO VIEW ➔</div>
+                </a>
+            `;
+            
             tableHtml += `
                 <tr>
                     <td class="date-cell">
@@ -2963,27 +2989,16 @@
                       </td>
                      <td style="vertical-align: middle;">
                         <div style="background: #f8fafc; padding: 10px; border-radius: 8px;">
-                            <div class="payment-method-item">
-                                <span class="payment-label">💰 Cash Sales</span>
-                                <span class="payment-amount positive">+${cashSales.toLocaleString()}</span>
-                            </div>
-                            <div class="payment-method-item">
-                                <span class="payment-label">🏦 KCB Paybill</span>
-                                <span class="payment-amount positive">+${kcbPaybillSales.toLocaleString()}</span>
-                            </div>
-                            <div class="payment-method-item" style="margin-top:8px; padding-top:8px; border-top:2px solid var(--border);">
-                                <span class="payment-label" style="font-weight:800;">📊 TOTAL SALES</span>
-                                <span class="payment-amount" style="font-weight:800; color:var(--primary);">+${totalRevenue.toLocaleString()}</span>
-                            </div>
+                            ${paymentMethodsHtml}
                         </div>
-                      </td>
+                      侧
                       <td>
                         <a href="moneyinout.html" class="revenue-card">
                             <div class="account-line"><span class="account-label">In</span><span class="account-val" style="color:var(--success)">+${moneyIn.toLocaleString()}</span></div>
                             <div class="account-line"><span class="account-label">Out</span><span class="account-val" style="color:var(--danger)">-${moneyOut.toLocaleString()}</span></div>
                             <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW →</div>
                         </a>
-                      </td>
+                      侧
                       <td>
                         <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.close_cash||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa||0).toLocaleString()}</span></div>
@@ -2991,7 +3006,7 @@
                         <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.close_equity||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">Paybill</span><span class="account-val">${(sh.close_kcb_bank||0).toLocaleString()}</span></div>
                         <div class="total-row" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>
-                      </td>
+                      侧
                       <td>
                         <span class="status-badge ${varianceClass}">
                             ${varianceDisplay}
@@ -2999,12 +3014,12 @@
                         <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 8px; text-align: center;">
                             Expected: ${expected.toLocaleString()}
                         </div>
-                      </td>
-                      <td><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim); font-style: italic;">${sh.variance_note && sh.variance_note !== 'Balanced' ? sh.variance_note.split(' - ')[1] || sh.variance_note : sh.variance_note || 'No notes added.'}</div></td>
+                      侧
+                      <td><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim); font-style: italic;">${sh.variance_note && sh.variance_note !== 'Balanced' ? sh.variance_note.split(' - ')[1] || sh.variance_note : sh.variance_note || 'No notes added.'}</div>侧
                 </tr>`;
         });
 
-        desktopTbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.</td></td>';
+        desktopTbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.侧</td>';
     }
 
     function renderMobileHistory(shifts, transData, query = "") {
@@ -3032,6 +3047,9 @@
             const cashSales = sh.total_cash_sales || 0;
             const kcbPaybillSales = sh.total_kcb_paybill_sales || 0;
             const totalRevenue = sh.total_sales_amount || 0;
+            
+            // Format the date for the URL (YYYY-MM-DD)
+            const shiftDate = new Date(sh.start_time).toISOString().split('T')[0];
 
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
@@ -3055,6 +3073,27 @@
             
             const varianceNote = sh.variance_note && sh.variance_note !== 'Balanced' ? 
                 (sh.variance_note.split(' - ')[1] || sh.variance_note) : sh.variance_note;
+            
+            // Build payment methods with clickable total
+            let paymentMethodsHtml = `
+                <div class="shift-mobile-detail-line">
+                    <span class="shift-mobile-detail-label">Cash</span>
+                    <span class="shift-mobile-detail-value" style="color:var(--success)">+${cashSales.toLocaleString()}</span>
+                </div>
+                <div class="shift-mobile-detail-line">
+                    <span class="shift-mobile-detail-label">🏦 KCB Paybill</span>
+                    <span class="shift-mobile-detail-value" style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span>
+                </div>
+            `;
+            
+            paymentMethodsHtml += `
+                <a href="sales_reports.html?date=${shiftDate}" style="text-decoration: none; display: block;">
+                    <div class="shift-mobile-total" style="margin-top:8px;">
+                        Total Sales: +${totalRevenue.toLocaleString()}
+                        <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:4px;">➔ CLICK TO VIEW</div>
+                    </div>
+                </a>
+            `;
             
             mobileHtml += `
                 <div class="shift-mobile-card">
@@ -3080,10 +3119,8 @@
                         
                         <div class="shift-mobile-section">
                             <div class="shift-mobile-section-title">Sales</div>
-                            <div style="font-size: 0.8rem;">
-                                <div>Cash: ${cashSales.toLocaleString()}</div>
-                                <div>Paybill: ${kcbPaybillSales.toLocaleString()}</div>
-                                <div style="font-weight:700; margin-top:5px;">Total: ${totalRevenue.toLocaleString()}</div>
+                            <div class="shift-mobile-details">
+                                ${paymentMethodsHtml}
                             </div>
                         </div>
                         
