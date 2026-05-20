@@ -375,6 +375,34 @@
             vertical-align: top; 
         }
 
+        .payment-method-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px dashed #f1f5f9;
+        }
+        
+        .payment-method-item:last-child {
+            border-bottom: none;
+        }
+        
+        .payment-label {
+            font-weight: 600;
+            color: var(--dim);
+            font-size: 0.75rem;
+        }
+        
+        .payment-amount {
+            font-weight: 700;
+            color: var(--text);
+            font-size: 0.85rem;
+        }
+        
+        .payment-amount.positive {
+            color: var(--success);
+        }
+
         .account-line { 
             display: flex; 
             justify-content: space-between; 
@@ -419,7 +447,6 @@
             color: #4338ca; 
             border: 1px solid #c7d2fe; 
         }
-        /* Variance specific classes */
         .var-positive { 
             background: #dcfce7; 
             color: #15803d; 
@@ -448,15 +475,6 @@
         .revenue-card:hover { 
             border-color: var(--primary); 
             transform: translateY(-2px); 
-        }
-        
-        .adj-box { 
-            padding: 12px; 
-            border-radius: 10px; 
-            background: #fafafa; 
-            border: 1px solid #f0f0f0; 
-            text-decoration: none; 
-            display: block; 
         }
 
         .date-cell b { 
@@ -572,10 +590,6 @@
                 gap: 6px;
             }
             
-            .shift-mobile-section-title i {
-                font-size: 0.9rem;
-            }
-            
             .shift-mobile-details {
                 font-size: 0.85rem;
             }
@@ -665,25 +679,6 @@
                 transform: translateY(-2px);
                 box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             }
-            
-            .shift-mobile-action-btn i {
-                font-size: 0.9rem;
-            }
-            
-            .mobile-header {
-                display: none;
-            }
-        }
-        
-        /* Desktop specific */
-        @media (min-width: 769px) {
-            .mobile-shifts-container {
-                display: none !important;
-            }
-            
-            .table-outer {
-                display: block;
-            }
         }
         
         /* Loading Spinner */
@@ -708,7 +703,6 @@
             100% { transform: rotate(360deg); }
         }
         
-        /* No results message */
         .no-results {
             text-align: center;
             padding: 40px 20px;
@@ -722,7 +716,6 @@
             color: #cbd5e1;
         }
         
-        /* Refresh button */
         .refresh-btn {
             position: fixed;
             bottom: 20px;
@@ -768,7 +761,6 @@
         <button class="close-btn" onclick="toggleMenu()">×</button>
     </div>
     
-    <!-- Branch Info Display -->
     <div class="branch-info" id="sidebarBranchInfo">
         <div class="branch-label">Your Assigned Branch</div>
         <div class="branch-name" id="sidebarBranchName">
@@ -814,14 +806,11 @@
         <p style="margin:6px 0 0; color: var(--dim);">Comprehensive reconciliation of all physical and system balances.</p>
     </div>
 
-    <!-- Branch Selector -->
     <div class="branch-selector-container">
         <div class="branch-filter">
             <i class="fas fa-store" style="color: var(--primary); font-size: 1.1rem;"></i>
             <select id="branchSelector" class="branch-select" onchange="handleBranchChange()">
                 <option value="all">🏢 ALL BRANCHES (Consolidated)</option>
-                <option value="MUT">🏪 MUTOMO BRANCH</option>
-                <option value="KIT">🏪 KITUI BRANCH</option>
             </select>
         </div>
         <div class="branch-badge" id="currentBranchBadge">
@@ -833,23 +822,22 @@
 
     <div class="slide-indicator" id="scrollHint">
         <span class="hand-icon">👉</span>
-        <span style="letter-spacing: 1px;">SWIPE/SLIDE TABLE BELOW TO VIEW ALL SHIFT DETAILS</span>
+        <span>SWIPE/SLIDE TABLE BELOW TO VIEW ALL SHIFT DETAILS</span>
     </div>
 
     <input type="text" id="auditSearch" class="search-input" placeholder="Search by date (e.g. 10 Jan 2026)...">
 
-    <!-- Desktop Table View -->
     <div class="table-outer">
         <div class="table-container" id="scrollContainer">
             <table>
                 <thead>
                     <tr>
-                        <th width="160">DATE</th>
-                        <th width="210">OPENING FLOATS</th>
-                        <th width="210">PAYMENT METHOD</th>
-                        <th width="190">MONEY IN/OUT</th>
-                        <th width="210">CLOSING FLOATS</th>
-                        <th width="190">VARIANCE</th>
+                        <th width="140">DATE</th>
+                        <th width="200">OPENING FLOATS</th>
+                        <th width="250">PAYMENT METHOD</th>
+                        <th width="180">MONEY IN/OUT</th>
+                        <th width="200">CLOSING FLOATS</th>
+                        <th width="180">VARIANCE</th>
                         <th width="200">VARIANCE REASON</th>
                         <th width="80">BRANCH</th>
                     </tr>
@@ -859,17 +847,12 @@
         </div>
     </div>
     
-    <!-- Mobile Card View -->
-    <div id="mobile-shifts-container" class="mobile-shifts-container">
-        <!-- Mobile cards will be inserted here by JavaScript -->
-    </div>
+    <div id="mobile-shifts-container" class="mobile-shifts-container"></div>
     
-    <!-- Loading Spinner -->
     <div id="loadingSpinner" class="loading-spinner" style="display: none;">
         <div class="spinner"></div>
     </div>
     
-    <!-- No Results Message -->
     <div id="noResults" class="no-results" style="display: none;">
         <i class="fas fa-search"></i>
         <p>No shift records found</p>
@@ -877,7 +860,6 @@
     </div>
 </main>
 
-<!-- Refresh Button -->
 <button class="refresh-btn" onclick="refreshData()" id="refreshBtn">
     <i class="fas fa-sync-alt"></i>
 </button>
@@ -889,12 +871,10 @@
     let isMobile = window.innerWidth <= 768;
     let currentUser = null;
     let currentBranchId = null;
-    let currentBranch = null;
     let selectedBranchId = null;
     let branches = {};
     let branchIdMap = {};
 
-    // ==================== SIDEBAR FUNCTION ====================
     window.toggleMenu = function() {
         document.getElementById('sidebar').classList.toggle('mobile-active');
     };
@@ -906,7 +886,29 @@
         }
     };
 
-    // ==================== BRANCH FUNCTIONS ====================
+    // Helper function to get sales by payment method for a shift
+    function getSalesByPaymentMethod(shiftId) {
+        const shiftSales = allSales.filter(s => s.shift_id === shiftId);
+        
+        const paymentTotals = {
+            'Cash': 0,
+            'KCB Paybill': 0,
+            'Mpesa': 0,
+            'Bank': 0,
+            'Debt': 0
+        };
+        
+        shiftSales.forEach(sale => {
+            const method = sale.payment_method || 'Unknown';
+            const amount = Number(sale.total_amount) || 0;
+            
+            if (paymentTotals[method] !== undefined) {
+                paymentTotals[method] += amount;
+            }
+        });
+        
+        return paymentTotals;
+    }
 
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
@@ -916,12 +918,18 @@
             branches[b.id] = b;
             branchIdMap[b.code] = b.id;
         });
-        console.log("✅ Branches loaded:", branches);
+        
+        // Populate branch selector
+        const selector = document.getElementById('branchSelector');
+        data?.forEach(b => {
+            const option = document.createElement('option');
+            option.value = b.id;
+            option.textContent = `🏪 ${b.name} (${b.code})`;
+            selector.appendChild(option);
+        });
+        
+        console.log("Branches loaded:", branches);
         return branches;
-    }
-
-    function getBranchIdFromCode(code) {
-        return branchIdMap[code] || null;
     }
 
     async function loadUserProfile() {
@@ -951,7 +959,6 @@
             if (error) throw error;
             
             currentBranchId = profile.branch_id;
-            currentBranch = profile.branches;
             
             const session = {
                 user: user,
@@ -961,7 +968,6 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
-            // Update sidebar with user's assigned branch
             const sidebarBranchName = document.querySelector('#sidebarBranchName span');
             if (profile.branches && sidebarBranchName) {
                 sidebarBranchName.textContent = profile.branches.name;
@@ -969,48 +975,28 @@
             
             return profile;
         } catch (error) {
-            console.error("❌ Error loading profile:", error);
+            console.error("Error loading profile:", error);
             return null;
         }
     }
 
     window.handleBranchChange = async function() {
         const selector = document.getElementById('branchSelector');
-        const selectedCode = selector.value;
+        const selectedValue = selector.value;
         
         const branchDisplay = document.getElementById('currentBranchDisplay');
-        const dateRange = document.getElementById('dateRange');
         
-        console.log("========== BRANCH CHANGE ==========");
-        console.log("Selected code:", selectedCode);
-        
-        if (selectedCode === 'all') {
+        if (selectedValue === 'all') {
             branchDisplay.textContent = 'ALL BRANCHES';
             selectedBranchId = null;
-            dateRange.textContent = 'Showing all branches';
         } else {
-            const branchId = getBranchIdFromCode(selectedCode);
-            if (branchId) {
-                selectedBranchId = branchId;
-                branchDisplay.textContent = branches[branchId].name;
-                dateRange.textContent = `Showing ${branches[branchId].name} only`;
-                console.log(`Selected branch: ${branches[branchId].name} (ID: ${branchId})`);
-            }
+            selectedBranchId = selectedValue;
+            const branch = branches[selectedBranchId];
+            branchDisplay.textContent = branch ? branch.name : 'SELECTED BRANCH';
         }
         
         await fetchData();
     };
-
-    const scrollContainer = document.getElementById('scrollContainer');
-    const scrollHint = document.getElementById('scrollHint');
-    if (scrollContainer && scrollHint) {
-        scrollContainer.addEventListener('scroll', () => {
-            if (scrollContainer.scrollLeft > 20) {
-                scrollHint.style.opacity = '0';
-                setTimeout(() => scrollHint.style.display = 'none', 500);
-            }
-        });
-    }
 
     async function fetchData() {
         showLoading(true);
@@ -1018,7 +1004,6 @@
         try {
             console.log("Fetching shifts for branch ID:", selectedBranchId || 'ALL');
             
-            // Build shifts query
             let shiftsQuery = supabase
                 .from('daily_shifts')
                 .select('*')
@@ -1028,7 +1013,6 @@
                 shiftsQuery = shiftsQuery.eq('branch_id', selectedBranchId);
             }
             
-            // Build transactions query
             let transQuery = supabase
                 .from('cash_transactions')
                 .select('shift_id, amount, type');
@@ -1037,7 +1021,6 @@
                 transQuery = transQuery.eq('branch_id', selectedBranchId);
             }
             
-            // Build sales query
             let salesQuery = supabase
                 .from('sales')
                 .select('shift_id, total_amount, payment_method');
@@ -1056,7 +1039,7 @@
             allTransactions = transRes.data || [];
             allSales = salesRes.data || [];
             
-            console.log(`Loaded ${allShifts.length} shifts`);
+            console.log(`Loaded ${allShifts.length} shifts, ${allSales.length} sales`);
             
             render();
         } catch (error) {
@@ -1082,7 +1065,6 @@
             renderDesktop(data);
         }
         
-        // Show/hide no results message
         const noResultsEl = document.getElementById('noResults');
         if (noResultsEl) {
             noResultsEl.style.display = data.length === 0 ? 'block' : 'none';
@@ -1098,18 +1080,16 @@
         data.forEach(sh => {
             const branch = branches[sh.branch_id] || { name: 'Unknown', code: '--' };
             const shiftLogs = allTransactions.filter(t => t.shift_id === sh.id);
-            const shiftSales = allSales.filter(s => s.shift_id === sh.id);
+            const paymentTotals = getSalesByPaymentMethod(sh.id);
 
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
-            const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount || 0), 0);
-            const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount || 0), 0);
 
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
             const isClosed = sh.status === 'Closed';
-            const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            const totalRevenue = allSales.filter(s => s.shift_id === sh.id).reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             
             let varianceVal = isClosed ? (closeTotal - expected) : 0;
@@ -1121,18 +1101,62 @@
                 varianceClass = 'active-shift';
             } else {
                 if (varianceVal > 0) {
-                    varianceDisplay = 'VAR: +' + varianceVal.toLocaleString();
+                    varianceDisplay = '+ ' + varianceVal.toLocaleString();
                     varianceClass = 'var-positive';
                 } else if (varianceVal < 0) {
-                    varianceDisplay = 'VAR: ' + varianceVal.toLocaleString();
+                    varianceDisplay = varianceVal.toLocaleString();
                     varianceClass = 'var-negative';
                 } else {
-                    varianceDisplay = 'VAR: 0';
+                    varianceDisplay = 'BALANCED';
                     varianceClass = 'var-balanced';
                 }
             }
 
             const startD = new Date(sh.start_time);
+            
+            // Build payment methods HTML - NOW WITH ACTUAL SALES DATA
+            let paymentMethodsHtml = '';
+            const paymentMethodsToShow = [
+                { key: 'Cash', label: '💰 Cash', icon: '💰' },
+                { key: 'KCB Paybill', label: '🏦 KCB Paybill', icon: '🏦' },
+                { key: 'Mpesa', label: '📱 Mpesa', icon: '📱' },
+                { key: 'Bank', label: '💳 Bank', icon: '💳' },
+                { key: 'Debt', label: '📝 Debt', icon: '📝' }
+            ];
+            
+            let hasPayments = false;
+            paymentMethodsToShow.forEach(pm => {
+                const amount = paymentTotals[pm.key] || 0;
+                if (amount > 0) {
+                    hasPayments = true;
+                    paymentMethodsHtml += `
+                        <div class="payment-method-item">
+                            <span class="payment-label">${pm.label}</span>
+                            <span class="payment-amount positive">+${amount.toLocaleString()}</span>
+                        </div>
+                    `;
+                }
+            });
+            
+            if (!hasPayments && totalRevenue > 0) {
+                // If we have total revenue but no breakdown, show total only
+                paymentMethodsHtml = `
+                    <div class="payment-method-item">
+                        <span class="payment-label">💰 Total Sales</span>
+                        <span class="payment-amount positive">+${totalRevenue.toLocaleString()}</span>
+                    </div>
+                `;
+            } else if (!hasPayments) {
+                paymentMethodsHtml = '<div class="payment-method-item"><span class="payment-label">No sales recorded</span><span class="payment-amount">0</span></div>';
+            }
+            
+            // Add total revenue at the bottom
+            paymentMethodsHtml += `
+                <div class="payment-method-item" style="margin-top:8px; padding-top:8px; border-top:2px solid var(--border);">
+                    <span class="payment-label" style="font-weight:800;">📊 TOTAL SALES</span>
+                    <span class="payment-amount" style="font-weight:800; color:var(--primary);">+${totalRevenue.toLocaleString()}</span>
+                </div>
+            `;
             
             tableHtml += `
                 <tr>
@@ -1148,18 +1172,16 @@
                         <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity||0).toLocaleString()}</span></div>
                         <div class="total-row">Total: ${openTotal.toLocaleString()}</div>
                     </td>
-                    <td>
-                        <a href="sales-history.html" class="revenue-card">
-                            <div class="account-line"><span class="account-label">Cash Sales</span><span class="account-val" style="color:var(--success)">+${cashSales.toLocaleString()}</span></div>
-                            <div class="account-line"><span class="account-label">KCB Paybill</span><span class="account-val" style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span></div>
-                            <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW ➔</div>
-                        </a>
+                    <td style="vertical-align: middle;">
+                        <div style="background: #f8fafc; padding: 10px; border-radius: 8px;">
+                            ${paymentMethodsHtml}
+                        </div>
                     </td>
                     <td>
                         <a href="money-history.html" class="revenue-card">
                             <div class="account-line"><span class="account-label">In</span><span class="account-val" style="color:var(--success)">+${moneyIn.toLocaleString()}</span></div>
                             <div class="account-line"><span class="account-label">Out</span><span class="account-val" style="color:var(--danger)">-${moneyOut.toLocaleString()}</span></div>
-                            <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW ➔</div>
+                            <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW →</div>
                         </a>
                     </td>
                     <td>
@@ -1167,7 +1189,6 @@
                         <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.close_kcb||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.close_equity||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">Paybill</span><span class="account-val">${(sh.close_kcb_bank||0).toLocaleString()}</span></div>
                         <div class="total-row" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>
                     </td>
                     <td>
@@ -1195,18 +1216,18 @@
         data.forEach(sh => {
             const branch = branches[sh.branch_id] || { name: 'Unknown', code: '--' };
             const shiftLogs = allTransactions.filter(t => t.shift_id === sh.id);
-            const shiftSales = allSales.filter(s => s.shift_id === sh.id);
+            const paymentTotals = getSalesByPaymentMethod(sh.id);
 
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
-            const cashSales = shiftSales.filter(s => s.payment_method === 'Cash').reduce((s, x) => s + Number(x.total_amount || 0), 0);
-            const kcbPaybillSales = shiftSales.filter(s => s.payment_method === 'KCB Paybill').reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            const cashSales = paymentTotals.Cash || 0;
+            const kcbPaybillSales = paymentTotals['KCB Paybill'] || 0;
 
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
             const isClosed = sh.status === 'Closed';
-            const totalRevenue = shiftSales.reduce((s, x) => s + Number(x.total_amount || 0), 0);
+            const totalRevenue = allSales.filter(s => s.shift_id === sh.id).reduce((s, x) => s + Number(x.total_amount || 0), 0);
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             const varianceVal = isClosed ? (closeTotal - expected) : 0;
             
@@ -1248,113 +1269,52 @@
                     
                     <div class="shift-mobile-grid">
                         <div class="shift-mobile-section">
-                            <div class="shift-mobile-section-title">
-                                <i class="fas fa-wallet"></i> OPENING FLOATS
-                            </div>
+                            <div class="shift-mobile-section-title"><i class="fas fa-wallet"></i> OPENING FLOATS</div>
                             <div class="shift-mobile-details">
-                                <div class="shift-mobile-detail-line">
-                                    <span class="shift-mobile-detail-label">Cash</span>
-                                    <span class="shift-mobile-detail-value">${(sh.open_cash||0).toLocaleString()}</span>
-                                </div>
-                                <div class="shift-mobile-detail-line">
-                                    <span class="shift-mobile-detail-label">Mpesa</span>
-                                    <span class="shift-mobile-detail-value">${(sh.open_mpesa||0).toLocaleString()}</span>
-                                </div>
-                                <div class="shift-mobile-detail-line">
-                                    <span class="shift-mobile-detail-label">KCB Float</span>
-                                    <span class="shift-mobile-detail-value">${(sh.open_kcb||0).toLocaleString()}</span>
-                                </div>
-                                <div class="shift-mobile-detail-line">
-                                    <span class="shift-mobile-detail-label">Equity</span>
-                                    <span class="shift-mobile-detail-value">${(sh.open_equity||0).toLocaleString()}</span>
-                                </div>
-                                <div class="shift-mobile-total">
-                                    Total: ${openTotal.toLocaleString()}
-                                </div>
+                                <div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">Cash</span><span class="shift-mobile-detail-value">${(sh.open_cash||0).toLocaleString()}</span></div>
+                                <div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">Mpesa</span><span class="shift-mobile-detail-value">${(sh.open_mpesa||0).toLocaleString()}</span></div>
+                                <div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">KCB Float</span><span class="shift-mobile-detail-value">${(sh.open_kcb||0).toLocaleString()}</span></div>
+                                <div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">Equity</span><span class="shift-mobile-detail-value">${(sh.open_equity||0).toLocaleString()}</span></div>
+                                <div class="shift-mobile-total">Total: ${openTotal.toLocaleString()}</div>
                             </div>
                         </div>
                         
                         <div class="shift-mobile-section">
-                            <div class="shift-mobile-section-title">
-                                <i class="fas fa-cash-register"></i> PAYMENT METHOD
-                            </div>
+                            <div class="shift-mobile-section-title"><i class="fas fa-cash-register"></i> PAYMENT METHOD</div>
                             <div class="shift-mobile-details">
-                                <div class="shift-mobile-detail-line">
-                                    <span class="shift-mobile-detail-label">Cash Sales</span>
-                                    <span class="shift-mobile-detail-value" style="color:var(--success)">+${cashSales.toLocaleString()}</span>
-                                </div>
-                                <div class="shift-mobile-detail-line">
-                                    <span class="shift-mobile-detail-label">KCB Paybill</span>
-                                    <span class="shift-mobile-detail-value" style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span>
-                                </div>
+                                <div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">💰 Cash Sales</span><span class="shift-mobile-detail-value" style="color:var(--success)">+${cashSales.toLocaleString()}</span></div>
+                                <div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">🏦 KCB Paybill</span><span class="shift-mobile-detail-value" style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span></div>
+                                <div class="shift-mobile-total" style="margin-top:8px;">Total Sales: +${totalRevenue.toLocaleString()}</div>
                             </div>
                         </div>
                         
                         <div class="shift-mobile-section">
-                            <div class="shift-mobile-section-title">
-                                <i class="fas fa-exchange-alt"></i> MONEY IN/OUT
-                            </div>
+                            <div class="shift-mobile-section-title"><i class="fas fa-exchange-alt"></i> MONEY IN/OUT</div>
                             <div class="shift-mobile-details">
-                                <div class="shift-mobile-detail-line">
-                                    <span class="shift-mobile-detail-label">Money In</span>
-                                    <span class="shift-mobile-detail-value" style="color:var(--success)">+${moneyIn.toLocaleString()}</span>
-                                </div>
-                                <div class="shift-mobile-detail-line">
-                                    <span class="shift-mobile-detail-label">Money Out</span>
-                                    <span class="shift-mobile-detail-value" style="color:var(--danger)">-${moneyOut.toLocaleString()}</span>
-                                </div>
+                                <div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">Money In</span><span class="shift-mobile-detail-value" style="color:var(--success)">+${moneyIn.toLocaleString()}</span></div>
+                                <div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">Money Out</span><span class="shift-mobile-detail-value" style="color:var(--danger)">-${moneyOut.toLocaleString()}</span></div>
                             </div>
                         </div>
                         
                         <div class="shift-mobile-section">
-                            <div class="shift-mobile-section-title">
-                                <i class="fas fa-safe"></i> CLOSING FLOATS
-                            </div>
+                            <div class="shift-mobile-section-title"><i class="fas fa-safe"></i> CLOSING FLOATS</div>
                             <div class="shift-mobile-details">
-                                <div class="shift-mobile-detail-line">
-                                    <span class="shift-mobile-detail-label">Cash</span>
-                                    <span class="shift-mobile-detail-value">${(sh.close_cash||0).toLocaleString()}</span>
-                                </div>
-                                <div class="shift-mobile-detail-line">
-                                    <span class="shift-mobile-detail-label">Mpesa</span>
-                                    <span class="shift-mobile-detail-value">${(sh.close_mpesa||0).toLocaleString()}</span>
-                                </div>
-                                <div class="shift-mobile-detail-line">
-                                    <span class="shift-mobile-detail-label">KCB Float</span>
-                                    <span class="shift-mobile-detail-value">${(sh.close_kcb||0).toLocaleString()}</span>
-                                </div>
-                                <div class="shift-mobile-detail-line">
-                                    <span class="shift-mobile-detail-label">Equity</span>
-                                    <span class="shift-mobile-detail-value">${(sh.close_equity||0).toLocaleString()}</span>
-                                </div>
-                                <div class="shift-mobile-detail-line">
-                                    <span class="shift-mobile-detail-label">Paybill</span>
-                                    <span class="shift-mobile-detail-value">${(sh.close_kcb_bank||0).toLocaleString()}</span>
-                                </div>
-                                <div class="shift-mobile-total" style="background:#f0f9ff">
-                                    Total: ${closeTotal.toLocaleString()}
-                                </div>
+                                <div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">Cash</span><span class="shift-mobile-detail-value">${(sh.close_cash||0).toLocaleString()}</span></div>
+                                <div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">Mpesa</span><span class="shift-mobile-detail-value">${(sh.close_mpesa||0).toLocaleString()}</span></div>
+                                <div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">KCB Float</span><span class="shift-mobile-detail-value">${(sh.close_kcb||0).toLocaleString()}</span></div>
+                                <div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">Equity</span><span class="shift-mobile-detail-value">${(sh.close_equity||0).toLocaleString()}</span></div>
+                                <div class="shift-mobile-total" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="shift-mobile-expected">
-                        Expected: ${expected.toLocaleString()}
-                    </div>
+                    <div class="shift-mobile-expected">Expected: ${expected.toLocaleString()}</div>
                     
-                    ${sh.variance_note ? `
-                        <div class="shift-mobile-variance-note">
-                            <strong>Note:</strong> ${sh.variance_note}
-                        </div>
-                    ` : ''}
+                    ${sh.variance_note ? `<div class="shift-mobile-variance-note"><strong>Note:</strong> ${sh.variance_note}</div>` : ''}
                     
                     <div class="shift-mobile-actions">
-                        <a href="sales-history.html" class="shift-mobile-action-btn sales-action">
-                            <i class="fas fa-chart-line"></i> Sales Report
-                        </a>
-                        <a href="money-history.html" class="shift-mobile-action-btn money-action">
-                            <i class="fas fa-money-bill-wave"></i> Money Log
-                        </a>
+                        <a href="sales-history.html" class="shift-mobile-action-btn sales-action"><i class="fas fa-chart-line"></i> Sales Report</a>
+                        <a href="money-history.html" class="shift-mobile-action-btn money-action"><i class="fas fa-money-bill-wave"></i> Money Log</a>
                     </div>
                 </div>
             `;
@@ -1366,12 +1326,10 @@
     function filterData(searchTerm) {
         const filtered = allShifts.filter(sh => {
             const dateStr = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'}).toLowerCase();
-            const status = sh.status.toLowerCase();
+            const status = (sh.status || '').toLowerCase();
             const note = (sh.variance_note || '').toLowerCase();
             
-            return dateStr.includes(searchTerm) || 
-                   status.includes(searchTerm) ||
-                   note.includes(searchTerm);
+            return dateStr.includes(searchTerm) || status.includes(searchTerm) || note.includes(searchTerm);
         });
         
         render(filtered);
@@ -1386,19 +1344,16 @@
         const btn = document.getElementById('refreshBtn');
         const originalHtml = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
         
         await fetchData();
         
         btn.innerHTML = originalHtml;
-        
-        // Show success feedback
+        btn.disabled = false;
         btn.style.background = '#10b981';
-        setTimeout(() => {
-            btn.style.background = '';
-        }, 1000);
+        setTimeout(() => { btn.style.background = ''; }, 1000);
     }
 
-    // Handle window resize
     window.addEventListener('resize', function() {
         const newIsMobile = window.innerWidth <= 768;
         if (newIsMobile !== isMobile) {
@@ -1407,31 +1362,21 @@
         }
     });
 
-    // Initialize on load
     document.addEventListener('DOMContentLoaded', async function() {
         await loadBranches();
         await loadUserProfile();
         
-        // Set today's date
         const today = new Date();
         document.getElementById('dateRange').textContent = today.toLocaleDateString('en-GB', { 
             day: 'numeric', month: 'long', year: 'numeric' 
         });
         
-        // Set default branch selector
         document.getElementById('branchSelector').value = 'all';
         selectedBranchId = null;
         
         await fetchData();
         
-        // Check if we're on mobile initially
         isMobile = window.innerWidth <= 768;
-        if (isMobile) {
-            const desktopTable = document.querySelector('.table-outer');
-            const mobileContainer = document.getElementById('mobile-shifts-container');
-            if (desktopTable) desktopTable.style.display = 'none';
-            if (mobileContainer) mobileContainer.style.display = 'block';
-        }
     });
 </script>
 </body>
