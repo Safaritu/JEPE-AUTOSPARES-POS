@@ -1710,6 +1710,26 @@
     let branches = {};
 
     // ============================================
+    // HELPER: GET CURRENT ACTIVE SHIFT ID
+    // ============================================
+    async function getCurrentActiveShiftId(branchId) {
+        try {
+            const { data, error } = await supabase
+                .from('daily_shifts')
+                .select('id')
+                .eq('branch_id', branchId)
+                .eq('status', 'Open')
+                .maybeSingle();
+            
+            if (error) throw error;
+            return data?.id || null;
+        } catch (error) {
+            console.error("Error getting active shift:", error);
+            return null;
+        }
+    }
+
+    // ============================================
     // GET BRANCH ID FROM URL PARAMETER
     // ============================================
     function getBranchIdFromUrl() {
@@ -1724,14 +1744,12 @@
     // ============================================
 
     function getCurrentBranchId() {
-        // First check if we have a branch from URL
         const urlBranchId = getBranchIdFromUrl();
         if (urlBranchId) {
             console.log("Using branch ID from URL:", urlBranchId);
             return urlBranchId;
         }
         
-        // Fallback to session or currentBranchId
         const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
         return session.branch?.id || currentBranchId;
     }
@@ -1741,7 +1759,6 @@
         return session.role === 'admin';
     }
 
-    // Load branches for name lookup
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
         branches = {};
@@ -1840,9 +1857,6 @@
         }
     }
 
-    // ============================================
-    // SUCCESS NOTIFICATION FUNCTION
-    // ============================================
     function showSuccessNotification(message, details = '') {
         const container = document.getElementById('success-notification-container');
         if (!container) return;
@@ -1871,9 +1885,6 @@
         setTimeout(() => notification.remove(), 3000);
     }
 
-    // ============================================
-    // REDIRECT TO GAS HUB
-    // ============================================
     window.redirectToGasHub = function() {
         const branchId = getCurrentBranchId();
         if (branchId) {
@@ -2227,7 +2238,6 @@
             const branchId = getCurrentBranchId();
             console.log("Current branch ID for cashier:", branchId);
 
-            // Update branch name display in header
             const branchNameHeader = document.getElementById('branch-name-header');
             if (branchNameHeader && branchId && branches[branchId]) {
                 branchNameHeader.innerHTML = `<i class="fas fa-store"></i> ${branches[branchId].name}`;
@@ -2307,7 +2317,6 @@
     document.getElementById('pSearch').addEventListener('input', (e) => {
         selectedItem = inventory.find(p => formatItemName(p) === e.target.value);
         
-        // Hide gas redirect notice when searching
         const notice = document.getElementById('gas-redirect-notice');
         if (notice) notice.style.display = 'none';
         
@@ -2325,7 +2334,6 @@
             updateStockDisplay(selectedItem);
             updateTotal();
             
-            // Show gas exchange note for gas products
             if (selectedItem.category === 'Gas') {
                 gasExchangeNote.style.display = 'block';
                 if (notice) notice.style.display = 'flex';
@@ -2350,12 +2358,18 @@
     document.getElementById('pPrice').addEventListener('input', updateTotal);
     document.getElementById('pQty').addEventListener('input', updateTotal);
 
+    // ============================================
+    // UPDATED SALE SUBMISSION WITH PROPER SHIFT_ID LINKING
+    // ============================================
     document.getElementById('sale-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('submit-sale-btn');
         const branchId = getCurrentBranchId();
         
-        if (!currentShift) {
+        // CRITICAL: Get the current active shift ID
+        const activeShiftId = await getCurrentActiveShiftId(branchId);
+        
+        if (!activeShiftId) {
             alert("❌ You must open a shift first before making sales!");
             return;
         }
@@ -2370,7 +2384,6 @@
             const notice = document.getElementById('gas-redirect-notice');
             if (notice) {
                 notice.style.display = 'flex';
-                // Auto-hide after 5 seconds if not clicked
                 setTimeout(() => {
                     if (notice.style.display === 'flex') {
                         notice.style.display = 'none';
@@ -2401,7 +2414,7 @@
 
         let salesToInsert = [];
         const baseSale = {
-            shift_id: currentShift.id,
+            shift_id: activeShiftId,  // CRITICAL: Link sale to current shift
             product_id: selectedItem.id,
             quantity: qty, 
             unit_price: price, 
@@ -2424,9 +2437,7 @@
         }
 
         try {
-            // ============================================
-            // 1. INSERT INTO SALES TABLE
-            // ============================================
+            // Insert into sales table with shift_id
             const { data: sData, error } = await supabase
                 .from('sales')
                 .insert(salesToInsert)
@@ -2434,9 +2445,7 @@
             
             if (error) throw error;
 
-            // ============================================
-            // 2. UPDATE PRODUCT STOCK
-            // ============================================
+            // Update product stock
             const newStock = selectedItem.stock_quantity - qty;
             const { error: updateError } = await supabase
                 .from('products')
@@ -2445,11 +2454,8 @@
             
             if (updateError) throw updateError;
 
-            // ============================================
-            // 3. DEBT HANDLING - RECORD TO DEBTORS TABLE
-            // ============================================
+            // Debt handling
             if(method === "Debt") {
-                // Prompt for customer name (required)
                 const customerName = prompt("Customer Name (required):");
                 if(!customerName) {
                     alert("❌ Customer name is required for debt sales!");
@@ -2458,10 +2464,8 @@
                     return;
                 }
                 
-                // Prompt for customer phone (optional)
                 const customerPhone = prompt("Customer Phone (optional):", "");
                 
-                // Insert into debtors table with all required fields
                 const { error: debtError } = await supabase.from('debtors').insert([{ 
                     customer_name: customerName,
                     customer_phone: customerPhone || null,
@@ -2531,12 +2535,10 @@
             const sales = salesRes.data || [];
             const trans = transRes.data || [];
 
-            // Calculate KCB Paybill sales including both regular sales and any Money In transactions to KCB Paybill
             const kcbPaybillSales = sales
                 .filter(s => s.payment_method === 'KCB Paybill' && !s.refunded && s.total_amount > 0)
                 .reduce((a, b) => a + b.total_amount, 0);
             
-            // Also include any Money In transactions that were added to KCB Paybill (like debt settlements)
             const kcbPaybillMoneyIn = trans
                 .filter(t => t.type === 'Money In' && t.category === 'KCB Paybill')
                 .reduce((a, b) => a + b.amount, 0);
@@ -2602,7 +2604,6 @@
             const liveTransBody = document.getElementById('live-trans-body');
             if (liveTransBody) {
                 liveTransBody.innerHTML = trans.map(t => {
-                    // Highlight KCB Paybill transactions in the table
                     const isKcbPaybill = t.category === 'KCB Paybill';
                     return `
                         <tr class="${t.type === 'Money In' ? 'money-in-row' : 'money-out-row'} ${isKcbPaybill ? 'kcb-live-box' : ''}">
@@ -2611,7 +2612,7 @@
                                 ${t.description}
                                 ${isKcbPaybill ? '<span class="kcb-paybill-badge">LIVE KCB</span>' : ''}
                             </td>
-                            <td data-label="Amount">Ksh ${t.amount.toLocaleString()}</td>
+                            <td data-label="Amount">Ksh ${t.amount.toLocaleString()}侧
                             <td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">
                                 ${t.type}
                             </td>
@@ -2689,12 +2690,10 @@
         }
     });
 
-    // Show close modal with cancel button
     window.showCloseModal = function() {
         document.getElementById('close-modal').style.display = 'flex';
     };
 
-    // Function to show confirmation card with entered values
     function showCloseConfirmation() {
         const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
         const clK = parseFloat(document.getElementById('c-kcb').value || 0);
@@ -2702,10 +2701,8 @@
         const clC = parseFloat(document.getElementById('c-cash').value || 0);
         const clB = currentKcbSalesTotal;
         
-        // Hide the close modal
         document.getElementById('close-modal').style.display = 'none';
         
-        // Create confirmation card
         const card = document.createElement('div');
         card.className = 'overlay';
         card.id = 'close-confirm-card';
@@ -2760,14 +2757,12 @@
         document.body.appendChild(card);
     }
 
-    // Function to close confirmation card
     window.closeConfirmationCard = function() {
         const card = document.getElementById('close-confirm-card');
         if (card) card.remove();
         document.getElementById('close-modal').style.display = 'flex';
     };
 
-    // Modified close handler - shows confirmation first
     document.getElementById('confirm-close').addEventListener('click', function() {
         const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
         const clK = parseFloat(document.getElementById('c-kcb').value || 0);
@@ -2779,11 +2774,9 @@
             return;
         }
         
-        // Show confirmation card with entered values
         showCloseConfirmation();
     });
 
-    // Process final close after confirmation
     window.processFinalClose = async function() {
         const card = document.getElementById('close-confirm-card');
         if (!card) return;
@@ -2830,8 +2823,6 @@
                     btn.innerHTML = 'FINALIZE & CLOSE';
                     return;
                 }
-                // Store only the reason without the amount
-                note = note;
             }
 
             await supabase.from('daily_shifts').update({
@@ -3003,7 +2994,7 @@
                 </tr>`;
         });
 
-        desktopTbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.</td></tr>';
+        desktopTbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.侧</td>';
     }
 
     function renderMobileHistory(shifts, transData, salesData, query = "") {
@@ -3176,7 +3167,6 @@
                 this.disabled = false;
                 this.innerHTML = 'RECORD MONEY';
                 
-                // Show success message with method
                 const method = document.getElementById('exp-method').value;
                 showSuccessNotification('Transaction recorded successfully!', `${document.getElementById('exp-type').value}: Ksh ${amt.toLocaleString()} via ${method}`);
             } else {
