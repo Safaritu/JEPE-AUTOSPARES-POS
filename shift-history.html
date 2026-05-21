@@ -16,6 +16,7 @@
             --success: #10b981; 
             --danger: #ef4444; 
             --warning: #f59e0b;
+            --info: #3b82f6;
             --text: #1e293b; 
             --dim: #64748b; 
             --border: #e2e8f0; 
@@ -291,6 +292,95 @@
             font-weight: 500;
         }
 
+        /* Review Actions Bar */
+        .review-actions-bar {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        
+        .review-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-review {
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            border: none;
+        }
+        
+        .btn-mark-reviewed {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-mark-reviewed:hover {
+            background: #0d9664;
+            transform: translateY(-1px);
+        }
+        
+        .btn-goto-unreviewed {
+            background: var(--info);
+            color: white;
+        }
+        
+        .btn-goto-unreviewed:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        
+        .btn-reset-review {
+            background: #f1f5f9;
+            color: var(--text-dim);
+        }
+        
+        .btn-reset-review:hover {
+            background: #e2e8f0;
+            transform: translateY(-1px);
+        }
+        
+        .review-status-info {
+            font-size: 0.75rem;
+            color: var(--dim);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .review-badge {
+            background: var(--success);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .review-badge-pending {
+            background: var(--warning);
+        }
+
         /* --- MOBILE SLIDE INDICATOR --- */
         .slide-indicator { 
             background: #0f172a; 
@@ -461,6 +551,19 @@
             background: #f1f5f9; 
             color: var(--text); 
             border-color: var(--border); 
+        }
+
+        .reviewed-badge {
+            background: var(--success);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 5px;
         }
 
         .revenue-card { 
@@ -679,6 +782,11 @@
                 transform: translateY(-2px);
                 box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             }
+            
+            .mobile-review-btn {
+                margin-top: 10px;
+                width: 100%;
+            }
         }
         
         /* Loading Spinner */
@@ -820,6 +928,25 @@
         <span class="date-range" id="dateRange"></span>
     </div>
 
+    <!-- Review Actions Bar -->
+    <div class="review-actions-bar">
+        <div class="review-buttons">
+            <button class="btn-review btn-mark-reviewed" onclick="markCurrentShiftReviewed()">
+                <i class="fas fa-check-circle"></i> Mark Last Shift as Reviewed
+            </button>
+            <button class="btn-review btn-goto-unreviewed" onclick="goToLastUnreviewed()">
+                <i class="fas fa-arrow-right"></i> Go to Last Unreviewed
+            </button>
+            <button class="btn-review btn-reset-review" onclick="resetReviewedStatus()">
+                <i class="fas fa-undo"></i> Reset Review Status
+            </button>
+        </div>
+        <div class="review-status-info" id="reviewStatusInfo">
+            <i class="fas fa-info-circle"></i>
+            <span>Last reviewed: <span id="lastReviewedDate">Not yet</span></span>
+        </div>
+    </div>
+
     <div class="slide-indicator" id="scrollHint">
         <span class="hand-icon">👉</span>
         <span>SWIPE/SLIDE TABLE BELOW TO VIEW ALL SHIFT DETAILS</span>
@@ -839,6 +966,7 @@
                         <th width="200">CLOSING FLOATS</th>
                         <th width="180">VARIANCE</th>
                         <th width="200">VARIANCE REASON</th>
+                        <th width="100">REVIEW</th>
                         <th width="80">BRANCH</th>
                     </tr>
                 </thead>
@@ -874,6 +1002,10 @@
     let selectedBranchId = null;
     let branches = {};
     let branchIdMap = {};
+    
+    // Review tracking - using localStorage to persist review status
+    let reviewedShifts = new Set();
+    let lastReviewedShiftId = null;
 
     window.toggleMenu = function() {
         document.getElementById('sidebar').classList.toggle('mobile-active');
@@ -886,6 +1018,143 @@
         }
     };
 
+    // Load reviewed shifts from localStorage
+    function loadReviewedStatus() {
+        const saved = localStorage.getItem('reviewed_shifts');
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                reviewedShifts = new Set(data.reviewed);
+                lastReviewedShiftId = data.lastReviewed;
+                updateReviewStatusInfo();
+            } catch(e) {
+                console.error("Error loading review status:", e);
+            }
+        }
+    }
+
+    // Save reviewed shifts to localStorage
+    function saveReviewedStatus() {
+        const data = {
+            reviewed: Array.from(reviewedShifts),
+            lastReviewed: lastReviewedShiftId
+        };
+        localStorage.setItem('reviewed_shifts', JSON.stringify(data));
+        updateReviewStatusInfo();
+    }
+
+    // Mark a shift as reviewed
+    window.markShiftReviewed = function(shiftId, shiftDate) {
+        if (!shiftId) return;
+        
+        reviewedShifts.add(shiftId);
+        lastReviewedShiftId = shiftId;
+        saveReviewedStatus();
+        
+        // Show success toast
+        showToast(`✓ Shift from ${shiftDate} marked as reviewed`, 'success');
+        
+        // Refresh the display
+        render();
+    };
+    
+    // Mark the last (most recent) shift as reviewed
+    window.markCurrentShiftReviewed = function() {
+        if (!allShifts || allShifts.length === 0) {
+            showToast("No shifts available to mark", 'error');
+            return;
+        }
+        
+        // Get the most recent shift (first in the list since they're sorted descending)
+        const latestShift = allShifts[0];
+        if (!latestShift) {
+            showToast("No shifts found", 'error');
+            return;
+        }
+        
+        const shiftDate = new Date(latestShift.start_time).toLocaleDateString('en-GB', {
+            day: '2-digit', month: 'short', year: 'numeric'
+        });
+        
+        markShiftReviewed(latestShift.id, shiftDate);
+    };
+    
+    // Go to the last unreviewed shift
+    window.goToLastUnreviewed = function() {
+        // Find the most recent shift that hasn't been reviewed
+        const unreviewedShift = allShifts.find(sh => !reviewedShifts.has(sh.id));
+        
+        if (!unreviewedShift) {
+            showToast("All shifts have been reviewed!", 'success');
+            return;
+        }
+        
+        // Find the row element and scroll to it
+        const shiftId = unreviewedShift.id;
+        const rowElement = document.querySelector(`tr[data-shift-id="${shiftId}"]`);
+        if (rowElement) {
+            rowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            rowElement.style.backgroundColor = '#fef3c7';
+            setTimeout(() => {
+                rowElement.style.backgroundColor = '';
+            }, 2000);
+        }
+        
+        showToast(`Go to unreviewed shift from ${new Date(unreviewedShift.start_time).toLocaleDateString()}`, 'info');
+    };
+    
+    // Reset all review status
+    window.resetReviewedStatus = function() {
+        if (confirm("Are you sure you want to reset all review status? This will mark all shifts as unreviewed.")) {
+            reviewedShifts.clear();
+            lastReviewedShiftId = null;
+            saveReviewedStatus();
+            render();
+            showToast("Review status has been reset", 'info');
+        }
+    };
+    
+    // Update the review status info bar
+    function updateReviewStatusInfo() {
+        const lastReviewedSpan = document.getElementById('lastReviewedDate');
+        if (lastReviewedSpan && lastReviewedShiftId) {
+            const reviewedShift = allShifts.find(sh => sh.id === lastReviewedShiftId);
+            if (reviewedShift) {
+                const date = new Date(reviewedShift.start_time).toLocaleDateString('en-GB', {
+                    day: '2-digit', month: 'short', year: 'numeric'
+                });
+                lastReviewedSpan.textContent = date;
+                return;
+            }
+        }
+        if (lastReviewedSpan) lastReviewedSpan.textContent = 'Not yet';
+    }
+    
+    // Show toast notification
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease;
+        `;
+        toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i> ${message}`;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
         branches = {};
@@ -895,7 +1164,6 @@
             branchIdMap[b.code] = b.id;
         });
         
-        // Populate branch selector
         const selector = document.getElementById('branchSelector');
         selector.innerHTML = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>';
         data?.forEach(b => {
@@ -905,7 +1173,6 @@
             selector.appendChild(option);
         });
         
-        console.log("Branches loaded:", branches);
         return branches;
     }
 
@@ -979,8 +1246,6 @@
         showLoading(true);
         
         try {
-            console.log("Fetching shifts for branch ID:", selectedBranchId || 'ALL');
-            
             let shiftsQuery = supabase
                 .from('daily_shifts')
                 .select('*')
@@ -1006,7 +1271,8 @@
             allShifts = shiftsRes.data || [];
             allTransactions = transRes.data || [];
             
-            console.log(`Loaded ${allShifts.length} shifts`);
+            // Load reviewed status after fetching shifts
+            loadReviewedStatus();
             
             render();
         } catch (error) {
@@ -1036,6 +1302,8 @@
         if (noResultsEl) {
             noResultsEl.style.display = data.length === 0 ? 'block' : 'none';
         }
+        
+        updateReviewStatusInfo();
     }
 
     function renderDesktop(data = allShifts) {
@@ -1048,13 +1316,11 @@
             const branch = branches[sh.branch_id] || { name: 'Unknown', code: '--' };
             const shiftLogs = allTransactions.filter(t => t.shift_id === sh.id);
             
-            // Use pre-calculated totals from the shift table
             const cashSales = sh.total_cash_sales || 0;
             const kcbPaybillSales = sh.total_kcb_paybill_sales || 0;
             const totalRevenue = sh.total_sales_amount || 0;
-            
-            // Format the date for the URL (YYYY-MM-DD)
             const shiftDate = new Date(sh.start_time).toISOString().split('T')[0];
+            const isReviewed = reviewedShifts.has(sh.id);
 
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
@@ -1087,10 +1353,8 @@
 
             const startD = new Date(sh.start_time);
             
-            // Build payment methods HTML using pre-calculated totals
             let paymentMethodsHtml = '';
             
-            // Only show if there are sales
             if (cashSales > 0 || kcbPaybillSales > 0 || totalRevenue > 0) {
                 if (cashSales > 0) {
                     paymentMethodsHtml += `
@@ -1112,7 +1376,6 @@
                 paymentMethodsHtml = '<div class="payment-method-item"><span class="payment-label">No sales recorded</span><span class="payment-amount">0</span></div>';
             }
             
-            // Add total revenue at the bottom, wrapped in a link
             paymentMethodsHtml += `
                 <a href="sales-history.html?date=${shiftDate}" class="revenue-card" style="display: block; text-decoration: none; margin-top: 8px;">
                     <div class="payment-method-item" style="margin-top:8px; padding-top:8px; border-top:2px solid var(--border);">
@@ -1123,10 +1386,12 @@
                 </a>
             `;
             
+            const formattedDate = startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'});
+            
             tableHtml += `
-                <tr>
+                <tr> data-shift-id="${sh.id}">
                     <td class="date-cell">
-                        <b>${startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'})}</b>
+                        <b>${formattedDate}</b>
                         <span class="time-pill">IN: ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span><br>
                         <span class="time-pill">${sh.end_time ? 'OUT: '+new Date(sh.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'ACTIVE'}</span>
                       </td>
@@ -1164,12 +1429,21 @@
                             Expected: ${expected.toLocaleString()}
                         </div>
                     </td>
-                    <td><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--dim); font-style: italic;">${sh.variance_note || 'No notes added.'}</div></td>
-                    <td><span class="branch-pill">${branch.code}</span></td>
+                    <td style="vertical-align: middle;">
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                            ${isReviewed ? 
+                                `<span class="review-badge"><i class="fas fa-check-circle"></i> Reviewed</span>` :
+                                `<button class="btn-review btn-mark-reviewed" style="background: var(--warning); padding: 8px 15px;" onclick="markShiftReviewed('${sh.id}', '${formattedDate}')">
+                                    <i class="fas fa-eye"></i> Mark Reviewed
+                                </button>`
+                            }
+                        </div>
+                    </td>
+                    <td><span class="branch-pill">${branch.code}</span>侧
                 </tr>`;
         });
 
-        tbody.innerHTML = tableHtml || '<tr><td colspan="8" style="text-align:center; padding:50px;">No records found.</td></tr>';
+        tbody.innerHTML = tableHtml || '<tr><td colspan="9" style="text-align:center; padding:50px;">No records found.侧</td>';
     }
 
     function renderMobile(data = allShifts) {
@@ -1182,13 +1456,11 @@
             const branch = branches[sh.branch_id] || { name: 'Unknown', code: '--' };
             const shiftLogs = allTransactions.filter(t => t.shift_id === sh.id);
             
-            // Use pre-calculated totals from the shift table
             const cashSales = sh.total_cash_sales || 0;
             const kcbPaybillSales = sh.total_kcb_paybill_sales || 0;
             const totalRevenue = sh.total_sales_amount || 0;
-            
-            // Format the date for the URL (YYYY-MM-DD)
             const shiftDate = new Date(sh.start_time).toISOString().split('T')[0];
+            const isReviewed = reviewedShifts.has(sh.id);
 
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
@@ -1220,7 +1492,6 @@
                 varianceText = 'BALANCED';
             }
             
-            // Build payment methods HTML for mobile
             let paymentMethodsHtml = '';
             
             if (cashSales > 0) {
@@ -1244,7 +1515,6 @@
                 paymentMethodsHtml = '<div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">No sales recorded</span><span class="shift-mobile-detail-value">0</span></div>';
             }
             
-            // Add total, wrapped in a link
             paymentMethodsHtml += `
                 <a href="sales-history.html?date=${shiftDate}" style="text-decoration: none; display: block;">
                     <div class="shift-mobile-total" style="margin-top:8px;">
@@ -1254,11 +1524,13 @@
                 </a>
             `;
             
+            const formattedDate = startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'});
+            
             mobileHtml += `
-                <div class="shift-mobile-card">
+                <div class="shift-mobile-card" data-shift-id="${sh.id}">
                     <div class="shift-mobile-header">
                         <div class="shift-mobile-date">
-                            ${startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'})}
+                            ${formattedDate}
                             <small>
                                 ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
                                 ${endD ? ` - ${endD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}` : ''}
@@ -1316,6 +1588,15 @@
                     <div class="shift-mobile-actions">
                         <a href="sales-history.html?date=${shiftDate}" class="shift-mobile-action-btn sales-action"><i class="fas fa-chart-line"></i> Sales Report</a>
                         <a href="money-history.html" class="shift-mobile-action-btn money-action"><i class="fas fa-money-bill-wave"></i> Money Log</a>
+                    </div>
+                    
+                    <div class="mobile-review-btn" style="margin-top: 12px;">
+                        ${isReviewed ? 
+                            `<div class="review-badge" style="display: flex; justify-content: center;"><i class="fas fa-check-circle"></i> Reviewed</div>` :
+                            `<button class="btn-review btn-mark-reviewed" style="width: 100%; background: var(--warning); padding: 10px;" onclick="markShiftReviewed('${sh.id}', '${formattedDate}')">
+                                <i class="fas fa-eye"></i> Mark as Reviewed
+                            </button>`
+                        }
                     </div>
                 </div>
             `;
