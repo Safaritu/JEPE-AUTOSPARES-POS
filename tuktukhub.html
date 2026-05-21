@@ -580,464 +580,441 @@
             <button id="loadMoreBtn" class="btn-load">Load More Models</button>
         </div>
     </div>
+<script type="module">
+    import { supabase } from './auth.js';
+    
+    let displayLimit = 10;
+    let allTuktukData = [];
+    let currentUser = null;
+    let currentBranchId = null;
+    let currentBranch = null;
+    let selectedBranchId = null;
+    let branches = {};
+    let branchIdMap = {};
+    let tuktukStockChart = null;
+    let tuktukRevChart = null;
+    let currentTypeFilter = 'all';
 
-    <script type="module">
-        import { supabase } from './auth.js';
+    // Mobile Sidebar Function
+    window.toggleMenu = function() {
+        document.getElementById('sidebar').classList.toggle('mobile-active');
+    };
+
+    // Filter function
+    window.filterByType = function(type, event) {
+        currentTypeFilter = type;
         
-        // Mobile Sidebar Function
-        window.toggleMenu = function() {
-            document.getElementById('sidebar').classList.toggle('mobile-active');
-        };
-
-        let displayLimit = 10;
-        let allTuktukData = [];
-        let currentUser = null;
-        let currentBranchId = null;
-        let currentBranch = null;
-        let selectedBranchId = null;
-        let branches = {};
-        let branchIdMap = {};
-        let tuktukStockChart = null;
-        let tuktukRevChart = null;
-        let currentTypeFilter = 'all';
-
-        // Filter function
-        window.filterByType = function(type) {
-            currentTypeFilter = type;
-            
-            // Update active button states
+        if (event && event.target) {
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             event.target.classList.add('active');
-            
-            displayTable();
-            updateCharts(getFilteredData());
-        };
-
-        // ==================== BRANCH FUNCTIONS ====================
-
-        async function loadBranches() {
-            const { data } = await supabase.from('branches').select('*');
-            branches = {};
-            branchIdMap = {};
-            data?.forEach(b => {
-                branches[b.id] = b;
-                branchIdMap[b.code] = b.id;
-            });
-            
-            // Populate branch selector
-            const selector = document.getElementById('branchSelector');
-            let options = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>';
-            data?.forEach(b => {
-                options += `<option value="${b.code}">🏪 ${b.name}</option>`;
-            });
-            selector.innerHTML = options;
-            
-            return branches;
         }
+        
+        displayTable();
+        updateCharts(getFilteredData());
+    };
 
-        function getBranchIdFromCode(code) {
-            return branchIdMap[code] || null;
-        }
+    async function loadBranches() {
+        const { data } = await supabase.from('branches').select('*');
+        branches = {};
+        branchIdMap = {};
+        data?.forEach(b => {
+            branches[b.id] = b;
+            branchIdMap[b.code] = b.id;
+        });
+        
+        const selector = document.getElementById('branchSelector');
+        let options = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>';
+        data?.forEach(b => {
+            options += `<option value="${b.code}">🏪 ${b.name}</option>`;
+        });
+        selector.innerHTML = options;
+        
+        return branches;
+    }
 
-        async function loadUserProfile() {
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) {
-                    window.location.href = 'index.html';
-                    return null;
-                }
-                
-                currentUser = user;
-                
-                const { data: profile, error } = await supabase
-                    .from('profiles')
-                    .select(`
-                        *,
-                        branches (
-                            id,
-                            name,
-                            code,
-                            location
-                        )
-                    `)
-                    .eq('id', user.id)
-                    .single();
-                
-                if (error) throw error;
-                
-                currentBranchId = profile.branch_id;
-                currentBranch = profile.branches;
-                
-                const session = {
-                    user: user,
-                    profile: profile,
-                    branch: profile.branches,
-                    role: profile.role
-                };
-                localStorage.setItem('pos_session', JSON.stringify(session));
-                
-                // Update sidebar with user's assigned branch
-                const sidebarBranchName = document.querySelector('#sidebarBranchName span');
-                if (profile.branches && sidebarBranchName) {
-                    sidebarBranchName.textContent = profile.branches.name;
-                }
-                
-                return profile;
-            } catch (error) {
-                console.error("❌ Error loading profile:", error);
+    function getBranchIdFromCode(code) {
+        return branchIdMap[code] || null;
+    }
+
+    async function loadUserProfile() {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = 'index.html';
                 return null;
             }
-        }
-
-        window.handleBranchChange = async function() {
-            const selector = document.getElementById('branchSelector');
-            const selectedCode = selector.value;
             
-            const branchDisplay = document.getElementById('currentBranchDisplay');
-            const inventoryBranch = document.getElementById('inventoryBranch');
-            const salesBranch = document.getElementById('salesBranch');
-            const tableBranch = document.getElementById('tableBranch');
-            const dateRange = document.getElementById('dateRange');
+            currentUser = user;
             
-            if (selectedCode === 'all') {
-                branchDisplay.textContent = 'ALL BRANCHES';
-                if (inventoryBranch) inventoryBranch.textContent = '(All Branches)';
-                if (salesBranch) salesBranch.textContent = '(All Branches)';
-                if (tableBranch) tableBranch.textContent = '(All Branches)';
-                selectedBranchId = null;
-                dateRange.textContent = 'Showing all branches';
-            } else {
-                const branchId = getBranchIdFromCode(selectedCode);
-                if (branchId) {
-                    selectedBranchId = branchId;
-                    branchDisplay.textContent = branches[branchId].name;
-                    if (inventoryBranch) inventoryBranch.textContent = `(${branches[branchId].name})`;
-                    if (salesBranch) salesBranch.textContent = `(${branches[branchId].name})`;
-                    if (tableBranch) tableBranch.textContent = `(${branches[branchId].name})`;
-                    dateRange.textContent = `Showing ${branches[branchId].name} only`;
-                }
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select(`
+                    *,
+                    branches (
+                        id,
+                        name,
+                        code,
+                        location
+                    )
+                `)
+                .eq('id', user.id)
+                .single();
+            
+            if (error) throw error;
+            
+            currentBranchId = profile.branch_id;
+            currentBranch = profile.branches;
+            
+            const session = {
+                user: user,
+                profile: profile,
+                branch: profile.branches,
+                role: profile.role
+            };
+            localStorage.setItem('pos_session', JSON.stringify(session));
+            
+            const sidebarBranchName = document.querySelector('#sidebarBranchName span');
+            if (profile.branches && sidebarBranchName) {
+                sidebarBranchName.textContent = profile.branches.name;
             }
             
-            // Reset and reload data
-            displayLimit = 10;
-            await loadData();
-        };
-
-        function extractTuktukType(product) {
-            // Try to extract type from name or use a default
-            const name = product.name || '';
-            if (name.toLowerCase().includes('passenger') || name.toLowerCase().includes('p')) return 'Passenger';
-            if (name.toLowerCase().includes('cargo') || name.toLowerCase().includes('c')) return 'Cargo';
-            if (name.toLowerCase().includes('spare') || product.category === 'Spare Part') return 'Spare Part';
-            return 'Passenger'; // Default
+            return profile;
+        } catch (error) {
+            console.error("Error loading profile:", error);
+            return null;
         }
+    }
 
-        async function loadData() {
-            // Show loading state
+    window.handleBranchChange = async function() {
+        const selector = document.getElementById('branchSelector');
+        const selectedCode = selector.value;
+        
+        const branchDisplay = document.getElementById('currentBranchDisplay');
+        const inventoryBranch = document.getElementById('inventoryBranch');
+        const salesBranch = document.getElementById('salesBranch');
+        const tableBranch = document.getElementById('tableBranch');
+        const dateRange = document.getElementById('dateRange');
+        
+        if (selectedCode === 'all') {
+            branchDisplay.textContent = 'ALL BRANCHES';
+            if (inventoryBranch) inventoryBranch.textContent = '(All Branches)';
+            if (salesBranch) salesBranch.textContent = '(All Branches)';
+            if (tableBranch) tableBranch.textContent = '(All Branches)';
+            selectedBranchId = null;
+            dateRange.textContent = 'Showing all branches';
+        } else {
+            const branchId = getBranchIdFromCode(selectedCode);
+            if (branchId) {
+                selectedBranchId = branchId;
+                branchDisplay.textContent = branches[branchId].name;
+                if (inventoryBranch) inventoryBranch.textContent = `(${branches[branchId].name})`;
+                if (salesBranch) salesBranch.textContent = `(${branches[branchId].name})`;
+                if (tableBranch) tableBranch.textContent = `(${branches[branchId].name})`;
+                dateRange.textContent = `Showing ${branches[branchId].name} only`;
+            }
+        }
+        
+        displayLimit = 10;
+        await loadData();
+    };
+
+    function extractTuktukType(product) {
+        const name = product.name || '';
+        if (name.toLowerCase().includes('passenger')) return 'Passenger';
+        if (name.toLowerCase().includes('cargo')) return 'Cargo';
+        if (product.tuktuk_type === 'Passenger') return 'Passenger';
+        if (product.tuktuk_type === 'Cargo') return 'Cargo';
+        if (product.category === 'Spare Part') return 'Spare Part';
+        return 'Passenger';
+    }
+
+    async function loadData() {
+        document.getElementById('tuktuk-table-body').innerHTML = `
+            <tr>
+                <td colspan="9" style="text-align: center; padding: 40px;">
+                    <div class="spinner" style="margin: 0 auto;"></div>
+                    Loading data...
+                </td>
+            </tr>
+        `;
+
+        try {
+            let productsQuery = supabase
+                .from('products')
+                .select('*')
+                .eq('category', 'Tuktuk');
+            
+            if (selectedBranchId) {
+                productsQuery = productsQuery.eq('branch_id', selectedBranchId);
+            }
+            
+            let salesQuery = supabase
+                .from('sales')
+                .select('*')
+                .eq('category', 'Tuktuk');
+            
+            if (selectedBranchId) {
+                salesQuery = salesQuery.eq('branch_id', selectedBranchId);
+            }
+
+            const [productsRes, salesRes] = await Promise.all([
+                productsQuery,
+                salesQuery
+            ]);
+
+            const products = productsRes.data || [];
+            const sales = salesRes.data || [];
+            
+            render(products, sales);
+        } catch (error) {
+            console.error("Error loading data:", error);
             document.getElementById('tuktuk-table-body').innerHTML = `
                 <tr>
-                    <td colspan="9" style="text-align: center; padding: 40px;">
-                        <div class="spinner" style="margin: 0 auto;"></div>
-                        Loading data...
-                    </td>
+                    <td colspan="9" style="text-align: center; padding: 40px; color: #ef4444;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        Error loading data: ${error.message}
+                    侧
                 </tr>
             `;
-
-            try {
-                // Build product query - get TUKTUK products
-                let productsQuery = supabase
-                    .from('products')
-                    .select('*')
-                    .eq('category', 'Tuktuk');
-                
-                if (selectedBranchId) {
-                    productsQuery = productsQuery.eq('branch_id', selectedBranchId);
-                }
-                
-                // Build sales query for TUKTUK products
-                let salesQuery = supabase
-                    .from('sales')
-                    .select('*')
-                    .eq('category', 'Tuktuk');
-                
-                if (selectedBranchId) {
-                    salesQuery = salesQuery.eq('branch_id', selectedBranchId);
-                }
-
-                const [productsRes, salesRes] = await Promise.all([
-                    productsQuery,
-                    salesQuery
-                ]);
-
-                const products = productsRes.data || [];
-                const sales = salesRes.data || [];
-                
-                render(products, sales);
-            } catch (error) {
-                console.error("Error loading data:", error);
-                document.getElementById('tuktuk-table-body').innerHTML = `
-                    <tr>
-                        <td colspan="9" style="text-align: center; padding: 40px; color: #ef4444;">
-                            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                            Error loading data: ${error.message}
-                        </td>
-                    </tr>
-                `;
-            }
         }
+    }
 
-        function render(products, sales) {
-            const today = new Date().toLocaleDateString();
-            let tRev = 0, tProf = 0, tSold = 0, tStock = 0, tInvCost = 0, tProjProfit = 0, todayProf = 0;
-            let passengerCount = 0, cargoCount = 0;
-            const perfMap = {};
+    function render(products, sales) {
+        const today = new Date().toLocaleDateString();
+        let tRev = 0, tProf = 0, tSold = 0, tStock = 0, tInvCost = 0, tProjProfit = 0, todayProf = 0;
+        let passengerCount = 0, cargoCount = 0;
+        const perfMap = {};
 
-            products.forEach(p => {
-                const stock = p.stock_quantity || 0;
-                const cost = p.cost_price || 0;
-                const price = p.selling_price || 0;
-                tStock += stock;
-                tInvCost += (stock * cost);
-                tProjProfit += (stock * (price - cost));
-                
-                // Count by type
-                const type = extractTuktukType(p);
-                if (type === 'Passenger') passengerCount++;
-                if (type === 'Cargo') cargoCount++;
-                
-                perfMap[p.id] = {
-                    id: p.id,
-                    name: p.name,
-                    type: type,
-                    stock: stock,
-                    sold: 0,
-                    rev: 0,
-                    prof: 0,
-                    cost_price: cost,
-                    selling_price: price,
-                    branch_id: p.branch_id,
-                    branch_code: branches[p.branch_id]?.code || '--',
-                    status: stock > 0 ? 'In Stock' : 'Out of Stock'
-                };
-            });
-
-            sales.forEach(s => {
-                const amt = s.total_amount || 0;
-                const cost = (s.cost_price || 0) * (s.quantity || 1);
-                const profit = amt - cost;
-                tRev += amt;
-                tProf += profit;
-                tSold += (s.quantity || 0);
-                
-                const saleDate = new Date(s.created_at).toLocaleDateString();
-                if (saleDate === today) {
-                    todayProf += profit;
-                }
-                
-                if (perfMap[s.product_id]) {
-                    perfMap[s.product_id].sold += (s.quantity || 0);
-                    perfMap[s.product_id].rev += amt;
-                    perfMap[s.product_id].prof += profit;
-                }
-            });
-
-            // Update summary stats
-            document.getElementById('total-units').innerText = tStock;
-            document.getElementById('units-sold').innerText = tSold;
-            document.getElementById('total-rev').innerText = `Ksh ${tRev.toLocaleString()}`;
-            document.getElementById('total-prof').innerText = `Ksh ${tProf.toLocaleString()}`;
-            document.getElementById('inv-cost').innerText = `Ksh ${tInvCost.toLocaleString()}`;
-            document.getElementById('inv-proj-profit').innerText = `Ksh ${tProjProfit.toLocaleString()}`;
-            document.getElementById('avg-unit-cost').innerText = `Ksh ${(tStock > 0 ? (tInvCost/tStock) : 0).toLocaleString()}`;
-            document.getElementById('total-sales-val').innerText = `Ksh ${tRev.toLocaleString()}`;
-            document.getElementById('total-profit-val').innerText = `Ksh ${tProf.toLocaleString()}`;
-            document.getElementById('today-profit-val').innerText = `Ksh ${todayProf.toLocaleString()}`;
-            document.getElementById('passenger-count').innerText = passengerCount;
-            document.getElementById('cargo-count').innerText = cargoCount;
-
-            // Find best selling model
-            allTuktukData = Object.values(perfMap).sort((a, b) => b.rev - a.rev);
-            if (allTuktukData.length > 0) {
-                document.getElementById('best-model').innerText = allTuktukData[0].name;
-            }
+        products.forEach(p => {
+            const stock = p.stock_quantity || 0;
+            const cost = p.cost_price || 0;
+            const price = p.selling_price || 0;
+            tStock += stock;
+            tInvCost += (stock * cost);
+            tProjProfit += (stock * (price - cost));
             
-            // Destroy existing charts if they exist
-            if (tuktukStockChart) {
-                tuktukStockChart.destroy();
-                tuktukStockChart = null;
-            }
-            if (tuktukRevChart) {
-                tuktukRevChart.destroy();
-                tuktukRevChart = null;
-            }
+            const type = extractTuktukType(p);
+            if (type === 'Passenger') passengerCount++;
+            if (type === 'Cargo') cargoCount++;
             
-            displayTable();
-            
-            // Small delay to ensure canvas is ready
-            setTimeout(() => {
-                updateCharts(getFilteredData());
-            }, 100);
-        }
-
-        function getFilteredData() {
-            if (currentTypeFilter === 'all') {
-                return allTuktukData;
-            }
-            return allTuktukData.filter(item => item.type === currentTypeFilter);
-        }
-
-        function displayTable() {
-            const tbody = document.getElementById('tuktuk-table-body');
-            const filteredData = getFilteredData();
-            
-            if (filteredData.length === 0) {
-                const branchName = selectedBranchId ? branches[selectedBranchId]?.name : 'All Branches';
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-dim);">
-                            <i class="fas fa-car-side" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                            No TUKTUK products found for ${branchName}
-                        </td>
-                    </tr>
-                `;
-                document.getElementById('loadMoreBtn').style.display = 'none';
-                return;
-            }
-            
-            tbody.innerHTML = filteredData.slice(0, displayLimit).map(m => {
-                const margin = m.selling_price - m.cost_price;
-                const marginPercent = m.selling_price > 0 ? ((margin / m.selling_price) * 100).toFixed(1) : 0;
-                
-                return `
-                <tr>
-                    <td><strong>${m.name}</strong></td>
-                    <td><span class="type-badge">${m.type}</span></td>
-                    <td><span style="color: ${m.stock > 0 ? '#10b981' : '#ef4444'}">• ${m.status}</span></td>
-                    <td>${m.stock}</td>
-                    <td>${m.sold}</td>
-                    <td>Ksh ${m.rev.toLocaleString()}</td>
-                    <td style="color:#10b981">Ksh ${m.prof.toLocaleString()}</td>
-                    <td>${marginPercent}%</td>
-                    <td><span class="branch-pill">${m.branch_code}</span></td>
-                </tr>
-            `}).join('');
-            
-            document.getElementById('loadMoreBtn').style.display = displayLimit >= filteredData.length ? 'none' : 'block';
-        }
-
-        function updateCharts(data) {
-            // Only show top 5 models in charts
-            const chartData = data.slice(0, 5);
-            
-            if (chartData.length === 0) {
-                // Clear charts if no data
-                const stockCtx = document.getElementById('tuktukStockChart').getContext('2d');
-                const revCtx = document.getElementById('tuktukRevChart').getContext('2d');
-                stockCtx.clearRect(0, 0, stockCtx.canvas.width, stockCtx.canvas.height);
-                revCtx.clearRect(0, 0, revCtx.canvas.width, revCtx.canvas.height);
-                return;
-            }
-            
-            const labels = chartData.map(d => d.name.length > 15 ? d.name.substring(0, 12) + '...' : d.name);
-            
-            // Stock vs Sold Chart
-            const stockCtx = document.getElementById('tuktukStockChart').getContext('2d');
-            tuktukStockChart = new Chart(stockCtx, {
-                type: 'bar',
-                data: {
-                    labels,
-                    datasets: [
-                        { 
-                            label: 'Stock', 
-                            data: chartData.map(d => d.stock), 
-                            backgroundColor: '#8b5cf6',
-                            barPercentage: 0.8,
-                            categoryPercentage: 0.9
-                        },
-                        { 
-                            label: 'Sold', 
-                            data: chartData.map(d => d.sold), 
-                            backgroundColor: '#10b981',
-                            barPercentage: 0.8,
-                            categoryPercentage: 0.9
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: { font: { size: 11 } }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { font: { size: 10 } }
-                        },
-                        x: {
-                            ticks: { font: { size: 10 } }
-                        }
-                    }
-                }
-            });
-            
-            // Revenue Chart
-            const revCtx = document.getElementById('tuktukRevChart').getContext('2d');
-            tuktukRevChart = new Chart(revCtx, {
-                type: 'doughnut',
-                data: {
-                    labels,
-                    datasets: [{
-                        data: chartData.map(d => d.rev),
-                        backgroundColor: ['#8b5cf6', '#a78bfa', '#c4b5fd', '#ddd6fe', '#ede9fe'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: { font: { size: 10 } }
-                        }
-                    },
-                    cutout: '60%'
-                }
-            });
-        }
-
-        document.getElementById('loadMoreBtn').addEventListener('click', () => { 
-            displayLimit += 10; 
-            displayTable(); 
+            perfMap[p.id] = {
+                id: p.id,
+                name: p.name,
+                type: type,
+                stock: stock,
+                sold: 0,
+                rev: 0,
+                prof: 0,
+                cost_price: cost,
+                selling_price: price,
+                branch_id: p.branch_id,
+                branch_code: branches[p.branch_id]?.code || '--',
+                status: stock > 0 ? 'In Stock' : 'Out of Stock'
+            };
         });
 
-        async function init() {
-            await loadBranches();
-            await loadUserProfile();
+        sales.forEach(s => {
+            const amt = s.total_amount || 0;
+            const cost = (s.cost_price || 0) * (s.quantity || 1);
+            const profit = amt - cost;
+            tRev += amt;
+            tProf += profit;
+            tSold += (s.quantity || 0);
             
-            // Set today's date
-            const today = new Date();
-            document.getElementById('dateRange').textContent = today.toLocaleDateString('en-GB', { 
-                day: 'numeric', month: 'long', year: 'numeric' 
-            });
-            
-            // Set default branch selector to user's branch
-            if (currentBranch) {
-                document.getElementById('branchSelector').value = currentBranch.code;
-                selectedBranchId = currentBranch.id;
-                document.getElementById('currentBranchDisplay').textContent = currentBranch.name;
+            const saleDate = new Date(s.created_at).toLocaleDateString();
+            if (saleDate === today) {
+                todayProf += profit;
             }
             
-            await loadData();
-        }
+            if (perfMap[s.product_id]) {
+                perfMap[s.product_id].sold += (s.quantity || 0);
+                perfMap[s.product_id].rev += amt;
+                perfMap[s.product_id].prof += profit;
+            }
+        });
 
-        init();
-    </script>
+        document.getElementById('total-units').innerText = tStock;
+        document.getElementById('units-sold').innerText = tSold;
+        document.getElementById('total-rev').innerText = `Ksh ${tRev.toLocaleString()}`;
+        document.getElementById('total-prof').innerText = `Ksh ${tProf.toLocaleString()}`;
+        document.getElementById('inv-cost').innerText = `Ksh ${tInvCost.toLocaleString()}`;
+        document.getElementById('inv-proj-profit').innerText = `Ksh ${tProjProfit.toLocaleString()}`;
+        document.getElementById('avg-unit-cost').innerText = `Ksh ${(tStock > 0 ? (tInvCost/tStock) : 0).toLocaleString()}`;
+        document.getElementById('total-sales-val').innerText = `Ksh ${tRev.toLocaleString()}`;
+        document.getElementById('total-profit-val').innerText = `Ksh ${tProf.toLocaleString()}`;
+        document.getElementById('today-profit-val').innerText = `Ksh ${todayProf.toLocaleString()}`;
+        document.getElementById('passenger-count').innerText = passengerCount;
+        document.getElementById('cargo-count').innerText = cargoCount;
+
+        allTuktukData = Object.values(perfMap).sort((a, b) => b.rev - a.rev);
+        if (allTuktukData.length > 0) {
+            document.getElementById('best-model').innerText = allTuktukData[0].name;
+        }
+        
+        if (tuktukStockChart) {
+            tuktukStockChart.destroy();
+            tuktukStockChart = null;
+        }
+        if (tuktukRevChart) {
+            tuktukRevChart.destroy();
+            tuktukRevChart = null;
+        }
+        
+        displayTable();
+        
+        setTimeout(() => {
+            updateCharts(getFilteredData());
+        }, 100);
+    }
+
+    function getFilteredData() {
+        if (currentTypeFilter === 'all') {
+            return allTuktukData;
+        }
+        return allTuktukData.filter(item => item.type === currentTypeFilter);
+    }
+
+    function displayTable() {
+        const tbody = document.getElementById('tuktuk-table-body');
+        const filteredData = getFilteredData();
+        
+        if (filteredData.length === 0) {
+            const branchName = selectedBranchId ? branches[selectedBranchId]?.name : 'All Branches';
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-dim);">
+                        <i class="fas fa-car-side" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        No TUKTUK products found for ${branchName}
+                    侧
+                </tr>
+            `;
+            document.getElementById('loadMoreBtn').style.display = 'none';
+            return;
+        }
+        
+        tbody.innerHTML = filteredData.slice(0, displayLimit).map(m => {
+            const marginPercent = m.selling_price > 0 ? (((m.selling_price - m.cost_price) / m.selling_price) * 100).toFixed(1) : 0;
+            
+            return `
+                <tr>
+                    <td><strong>${m.name}</strong>侧
+                    <td><span class="type-badge">${m.type}</span>侧
+                    <td><span style="color: ${m.stock > 0 ? '#10b981' : '#ef4444'}">• ${m.status}</span>侧
+                    <td>${m.stock}侧
+                    <td>${m.sold}侧
+                    <td>Ksh ${m.rev.toLocaleString()}侧
+                    <td style="color:#10b981">Ksh ${m.prof.toLocaleString()}侧
+                    <td>${marginPercent}%侧
+                    <td><span class="branch-pill">${m.branch_code}</span>侧
+                </tr>
+            `;
+        }).join('');
+        
+        document.getElementById('loadMoreBtn').style.display = displayLimit >= filteredData.length ? 'none' : 'block';
+    }
+
+    function updateCharts(data) {
+        const chartData = data.slice(0, 5);
+        
+        if (chartData.length === 0) {
+            const stockCtx = document.getElementById('tuktukStockChart').getContext('2d');
+            const revCtx = document.getElementById('tuktukRevChart').getContext('2d');
+            stockCtx.clearRect(0, 0, stockCtx.canvas.width, stockCtx.canvas.height);
+            revCtx.clearRect(0, 0, revCtx.canvas.width, revCtx.canvas.height);
+            return;
+        }
+        
+        const labels = chartData.map(d => d.name.length > 15 ? d.name.substring(0, 12) + '...' : d.name);
+        
+        const stockCtx = document.getElementById('tuktukStockChart').getContext('2d');
+        tuktukStockChart = new Chart(stockCtx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    { 
+                        label: 'Stock', 
+                        data: chartData.map(d => d.stock), 
+                        backgroundColor: '#8b5cf6',
+                        barPercentage: 0.8,
+                        categoryPercentage: 0.9
+                    },
+                    { 
+                        label: 'Sold', 
+                        data: chartData.map(d => d.sold), 
+                        backgroundColor: '#10b981',
+                        barPercentage: 0.8,
+                        categoryPercentage: 0.9
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { font: { size: 11 } }
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { font: { size: 10 } } },
+                    x: { ticks: { font: { size: 10 } } }
+                }
+            }
+        });
+        
+        const revCtx = document.getElementById('tuktukRevChart').getContext('2d');
+        tuktukRevChart = new Chart(revCtx, {
+            type: 'doughnut',
+            data: {
+                labels,
+                datasets: [{
+                    data: chartData.map(d => d.rev),
+                    backgroundColor: ['#8b5cf6', '#a78bfa', '#c4b5fd', '#ddd6fe', '#ede9fe'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { font: { size: 10 } }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+    }
+
+    document.getElementById('loadMoreBtn').addEventListener('click', () => { 
+        displayLimit += 10; 
+        displayTable(); 
+    });
+
+    async function init() {
+        await loadBranches();
+        await loadUserProfile();
+        
+        const today = new Date();
+        document.getElementById('dateRange').textContent = today.toLocaleDateString('en-GB', { 
+            day: 'numeric', month: 'long', year: 'numeric' 
+        });
+        
+        if (currentBranch) {
+            document.getElementById('branchSelector').value = currentBranch.code;
+            selectedBranchId = currentBranch.id;
+            document.getElementById('currentBranchDisplay').textContent = currentBranch.name;
+        }
+        
+        await loadData();
+    }
+
+    init();
+</script>
 </body>
 </html>
