@@ -615,6 +615,26 @@
         updateCharts(getFilteredData());
     };
 
+    // ==================== AUTHENTICATION CHECK ====================
+    async function checkAuthAndRedirect() {
+        try {
+            const { data: { session }, error } = await supabase.auth.getSession();
+            
+            if (error || !session) {
+                console.log("No active session, redirecting to login...");
+                window.location.href = 'index.html';
+                return false;
+            }
+            
+            currentUser = session.user;
+            return true;
+        } catch (err) {
+            console.error("Auth check error:", err);
+            window.location.href = 'index.html';
+            return false;
+        }
+    }
+
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
         branches = {};
@@ -640,13 +660,7 @@
 
     async function loadUserProfile() {
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                window.location.href = 'index.html';
-                return null;
-            }
-            
-            currentUser = user;
+            if (!currentUser) return null;
             
             const { data: profile, error } = await supabase
                 .from('profiles')
@@ -659,7 +673,7 @@
                         location
                     )
                 `)
-                .eq('id', user.id)
+                .eq('id', currentUser.id)
                 .single();
             
             if (error) throw error;
@@ -668,7 +682,7 @@
             currentBranch = profile.branches;
             
             const session = {
-                user: user,
+                user: currentUser,
                 profile: profile,
                 branch: profile.branches,
                 role: profile.role
@@ -736,7 +750,7 @@
                 <td colspan="9" style="text-align: center; padding: 40px;">
                     <div class="spinner" style="margin: 0 auto;"></div>
                     Loading data...
-                </td>
+                侧
             </tr>
         `;
 
@@ -921,14 +935,15 @@
         if (chartData.length === 0) {
             const stockCtx = document.getElementById('tuktukStockChart').getContext('2d');
             const revCtx = document.getElementById('tuktukRevChart').getContext('2d');
-            stockCtx.clearRect(0, 0, stockCtx.canvas.width, stockCtx.canvas.height);
-            revCtx.clearRect(0, 0, revCtx.canvas.width, revCtx.canvas.height);
+            if (stockCtx) stockCtx.clearRect(0, 0, stockCtx.canvas.width, stockCtx.canvas.height);
+            if (revCtx) revCtx.clearRect(0, 0, revCtx.canvas.width, revCtx.canvas.height);
             return;
         }
         
         const labels = chartData.map(d => d.name.length > 15 ? d.name.substring(0, 12) + '...' : d.name);
         
         const stockCtx = document.getElementById('tuktukStockChart').getContext('2d');
+        if (tuktukStockChart) tuktukStockChart.destroy();
         tuktukStockChart = new Chart(stockCtx, {
             type: 'bar',
             data: {
@@ -967,6 +982,7 @@
         });
         
         const revCtx = document.getElementById('tuktukRevChart').getContext('2d');
+        if (tuktukRevChart) tuktukRevChart.destroy();
         tuktukRevChart = new Chart(revCtx, {
             type: 'doughnut',
             data: {
@@ -997,18 +1013,27 @@
     });
 
     async function init() {
+        // First check authentication
+        const isAuthenticated = await checkAuthAndRedirect();
+        if (!isAuthenticated) return;
+        
         await loadBranches();
         await loadUserProfile();
         
         const today = new Date();
-        document.getElementById('dateRange').textContent = today.toLocaleDateString('en-GB', { 
-            day: 'numeric', month: 'long', year: 'numeric' 
-        });
+        const dateRangeEl = document.getElementById('dateRange');
+        if (dateRangeEl) {
+            dateRangeEl.textContent = today.toLocaleDateString('en-GB', { 
+                day: 'numeric', month: 'long', year: 'numeric' 
+            });
+        }
         
         if (currentBranch) {
-            document.getElementById('branchSelector').value = currentBranch.code;
+            const branchSelector = document.getElementById('branchSelector');
+            const branchDisplay = document.getElementById('currentBranchDisplay');
+            if (branchSelector) branchSelector.value = currentBranch.code;
             selectedBranchId = currentBranch.id;
-            document.getElementById('currentBranchDisplay').textContent = currentBranch.name;
+            if (branchDisplay) branchDisplay.textContent = currentBranch.name;
         }
         
         await loadData();
