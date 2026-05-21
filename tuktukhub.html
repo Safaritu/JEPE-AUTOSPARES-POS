@@ -615,26 +615,6 @@
         updateCharts(getFilteredData());
     };
 
-    // ==================== AUTHENTICATION CHECK ====================
-    async function checkAuthAndRedirect() {
-        try {
-            const { data: { session }, error } = await supabase.auth.getSession();
-            
-            if (error || !session) {
-                console.log("No active session, redirecting to login...");
-                window.location.href = 'index.html';
-                return false;
-            }
-            
-            currentUser = session.user;
-            return true;
-        } catch (err) {
-            console.error("Auth check error:", err);
-            window.location.href = 'index.html';
-            return false;
-        }
-    }
-
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
         branches = {};
@@ -660,7 +640,13 @@
 
     async function loadUserProfile() {
         try {
-            if (!currentUser) return null;
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return null;
+            }
+            
+            currentUser = user;
             
             const { data: profile, error } = await supabase
                 .from('profiles')
@@ -673,7 +659,7 @@
                         location
                     )
                 `)
-                .eq('id', currentUser.id)
+                .eq('id', user.id)
                 .single();
             
             if (error) throw error;
@@ -682,7 +668,7 @@
             currentBranch = profile.branches;
             
             const session = {
-                user: currentUser,
+                user: user,
                 profile: profile,
                 branch: profile.branches,
                 role: profile.role
@@ -697,6 +683,19 @@
             return profile;
         } catch (error) {
             console.error("Error loading profile:", error);
+            // Don't redirect immediately, check if we have session in localStorage
+            const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
+            if (session.user && session.profile) {
+                currentUser = session.user;
+                currentBranchId = session.branch?.id;
+                currentBranch = session.branch;
+                if (currentBranch) {
+                    const sidebarBranchName = document.querySelector('#sidebarBranchName span');
+                    if (sidebarBranchName) sidebarBranchName.textContent = currentBranch.name;
+                }
+                return session.profile;
+            }
+            window.location.href = 'index.html';
             return null;
         }
     }
@@ -722,11 +721,11 @@
             const branchId = getBranchIdFromCode(selectedCode);
             if (branchId) {
                 selectedBranchId = branchId;
-                branchDisplay.textContent = branches[branchId].name;
-                if (inventoryBranch) inventoryBranch.textContent = `(${branches[branchId].name})`;
-                if (salesBranch) salesBranch.textContent = `(${branches[branchId].name})`;
-                if (tableBranch) tableBranch.textContent = `(${branches[branchId].name})`;
-                dateRange.textContent = `Showing ${branches[branchId].name} only`;
+                branchDisplay.textContent = branches[branchId]?.name || selectedCode;
+                if (inventoryBranch) inventoryBranch.textContent = `(${branches[branchId]?.name || selectedCode})`;
+                if (salesBranch) salesBranch.textContent = `(${branches[branchId]?.name || selectedCode})`;
+                if (tableBranch) tableBranch.textContent = `(${branches[branchId]?.name || selectedCode})`;
+                dateRange.textContent = `Showing ${branches[branchId]?.name || selectedCode} only`;
             }
         }
         
@@ -745,14 +744,17 @@
     }
 
     async function loadData() {
-        document.getElementById('tuktuk-table-body').innerHTML = `
-            <tr>
-                <td colspan="9" style="text-align: center; padding: 40px;">
-                    <div class="spinner" style="margin: 0 auto;"></div>
-                    Loading data...
-                侧
-            </tr>
-        `;
+        const tbody = document.getElementById('tuktuk-table-body');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 40px;">
+                        <div class="spinner" style="margin: 0 auto;"></div>
+                        Loading data...
+                    侧
+                </tr>
+            `;
+        }
 
         try {
             let productsQuery = supabase
@@ -784,14 +786,16 @@
             render(products, sales);
         } catch (error) {
             console.error("Error loading data:", error);
-            document.getElementById('tuktuk-table-body').innerHTML = `
-                <tr>
-                    <td colspan="9" style="text-align: center; padding: 40px; color: #ef4444;">
-                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                        Error loading data: ${error.message}
-                    侧
-                </tr>
-            `;
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 40px; color: #ef4444;">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                            Error loading data: ${error.message}
+                        侧
+                    </tr>
+                `;
+            }
         }
     }
 
@@ -849,22 +853,37 @@
             }
         });
 
-        document.getElementById('total-units').innerText = tStock;
-        document.getElementById('units-sold').innerText = tSold;
-        document.getElementById('total-rev').innerText = `Ksh ${tRev.toLocaleString()}`;
-        document.getElementById('total-prof').innerText = `Ksh ${tProf.toLocaleString()}`;
-        document.getElementById('inv-cost').innerText = `Ksh ${tInvCost.toLocaleString()}`;
-        document.getElementById('inv-proj-profit').innerText = `Ksh ${tProjProfit.toLocaleString()}`;
-        document.getElementById('avg-unit-cost').innerText = `Ksh ${(tStock > 0 ? (tInvCost/tStock) : 0).toLocaleString()}`;
-        document.getElementById('total-sales-val').innerText = `Ksh ${tRev.toLocaleString()}`;
-        document.getElementById('total-profit-val').innerText = `Ksh ${tProf.toLocaleString()}`;
-        document.getElementById('today-profit-val').innerText = `Ksh ${todayProf.toLocaleString()}`;
-        document.getElementById('passenger-count').innerText = passengerCount;
-        document.getElementById('cargo-count').innerText = cargoCount;
+        // Update stats
+        const totalUnitsEl = document.getElementById('total-units');
+        const unitsSoldEl = document.getElementById('units-sold');
+        const totalRevEl = document.getElementById('total-rev');
+        const totalProfEl = document.getElementById('total-prof');
+        const invCostEl = document.getElementById('inv-cost');
+        const invProjProfitEl = document.getElementById('inv-proj-profit');
+        const avgUnitCostEl = document.getElementById('avg-unit-cost');
+        const totalSalesValEl = document.getElementById('total-sales-val');
+        const totalProfitValEl = document.getElementById('total-profit-val');
+        const todayProfitValEl = document.getElementById('today-profit-val');
+        const passengerCountEl = document.getElementById('passenger-count');
+        const cargoCountEl = document.getElementById('cargo-count');
+        const bestModelEl = document.getElementById('best-model');
+        
+        if (totalUnitsEl) totalUnitsEl.innerText = tStock;
+        if (unitsSoldEl) unitsSoldEl.innerText = tSold;
+        if (totalRevEl) totalRevEl.innerText = `Ksh ${tRev.toLocaleString()}`;
+        if (totalProfEl) totalProfEl.innerText = `Ksh ${tProf.toLocaleString()}`;
+        if (invCostEl) invCostEl.innerText = `Ksh ${tInvCost.toLocaleString()}`;
+        if (invProjProfitEl) invProjProfitEl.innerText = `Ksh ${tProjProfit.toLocaleString()}`;
+        if (avgUnitCostEl) avgUnitCostEl.innerText = `Ksh ${(tStock > 0 ? (tInvCost/tStock) : 0).toLocaleString()}`;
+        if (totalSalesValEl) totalSalesValEl.innerText = `Ksh ${tRev.toLocaleString()}`;
+        if (totalProfitValEl) totalProfitValEl.innerText = `Ksh ${tProf.toLocaleString()}`;
+        if (todayProfitValEl) todayProfitValEl.innerText = `Ksh ${todayProf.toLocaleString()}`;
+        if (passengerCountEl) passengerCountEl.innerText = passengerCount;
+        if (cargoCountEl) cargoCountEl.innerText = cargoCount;
 
         allTuktukData = Object.values(perfMap).sort((a, b) => b.rev - a.rev);
-        if (allTuktukData.length > 0) {
-            document.getElementById('best-model').innerText = allTuktukData[0].name;
+        if (allTuktukData.length > 0 && bestModelEl) {
+            bestModelEl.innerText = allTuktukData[0].name;
         }
         
         if (tuktukStockChart) {
@@ -892,6 +911,8 @@
 
     function displayTable() {
         const tbody = document.getElementById('tuktuk-table-body');
+        if (!tbody) return;
+        
         const filteredData = getFilteredData();
         
         if (filteredData.length === 0) {
@@ -904,7 +925,8 @@
                     侧
                 </tr>
             `;
-            document.getElementById('loadMoreBtn').style.display = 'none';
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            if (loadMoreBtn) loadMoreBtn.style.display = 'none';
             return;
         }
         
@@ -926,15 +948,23 @@
             `;
         }).join('');
         
-        document.getElementById('loadMoreBtn').style.display = displayLimit >= filteredData.length ? 'none' : 'block';
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        if (loadMoreBtn) {
+            loadMoreBtn.style.display = displayLimit >= filteredData.length ? 'none' : 'block';
+        }
     }
 
     function updateCharts(data) {
         const chartData = data.slice(0, 5);
         
+        const stockCanvas = document.getElementById('tuktukStockChart');
+        const revCanvas = document.getElementById('tuktukRevChart');
+        
+        if (!stockCanvas || !revCanvas) return;
+        
         if (chartData.length === 0) {
-            const stockCtx = document.getElementById('tuktukStockChart').getContext('2d');
-            const revCtx = document.getElementById('tuktukRevChart').getContext('2d');
+            const stockCtx = stockCanvas.getContext('2d');
+            const revCtx = revCanvas.getContext('2d');
             if (stockCtx) stockCtx.clearRect(0, 0, stockCtx.canvas.width, stockCtx.canvas.height);
             if (revCtx) revCtx.clearRect(0, 0, revCtx.canvas.width, revCtx.canvas.height);
             return;
@@ -942,7 +972,7 @@
         
         const labels = chartData.map(d => d.name.length > 15 ? d.name.substring(0, 12) + '...' : d.name);
         
-        const stockCtx = document.getElementById('tuktukStockChart').getContext('2d');
+        const stockCtx = stockCanvas.getContext('2d');
         if (tuktukStockChart) tuktukStockChart.destroy();
         tuktukStockChart = new Chart(stockCtx, {
             type: 'bar',
@@ -981,7 +1011,7 @@
             }
         });
         
-        const revCtx = document.getElementById('tuktukRevChart').getContext('2d');
+        const revCtx = revCanvas.getContext('2d');
         if (tuktukRevChart) tuktukRevChart.destroy();
         tuktukRevChart = new Chart(revCtx, {
             type: 'doughnut',
@@ -1007,16 +1037,15 @@
         });
     }
 
-    document.getElementById('loadMoreBtn').addEventListener('click', () => { 
-        displayLimit += 10; 
-        displayTable(); 
-    });
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', () => { 
+            displayLimit += 10; 
+            displayTable(); 
+        });
+    }
 
     async function init() {
-        // First check authentication
-        const isAuthenticated = await checkAuthAndRedirect();
-        if (!isAuthenticated) return;
-        
         await loadBranches();
         await loadUserProfile();
         
