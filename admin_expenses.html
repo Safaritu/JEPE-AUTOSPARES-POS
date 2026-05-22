@@ -674,7 +674,22 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
             <h1 style="font-size: 1.3rem; margin:0;">KCB Paybill Manager</h1>
         </div>
-         <div class="balance-preview">
+
+        <!-- Branch Selector -->
+        <div class="branch-selector-container">
+            <div class="branch-filter">
+                <i class="fas fa-store" style="color: var(--admin-accent); font-size: 1.1rem;"></i>
+                <select id="branchSelector" class="branch-select" onchange="handleBranchChange()">
+                    <option value="all">🏢 ALL BRANCHES (Consolidated)</option>
+                </select>
+            </div>
+            <div class="branch-badge" id="currentBranchBadge">
+                <i class="fas fa-store"></i>
+                <span id="currentBranchDisplay">ALL BRANCHES</span>
+            </div>
+        </div>
+
+        <div class="balance-preview">
             <label>Live KCB Paybill Balance</label>
             <div id="live-pb-total" class="val">Ksh 0.00</div>
         </div>
@@ -785,7 +800,7 @@
         
         // Populate branch selector
         const selector = document.getElementById('branchSelector');
-        let options = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>';
+        let options = '<option value="all"></option>';
         data?.forEach(b => {
             options += `<option value="${b.id}">🏪 ${b.name}</option>`;
         });
