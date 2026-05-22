@@ -1706,6 +1706,10 @@
     let currentUserProfile = null;
     let currentBranchId = null;
     let branches = {};
+    
+    // Track if shift creation is in progress to prevent double submission
+    let isCreatingShift = false;
+    let isClosingShift = false;
 
     // ============================================
     // HELPER: GET CURRENT ACTIVE SHIFT ID
@@ -1881,6 +1885,25 @@
         
         container.appendChild(notification);
         setTimeout(() => notification.remove(), 3000);
+    }
+    
+    function showErrorMessage(message) {
+        const container = document.getElementById('success-notification-container');
+        if (!container) return;
+        
+        const notification = document.createElement('div');
+        notification.className = 'success-notification';
+        notification.style.background = '#ef4444';
+        notification.innerHTML = `
+            <i class="fas fa-exclamation-triangle" style="font-size: 1.5rem;"></i>
+            <div style="flex: 1;">
+                <div style="font-weight: 800;">⚠️ ${message}</div>
+                <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Please check your connection and try again</div>
+            </div>
+        `;
+        
+        container.appendChild(notification);
+        setTimeout(() => notification.remove(), 5000);
     }
 
     window.redirectToGasHub = function() {
@@ -2060,15 +2083,20 @@
         btn.innerHTML = '<span class="spinner"></span>';
         btn.disabled = true;
         
-        await Promise.all([
-            fetchInventory(),
-            loadShiftData(),
-            loadHistory()
-        ]);
-        
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-        showSuccessNotification('Data refreshed successfully!');
+        try {
+            await Promise.all([
+                fetchInventory(),
+                loadShiftData(),
+                loadHistory()
+            ]);
+            showSuccessNotification('Data refreshed successfully!');
+        } catch (error) {
+            console.error("Refresh error:", error);
+            showErrorMessage("Failed to refresh data");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
     };
 
     const productSubscription = supabase
@@ -2214,14 +2242,20 @@
     }
 
     async function checkForOpenShift(branchId) {
-        const { data } = await supabase
-            .from('daily_shifts')
-            .select('*')
-            .eq('branch_id', branchId)
-            .eq('status', 'Open')
-            .maybeSingle();
-        
-        return data;
+        try {
+            const { data, error } = await supabase
+                .from('daily_shifts')
+                .select('id, status, start_time')
+                .eq('branch_id', branchId)
+                .eq('status', 'Open')
+                .maybeSingle();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error("Error checking open shift:", error);
+            return null;
+        }
     }
 
     async function init() {
@@ -2563,23 +2597,23 @@
                             ${s.category === 'Gas' ? '<span class="gas-badge">GAS</span>' : ''}
                             ${s.payment_method === 'Debt' ? '<span class="refunded-badge" style="background:var(--warning)">DEBT</span>' : ''}
                             ${s.payment_method === 'KCB Paybill' ? '<span class="kcb-paybill-badge">KCB PAYBILL</span>' : ''}
-                        </td>
+                        侧
                         <td data-label="Qty" class="${s.quantity < 0 ? 'text-danger' : ''}">
                             ${s.quantity < 0 ? `-${Math.abs(s.quantity)}` : s.quantity}
-                        </td>
+                        侧
                         <td data-label="Total" class="${s.total_amount < 0 ? 'text-danger' : ''}">
                             Ksh ${s.total_amount.toLocaleString()}
-                        </td>
+                        侧
                         <td data-label="Method">
                             ${s.refunded ? 'Refund via ' : ''}${s.payment_method}
-                        </td>
+                        侧
                         <td data-label="Action" class="action-column">
                             ${!s.refunded && s.quantity > 0 && s.total_amount > 0 ? `
                                 <button class="btn-refund" onclick='openRefundModal(${JSON.stringify(s).replace(/'/g, "\\'")})'>
                                     <i class="fas fa-undo-alt"></i> Refund
                                 </button>
                             ` : ''}
-                        </td>
+                        侧
                     </tr>
                 `).join('');
             }
@@ -2607,19 +2641,19 @@
                     const isKcbPaybill = t.category === 'KCB Paybill';
                     return `
                         <tr class="${t.type === 'Money In' ? 'money-in-row' : 'money-out-row'} ${isKcbPaybill ? 'kcb-live-box' : ''}">
-                            <td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
+                            <td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}侧
                             <td data-label="Reason">
                                 ${t.description}
                                 ${isKcbPaybill ? '<span class="kcb-paybill-badge">LIVE KCB</span>' : ''}
-                            </td>
-                            <td data-label="Amount">Ksh ${t.amount.toLocaleString()}</td>
+                            侧
+                            <td data-label="Amount">Ksh ${t.amount.toLocaleString()}侧
                             <td data-label="Type" class="${t.type==='Money In'?'text-success':'text-danger'}">
                                 ${t.type}
-                            </td>
+                            侧
                             <td data-label="Wallet">
                                 ${t.category}
                                 ${isKcbPaybill ? '💰' : ''}
-                            </td>
+                            侧
                         </tr>
                     `;
                 }).join('');
@@ -2631,13 +2665,23 @@
         }
     }
 
+    // ============================================
+    // FIXED: START SHIFT - Prevents duplicate shifts
+    // ============================================
     document.getElementById('confirm-open').addEventListener('click', async function() {
+        // Prevent multiple clicks while creating shift
+        if (isCreatingShift) {
+            alert("Please wait, shift is being created...");
+            return;
+        }
+        
         const branchId = getCurrentBranchId();
         
+        // Double-check if there's already an open shift before attempting to create
         const existingOpenShift = await checkForOpenShift(branchId);
         
         if (existingOpenShift) {
-            alert("❌ There is already an open shift for this branch. Please close the existing shift before starting a new one.");
+            alert("❌ There is already an open shift for this branch.\n\nPlease close the existing shift before starting a new one.\n\nIf you believe this is an error, contact the administrator.");
             this.disabled = false;
             this.innerHTML = 'START DAY';
             document.getElementById('open-modal').style.display = 'none';
@@ -2663,6 +2707,8 @@
             return;
         }
         
+        // Set creating flag to prevent duplicate
+        isCreatingShift = true;
         this.disabled = true;
         this.innerHTML = '<span class="spinner"></span> STARTING...';
         
@@ -2678,15 +2724,35 @@
         };
         
         try {
+            // Final check before insert - ensure no shift was created in between
+            const finalCheck = await checkForOpenShift(branchId);
+            if (finalCheck) {
+                alert("❌ A shift was just opened for this branch. Please refresh the page.");
+                isCreatingShift = false;
+                this.disabled = false;
+                this.innerHTML = 'START DAY';
+                document.getElementById('open-modal').style.display = 'none';
+                return;
+            }
+            
             const { error } = await supabase.from('daily_shifts').insert([openData]);
             if (error) throw error;
             
             showSuccessNotification('Shift started successfully!', `Cash: Ksh ${cash} | Mpesa: Ksh ${mpesa}`);
             setTimeout(() => location.reload(), 1500);
         } catch (error) {
-            alert("Error starting shift: " + error.message);
+            console.error("Start shift error:", error);
+            let errorMessage = "Error starting shift: " + error.message;
+            if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
+                errorMessage = "Connection error. Please check your internet and try again.";
+                showErrorMessage(errorMessage);
+            } else {
+                alert(errorMessage);
+            }
             this.disabled = false;
             this.innerHTML = 'START DAY';
+        } finally {
+            isCreatingShift = false;
         }
     });
 
@@ -2763,6 +2829,9 @@
         document.getElementById('close-modal').style.display = 'flex';
     };
 
+    // ============================================
+    // FIXED: CLOSE SHIFT - Prevents duplicate closures
+    // ============================================
     document.getElementById('confirm-close').addEventListener('click', function() {
         const clM = parseFloat(document.getElementById('c-mpesa').value || 0);
         const clK = parseFloat(document.getElementById('c-kcb').value || 0);
@@ -2778,6 +2847,12 @@
     });
 
     window.processFinalClose = async function() {
+        // Prevent multiple close attempts
+        if (isClosingShift) {
+            alert("Please wait, shift is being closed...");
+            return;
+        }
+        
         const card = document.getElementById('close-confirm-card');
         if (!card) return;
         
@@ -2789,6 +2864,8 @@
         
         card.remove();
         
+        // Set closing flag to prevent duplicate
+        isClosingShift = true;
         const btn = document.getElementById('confirm-close');
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner"></span> FINALIZING...';
@@ -2819,13 +2896,14 @@
                 const sign = variance > 0 ? "+" : "-";
                 note = prompt(`Variance: ${sign}${Math.abs(variance).toFixed(2)}. Please enter reason:`);
                 if (!note) {
+                    isClosingShift = false;
                     btn.disabled = false;
                     btn.innerHTML = 'FINALIZE & CLOSE';
                     return;
                 }
             }
 
-            await supabase.from('daily_shifts').update({
+            const { error } = await supabase.from('daily_shifts').update({
                 close_mpesa: clM, 
                 close_kcb: clK, 
                 close_equity: clE, 
@@ -2837,10 +2915,20 @@
                 system_expected_total: expected
             }).eq('id', currentShift.id);
             
+            if (error) throw error;
+            
             showSuccessNotification('Shift closed successfully!', `Variance: ${variance === 0 ? 'Balanced' : variance.toFixed(2)}`);
             setTimeout(() => location.reload(), 1500);
         } catch (error) {
-            alert("Error closing shift: " + error.message);
+            console.error("Close shift error:", error);
+            let errorMessage = "Error closing shift: " + error.message;
+            if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
+                errorMessage = "Connection error. Please check your internet and try again.";
+                showErrorMessage(errorMessage);
+            } else {
+                alert(errorMessage);
+            }
+            isClosingShift = false;
             btn.disabled = false;
             btn.innerHTML = 'FINALIZE & CLOSE';
         }
@@ -2850,7 +2938,6 @@
         try {
             const branchId = getCurrentBranchId();
             
-            // Fetch shifts with their pre-calculated totals
             const { data: shifts, error } = await supabase
                 .from('daily_shifts')
                 .select('*')
@@ -2862,7 +2949,6 @@
             
             allShifts = shifts || [];
             
-            // Fetch transactions for money in/out (these are not pre-aggregated in the shift table yet)
             const { data: transactions } = await supabase
                 .from('cash_transactions')
                 .select('shift_id, amount, type')
@@ -2898,7 +2984,6 @@
         const desktopTbody = document.getElementById('history-body');
         if(!desktopTbody) return;
         
-        // Filter shifts by search query
         const filtered = shifts.filter(sh => {
             const dateStr = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }).toLowerCase();
             return dateStr.includes(query.toLowerCase());
@@ -2907,20 +2992,16 @@
         let tableHtml = '';
 
         filtered.forEach(sh => {
-            // Calculate money in/out for this shift
             const shiftLogs = transData.filter(t => t.shift_id === sh.id);
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
             
-            // Use pre-calculated totals from the shift table
             const cashSales = sh.total_cash_sales || 0;
             const kcbPaybillSales = sh.total_kcb_paybill_sales || 0;
             const totalRevenue = sh.total_sales_amount || 0;
             
-            // Format the date for the URL (YYYY-MM-DD)
             const shiftDate = new Date(sh.start_time).toISOString().split('T')[0];
             
-            // Calculate totals
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
             const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
 
@@ -2949,7 +3030,6 @@
 
             const startD = new Date(sh.start_time);
             
-            // Build payment methods HTML with clickable TOTAL SALES
             let paymentMethodsHtml = `
                 <div class="payment-method-item">
                     <span class="payment-label">Cash Sales</span>
@@ -2961,7 +3041,6 @@
                 </div>
             `;
             
-            // Add total revenue at the bottom, wrapped in a link
             paymentMethodsHtml += `
                 <a href="sales_reports.html?date=${shiftDate}" class="revenue-card" style="display: block; text-decoration: none; margin-top: 8px;">
                     <div class="payment-method-item" style="margin-top:8px; padding-top:8px; border-top:2px solid var(--border);">
@@ -2978,26 +3057,26 @@
                         <b>${startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'})}</b>
                         <span class="time-pill">IN: ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span><br>
                         <span class="time-pill">${sh.end_time ? 'OUT: '+new Date(sh.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'ACTIVE'}</span>
-                      </td>
+                      侧
                       <td>
                         <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity||0).toLocaleString()}</span></div>
                         <div class="total-row">Total: ${openTotal.toLocaleString()}</div>
-                      </td>
+                      侧
                      <td style="vertical-align: middle;">
                         <div style="background: #f8fafc; padding: 10px; border-radius: 8px;">
                             ${paymentMethodsHtml}
                         </div>
-                      </td>
+                      侧
                       <td>
                         <a href="moneyinout.html" class="revenue-card">
                             <div class="account-line"><span class="account-label">In</span><span class="account-val" style="color:var(--success)">+${moneyIn.toLocaleString()}</span></div>
                             <div class="account-line"><span class="account-label">Out</span><span class="account-val" style="color:var(--danger)">-${moneyOut.toLocaleString()}</span></div>
                             <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW →</div>
                         </a>
-                      </td>
+                      侧
                       <td>
                         <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.close_cash||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa||0).toLocaleString()}</span></div>
@@ -3005,7 +3084,7 @@
                         <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.close_equity||0).toLocaleString()}</span></div>
                         <div class="account-line"><span class="account-label">Paybill</span><span class="account-val">${(sh.close_kcb_bank||0).toLocaleString()}</span></div>
                         <div class="total-row" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>
-                      </td>
+                      侧
                       <td>
                         <span class="status-badge ${varianceClass}">
                             ${varianceDisplay}
@@ -3013,12 +3092,12 @@
                         <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 8px; text-align: center;">
                             Expected: ${expected.toLocaleString()}
                         </div>
-                      </td>
-                      <td><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim); font-style: italic;">${sh.variance_note && sh.variance_note !== 'Balanced' ? sh.variance_note.split(' - ')[1] || sh.variance_note : sh.variance_note || 'No notes added.'}</div></td>
+                      侧
+                      <td><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim); font-style: italic;">${sh.variance_note && sh.variance_note !== 'Balanced' ? sh.variance_note.split(' - ')[1] || sh.variance_note : sh.variance_note || 'No notes added.'}</div>侧
                 </tr>`;
         });
 
-        desktopTbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.</td></td>';
+        desktopTbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.侧</td>';
     }
 
     function renderMobileHistory(shifts, transData, query = "") {
@@ -3042,12 +3121,10 @@
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
             
-            // Use pre-calculated totals from the shift table
             const cashSales = sh.total_cash_sales || 0;
             const kcbPaybillSales = sh.total_kcb_paybill_sales || 0;
             const totalRevenue = sh.total_sales_amount || 0;
             
-            // Format the date for the URL (YYYY-MM-DD)
             const shiftDate = new Date(sh.start_time).toISOString().split('T')[0];
 
             const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
@@ -3073,7 +3150,6 @@
             const varianceNote = sh.variance_note && sh.variance_note !== 'Balanced' ? 
                 (sh.variance_note.split(' - ')[1] || sh.variance_note) : sh.variance_note;
             
-            // Build payment methods with clickable total
             let paymentMethodsHtml = `
                 <div class="shift-mobile-detail-line">
                     <span class="shift-mobile-detail-label">Cash</span>
