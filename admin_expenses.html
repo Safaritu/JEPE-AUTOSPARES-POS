@@ -253,19 +253,51 @@
             }
         }
 
-        /* --- BRANCH BADGE --- */
+        /* --- BRANCH SELECTOR --- */
+        .branch-selector-container {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        
+        .branch-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .branch-select {
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 2px solid var(--admin-accent);
+            background: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text);
+            cursor: pointer;
+            min-width: 220px;
+            outline: none;
+        }
+        
         .branch-badge {
             background: var(--admin-accent);
             color: white;
-            padding: 8px 16px;
+            padding: 6px 16px;
             border-radius: 30px;
             font-size: 0.8rem;
             font-weight: 700;
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            border: 2px solid white;
-            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
         }
 
         .container { 
@@ -482,6 +514,15 @@
             font-weight: 600; 
             margin-top: 2px;
         }
+        .branch-tag {
+            font-size: 0.65rem;
+            color: var(--admin-accent);
+            background: #e0e7ff;
+            padding: 2px 8px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-top: 4px;
+        }
 
         /* Delete Button */
         .btn-delete { 
@@ -551,6 +592,13 @@
                 width: 100%;
                 justify-content: space-between;
             }
+            .branch-selector-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .branch-select {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -583,6 +631,7 @@
         <a href="gas_hub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
         <a href="spares_hub.html" class="nav-link"><i class="fas fa-cogs"></i> <span>Spare Parts Hub</span></a>
         <a href="motorbike_hub.html" class="nav-link"><i class="fas fa-motorcycle"></i> <span>Motorbike Hub</span></a>
+        <a href="tuktuk_hub.html" class="nav-link"><i class="fas fa-car-side"></i> <span>TUKTUK Hub</span></a>
 
         <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
 
@@ -624,9 +673,20 @@
     <div class="container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
             <h1 style="font-size: 1.3rem; margin:0;">KCB Paybill Manager</h1>
-            <span id="branchDisplay" class="branch-badge">
-                <i class="fas fa-store"></i> <span>Loading...</span>
-            </span>
+        </div>
+
+        <!-- Branch Selector -->
+        <div class="branch-selector-container">
+            <div class="branch-filter">
+                <i class="fas fa-store" style="color: var(--admin-accent); font-size: 1.1rem;"></i>
+                <select id="branchSelector" class="branch-select" onchange="handleBranchChange()">
+                    <option value="all">🏢 ALL BRANCHES (Consolidated)</option>
+                </select>
+            </div>
+            <div class="branch-badge" id="currentBranchBadge">
+                <i class="fas fa-store"></i>
+                <span id="currentBranchDisplay">ALL BRANCHES</span>
+            </div>
         </div>
 
         <div class="balance-preview">
@@ -710,6 +770,9 @@
     let currentUser = null;
     let currentBranchId = null;
     let currentBranch = null;
+    let selectedBranchId = null;
+    let branches = {};
+    let branchIdMap = {};
 
     // ==================== SIDEBAR FUNCTIONS ====================
     window.toggleMenu = () => {
@@ -720,12 +783,31 @@
     window.confirmSwitchToCashier = (e) => {
         e.preventDefault();
         if(confirm("Switch to Cashier Mode?")) {
-            // You can add branch selection logic here if needed
             window.location.href = "cashier.html";
         }
     };
 
     // ==================== BRANCH FUNCTIONS ====================
+
+    async function loadBranches() {
+        const { data } = await supabase.from('branches').select('*');
+        branches = {};
+        branchIdMap = {};
+        data?.forEach(b => {
+            branches[b.id] = b;
+            branchIdMap[b.code] = b.id;
+        });
+        
+        // Populate branch selector
+        const selector = document.getElementById('branchSelector');
+        let options = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>';
+        data?.forEach(b => {
+            options += `<option value="${b.id}">🏪 ${b.name}</option>`;
+        });
+        selector.innerHTML = options;
+        
+        return branches;
+    }
 
     async function loadUserProfile() {
         try {
@@ -765,14 +847,9 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
-            // Update branch displays
-            const branchDisplay = document.getElementById('branchDisplay');
+            // Update sidebar with user's assigned branch
             const sidebarBranchName = document.querySelector('#sidebarBranchName span');
-            
-            if (branchDisplay && profile.branches) {
-                branchDisplay.innerHTML = `<i class="fas fa-store"></i> ${profile.branches.name}`;
-            }
-            if (sidebarBranchName && profile.branches) {
+            if (profile.branches && sidebarBranchName) {
                 sidebarBranchName.textContent = profile.branches.name;
             }
             
@@ -782,6 +859,25 @@
             return null;
         }
     }
+
+    window.handleBranchChange = async function() {
+        const selector = document.getElementById('branchSelector');
+        const selectedValue = selector.value;
+        
+        const branchDisplay = document.getElementById('currentBranchDisplay');
+        
+        if (selectedValue === 'all') {
+            branchDisplay.textContent = 'ALL BRANCHES';
+            selectedBranchId = null;
+        } else {
+            selectedBranchId = selectedValue;
+            const branch = branches[selectedBranchId];
+            branchDisplay.textContent = branch ? branch.name : 'SELECTED BRANCH';
+        }
+        
+        await calculateTotals();
+        await loadHistory();
+    };
 
     // UI Toggle Logic
     const radios = document.querySelectorAll('input[name="tx_type"]');
@@ -806,19 +902,29 @@
     // Recalculate Totals Logic (Fixed Funding vs Expense Addition)
     async function calculateTotals() {
         try {
-            const branchFilter = currentBranchId;
+            const branchFilter = selectedBranchId || currentBranchId;
             
-            const { data: sales } = await supabase
+            let salesQuery = supabase
                 .from('sales')
                 .select('total_amount')
-                .eq('payment_method', 'KCB Paybill')
-                .eq('branch_id', branchFilter);
+                .eq('payment_method', 'KCB Paybill');
+            
+            if (branchFilter) {
+                salesQuery = salesQuery.eq('branch_id', branchFilter);
+            }
+            
+            const { data: sales } = await salesQuery;
                 
-            const { data: records } = await supabase
+            let recordsQuery = supabase
                 .from('admin_expenses')
                 .select('amount, type')
-                .eq('payment_source', 'KCB Paybill')
-                .eq('branch_id', branchFilter);
+                .eq('payment_source', 'KCB Paybill');
+            
+            if (branchFilter) {
+                recordsQuery = recordsQuery.eq('branch_id', branchFilter);
+            }
+            
+            const { data: records } = await recordsQuery;
 
             const totalSales = sales?.reduce((sum, s) => sum + parseFloat(s.total_amount || 0), 0) || 0;
             
@@ -844,23 +950,29 @@
     // Load History with Delete Feature
     async function loadHistory() {
         try {
-            const branchFilter = currentBranchId;
+            const branchFilter = selectedBranchId || currentBranchId;
             
-            const { data, error } = await supabase
+            let query = supabase
                 .from('admin_expenses')
-                .select('*')
+                .select('*, branches(name)')
                 .eq('payment_source', 'KCB Paybill')
-                .eq('branch_id', branchFilter)
                 .order('created_at', { ascending: false })
                 .limit(displayLimit);
+            
+            if (branchFilter) {
+                query = query.eq('branch_id', branchFilter);
+            }
+            
+            const { data, error } = await query;
 
             const list = document.getElementById('expenseList');
             if (error || !data) throw error;
 
             if (data.length === 0) {
+                const branchName = branchFilter ? branches[branchFilter]?.name : 'All Branches';
                 list.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-dim);">
                     <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                    No transactions found for ${currentBranch?.name || 'this branch'}
+                    No transactions found for ${branchName}
                 </div>`;
                 return;
             }
@@ -870,12 +982,14 @@
                 const formattedDate = new Date(ex.created_at).toLocaleDateString('en-GB', {
                     day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
                 });
+                const branchName = ex.branches?.name || branches[ex.branch_id]?.name || 'Unknown';
 
                 return `
                     <div class="history-item">
                         <div class="item-info">
                             <div class="title">${ex.description || ex.category}</div>
                             <div class="date">${formattedDate}</div>
+                            <div class="branch-tag"><i class="fas fa-store"></i> ${branchName}</div>
                         </div>
                         <div class="item-right">
                             <div class="item-amount-box">
@@ -929,8 +1043,10 @@
     document.getElementById('expenseForm').onsubmit = async (e) => {
         e.preventDefault();
         
-        if (!currentBranchId) {
-            alert("Branch information not found");
+        const branchToUse = selectedBranchId || currentBranchId;
+        
+        if (!branchToUse) {
+            alert("Please select a branch first");
             return;
         }
         
@@ -938,7 +1054,7 @@
         const type = document.querySelector('input[name="tx_type"]:checked').value;
         const amount = parseFloat(document.getElementById('amount').value);
         
-        if(!confirm(`Commit this ${type} of Ksh ${amount.toLocaleString()}?`)) return;
+        if(!confirm(`Commit this ${type} of Ksh ${amount.toLocaleString()} to ${branches[branchToUse]?.name || 'selected branch'}?`)) return;
 
         btn.disabled = true; 
         btn.innerHTML = '<span class="spinner"></span> SAVING...';
@@ -949,7 +1065,7 @@
             category: document.getElementById('category').value,
             type: type,
             payment_source: 'KCB Paybill',
-            branch_id: currentBranchId
+            branch_id: branchToUse
         }]);
 
         if (error) {
@@ -974,7 +1090,16 @@
 
     // Initial load
     async function init() {
+        await loadBranches();
         await loadUserProfile();
+        
+        // Set default branch selector to user's branch
+        if (currentBranch) {
+            document.getElementById('branchSelector').value = currentBranch.id;
+            selectedBranchId = currentBranch.id;
+            document.getElementById('currentBranchDisplay').textContent = currentBranch.name;
+        }
+        
         await calculateTotals();
         await loadHistory();
     }
