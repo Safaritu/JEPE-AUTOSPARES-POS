@@ -750,16 +750,6 @@
                 height: 45px;
             }
         }
-        
-        /* Bank row styling */
-        .bank-row {
-            background: #f0fdf4;
-            border-left: 3px solid var(--family-bank);
-        }
-        
-        .cooperative-row {
-            border-left-color: var(--cooperative-bank);
-        }
     </style>
 </head>
 <body>
@@ -858,9 +848,7 @@
         </div>
         
         <!-- Mobile Card View -->
-        <div id="mobile-shifts-container" class="mobile-shifts-container">
-            <!-- Mobile cards will be inserted here by JavaScript -->
-        </div>
+        <div id="mobile-shifts-container" class="mobile-shifts-container"></div>
         
         <!-- Loading Spinner -->
         <div id="loadingSpinner" class="loading-spinner" style="display: none;">
@@ -884,7 +872,8 @@
 <script type="module">
     import { supabase } from './auth.js';
     
-    let allShifts = [], allTransactions = [];
+    let allShifts = [];
+    let allTransactions = [];
     let isMobile = window.innerWidth <= 768;
     let currentUser = null;
     let currentBranchId = null;
@@ -893,8 +882,12 @@
 
     // ==================== SIDEBAR FUNCTIONS ====================
     window.toggleMenu = () => {
-        document.getElementById('sidebar').classList.toggle('mobile-active');
-        document.getElementById('overlay').classList.toggle('active');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        if (sidebar && overlay) {
+            sidebar.classList.toggle('mobile-active');
+            overlay.classList.toggle('active');
+        }
     };
 
     // ==================== BRANCH FUNCTIONS ====================
@@ -910,15 +903,16 @@
         const branchId = getCurrentBranchId();
         if (!branchId || !currentBranch) return false;
         
-        const branchName = currentBranch.name?.toLowerCase() || '';
+        const branchName = (currentBranch.name || '').toLowerCase();
         return branchName.includes('kitui') || branchId === 'kitui';
     }
 
     // Load user profile with branch info
     async function loadUserProfile() {
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            if (userError || !user) {
+                console.error("No authenticated user found");
                 window.location.href = 'index.html';
                 return null;
             }
@@ -926,7 +920,7 @@
             currentUser = user;
             
             // Get profile with branch info
-            const { data: profile, error } = await supabase
+            const { data: profile, error: profileError } = await supabase
                 .from('profiles')
                 .select(`
                     *,
@@ -940,15 +934,20 @@
                 .eq('id', user.id)
                 .maybeSingle();
             
-            if (error) throw error;
+            if (profileError) {
+                console.error("Profile fetch error:", profileError);
+                throw profileError;
+            }
+            
             if (!profile) {
-                console.error("No profile found");
+                console.error("No profile found for user");
                 return null;
             }
             
             currentBranchId = profile.branch_id;
             currentBranch = profile.branches;
             
+            // Store session info
             const session = {
                 user: user,
                 profile: profile,
@@ -958,15 +957,15 @@
             localStorage.setItem('pos_session', JSON.stringify(session));
             
             // Update sidebar with user's assigned branch
-            const sidebarBranchName = document.querySelector('#sidebarBranchName span');
-            if (profile.branches && sidebarBranchName) {
-                sidebarBranchName.textContent = profile.branches.name;
+            const sidebarBranchNameSpan = document.querySelector('#sidebarBranchName span');
+            if (sidebarBranchNameSpan && profile.branches) {
+                sidebarBranchNameSpan.textContent = profile.branches.name || 'Unknown Branch';
             }
             
             // Update branch display
             const branchNameSpan = document.getElementById('branchName');
             if (branchNameSpan && profile.branches) {
-                branchNameSpan.textContent = profile.branches.name;
+                branchNameSpan.textContent = profile.branches.name || 'Unknown Branch';
             }
             
             // Check if this is Kitui branch
@@ -976,6 +975,30 @@
             return profile;
         } catch (error) {
             console.error("Error loading profile:", error);
+            
+            // Try to get session from localStorage as fallback
+            const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
+            if (session.user && session.profile) {
+                console.log("Using session from localStorage");
+                currentUser = session.user;
+                currentBranchId = session.branch?.id;
+                currentBranch = session.branch;
+                
+                // Update displays
+                const sidebarBranchNameSpan = document.querySelector('#sidebarBranchName span');
+                if (sidebarBranchNameSpan && session.branch) {
+                    sidebarBranchNameSpan.textContent = session.branch.name || 'Unknown Branch';
+                }
+                
+                const branchNameSpan = document.getElementById('branchName');
+                if (branchNameSpan && session.branch) {
+                    branchNameSpan.textContent = session.branch.name || 'Unknown Branch';
+                }
+                
+                isKituiBranch = checkIfKituiBranch();
+                return session.profile;
+            }
+            
             return null;
         }
     }
@@ -983,7 +1006,7 @@
     window.logoutUser = async () => { 
         localStorage.removeItem('pos_session');
         await supabase.auth.signOut(); 
-        location.href = 'index.html'; 
+        window.location.href = 'index.html'; 
     };
 
     async function fetchData() {
@@ -993,29 +1016,48 @@
             const branchId = getCurrentBranchId();
             if (!branchId) {
                 console.error("No branch ID found");
+                showLoading(false);
                 return;
             }
 
-            // Fetch shifts with pre-calculated totals
-            const [shiftsRes, transRes] = await Promise.all([
-                supabase.from('daily_shifts')
-                    .select('*')
-                    .eq('branch_id', branchId)
-                    .order('start_time', { ascending: false }),
-                supabase.from('cash_transactions')
-                    .select('shift_id, amount, type')
-                    .eq('branch_id', branchId)
-            ]);
+            console.log("Fetching shifts for branch:", branchId);
 
-            allShifts = shiftsRes.data || [];
-            allTransactions = transRes.data || [];
+            // Fetch shifts
+            const { data: shiftsData, error: shiftsError } = await supabase
+                .from('daily_shifts')
+                .select('*')
+                .eq('branch_id', branchId)
+                .order('start_time', { ascending: false });
+            
+            if (shiftsError) {
+                console.error("Shifts fetch error:", shiftsError);
+                throw shiftsError;
+            }
+            
+            // Fetch transactions
+            const { data: transData, error: transError } = await supabase
+                .from('cash_transactions')
+                .select('shift_id, amount, type')
+                .eq('branch_id', branchId);
+            
+            if (transError) {
+                console.error("Transactions fetch error:", transError);
+                throw transError;
+            }
+
+            allShifts = shiftsData || [];
+            allTransactions = transData || [];
             
             console.log(`Loaded ${allShifts.length} shifts for ${isKituiBranch ? 'Kitui branch' : 'other branch'}`);
             
             render();
         } catch (error) {
             console.error("Error fetching data:", error);
-            alert("Error loading shift data. Please try again.");
+            const noResultsEl = document.getElementById('noResults');
+            if (noResultsEl) {
+                noResultsEl.style.display = 'block';
+                noResultsEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i><p>Error loading data. Please try again.</p>';
+            }
         } finally {
             showLoading(false);
         }
@@ -1045,7 +1087,7 @@
 
     // Helper function to calculate totals including new banks
     function calculateOpenTotal(sh) {
-        let total = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_equity||0);
+        let total = (sh.open_cash || 0) + (sh.open_mpesa || 0) + (sh.open_kcb || 0) + (sh.open_equity || 0);
         if (isKituiBranch) {
             total += (sh.open_family_bank || 0) + (sh.open_cooperative_bank || 0);
         }
@@ -1053,31 +1095,31 @@
     }
     
     function calculateCloseTotal(sh) {
-        let total = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_equity||0) + (sh.close_kcb_bank||0);
+        let total = (sh.close_cash || 0) + (sh.close_mpesa || 0) + (sh.close_kcb || 0) + (sh.close_equity || 0) + (sh.close_kcb_bank || 0);
         if (isKituiBranch) {
             total += (sh.close_family_bank || 0) + (sh.close_cooperative_bank || 0);
         }
         return total;
     }
 
-    // Build opening floats HTML (accounts for new banks if Kitui)
+    // Build opening floats HTML
     function buildOpeningFloatsHtml(sh) {
         let html = `
-            <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash||0).toLocaleString()}</span></div>
-            <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa||0).toLocaleString()}</span></div>
-            <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb||0).toLocaleString()}</span></div>
-            <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity||0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash || 0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa || 0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb || 0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity || 0).toLocaleString()}</span></div>
         `;
         
         if (isKituiBranch) {
             html += `
                 <div class="account-line">
                     <span class="account-label">Family Bank <span class="family-bank-badge">NEW</span></span>
-                    <span class="account-val">${(sh.open_family_bank||0).toLocaleString()}</span>
+                    <span class="account-val">${(sh.open_family_bank || 0).toLocaleString()}</span>
                 </div>
                 <div class="account-line">
                     <span class="account-label">Cooperative Bank <span class="cooperative-bank-badge">NEW</span></span>
-                    <span class="account-val">${(sh.open_cooperative_bank||0).toLocaleString()}</span>
+                    <span class="account-val">${(sh.open_cooperative_bank || 0).toLocaleString()}</span>
                 </div>
             `;
         }
@@ -1088,25 +1130,25 @@
         return html;
     }
 
-    // Build closing floats HTML (accounts for new banks if Kitui)
+    // Build closing floats HTML
     function buildClosingFloatsHtml(sh) {
         let html = `
-            <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.close_cash||0).toLocaleString()}</span></div>
-            <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa||0).toLocaleString()}</span></div>
-            <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.close_kcb||0).toLocaleString()}</span></div>
-            <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.close_equity||0).toLocaleString()}</span></div>
-            <div class="account-line"><span class="account-label">KCB Bank</span><span class="account-val">${(sh.close_kcb_bank||0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.close_cash || 0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa || 0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.close_kcb || 0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.close_equity || 0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">KCB Paybill</span><span class="account-val">${(sh.close_kcb_bank || 0).toLocaleString()}</span></div>
         `;
         
         if (isKituiBranch) {
             html += `
                 <div class="account-line">
                     <span class="account-label">Family Bank <span class="family-bank-badge">NEW</span></span>
-                    <span class="account-val">${(sh.close_family_bank||0).toLocaleString()}</span>
+                    <span class="account-val">${(sh.close_family_bank || 0).toLocaleString()}</span>
                 </div>
                 <div class="account-line">
                     <span class="account-label">Cooperative Bank <span class="cooperative-bank-badge">NEW</span></span>
-                    <span class="account-val">${(sh.close_cooperative_bank||0).toLocaleString()}</span>
+                    <span class="account-val">${(sh.close_cooperative_bank || 0).toLocaleString()}</span>
                 </div>
             `;
         }
@@ -1140,7 +1182,7 @@
             const openTotal = calculateOpenTotal(sh);
             const closeTotal = calculateCloseTotal(sh);
 
-            // Fix: Check status correctly (case insensitive)
+            // Check status correctly
             const isClosed = sh.status && sh.status.toLowerCase() === 'closed';
             
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
@@ -1154,7 +1196,6 @@
                 varianceDisplay = 'OPEN';
                 varianceClass = 'status-open';
             } else {
-                // If closed, check the amount for sign and color
                 if (varianceVal > 0) {
                     varianceDisplay = '+ ' + varianceVal.toLocaleString();
                     varianceClass = 'var-positive';
@@ -1170,10 +1211,9 @@
             const startD = new Date(sh.start_time);
             const endD = sh.end_time ? new Date(sh.end_time) : null;
             
-            // Build payment methods HTML using pre-calculated totals, wrapped in a link
+            // Build payment methods HTML
             let paymentMethodsHtml = '';
             
-            // Only show if there are sales
             if (cashSales > 0 || kcbPaybillSales > 0 || totalRevenue > 0) {
                 if (cashSales > 0) {
                     paymentMethodsHtml += `
@@ -1195,7 +1235,7 @@
                 paymentMethodsHtml = '<div class="payment-method-item"><span class="payment-label">No sales recorded</span><span class="payment-amount">0</span></div>';
             }
             
-            // Add total revenue at the bottom, wrapped in a link
+            // Add total revenue
             paymentMethodsHtml += `
                 <a href="sales_reports.html?date=${shiftDate}" class="revenue-card" style="display: block; text-decoration: none; margin-top: 8px;">
                     <div class="payment-method-item" style="margin-top:8px; padding-top:8px; border-top:2px solid var(--border);">
@@ -1243,7 +1283,7 @@
                 </tr>`);
         });
 
-        tbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.侧</td></tr>';
+        tbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.</td></tr>';
     }
 
     function renderMobile(data = allShifts) {
@@ -1294,7 +1334,7 @@
                 statusText = 'BALANCED';
             }
             
-            // Build payment methods HTML for mobile using pre-calculated totals, wrapped in a link
+            // Build payment methods HTML for mobile
             let paymentMethodsHtml = '';
             
             if (cashSales > 0) {
@@ -1318,7 +1358,7 @@
                 paymentMethodsHtml = '<div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">No sales recorded</span><span class="shift-mobile-detail-value">0</span></div>';
             }
             
-            // Add total, wrapped in a link
+            // Add total
             paymentMethodsHtml += `
                 <a href="sales_reports.html?date=${shiftDate}" style="text-decoration: none; display: block;">
                     <div class="shift-mobile-total" style="margin-top:8px;">
@@ -1332,19 +1372,19 @@
             let openingFloatsHtml = `
                 <div class="shift-mobile-detail-line">
                     <span class="shift-mobile-detail-label">Cash</span>
-                    <span class="shift-mobile-detail-value">${(sh.open_cash||0).toLocaleString()}</span>
+                    <span class="shift-mobile-detail-value">${(sh.open_cash || 0).toLocaleString()}</span>
                 </div>
                 <div class="shift-mobile-detail-line">
                     <span class="shift-mobile-detail-label">Mpesa</span>
-                    <span class="shift-mobile-detail-value">${(sh.open_mpesa||0).toLocaleString()}</span>
+                    <span class="shift-mobile-detail-value">${(sh.open_mpesa || 0).toLocaleString()}</span>
                 </div>
                 <div class="shift-mobile-detail-line">
                     <span class="shift-mobile-detail-label">KCB Float</span>
-                    <span class="shift-mobile-detail-value">${(sh.open_kcb||0).toLocaleString()}</span>
+                    <span class="shift-mobile-detail-value">${(sh.open_kcb || 0).toLocaleString()}</span>
                 </div>
                 <div class="shift-mobile-detail-line">
                     <span class="shift-mobile-detail-label">Equity</span>
-                    <span class="shift-mobile-detail-value">${(sh.open_equity||0).toLocaleString()}</span>
+                    <span class="shift-mobile-detail-value">${(sh.open_equity || 0).toLocaleString()}</span>
                 </div>
             `;
             
@@ -1352,11 +1392,11 @@
                 openingFloatsHtml += `
                     <div class="shift-mobile-detail-line">
                         <span class="shift-mobile-detail-label">Family Bank <span class="family-bank-badge" style="font-size:0.6rem;">NEW</span></span>
-                        <span class="shift-mobile-detail-value">${(sh.open_family_bank||0).toLocaleString()}</span>
+                        <span class="shift-mobile-detail-value">${(sh.open_family_bank || 0).toLocaleString()}</span>
                     </div>
                     <div class="shift-mobile-detail-line">
                         <span class="shift-mobile-detail-label">Cooperative Bank <span class="cooperative-bank-badge" style="font-size:0.6rem;">NEW</span></span>
-                        <span class="shift-mobile-detail-value">${(sh.open_cooperative_bank||0).toLocaleString()}</span>
+                        <span class="shift-mobile-detail-value">${(sh.open_cooperative_bank || 0).toLocaleString()}</span>
                     </div>
                 `;
             }
@@ -1367,23 +1407,23 @@
             let closingFloatsHtml = `
                 <div class="shift-mobile-detail-line">
                     <span class="shift-mobile-detail-label">Cash</span>
-                    <span class="shift-mobile-detail-value">${(sh.close_cash||0).toLocaleString()}</span>
+                    <span class="shift-mobile-detail-value">${(sh.close_cash || 0).toLocaleString()}</span>
                 </div>
                 <div class="shift-mobile-detail-line">
                     <span class="shift-mobile-detail-label">Mpesa</span>
-                    <span class="shift-mobile-detail-value">${(sh.close_mpesa||0).toLocaleString()}</span>
+                    <span class="shift-mobile-detail-value">${(sh.close_mpesa || 0).toLocaleString()}</span>
                 </div>
                 <div class="shift-mobile-detail-line">
                     <span class="shift-mobile-detail-label">KCB Float</span>
-                    <span class="shift-mobile-detail-value">${(sh.close_kcb||0).toLocaleString()}</span>
+                    <span class="shift-mobile-detail-value">${(sh.close_kcb || 0).toLocaleString()}</span>
                 </div>
                 <div class="shift-mobile-detail-line">
                     <span class="shift-mobile-detail-label">Equity</span>
-                    <span class="shift-mobile-detail-value">${(sh.close_equity||0).toLocaleString()}</span>
+                    <span class="shift-mobile-detail-value">${(sh.close_equity || 0).toLocaleString()}</span>
                 </div>
                 <div class="shift-mobile-detail-line">
-                    <span class="shift-mobile-detail-label">KCB Bank</span>
-                    <span class="shift-mobile-detail-value">${(sh.close_kcb_bank||0).toLocaleString()}</span>
+                    <span class="shift-mobile-detail-label">KCB Paybill</span>
+                    <span class="shift-mobile-detail-value">${(sh.close_kcb_bank || 0).toLocaleString()}</span>
                 </div>
             `;
             
@@ -1391,11 +1431,11 @@
                 closingFloatsHtml += `
                     <div class="shift-mobile-detail-line">
                         <span class="shift-mobile-detail-label">Family Bank <span class="family-bank-badge" style="font-size:0.6rem;">NEW</span></span>
-                        <span class="shift-mobile-detail-value">${(sh.close_family_bank||0).toLocaleString()}</span>
+                        <span class="shift-mobile-detail-value">${(sh.close_family_bank || 0).toLocaleString()}</span>
                     </div>
                     <div class="shift-mobile-detail-line">
                         <span class="shift-mobile-detail-label">Cooperative Bank <span class="cooperative-bank-badge" style="font-size:0.6rem;">NEW</span></span>
-                        <span class="shift-mobile-detail-value">${(sh.close_cooperative_bank||0).toLocaleString()}</span>
+                        <span class="shift-mobile-detail-value">${(sh.close_cooperative_bank || 0).toLocaleString()}</span>
                     </div>
                 `;
             }
@@ -1501,38 +1541,48 @@
         render(filtered);
     }
 
-    document.getElementById('auditSearch').addEventListener('input', (e) => {
-        const term = e.target.value.toLowerCase().trim();
-        if (term === '') {
-            render(allShifts);
-        } else {
-            filterData(term);
-        }
-    });
-
-    async function refreshData() {
-        const btn = document.getElementById('refreshBtn');
-        const originalHtml = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        btn.disabled = true;
-        
-        await fetchData();
-        
-        btn.innerHTML = originalHtml;
-        btn.disabled = false;
-        
-        btn.style.background = '#10b981';
-        setTimeout(() => {
-            btn.style.background = '';
-        }, 1000);
+    // Setup search input listener
+    const searchInput = document.getElementById('auditSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase().trim();
+            if (term === '') {
+                render(allShifts);
+            } else {
+                filterData(term);
+            }
+        });
     }
+
+    window.refreshData = async function() {
+        const btn = document.getElementById('refreshBtn');
+        if (btn) {
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+            
+            await fetchData();
+            
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+            
+            btn.style.background = '#10b981';
+            setTimeout(() => {
+                if (btn) btn.style.background = '';
+            }, 1000);
+        } else {
+            await fetchData();
+        }
+    };
 
     // Handle window resize
     window.addEventListener('resize', function() {
         const newIsMobile = window.innerWidth <= 768;
         if (newIsMobile !== isMobile) {
             isMobile = newIsMobile;
-            render();
+            if (allShifts.length > 0) {
+                render();
+            }
         }
     });
 
