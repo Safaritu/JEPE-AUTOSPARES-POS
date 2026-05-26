@@ -834,10 +834,10 @@
                     <thead>
                         <tr>
                             <th width="140">DATE</th>
-                            <th width="250">OPENING FLOATS</th>
+                            <th width="280">OPENING FLOATS</th>
                             <th width="220">PAYMENT METHOD</th>
                             <th width="180">MONEY IN/OUT</th>
-                            <th width="250">CLOSING FLOATS</th>
+                            <th width="280">CLOSING FLOATS</th>
                             <th width="180">VARIANCE</th>
                             <th width="200">VARIANCE REASON</th>
                         </tr>
@@ -902,25 +902,22 @@
     function checkIfKituiBranch() {
         const branchId = getCurrentBranchId();
         if (!branchId || !currentBranch) return false;
-        
         const branchName = (currentBranch.name || '').toLowerCase();
-        return branchName.includes('kitui') || branchId === 'kitui';
+        return branchName.includes('kitui');
     }
 
     // Load user profile with branch info
     async function loadUserProfile() {
         try {
-            const { data: { user }, error: userError } = await supabase.auth.getUser();
-            if (userError || !user) {
-                console.error("No authenticated user found");
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
                 window.location.href = 'index.html';
                 return null;
             }
             
             currentUser = user;
             
-            // Get profile with branch info
-            const { data: profile, error: profileError } = await supabase
+            const { data: profile, error } = await supabase
                 .from('profiles')
                 .select(`
                     *,
@@ -934,20 +931,15 @@
                 .eq('id', user.id)
                 .maybeSingle();
             
-            if (profileError) {
-                console.error("Profile fetch error:", profileError);
-                throw profileError;
-            }
-            
+            if (error) throw error;
             if (!profile) {
-                console.error("No profile found for user");
+                console.error("No profile found");
                 return null;
             }
             
             currentBranchId = profile.branch_id;
             currentBranch = profile.branches;
             
-            // Store session info
             const session = {
                 user: user,
                 profile: profile,
@@ -956,49 +948,22 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
-            // Update sidebar with user's assigned branch
-            const sidebarBranchNameSpan = document.querySelector('#sidebarBranchName span');
-            if (sidebarBranchNameSpan && profile.branches) {
-                sidebarBranchNameSpan.textContent = profile.branches.name || 'Unknown Branch';
+            const sidebarBranchName = document.querySelector('#sidebarBranchName span');
+            if (profile.branches && sidebarBranchName) {
+                sidebarBranchName.textContent = profile.branches.name;
             }
             
-            // Update branch display
             const branchNameSpan = document.getElementById('branchName');
             if (branchNameSpan && profile.branches) {
-                branchNameSpan.textContent = profile.branches.name || 'Unknown Branch';
+                branchNameSpan.textContent = profile.branches.name;
             }
             
-            // Check if this is Kitui branch
             isKituiBranch = checkIfKituiBranch();
-            console.log("Is Kitui branch in shift history?", isKituiBranch);
+            console.log("Is Kitui branch?", isKituiBranch);
             
             return profile;
         } catch (error) {
             console.error("Error loading profile:", error);
-            
-            // Try to get session from localStorage as fallback
-            const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
-            if (session.user && session.profile) {
-                console.log("Using session from localStorage");
-                currentUser = session.user;
-                currentBranchId = session.branch?.id;
-                currentBranch = session.branch;
-                
-                // Update displays
-                const sidebarBranchNameSpan = document.querySelector('#sidebarBranchName span');
-                if (sidebarBranchNameSpan && session.branch) {
-                    sidebarBranchNameSpan.textContent = session.branch.name || 'Unknown Branch';
-                }
-                
-                const branchNameSpan = document.getElementById('branchName');
-                if (branchNameSpan && session.branch) {
-                    branchNameSpan.textContent = session.branch.name || 'Unknown Branch';
-                }
-                
-                isKituiBranch = checkIfKituiBranch();
-                return session.profile;
-            }
-            
             return null;
         }
     }
@@ -1006,8 +971,78 @@
     window.logoutUser = async () => { 
         localStorage.removeItem('pos_session');
         await supabase.auth.signOut(); 
-        window.location.href = 'index.html'; 
+        location.href = 'index.html'; 
     };
+
+    // Helper functions for bank calculations
+    function calculateOpenTotal(sh) {
+        let total = (sh.open_cash || 0) + (sh.open_mpesa || 0) + (sh.open_kcb || 0) + (sh.open_equity || 0);
+        if (isKituiBranch) {
+            total += (sh.open_family_bank || 0) + (sh.open_cooperative_bank || 0);
+        }
+        return total;
+    }
+    
+    function calculateCloseTotal(sh) {
+        let total = (sh.close_cash || 0) + (sh.close_mpesa || 0) + (sh.close_kcb || 0) + (sh.close_equity || 0) + (sh.close_kcb_bank || 0);
+        if (isKituiBranch) {
+            total += (sh.close_family_bank || 0) + (sh.close_cooperative_bank || 0);
+        }
+        return total;
+    }
+    
+    function buildOpeningFloatsHtml(sh) {
+        let html = `
+            <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash || 0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa || 0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb || 0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity || 0).toLocaleString()}</span></div>
+        `;
+        
+        if (isKituiBranch) {
+            html += `
+                <div class="account-line">
+                    <span class="account-label">Family Bank <span class="family-bank-badge">NEW</span></span>
+                    <span class="account-val">${(sh.open_family_bank || 0).toLocaleString()}</span>
+                </div>
+                <div class="account-line">
+                    <span class="account-label">Cooperative Bank <span class="cooperative-bank-badge">NEW</span></span>
+                    <span class="account-val">${(sh.open_cooperative_bank || 0).toLocaleString()}</span>
+                </div>
+            `;
+        }
+        
+        const total = calculateOpenTotal(sh);
+        html += `<div class="total-row">Total: ${total.toLocaleString()}</div>`;
+        return html;
+    }
+    
+    function buildClosingFloatsHtml(sh) {
+        let html = `
+            <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.close_cash || 0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa || 0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.close_kcb || 0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.close_equity || 0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">KCB Paybill</span><span class="account-val">${(sh.close_kcb_bank || 0).toLocaleString()}</span></div>
+        `;
+        
+        if (isKituiBranch) {
+            html += `
+                <div class="account-line">
+                    <span class="account-label">Family Bank <span class="family-bank-badge">NEW</span></span>
+                    <span class="account-val">${(sh.close_family_bank || 0).toLocaleString()}</span>
+                </div>
+                <div class="account-line">
+                    <span class="account-label">Cooperative Bank <span class="cooperative-bank-badge">NEW</span></span>
+                    <span class="account-val">${(sh.close_cooperative_bank || 0).toLocaleString()}</span>
+                </div>
+            `;
+        }
+        
+        const total = calculateCloseTotal(sh);
+        html += `<div class="total-row" style="background:#f0f9ff">Total: ${total.toLocaleString()}</div>`;
+        return html;
+    }
 
     async function fetchData() {
         showLoading(true);
@@ -1020,36 +1055,23 @@
                 return;
             }
 
-            console.log("Fetching shifts for branch:", branchId);
+            const [shiftsRes, transRes] = await Promise.all([
+                supabase.from('daily_shifts')
+                    .select('*')
+                    .eq('branch_id', branchId)
+                    .order('start_time', { ascending: false }),
+                supabase.from('cash_transactions')
+                    .select('shift_id, amount, type')
+                    .eq('branch_id', branchId)
+            ]);
 
-            // Fetch shifts
-            const { data: shiftsData, error: shiftsError } = await supabase
-                .from('daily_shifts')
-                .select('*')
-                .eq('branch_id', branchId)
-                .order('start_time', { ascending: false });
-            
-            if (shiftsError) {
-                console.error("Shifts fetch error:", shiftsError);
-                throw shiftsError;
-            }
-            
-            // Fetch transactions
-            const { data: transData, error: transError } = await supabase
-                .from('cash_transactions')
-                .select('shift_id, amount, type')
-                .eq('branch_id', branchId);
-            
-            if (transError) {
-                console.error("Transactions fetch error:", transError);
-                throw transError;
-            }
+            if (shiftsRes.error) throw shiftsRes.error;
+            if (transRes.error) throw transRes.error;
 
-            allShifts = shiftsData || [];
-            allTransactions = transData || [];
+            allShifts = shiftsRes.data || [];
+            allTransactions = transRes.data || [];
             
-            console.log(`Loaded ${allShifts.length} shifts for ${isKituiBranch ? 'Kitui branch' : 'other branch'}`);
-            
+            console.log(`Loaded ${allShifts.length} shifts`);
             render();
         } catch (error) {
             console.error("Error fetching data:", error);
@@ -1078,85 +1100,10 @@
             renderDesktop(data);
         }
         
-        // Show/hide no results message
         const noResultsEl = document.getElementById('noResults');
         if (noResultsEl) {
             noResultsEl.style.display = data.length === 0 ? 'block' : 'none';
         }
-    }
-
-    // Helper function to calculate totals including new banks
-    function calculateOpenTotal(sh) {
-        let total = (sh.open_cash || 0) + (sh.open_mpesa || 0) + (sh.open_kcb || 0) + (sh.open_equity || 0);
-        if (isKituiBranch) {
-            total += (sh.open_family_bank || 0) + (sh.open_cooperative_bank || 0);
-        }
-        return total;
-    }
-    
-    function calculateCloseTotal(sh) {
-        let total = (sh.close_cash || 0) + (sh.close_mpesa || 0) + (sh.close_kcb || 0) + (sh.close_equity || 0) + (sh.close_kcb_bank || 0);
-        if (isKituiBranch) {
-            total += (sh.close_family_bank || 0) + (sh.close_cooperative_bank || 0);
-        }
-        return total;
-    }
-
-    // Build opening floats HTML
-    function buildOpeningFloatsHtml(sh) {
-        let html = `
-            <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash || 0).toLocaleString()}</span></div>
-            <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa || 0).toLocaleString()}</span></div>
-            <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb || 0).toLocaleString()}</span></div>
-            <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity || 0).toLocaleString()}</span></div>
-        `;
-        
-        if (isKituiBranch) {
-            html += `
-                <div class="account-line">
-                    <span class="account-label">Family Bank <span class="family-bank-badge">NEW</span></span>
-                    <span class="account-val">${(sh.open_family_bank || 0).toLocaleString()}</span>
-                </div>
-                <div class="account-line">
-                    <span class="account-label">Cooperative Bank <span class="cooperative-bank-badge">NEW</span></span>
-                    <span class="account-val">${(sh.open_cooperative_bank || 0).toLocaleString()}</span>
-                </div>
-            `;
-        }
-        
-        const total = calculateOpenTotal(sh);
-        html += `<div class="total-row">Total: ${total.toLocaleString()}</div>`;
-        
-        return html;
-    }
-
-    // Build closing floats HTML
-    function buildClosingFloatsHtml(sh) {
-        let html = `
-            <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.close_cash || 0).toLocaleString()}</span></div>
-            <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa || 0).toLocaleString()}</span></div>
-            <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.close_kcb || 0).toLocaleString()}</span></div>
-            <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.close_equity || 0).toLocaleString()}</span></div>
-            <div class="account-line"><span class="account-label">KCB Paybill</span><span class="account-val">${(sh.close_kcb_bank || 0).toLocaleString()}</span></div>
-        `;
-        
-        if (isKituiBranch) {
-            html += `
-                <div class="account-line">
-                    <span class="account-label">Family Bank <span class="family-bank-badge">NEW</span></span>
-                    <span class="account-val">${(sh.close_family_bank || 0).toLocaleString()}</span>
-                </div>
-                <div class="account-line">
-                    <span class="account-label">Cooperative Bank <span class="cooperative-bank-badge">NEW</span></span>
-                    <span class="account-val">${(sh.close_cooperative_bank || 0).toLocaleString()}</span>
-                </div>
-            `;
-        }
-        
-        const total = calculateCloseTotal(sh);
-        html += `<div class="total-row" style="background:#f0f9ff">Total: ${total.toLocaleString()}</div>`;
-        
-        return html;
     }
 
     function renderDesktop(data = allShifts) {
@@ -1168,12 +1115,10 @@
         data.forEach(sh => {
             const shiftLogs = allTransactions.filter(t => t.shift_id === sh.id);
             
-            // Use pre-calculated totals from the shift table
             const cashSales = sh.total_cash_sales || 0;
             const kcbPaybillSales = sh.total_kcb_paybill_sales || 0;
             const totalRevenue = sh.total_sales_amount || 0;
             
-            // Format the date for the URL (YYYY-MM-DD)
             const shiftDate = new Date(sh.start_time).toISOString().split('T')[0];
 
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
@@ -1182,12 +1127,10 @@
             const openTotal = calculateOpenTotal(sh);
             const closeTotal = calculateCloseTotal(sh);
 
-            // Check status correctly
             const isClosed = sh.status && sh.status.toLowerCase() === 'closed';
             
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
             
-            // LOGIC FOR VARIANCE DISPLAY
             let varianceVal = isClosed ? (closeTotal - expected) : 0;
             let varianceDisplay = '';
             let varianceClass = '';
@@ -1211,7 +1154,6 @@
             const startD = new Date(sh.start_time);
             const endD = sh.end_time ? new Date(sh.end_time) : null;
             
-            // Build payment methods HTML
             let paymentMethodsHtml = '';
             
             if (cashSales > 0 || kcbPaybillSales > 0 || totalRevenue > 0) {
@@ -1235,7 +1177,6 @@
                 paymentMethodsHtml = '<div class="payment-method-item"><span class="payment-label">No sales recorded</span><span class="payment-amount">0</span></div>';
             }
             
-            // Add total revenue
             paymentMethodsHtml += `
                 <a href="sales_reports.html?date=${shiftDate}" class="revenue-card" style="display: block; text-decoration: none; margin-top: 8px;">
                     <div class="payment-method-item" style="margin-top:8px; padding-top:8px; border-top:2px solid var(--border);">
@@ -1280,10 +1221,10 @@
                         </div>
                     </td>
                     <td style="vertical-align: middle;"><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim); font-style: italic;">${sh.variance_note || 'No notes added.'}</div></td>
-                </tr>`);
+                </tr>`;
         });
 
-        tbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.</td></tr>';
+        tbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.侧</tr>';
     }
 
     function renderMobile(data = allShifts) {
@@ -1295,12 +1236,10 @@
         data.forEach(sh => {
             const shiftLogs = allTransactions.filter(t => t.shift_id === sh.id);
             
-            // Use pre-calculated totals from the shift table
             const cashSales = sh.total_cash_sales || 0;
             const kcbPaybillSales = sh.total_kcb_paybill_sales || 0;
             const totalRevenue = sh.total_sales_amount || 0;
             
-            // Format the date for the URL (YYYY-MM-DD)
             const shiftDate = new Date(sh.start_time).toISOString().split('T')[0];
 
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
@@ -1334,7 +1273,6 @@
                 statusText = 'BALANCED';
             }
             
-            // Build payment methods HTML for mobile
             let paymentMethodsHtml = '';
             
             if (cashSales > 0) {
@@ -1358,7 +1296,6 @@
                 paymentMethodsHtml = '<div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">No sales recorded</span><span class="shift-mobile-detail-value">0</span></div>';
             }
             
-            // Add total
             paymentMethodsHtml += `
                 <a href="sales_reports.html?date=${shiftDate}" style="text-decoration: none; display: block;">
                     <div class="shift-mobile-total" style="margin-top:8px;">
@@ -1368,7 +1305,6 @@
                 </a>
             `;
             
-            // Build opening floats HTML for mobile
             let openingFloatsHtml = `
                 <div class="shift-mobile-detail-line">
                     <span class="shift-mobile-detail-label">Cash</span>
@@ -1403,7 +1339,6 @@
             
             openingFloatsHtml += `<div class="shift-mobile-total">Total: ${openTotal.toLocaleString()}</div>`;
             
-            // Build closing floats HTML for mobile
             let closingFloatsHtml = `
                 <div class="shift-mobile-detail-line">
                     <span class="shift-mobile-detail-label">Cash</span>
@@ -1541,7 +1476,6 @@
         render(filtered);
     }
 
-    // Setup search input listener
     const searchInput = document.getElementById('auditSearch');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
@@ -1575,7 +1509,6 @@
         }
     };
 
-    // Handle window resize
     window.addEventListener('resize', function() {
         const newIsMobile = window.innerWidth <= 768;
         if (newIsMobile !== isMobile) {
@@ -1586,14 +1519,11 @@
         }
     });
 
-    // Initialize on load
     document.addEventListener('DOMContentLoaded', async function() {
         const profile = await loadUserProfile();
         if (profile) {
             await fetchData();
         }
-        
-        // Check if we're on mobile initially
         isMobile = window.innerWidth <= 768;
     });
 </script>
