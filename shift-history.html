@@ -16,6 +16,8 @@
             --success: #10b981; 
             --danger: #ef4444; 
             --warning: #f59e0b;
+            --family-bank: #059669;
+            --cooperative-bank: #7c3aed;
             --text: #1e293b; 
             --dim: #64748b; 
             --border: #e2e8f0; 
@@ -291,6 +293,29 @@
             font-weight: 500;
         }
 
+        /* Bank badges */
+        .family-bank-badge {
+            background: var(--family-bank);
+            color: white;
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 8px;
+            font-weight: 700;
+            display: inline-block;
+        }
+        
+        .cooperative-bank-badge {
+            background: var(--cooperative-bank);
+            color: white;
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 8px;
+            font-weight: 700;
+            display: inline-block;
+        }
+
         /* --- MOBILE SLIDE INDICATOR --- */
         .slide-indicator { 
             background: #0f172a; 
@@ -355,7 +380,7 @@
         table { 
             width: 100%; 
             border-collapse: collapse; 
-            min-width: 1350px; 
+            min-width: 1650px; 
         }
         th { 
             background: #f8fafc; 
@@ -833,13 +858,13 @@
                 <thead>
                     <tr>
                         <th width="140">DATE</th>
-                        <th width="200">OPENING FLOATS</th>
+                        <th width="280">OPENING FLOATS</th>
                         <th width="250">PAYMENT METHOD</th>
                         <th width="180">MONEY IN/OUT</th>
-                        <th width="200">CLOSING FLOATS</th>
+                        <th width="280">CLOSING FLOATS</th>
                         <th width="180">VARIANCE</th>
                         <th width="200">VARIANCE REASON</th>
-                        <th width="80">BRANCH</th>
+                        <th width="100">BRANCH</th>
                     </tr>
                 </thead>
                 <tbody id="audit-body-desktop"></tbody>
@@ -874,6 +899,90 @@
     let selectedBranchId = null;
     let branches = {};
     let branchIdMap = {};
+
+    // Helper function to check if a branch is Kitui
+    function isKituiBranch(branchId) {
+        const branch = branches[branchId];
+        if (!branch) return false;
+        const branchName = (branch.name || '').toLowerCase();
+        return branchName.includes('kitui');
+    }
+
+    // Helper functions for bank calculations including new banks for Kitui
+    function calculateOpenTotal(sh) {
+        let total = (sh.open_cash || 0) + (sh.open_mpesa || 0) + (sh.open_kcb || 0) + (sh.open_equity || 0);
+        // If this is Kitui branch, include new banks
+        if (isKituiBranch(sh.branch_id)) {
+            total += (sh.open_family_bank || 0) + (sh.open_cooperative_bank || 0);
+        }
+        return total;
+    }
+    
+    function calculateCloseTotal(sh) {
+        let total = (sh.close_cash || 0) + (sh.close_mpesa || 0) + (sh.close_kcb || 0) + (sh.close_equity || 0) + (sh.close_kcb_bank || 0);
+        // If this is Kitui branch, include new banks
+        if (isKituiBranch(sh.branch_id)) {
+            total += (sh.close_family_bank || 0) + (sh.close_cooperative_bank || 0);
+        }
+        return total;
+    }
+    
+    // Build opening floats HTML (accounts for new banks if Kitui)
+    function buildOpeningFloatsHtml(sh) {
+        const isKitui = isKituiBranch(sh.branch_id);
+        let html = `
+            <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash || 0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa || 0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb || 0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity || 0).toLocaleString()}</span></div>
+        `;
+        
+        if (isKitui) {
+            html += `
+                <div class="account-line">
+                    <span class="account-label">Family Bank <span class="family-bank-badge">NEW</span></span>
+                    <span class="account-val">${(sh.open_family_bank || 0).toLocaleString()}</span>
+                </div>
+                <div class="account-line">
+                    <span class="account-label">Cooperative Bank <span class="cooperative-bank-badge">NEW</span></span>
+                    <span class="account-val">${(sh.open_cooperative_bank || 0).toLocaleString()}</span>
+                </div>
+            `;
+        }
+        
+        const total = calculateOpenTotal(sh);
+        html += `<div class="total-row">Total: ${total.toLocaleString()}</div>`;
+        return html;
+    }
+    
+    // Build closing floats HTML (accounts for new banks if Kitui)
+    function buildClosingFloatsHtml(sh) {
+        const isKitui = isKituiBranch(sh.branch_id);
+        let html = `
+            <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.close_cash || 0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa || 0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.close_kcb || 0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.close_equity || 0).toLocaleString()}</span></div>
+            <div class="account-line"><span class="account-label">KCB Paybill</span><span class="account-val">${(sh.close_kcb_bank || 0).toLocaleString()}</span></div>
+        `;
+        
+        if (isKitui) {
+            html += `
+                <div class="account-line">
+                    <span class="account-label">Family Bank <span class="family-bank-badge">NEW</span></span>
+                    <span class="account-val">${(sh.close_family_bank || 0).toLocaleString()}</span>
+                </div>
+                <div class="account-line">
+                    <span class="account-label">Cooperative Bank <span class="cooperative-bank-badge">NEW</span></span>
+                    <span class="account-val">${(sh.close_cooperative_bank || 0).toLocaleString()}</span>
+                </div>
+            `;
+        }
+        
+        const total = calculateCloseTotal(sh);
+        html += `<div class="total-row" style="background:#f0f9ff">Total: ${total.toLocaleString()}</div>`;
+        return html;
+    }
 
     window.toggleMenu = function() {
         document.getElementById('sidebar').classList.toggle('mobile-active');
@@ -1046,6 +1155,7 @@
 
         data.forEach(sh => {
             const branch = branches[sh.branch_id] || { name: 'Unknown', code: '--' };
+            const isKitui = isKituiBranch(sh.branch_id);
             const shiftLogs = allTransactions.filter(t => t.shift_id === sh.id);
             
             // Use pre-calculated totals from the shift table
@@ -1059,8 +1169,8 @@
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
 
-            const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
-            const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
+            const openTotal = calculateOpenTotal(sh);
+            const closeTotal = calculateCloseTotal(sh);
 
             const isClosed = sh.status === 'Closed';
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
@@ -1130,33 +1240,25 @@
                         <span class="time-pill">IN: ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span><br>
                         <span class="time-pill">${sh.end_time ? 'OUT: '+new Date(sh.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'ACTIVE'}</span>
                       </td>
-                      <td>
-                        <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity||0).toLocaleString()}</span></div>
-                        <div class="total-row">Total: ${openTotal.toLocaleString()}</div>
-                      </td>
+                    <td style="vertical-align: top;">
+                        ${buildOpeningFloatsHtml(sh)}
+                    </td>
                     <td style="vertical-align: middle;">
                         <div style="background: #f8fafc; padding: 10px; border-radius: 8px;">
                             ${paymentMethodsHtml}
                         </div>
                     </td>
-                    <td>
+                    <td style="vertical-align: top;">
                         <a href="money-history.html" class="revenue-card">
                             <div class="account-line"><span class="account-label">In</span><span class="account-val" style="color:var(--success)">+${moneyIn.toLocaleString()}</span></div>
                             <div class="account-line"><span class="account-label">Out</span><span class="account-val" style="color:var(--danger)">-${moneyOut.toLocaleString()}</span></div>
                             <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW →</div>
                         </a>
                     </td>
-                    <td>
-                        <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.close_cash||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.close_kcb||0).toLocaleString()}</span></div>
-                        <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.close_equity||0).toLocaleString()}</span></div>
-                        <div class="total-row" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>
+                    <td style="vertical-align: top;">
+                        ${buildClosingFloatsHtml(sh)}
                     </td>
-                    <td>
+                    <td style="vertical-align: middle;">
                         <span class="status-badge ${varianceClass}">
                             ${varianceDisplay}
                         </span>
@@ -1164,12 +1266,12 @@
                             Expected: ${expected.toLocaleString()}
                         </div>
                     </td>
-                    <td><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--dim); font-style: italic;">${sh.variance_note || 'No notes added.'}</div></td>
-                    <td><span class="branch-pill">${branch.code}</span></td>
+                    <td style="vertical-align: middle;"><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--dim); font-style: italic;">${sh.variance_note || 'No notes added.'}</div></td>
+                    <td style="vertical-align: middle;"><span class="branch-pill">${branch.code}</span></td>
                 </tr>`;
         });
 
-        tbody.innerHTML = tableHtml || '<tr><td colspan="8" style="text-align:center; padding:50px;">No records found.</td></tr>';
+        tbody.innerHTML = tableHtml || '<tr><td colspan="8" style="text-align:center; padding:50px;">No records found.侧</tr>';
     }
 
     function renderMobile(data = allShifts) {
@@ -1180,6 +1282,7 @@
 
         data.forEach(sh => {
             const branch = branches[sh.branch_id] || { name: 'Unknown', code: '--' };
+            const isKitui = isKituiBranch(sh.branch_id);
             const shiftLogs = allTransactions.filter(t => t.shift_id === sh.id);
             
             // Use pre-calculated totals from the shift table
@@ -1193,8 +1296,8 @@
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
 
-            const openTotal = (sh.open_cash||0) + (sh.open_mpesa||0) + (sh.open_kcb||0) + (sh.open_kcb_bank||0) + (sh.open_equity||0);
-            const closeTotal = (sh.close_cash||0) + (sh.close_mpesa||0) + (sh.close_kcb||0) + (sh.close_kcb_bank||0) + (sh.close_equity||0);
+            const openTotal = calculateOpenTotal(sh);
+            const closeTotal = calculateCloseTotal(sh);
 
             const isClosed = sh.status === 'Closed';
             const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
@@ -1254,6 +1357,80 @@
                 </a>
             `;
             
+            // Build opening floats HTML for mobile
+            let openingFloatsHtml = `
+                <div class="shift-mobile-detail-line">
+                    <span class="shift-mobile-detail-label">Cash</span>
+                    <span class="shift-mobile-detail-value">${(sh.open_cash || 0).toLocaleString()}</span>
+                </div>
+                <div class="shift-mobile-detail-line">
+                    <span class="shift-mobile-detail-label">Mpesa</span>
+                    <span class="shift-mobile-detail-value">${(sh.open_mpesa || 0).toLocaleString()}</span>
+                </div>
+                <div class="shift-mobile-detail-line">
+                    <span class="shift-mobile-detail-label">KCB Float</span>
+                    <span class="shift-mobile-detail-value">${(sh.open_kcb || 0).toLocaleString()}</span>
+                </div>
+                <div class="shift-mobile-detail-line">
+                    <span class="shift-mobile-detail-label">Equity</span>
+                    <span class="shift-mobile-detail-value">${(sh.open_equity || 0).toLocaleString()}</span>
+                </div>
+            `;
+            
+            if (isKitui) {
+                openingFloatsHtml += `
+                    <div class="shift-mobile-detail-line">
+                        <span class="shift-mobile-detail-label">Family Bank <span class="family-bank-badge" style="font-size:0.6rem;">NEW</span></span>
+                        <span class="shift-mobile-detail-value">${(sh.open_family_bank || 0).toLocaleString()}</span>
+                    </div>
+                    <div class="shift-mobile-detail-line">
+                        <span class="shift-mobile-detail-label">Cooperative Bank <span class="cooperative-bank-badge" style="font-size:0.6rem;">NEW</span></span>
+                        <span class="shift-mobile-detail-value">${(sh.open_cooperative_bank || 0).toLocaleString()}</span>
+                    </div>
+                `;
+            }
+            
+            openingFloatsHtml += `<div class="shift-mobile-total">Total: ${openTotal.toLocaleString()}</div>`;
+            
+            // Build closing floats HTML for mobile
+            let closingFloatsHtml = `
+                <div class="shift-mobile-detail-line">
+                    <span class="shift-mobile-detail-label">Cash</span>
+                    <span class="shift-mobile-detail-value">${(sh.close_cash || 0).toLocaleString()}</span>
+                </div>
+                <div class="shift-mobile-detail-line">
+                    <span class="shift-mobile-detail-label">Mpesa</span>
+                    <span class="shift-mobile-detail-value">${(sh.close_mpesa || 0).toLocaleString()}</span>
+                </div>
+                <div class="shift-mobile-detail-line">
+                    <span class="shift-mobile-detail-label">KCB Float</span>
+                    <span class="shift-mobile-detail-value">${(sh.close_kcb || 0).toLocaleString()}</span>
+                </div>
+                <div class="shift-mobile-detail-line">
+                    <span class="shift-mobile-detail-label">Equity</span>
+                    <span class="shift-mobile-detail-value">${(sh.close_equity || 0).toLocaleString()}</span>
+                </div>
+                <div class="shift-mobile-detail-line">
+                    <span class="shift-mobile-detail-label">KCB Paybill</span>
+                    <span class="shift-mobile-detail-value">${(sh.close_kcb_bank || 0).toLocaleString()}</span>
+                </div>
+            `;
+            
+            if (isKitui) {
+                closingFloatsHtml += `
+                    <div class="shift-mobile-detail-line">
+                        <span class="shift-mobile-detail-label">Family Bank <span class="family-bank-badge" style="font-size:0.6rem;">NEW</span></span>
+                        <span class="shift-mobile-detail-value">${(sh.close_family_bank || 0).toLocaleString()}</span>
+                    </div>
+                    <div class="shift-mobile-detail-line">
+                        <span class="shift-mobile-detail-label">Cooperative Bank <span class="cooperative-bank-badge" style="font-size:0.6rem;">NEW</span></span>
+                        <span class="shift-mobile-detail-value">${(sh.close_cooperative_bank || 0).toLocaleString()}</span>
+                    </div>
+                `;
+            }
+            
+            closingFloatsHtml += `<div class="shift-mobile-total" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>`;
+            
             mobileHtml += `
                 <div class="shift-mobile-card">
                     <div class="shift-mobile-header">
@@ -1274,11 +1451,7 @@
                         <div class="shift-mobile-section">
                             <div class="shift-mobile-section-title"><i class="fas fa-wallet"></i> OPENING FLOATS</div>
                             <div class="shift-mobile-details">
-                                <div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">Cash</span><span class="shift-mobile-detail-value">${(sh.open_cash||0).toLocaleString()}</span></div>
-                                <div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">Mpesa</span><span class="shift-mobile-detail-value">${(sh.open_mpesa||0).toLocaleString()}</span></div>
-                                <div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">KCB Float</span><span class="shift-mobile-detail-value">${(sh.open_kcb||0).toLocaleString()}</span></div>
-                                <div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">Equity</span><span class="shift-mobile-detail-value">${(sh.open_equity||0).toLocaleString()}</span></div>
-                                <div class="shift-mobile-total">Total: ${openTotal.toLocaleString()}</div>
+                                ${openingFloatsHtml}
                             </div>
                         </div>
                         
@@ -1300,11 +1473,7 @@
                         <div class="shift-mobile-section">
                             <div class="shift-mobile-section-title"><i class="fas fa-safe"></i> CLOSING FLOATS</div>
                             <div class="shift-mobile-details">
-                                <div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">Cash</span><span class="shift-mobile-detail-value">${(sh.close_cash||0).toLocaleString()}</span></div>
-                                <div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">Mpesa</span><span class="shift-mobile-detail-value">${(sh.close_mpesa||0).toLocaleString()}</span></div>
-                                <div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">KCB Float</span><span class="shift-mobile-detail-value">${(sh.close_kcb||0).toLocaleString()}</span></div>
-                                <div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">Equity</span><span class="shift-mobile-detail-value">${(sh.close_equity||0).toLocaleString()}</span></div>
-                                <div class="shift-mobile-total" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>
+                                ${closingFloatsHtml}
                             </div>
                         </div>
                     </div>
@@ -1336,12 +1505,15 @@
         render(filtered);
     }
 
-    document.getElementById('auditSearch').addEventListener('input', (e) => {
-        const term = e.target.value.toLowerCase();
-        filterData(term);
-    });
+    const searchInput = document.getElementById('auditSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            filterData(term);
+        });
+    }
 
-    async function refreshData() {
+    window.refreshData = async function() {
         const btn = document.getElementById('refreshBtn');
         const originalHtml = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
@@ -1353,7 +1525,7 @@
         btn.disabled = false;
         btn.style.background = '#10b981';
         setTimeout(() => { btn.style.background = ''; }, 1000);
-    }
+    };
 
     window.addEventListener('resize', function() {
         const newIsMobile = window.innerWidth <= 768;
