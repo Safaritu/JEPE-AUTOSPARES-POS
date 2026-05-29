@@ -334,6 +334,40 @@
             font-weight: 500;
         }
 
+        /* Verify All Button */
+        .verify-all-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+        
+        .verify-all-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+        }
+        
+        .verify-all-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .verify-all-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         /* Bank badges */
         .family-bank-badge {
             background: var(--family-bank);
@@ -364,48 +398,23 @@
             gap: 6px;
             background: var(--verified);
             color: white;
-            padding: 4px 10px;
+            padding: 5px 12px;
             border-radius: 20px;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             font-weight: 700;
         }
         
-        .unverified-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--unverified);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            font-weight: 700;
-        }
-        
-        .verify-btn {
-            background: #e0e7ff;
-            color: var(--primary);
-            border: none;
-            padding: 6px 12px;
-            border-radius: 20px;
+        .verify-checkbox {
+            width: 20px;
+            height: 20px;
             cursor: pointer;
-            font-size: 0.7rem;
-            font-weight: 700;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
+            accent-color: var(--success);
+            margin: 0 auto;
+            display: block;
         }
         
-        .verify-btn:hover {
-            background: var(--primary);
-            color: white;
-            transform: scale(1.02);
-        }
-        
-        .verify-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+        .verify-checkbox:checked {
+            accent-color: var(--success);
         }
         
         .verified-info {
@@ -456,12 +465,12 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.02); 
         }
 
-        /* TABLE STYLES - Optimized for no horizontal scroll on desktop */
+        /* TABLE STYLES - with clear borders */
         .table-outer { 
             border-radius: 20px; 
             overflow-x: auto;
             overflow-y: visible;
-            border: 1px solid var(--border); 
+            border: 2px solid var(--border); 
             background: white; 
             box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); 
             display: block;
@@ -531,6 +540,12 @@
         table { 
             width: 100%; 
             border-collapse: collapse; 
+            border: 1px solid var(--border);
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 16px 12px;
         }
 
         /* Desktop column widths - optimized for 1400px+ screens */
@@ -569,23 +584,24 @@
         /* Font sizes for better readability */
         th { 
             background: #f8fafc; 
-            padding: 16px 12px; 
             font-size: 0.8rem; 
             text-transform: uppercase; 
             letter-spacing: 0.05em; 
             color: var(--dim); 
-            border-bottom: 1px solid var(--border); 
             text-align: left; 
             font-weight: 800;
             white-space: nowrap;
         }
 
         td { 
-            padding: 18px 12px; 
-            border-bottom: 1px solid var(--border); 
             font-size: 0.95rem; 
             vertical-align: top; 
             word-wrap: break-word;
+        }
+
+        /* Row hover effect */
+        tr:hover td {
+            background-color: #f8fafc;
         }
 
         /* Compact content for better fit */
@@ -754,7 +770,7 @@
                 border-radius: 18px;
                 padding: 18px;
                 margin-bottom: 18px;
-                border: 1px solid var(--border);
+                border: 2px solid var(--border);
                 box-shadow: 0 4px 12px rgba(0,0,0,0.05);
                 position: relative;
                 overflow: hidden;
@@ -766,7 +782,7 @@
                 align-items: center;
                 margin-bottom: 18px;
                 padding-bottom: 14px;
-                border-bottom: 1px solid var(--border);
+                border-bottom: 2px solid var(--border);
             }
             
             .shift-mobile-date {
@@ -911,17 +927,6 @@
                 border: 1px solid #0d9664;
             }
             
-            .verify-action {
-                background: var(--warning);
-                color: white;
-                border: none;
-            }
-            
-            .shift-mobile-action-btn:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            }
-            
             .shift-mobile-verified-info {
                 margin-top: 12px;
                 padding-top: 10px;
@@ -929,6 +934,28 @@
                 font-size: 0.7rem;
                 color: var(--dim);
                 text-align: center;
+            }
+            
+            .mobile-verify-checkbox {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                margin-top: 12px;
+                padding-top: 10px;
+                border-top: 1px solid var(--border);
+            }
+            
+            .mobile-verify-checkbox label {
+                font-size: 0.8rem;
+                font-weight: 600;
+                cursor: pointer;
+            }
+            
+            .mobile-verify-checkbox input {
+                width: 20px;
+                height: 20px;
+                cursor: pointer;
             }
         }
 
@@ -1084,20 +1111,27 @@
 
     <input type="text" id="auditSearch" class="search-input" placeholder="Search by date (e.g. 10 Jan 2026)...">
 
+    <!-- Verify All Button -->
+    <div class="verify-all-container">
+        <button class="verify-all-btn" id="verifyAllBtn" onclick="verifyAllShifts()">
+            <i class="fas fa-check-double"></i> Verify All Displayed Shifts
+        </button>
+    </div>
+
     <div class="table-outer">
         <div class="table-container" id="scrollContainer">
             <table class="shift-history-table">
                 <thead>
                     <tr>
-                        <th width="140">DATE</th>
-                        <th width="280">OPENING FLOATS</th>
-                        <th width="250">PAYMENT METHOD</th>
-                        <th width="180">MONEY IN/OUT</th>
-                        <th width="280">CLOSING FLOATS</th>
-                        <th width="180">VARIANCE</th>
-                        <th width="200">VARIANCE REASON</th>
-                        <th width="100">BRANCH</th>
-                        <th width="120">VERIFICATION</th>
+                        <th>DATE</th>
+                        <th>OPENING FLOATS</th>
+                        <th>PAYMENT METHOD</th>
+                        <th>MONEY IN/OUT</th>
+                        <th>CLOSING FLOATS</th>
+                        <th>VARIANCE</th>
+                        <th>VARIANCE REASON</th>
+                        <th>BRANCH</th>
+                        <th>VERIFICATION</th>
                     </tr>
                 </thead>
                 <tbody id="audit-body-desktop"></tbody>
@@ -1133,6 +1167,7 @@
     let branches = {};
     let branchIdMap = {};
     let verifyingShift = false;
+    let currentFilteredShifts = [];
 
     // Helper function to check if a branch is Kitui
     function isKituiBranch(branchId) {
@@ -1214,60 +1249,19 @@
         return html;
     }
 
-    // Function to mark shift as verified
-    window.markShiftVerified = async function(shiftId, shiftDate) {
-        if (verifyingShift) {
-            alert("Please wait, verification in progress...");
-            return;
-        }
-        
-        const confirmMsg = `Are you sure you want to mark this shift as VERIFIED?\n\nShift Date: ${shiftDate}\n\nThis will record that you have reviewed and approved this shift.`;
-        
-        if (!confirm(confirmMsg)) return;
-        
-        verifyingShift = true;
-        
-        try {
-            const { error } = await supabase
-                .from('daily_shifts')
-                .update({
-                    verified: true,
-                    verified_by: currentUser?.email || 'Admin',
-                    verified_at: new Date().toISOString()
-                })
-                .eq('id', shiftId);
-            
-            if (error) throw error;
-            
-            // Show success notification
-            showSuccessNotification('Shift Verified!', `Shift dated ${shiftDate} has been marked as verified`);
-            
-            // Refresh the data
-            await fetchData();
-            
-        } catch (error) {
-            console.error("Error verifying shift:", error);
-            alert("Error verifying shift: " + error.message);
-        } finally {
-            verifyingShift = false;
-        }
-    };
-    
     // Function to show success notification
     function showSuccessNotification(message, details = '') {
-        const container = document.getElementById('success-notification-container');
+        let container = document.getElementById('success-notification-container');
         if (!container) {
-            // Create container if it doesn't exist
-            const newContainer = document.createElement('div');
-            newContainer.id = 'success-notification-container';
-            newContainer.style.position = 'fixed';
-            newContainer.style.top = '20px';
-            newContainer.style.right = '20px';
-            newContainer.style.zIndex = '9999';
-            document.body.appendChild(newContainer);
+            container = document.createElement('div');
+            container.id = 'success-notification-container';
+            container.style.position = 'fixed';
+            container.style.top = '20px';
+            container.style.right = '20px';
+            container.style.zIndex = '9999';
+            document.body.appendChild(container);
         }
         
-        const notifContainer = document.getElementById('success-notification-container');
         const notification = document.createElement('div');
         notification.className = 'success-notification';
         notification.style.background = '#10b981';
@@ -1291,7 +1285,139 @@
             </div>
         `;
         
-        notifContainer.appendChild(notification);
+        container.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    }
+
+    // Function to mark shift as verified/unverified
+    window.toggleShiftVerification = async function(shiftId, shiftDate, isChecked) {
+        if (verifyingShift) {
+            alert("Please wait, verification in progress...");
+            return;
+        }
+        
+        verifyingShift = true;
+        
+        try {
+            const updateData = {
+                verified: isChecked,
+                verified_by: isChecked ? (currentUser?.email || 'Admin') : null,
+                verified_at: isChecked ? new Date().toISOString() : null
+            };
+            
+            const { error } = await supabase
+                .from('daily_shifts')
+                .update(updateData)
+                .eq('id', shiftId);
+            
+            if (error) throw error;
+            
+            const message = isChecked ? 'Shift Verified!' : 'Shift Unverified';
+            const details = `Shift dated ${shiftDate} has been ${isChecked ? 'marked as verified' : 'unverified'}`;
+            showSuccessNotification(message, details);
+            
+            // Refresh the data
+            await fetchData();
+            
+        } catch (error) {
+            console.error("Error updating shift verification:", error);
+            alert("Error updating shift verification: " + error.message);
+        } finally {
+            verifyingShift = false;
+        }
+    };
+    
+    // Function to verify all displayed shifts
+    window.verifyAllShifts = async function() {
+        if (verifyingShift) {
+            alert("Please wait, verification in progress...");
+            return;
+        }
+        
+        const unverifiedShifts = currentFilteredShifts.filter(sh => !sh.verified && sh.status === 'Closed');
+        
+        if (unverifiedShifts.length === 0) {
+            alert("No unverified shifts to verify!");
+            return;
+        }
+        
+        const confirmMsg = `Are you sure you want to verify ${unverifiedShifts.length} shift(s)?\n\nThis will mark all displayed unverified shifts as reviewed.`;
+        
+        if (!confirm(confirmMsg)) return;
+        
+        verifyingShift = true;
+        const verifyAllBtn = document.getElementById('verifyAllBtn');
+        const originalText = verifyAllBtn.innerHTML;
+        verifyAllBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+        verifyAllBtn.disabled = true;
+        
+        let successCount = 0;
+        let errorCount = 0;
+        
+        for (const shift of unverifiedShifts) {
+            try {
+                const { error } = await supabase
+                    .from('daily_shifts')
+                    .update({
+                        verified: true,
+                        verified_by: currentUser?.email || 'Admin',
+                        verified_at: new Date().toISOString()
+                    })
+                    .eq('id', shift.id);
+                
+                if (error) throw error;
+                successCount++;
+            } catch (error) {
+                console.error(`Error verifying shift ${shift.id}:`, error);
+                errorCount++;
+            }
+        }
+        
+        verifyingShift = false;
+        verifyAllBtn.innerHTML = originalText;
+        verifyAllBtn.disabled = false;
+        
+        showSuccessMessage(`Verified ${successCount} shifts successfully!`, errorCount > 0 ? `${errorCount} failed` : '');
+        
+        await fetchData();
+    };
+    
+    function showSuccessMessage(message, details = '') {
+        let container = document.getElementById('success-notification-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'success-notification-container';
+            container.style.position = 'fixed';
+            container.style.top = '20px';
+            container.style.right = '20px';
+            container.style.zIndex = '9999';
+            document.body.appendChild(container);
+        }
+        
+        const notification = document.createElement('div');
+        notification.className = 'success-notification';
+        notification.style.background = '#10b981';
+        notification.style.color = 'white';
+        notification.style.padding = '15px 25px';
+        notification.style.borderRadius = '12px';
+        notification.style.marginBottom = '10px';
+        notification.style.boxShadow = '0 10px 25px rgba(16, 185, 129, 0.3)';
+        notification.style.animation = 'slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s forwards';
+        notification.style.display = 'flex';
+        notification.style.alignItems = 'center';
+        notification.style.gap = '10px';
+        notification.style.fontWeight = '700';
+        notification.style.borderLeft = '5px solid #0f5c3e';
+        
+        notification.innerHTML = `
+            <i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
+            <div style="flex: 1;">
+                <div style="font-weight: 800;">✅ ${message}</div>
+                ${details ? `<div style="font-size: 0.75rem; opacity: 0.9;">${details}</div>` : ''}
+            </div>
+        `;
+        
+        container.appendChild(notification);
         setTimeout(() => notification.remove(), 3000);
     }
 
@@ -1315,7 +1441,6 @@
             branchIdMap[b.code] = b.id;
         });
         
-        // Populate branch selector
         const selector = document.getElementById('branchSelector');
         selector.innerHTML = '<option value="all">🏢 ALL BRANCHES (Consolidated)</option>';
         data?.forEach(b => {
@@ -1368,6 +1493,12 @@
             const sidebarBranchName = document.querySelector('#sidebarBranchName span');
             if (profile.branches && sidebarBranchName) {
                 sidebarBranchName.textContent = profile.branches.name;
+            }
+            
+            // Update branch name in header
+            const branchNameSpan = document.getElementById('branchName');
+            if (branchNameSpan && profile.branches) {
+                branchNameSpan.textContent = profile.branches.name;
             }
             
             return profile;
@@ -1428,6 +1559,9 @@
             
             console.log(`Loaded ${allShifts.length} shifts`);
             
+            // Update currentFilteredShifts for verify all button
+            currentFilteredShifts = [...allShifts];
+            
             render();
         } catch (error) {
             console.error("Error fetching data:", error);
@@ -1440,12 +1574,26 @@
     function showLoading(show) {
         const loadingEl = document.getElementById('loadingSpinner');
         const refreshBtn = document.getElementById('refreshBtn');
+        const tableOuter = document.querySelector('.table-outer');
+        const mobileContainer = document.getElementById('mobile-shifts-container');
         
         if (loadingEl) loadingEl.style.display = show ? 'flex' : 'none';
         if (refreshBtn) refreshBtn.disabled = show;
+        
+        // Hide table content while loading
+        if (show) {
+            if (tableOuter) tableOuter.style.opacity = '0.5';
+            if (mobileContainer) mobileContainer.style.opacity = '0.5';
+        } else {
+            if (tableOuter) tableOuter.style.opacity = '1';
+            if (mobileContainer) mobileContainer.style.opacity = '1';
+        }
     }
 
     function render(data = allShifts) {
+        // Update currentFilteredShifts for verify all button
+        currentFilteredShifts = data;
+        
         if (isMobile) {
             renderMobile(data);
         } else {
@@ -1536,57 +1684,63 @@
                         <span class="payment-label" style="font-weight:800;">📊 TOTAL SALES</span>
                         <span class="payment-amount" style="font-weight:800; color:var(--primary);">+${totalRevenue.toLocaleString()}</span>
                     </div>
-                    <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:4px; text-align:right">CLICK TO VIEW →</div>
+                    <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:4px; text-align:right">CLICK TO VIEW ➔</div>
                 </a>
             `;
             
-            // Verification section
+            // Verification section with checkbox
             let verificationHtml = '';
             if (sh.verified) {
                 const verifiedBy = sh.verified_by || 'Admin';
                 const verifiedAt = sh.verified_at ? new Date(sh.verified_at).toLocaleString() : 'Recently';
                 verificationHtml = `
-                    <div class="verified-badge">
-                        <i class="fas fa-check-circle"></i> VERIFIED
-                    </div>
-                    <div class="verified-info">
-                        by ${verifiedBy}<br>${verifiedAt}
+                    <div style="text-align: center;">
+                        <input type="checkbox" class="verify-checkbox" checked 
+                            onchange="toggleShiftVerification('${sh.id}', '${formattedDate}', this.checked)">
+                        <div class="verified-info">
+                            <i class="fas fa-check-circle" style="color: var(--success);"></i> Verified<br>
+                            <small>by ${verifiedBy}<br>${verifiedAt}</small>
+                        </div>
                     </div>
                 `;
             } else {
                 verificationHtml = `
-                    <button class="verify-btn" onclick="markShiftVerified('${sh.id}', '${formattedDate}')">
-                        <i class="fas fa-check-double"></i> Mark Verified
-                    </button>
+                    <div style="text-align: center;">
+                        <input type="checkbox" class="verify-checkbox" 
+                            onchange="toggleShiftVerification('${sh.id}', '${formattedDate}', this.checked)">
+                        <div class="verified-info" style="color: var(--warning);">
+                            <i class="fas fa-clock"></i> Pending
+                        </div>
+                    </div>
                 `;
             }
             
             tableHtml += `
-                <tr>
-                    <td class="date-cell">
+                <tr style="border-bottom: 2px solid var(--border);">
+                    <td class="date-cell" style="border: 1px solid var(--border);">
                         <b>${startD.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'})}</b>
                         <span class="time-pill">IN: ${startD.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span><br>
                         <span class="time-pill">${sh.end_time ? 'OUT: '+new Date(sh.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'ACTIVE'}</span>
-                      </td>
-                    <td style="vertical-align: top;">
+                    </td>
+                    <td style="vertical-align: top; border: 1px solid var(--border);">
                         ${buildOpeningFloatsHtml(sh)}
                     </td>
-                    <td style="vertical-align: middle;">
+                    <td style="vertical-align: middle; border: 1px solid var(--border);">
                         <div style="background: #f8fafc; padding: 10px; border-radius: 8px;">
                             ${paymentMethodsHtml}
                         </div>
                     </td>
-                    <td style="vertical-align: top;">
+                    <td style="vertical-align: top; border: 1px solid var(--border);">
                         <a href="money-history.html" class="revenue-card">
                             <div class="account-line"><span class="account-label">In</span><span class="account-val" style="color:var(--success)">+${moneyIn.toLocaleString()}</span></div>
                             <div class="account-line"><span class="account-label">Out</span><span class="account-val" style="color:var(--danger)">-${moneyOut.toLocaleString()}</span></div>
                             <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW →</div>
                         </a>
                     </td>
-                    <td style="vertical-align: top;">
+                    <td style="vertical-align: top; border: 1px solid var(--border);">
                         ${buildClosingFloatsHtml(sh)}
                     </td>
-                    <td style="vertical-align: middle;">
+                    <td style="vertical-align: middle; border: 1px solid var(--border);">
                         <span class="status-badge ${varianceClass}">
                             ${varianceDisplay}
                         </span>
@@ -1594,9 +1748,15 @@
                             Expected: ${expected.toLocaleString()}
                         </div>
                     </td>
-                    <td style="vertical-align: middle;"><div style="max-height: 100px; overflow-y: auto; font-size: 0.8rem; color: var(--dim); font-style: italic;">${sh.variance_note || 'No notes added.'}</div></td>
-                    <td style="vertical-align: middle;"><span class="branch-pill">${branch.code}</span></td>
-                    <td style="vertical-align: middle; text-align: center;">
+                    <td style="vertical-align: middle; border: 1px solid var(--border);">
+                        <div style="max-height: 100px; overflow-y: auto; font-size: 0.8rem; color: var(--dim); font-style: italic;">
+                            ${sh.variance_note || 'No notes added.'}
+                        </div>
+                    </td>
+                    <td style="vertical-align: middle; border: 1px solid var(--border);">
+                        <span class="branch-pill">${branch.code}</span>
+                    </td>
+                    <td style="vertical-align: middle; text-align: center; border: 1px solid var(--border);">
                         ${verificationHtml}
                     </td>
                 </tr>
@@ -1758,22 +1918,29 @@
             
             closingFloatsHtml += `<div class="shift-mobile-total" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>`;
             
-            // Verification section for mobile
+            // Verification section for mobile with checkbox
             let verificationHtml = '';
             if (sh.verified) {
                 const verifiedBy = sh.verified_by || 'Admin';
                 const verifiedAt = sh.verified_at ? new Date(sh.verified_at).toLocaleString() : 'Recently';
                 verificationHtml = `
+                    <div class="mobile-verify-checkbox">
+                        <input type="checkbox" id="verify_${sh.id}" checked onchange="toggleShiftVerification('${sh.id}', '${formattedDate}', this.checked)">
+                        <label for="verify_${sh.id}">Mark as Verified</label>
+                    </div>
                     <div class="shift-mobile-verified-info">
-                        <i class="fas fa-check-circle" style="color: var(--success);"></i> Verified by ${verifiedBy} on ${verifiedAt}
+                        <i class="fas fa-check-circle" style="color: var(--success);"></i> Verified by ${verifiedBy}<br>
+                        <small>${verifiedAt}</small>
                     </div>
                 `;
             } else {
                 verificationHtml = `
-                    <div class="shift-mobile-actions" style="margin-top: 8px;">
-                        <button class="shift-mobile-action-btn verify-action" onclick="markShiftVerified('${sh.id}', '${formattedDate}')" style="background: var(--warning);">
-                            <i class="fas fa-check-double"></i> Mark Verified
-                        </button>
+                    <div class="mobile-verify-checkbox">
+                        <input type="checkbox" id="verify_${sh.id}" onchange="toggleShiftVerification('${sh.id}', '${formattedDate}', this.checked)">
+                        <label for="verify_${sh.id}">Mark as Verified</label>
+                    </div>
+                    <div class="shift-mobile-verified-info" style="color: var(--warning);">
+                        <i class="fas fa-clock"></i> Pending Verification
                     </div>
                 `;
             }
@@ -1899,6 +2066,12 @@
         await fetchData();
         
         isMobile = window.innerWidth <= 768;
+        
+        // Hide loading spinner after initial load
+        setTimeout(() => {
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            if (loadingSpinner) loadingSpinner.style.display = 'none';
+        }, 500);
     });
 </script>
 
