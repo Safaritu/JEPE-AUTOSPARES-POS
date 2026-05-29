@@ -1127,11 +1127,10 @@
         </div>
         <i class="fas fa-check-double" style="color: #10b981; font-size: 1.5rem; opacity: 0.8;"></i>
     </div>
-
     <!-- Verify All Button -->
     <div class="verify-all-container">
         <button class="verify-all-btn" id="verifyAllBtn" onclick="verifyAllShifts()">
-            <i class="fas fa-check-double"></i> Verify All Displayed Shifts
+            <i class="fas fa-check-double"></i> click to Select and Verify All at Once
         </button>
     </div>
 
@@ -1172,10 +1171,6 @@
 <button class="refresh-btn" onclick="refreshData()" id="refreshBtn">
     <i class="fas fa-sync-alt"></i>
 </button>
-
-<!-- Success Notification Container -->
-<div id="success-notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
-
 <script type="module">
     import { supabase } from './auth.js';
     
@@ -1412,6 +1407,45 @@
         
         await fetchData();
     };
+    
+    function showSuccessMessage(message, details = '') {
+        let container = document.getElementById('success-notification-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'success-notification-container';
+            container.style.position = 'fixed';
+            container.style.top = '20px';
+            container.style.right = '20px';
+            container.style.zIndex = '9999';
+            document.body.appendChild(container);
+        }
+        
+        const notification = document.createElement('div');
+        notification.className = 'success-notification';
+        notification.style.background = '#10b981';
+        notification.style.color = 'white';
+        notification.style.padding = '15px 25px';
+        notification.style.borderRadius = '12px';
+        notification.style.marginBottom = '10px';
+        notification.style.boxShadow = '0 10px 25px rgba(16, 185, 129, 0.3)';
+        notification.style.animation = 'slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s forwards';
+        notification.style.display = 'flex';
+        notification.style.alignItems = 'center';
+        notification.style.gap = '10px';
+        notification.style.fontWeight = '700';
+        notification.style.borderLeft = '5px solid #0f5c3e';
+        
+        notification.innerHTML = `
+            <i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
+            <div style="flex: 1;">
+                <div style="font-weight: 800;">✅ ${message}</div>
+                ${details ? `<div style="font-size: 0.75rem; opacity: 0.9;">${details}</div>` : ''}
+            </div>
+        `;
+        
+        container.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    }
 
     window.toggleMenu = function() {
         document.getElementById('sidebar').classList.toggle('mobile-active');
@@ -1487,6 +1521,7 @@
                 sidebarBranchName.textContent = profile.branches.name;
             }
             
+            // Update branch name in header
             const branchNameSpan = document.getElementById('branchName');
             if (branchNameSpan && profile.branches) {
                 branchNameSpan.textContent = profile.branches.name;
@@ -1550,6 +1585,7 @@
             
             console.log(`Loaded ${allShifts.length} shifts`);
             
+            // Update currentFilteredShifts for verify all button
             currentFilteredShifts = [...allShifts];
             
             render();
@@ -1570,6 +1606,7 @@
         if (loadingEl) loadingEl.style.display = show ? 'flex' : 'none';
         if (refreshBtn) refreshBtn.disabled = show;
         
+        // Hide table content while loading
         if (show) {
             if (tableOuter) tableOuter.style.opacity = '0.5';
             if (mobileContainer) mobileContainer.style.opacity = '0.5';
@@ -1580,6 +1617,7 @@
     }
 
     function render(data = allShifts) {
+        // Update currentFilteredShifts for verify all button
         currentFilteredShifts = data;
         
         if (isMobile) {
@@ -1676,6 +1714,7 @@
                 </a>
             `;
             
+            // Verification section - DATE ONLY (no time)
             let verificationHtml = '';
             if (sh.verified) {
                 const verifiedBy = sh.verified_by || 'Admin';
@@ -1723,7 +1762,7 @@
                             <div class="account-line"><span class="account-label">Out</span><span class="account-val" style="color:var(--danger)">-${moneyOut.toLocaleString()}</span></div>
                             <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW →</div>
                         </a>
-                    <tr>
+                    </td>
                     <td style="vertical-align: top; border: 1px solid var(--border);">
                         ${buildClosingFloatsHtml(sh)}
                     </td>
@@ -1750,7 +1789,7 @@
             `;
         });
 
-        tbody.innerHTML = tableHtml || '<tr><td colspan="9" style="text-align:center; padding:50px;">No records found.侧</td>';
+        tbody.innerHTML = tableHtml || '<tr><td colspan="9" style="text-align:center; padding:50px;">No records found.侧</tr>';
     }
 
     function renderMobile(data = allShifts) {
@@ -1905,6 +1944,7 @@
             
             closingFloatsHtml += `<div class="shift-mobile-total" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>`;
             
+            // Verification section for mobile - DATE ONLY (no time)
             let verificationHtml = '';
             if (sh.verified) {
                 const verifiedBy = sh.verified_by || 'Admin';
@@ -1912,7 +1952,7 @@
                 verificationHtml = `
                     <div class="mobile-verify-checkbox">
                         <input type="checkbox" id="verify_${sh.id}" checked onchange="toggleShiftVerification('${sh.id}', '${formattedDate}', this.checked)">
-                        <label for="verify_${sh.id}">Mark as Verified</label>
+                        <label for="verify_${sh.id}>Mark as Verified</label>
                     </div>
                     <div class="shift-mobile-verified-info">
                         <i class="fas fa-check-circle" style="color: var(--success);"></i> Verified by ${verifiedBy}<br>
@@ -2053,11 +2093,15 @@
         
         isMobile = window.innerWidth <= 768;
         
+        // Hide loading spinner after initial load
         setTimeout(() => {
             const loadingSpinner = document.getElementById('loadingSpinner');
             if (loadingSpinner) loadingSpinner.style.display = 'none';
         }, 500);
     });
 </script>
+<!-- Success Notification Container -->
+<div id="success-notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+
 </body>
 </html>
