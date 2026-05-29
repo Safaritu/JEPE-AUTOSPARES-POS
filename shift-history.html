@@ -1155,7 +1155,6 @@
 <button class="refresh-btn" onclick="refreshData()" id="refreshBtn">
     <i class="fas fa-sync-alt"></i>
 </button>
-
 <script type="module">
     import { supabase } from './auth.js';
     
@@ -1169,18 +1168,14 @@
     let verifyingShift = false;
     let currentFilteredShifts = [];
 
-    // Helper function to format local time correctly - let browser handle conversion
-    function formatLocalTime(timestamp) {
+    // Helper function to format only date (no time)
+    function formatDateOnly(timestamp) {
         if (!timestamp) return 'Recently';
         const date = new Date(timestamp);
-        // Browser automatically converts UTC to local timezone
-        return date.toLocaleString('en-GB', { 
+        return date.toLocaleDateString('en-GB', { 
             day: '2-digit', 
             month: 'short', 
-            year: 'numeric',
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false
+            year: 'numeric'
         });
     }
 
@@ -1703,18 +1698,18 @@
                 </a>
             `;
             
-            // Verification section with checkbox - using corrected local time (browser auto-converts)
+            // Verification section - DATE ONLY (no time)
             let verificationHtml = '';
             if (sh.verified) {
                 const verifiedBy = sh.verified_by || 'Admin';
-                const verifiedAtLocal = formatLocalTime(sh.verified_at);
+                const verifiedDate = formatDateOnly(sh.verified_at);
                 verificationHtml = `
                     <div style="text-align: center;">
                         <input type="checkbox" class="verify-checkbox" checked 
                             onchange="toggleShiftVerification('${sh.id}', '${formattedDate}', this.checked)">
                         <div class="verified-info">
                             <i class="fas fa-check-circle" style="color: var(--success);"></i> Verified<br>
-                            <small>by ${verifiedBy}<br>${verifiedAtLocal}</small>
+                            <small>by ${verifiedBy}<br>${verifiedDate}</small>
                         </div>
                     </div>
                 `;
@@ -1778,7 +1773,7 @@
             `;
         });
 
-        tbody.innerHTML = tableHtml || '<tr><td colspan="9" style="text-align:center; padding:50px;">No records found.侧</td>';
+        tbody.innerHTML = tableHtml || '<tr><td colspan="9" style="text-align:center; padding:50px;">No records found.侧</tr>';
     }
 
     function renderMobile(data = allShifts) {
@@ -1933,19 +1928,19 @@
             
             closingFloatsHtml += `<div class="shift-mobile-total" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>`;
             
-            // Verification section for mobile - using corrected local time
+            // Verification section for mobile - DATE ONLY (no time)
             let verificationHtml = '';
             if (sh.verified) {
                 const verifiedBy = sh.verified_by || 'Admin';
-                const verifiedAtLocal = formatLocalTime(sh.verified_at);
+                const verifiedDate = formatDateOnly(sh.verified_at);
                 verificationHtml = `
                     <div class="mobile-verify-checkbox">
                         <input type="checkbox" id="verify_${sh.id}" checked onchange="toggleShiftVerification('${sh.id}', '${formattedDate}', this.checked)">
-                        <label for="verify_${sh.id}">Mark as Verified</label>
+                        <label for="verify_${sh.id}>Mark as Verified</label>
                     </div>
                     <div class="shift-mobile-verified-info">
                         <i class="fas fa-check-circle" style="color: var(--success);"></i> Verified by ${verifiedBy}<br>
-                        <small>${verifiedAtLocal}</small>
+                        <small>${verifiedDate}</small>
                     </div>
                 `;
             } else {
