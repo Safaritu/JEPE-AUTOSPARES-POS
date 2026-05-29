@@ -1169,6 +1169,20 @@
     let verifyingShift = false;
     let currentFilteredShifts = [];
 
+    // Helper function to format local time correctly
+    function formatLocalTime(timestamp) {
+        if (!timestamp) return 'Recently';
+        const date = new Date(timestamp);
+        return date.toLocaleString('en-GB', { 
+            day: '2-digit', 
+            month: 'short', 
+            year: 'numeric',
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false
+        });
+    }
+
     // Helper function to check if a branch is Kitui
     function isKituiBranch(branchId) {
         const branch = branches[branchId];
@@ -1377,7 +1391,7 @@
         verifyAllBtn.innerHTML = originalText;
         verifyAllBtn.disabled = false;
         
-        showSuccessMessage(`Verified ${successCount} shifts successfully!`, errorCount > 0 ? `${errorCount} failed` : '');
+        showSuccessNotification(`Verified ${successCount} shifts successfully!`, errorCount > 0 ? `${errorCount} failed` : '');
         
         await fetchData();
     };
@@ -1688,11 +1702,11 @@
                 </a>
             `;
             
-            // Verification section with checkbox
+            // Verification section with checkbox - using corrected local time
             let verificationHtml = '';
             if (sh.verified) {
                 const verifiedBy = sh.verified_by || 'Admin';
-                const verifiedAt = sh.verified_at ? new Date(sh.verified_at).toLocaleString() : 'Recently';
+                const verifiedAt = formatLocalTime(sh.verified_at);
                 verificationHtml = `
                     <div style="text-align: center;">
                         <input type="checkbox" class="verify-checkbox" checked 
@@ -1763,7 +1777,7 @@
             `;
         });
 
-        tbody.innerHTML = tableHtml || '<tr><td colspan="9" style="text-align:center; padding:50px;">No records found.</td></tr>';
+        tbody.innerHTML = tableHtml || '<tr><td colspan="9" style="text-align:center; padding:50px;">No records found.侧</table>';
     }
 
     function renderMobile(data = allShifts) {
@@ -1918,11 +1932,11 @@
             
             closingFloatsHtml += `<div class="shift-mobile-total" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>`;
             
-            // Verification section for mobile with checkbox
+            // Verification section for mobile with checkbox - using corrected local time
             let verificationHtml = '';
             if (sh.verified) {
                 const verifiedBy = sh.verified_by || 'Admin';
-                const verifiedAt = sh.verified_at ? new Date(sh.verified_at).toLocaleString() : 'Recently';
+                const verifiedAt = formatLocalTime(sh.verified_at);
                 verificationHtml = `
                     <div class="mobile-verify-checkbox">
                         <input type="checkbox" id="verify_${sh.id}" checked onchange="toggleShiftVerification('${sh.id}', '${formattedDate}', this.checked)">
