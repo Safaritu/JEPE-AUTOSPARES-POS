@@ -1169,19 +1169,18 @@
     let verifyingShift = false;
     let currentFilteredShifts = [];
 
-    // Helper function to format local time correctly with timezone
+    // Helper function to format local time correctly - let browser handle conversion
     function formatLocalTime(timestamp) {
         if (!timestamp) return 'Recently';
         const date = new Date(timestamp);
-        // Force Nairobi timezone (East Africa Time UTC+3)
+        // Browser automatically converts UTC to local timezone
         return date.toLocaleString('en-GB', { 
             day: '2-digit', 
             month: 'short', 
             year: 'numeric',
             hour: '2-digit', 
             minute: '2-digit',
-            hour12: false,
-            timeZone: 'Africa/Nairobi'
+            hour12: false
         });
     }
 
@@ -1704,25 +1703,11 @@
                 </a>
             `;
             
-            // Verification section with checkbox - using corrected local time with timezone
+            // Verification section with checkbox - using corrected local time (browser auto-converts)
             let verificationHtml = '';
             if (sh.verified) {
                 const verifiedBy = sh.verified_by || 'Admin';
-                let verifiedAtLocal = '';
-                if (sh.verified_at) {
-                    const utcDate = new Date(sh.verified_at);
-                    verifiedAtLocal = utcDate.toLocaleString('en-GB', { 
-                        day: '2-digit', 
-                        month: 'short', 
-                        year: 'numeric',
-                        hour: '2-digit', 
-                        minute: '2-digit',
-                        hour12: false,
-                        timeZone: 'Africa/Nairobi'
-                    });
-                } else {
-                    verifiedAtLocal = 'Recently';
-                }
+                const verifiedAtLocal = formatLocalTime(sh.verified_at);
                 verificationHtml = `
                     <div style="text-align: center;">
                         <input type="checkbox" class="verify-checkbox" checked 
@@ -1793,7 +1778,7 @@
             `;
         });
 
-        tbody.innerHTML = tableHtml || '<tr><td colspan="9" style="text-align:center; padding:50px;">No records found.</td></tr>';
+        tbody.innerHTML = tableHtml || '<tr><td colspan="9" style="text-align:center; padding:50px;">No records found.侧</td>';
     }
 
     function renderMobile(data = allShifts) {
@@ -1948,25 +1933,11 @@
             
             closingFloatsHtml += `<div class="shift-mobile-total" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>`;
             
-            // Verification section for mobile with checkbox - using corrected local time with timezone
+            // Verification section for mobile - using corrected local time
             let verificationHtml = '';
             if (sh.verified) {
                 const verifiedBy = sh.verified_by || 'Admin';
-                let verifiedAtLocal = '';
-                if (sh.verified_at) {
-                    const utcDate = new Date(sh.verified_at);
-                    verifiedAtLocal = utcDate.toLocaleString('en-GB', { 
-                        day: '2-digit', 
-                        month: 'short', 
-                        year: 'numeric',
-                        hour: '2-digit', 
-                        minute: '2-digit',
-                        hour12: false,
-                        timeZone: 'Africa/Nairobi'
-                    });
-                } else {
-                    verifiedAtLocal = 'Recently';
-                }
+                const verifiedAtLocal = formatLocalTime(sh.verified_at);
                 verificationHtml = `
                     <div class="mobile-verify-checkbox">
                         <input type="checkbox" id="verify_${sh.id}" checked onchange="toggleShiftVerification('${sh.id}', '${formattedDate}', this.checked)">
