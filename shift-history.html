@@ -7,7 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-   <style>
+    <style>
         :root { 
             --primary: #4f46e5; 
             --primary-dark: #3730a3;
@@ -24,6 +24,8 @@
             --sidebar-width: 260px;
             --sidebar-collapsed: 70px; 
             --sidebar-bg: #0f172a; 
+            --verified: #10b981;
+            --unverified: #f59e0b;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
@@ -355,6 +357,64 @@
             display: inline-block;
         }
 
+        /* Verification styles */
+        .verified-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--verified);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        
+        .unverified-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--unverified);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        
+        .verify-btn {
+            background: #e0e7ff;
+            color: var(--primary);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 700;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .verify-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.02);
+        }
+        
+        .verify-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .verified-info {
+            font-size: 0.65rem;
+            color: var(--dim);
+            margin-top: 5px;
+            text-align: center;
+        }
+
         /* --- MOBILE SLIDE INDICATOR --- */
         .slide-indicator { 
             background: #0f172a; 
@@ -457,7 +517,7 @@
             }
             
             table {
-                min-width: 1350px;
+                min-width: 1450px;
                 width: auto;
             }
         }
@@ -479,14 +539,15 @@
                 table-layout: fixed;
             }
             
-            th:nth-child(1), td:nth-child(1) { width: 10%; }  /* DATE */
-            th:nth-child(2), td:nth-child(2) { width: 18%; }  /* OPENING FLOATS */
-            th:nth-child(3), td:nth-child(3) { width: 15%; }  /* PAYMENT METHOD */
-            th:nth-child(4), td:nth-child(4) { width: 10%; }  /* MONEY IN/OUT */
-            th:nth-child(5), td:nth-child(5) { width: 18%; }  /* CLOSING FLOATS */
-            th:nth-child(6), td:nth-child(6) { width: 10%; }  /* VARIANCE */
-            th:nth-child(7), td:nth-child(7) { width: 12%; }  /* VARIANCE REASON */
+            th:nth-child(1), td:nth-child(1) { width: 9%; }   /* DATE */
+            th:nth-child(2), td:nth-child(2) { width: 16%; }  /* OPENING FLOATS */
+            th:nth-child(3), td:nth-child(3) { width: 13%; }  /* PAYMENT METHOD */
+            th:nth-child(4), td:nth-child(4) { width: 9%; }   /* MONEY IN/OUT */
+            th:nth-child(5), td:nth-child(5) { width: 16%; }  /* CLOSING FLOATS */
+            th:nth-child(6), td:nth-child(6) { width: 9%; }   /* VARIANCE */
+            th:nth-child(7), td:nth-child(7) { width: 11%; }  /* VARIANCE REASON */
             th:nth-child(8), td:nth-child(8) { width: 7%; }   /* BRANCH */
+            th:nth-child(9), td:nth-child(9) { width: 10%; }  /* VERIFICATION */
         }
 
         @media (min-width: 1200px) and (max-width: 1399px) {
@@ -494,21 +555,22 @@
                 table-layout: fixed;
             }
             
-            th:nth-child(1), td:nth-child(1) { width: 10%; }
-            th:nth-child(2), td:nth-child(2) { width: 17%; }
-            th:nth-child(3), td:nth-child(3) { width: 15%; }
-            th:nth-child(4), td:nth-child(4) { width: 10%; }
-            th:nth-child(5), td:nth-child(5) { width: 17%; }
-            th:nth-child(6), td:nth-child(6) { width: 10%; }
-            th:nth-child(7), td:nth-child(7) { width: 14%; }
+            th:nth-child(1), td:nth-child(1) { width: 9%; }
+            th:nth-child(2), td:nth-child(2) { width: 15%; }
+            th:nth-child(3), td:nth-child(3) { width: 13%; }
+            th:nth-child(4), td:nth-child(4) { width: 9%; }
+            th:nth-child(5), td:nth-child(5) { width: 15%; }
+            th:nth-child(6), td:nth-child(6) { width: 9%; }
+            th:nth-child(7), td:nth-child(7) { width: 12%; }
             th:nth-child(8), td:nth-child(8) { width: 7%; }
+            th:nth-child(9), td:nth-child(9) { width: 11%; }
         }
 
         /* Font sizes for better readability */
         th { 
             background: #f8fafc; 
-            padding: 16px 14px; 
-            font-size: 0.85rem; 
+            padding: 16px 12px; 
+            font-size: 0.8rem; 
             text-transform: uppercase; 
             letter-spacing: 0.05em; 
             color: var(--dim); 
@@ -519,7 +581,7 @@
         }
 
         td { 
-            padding: 18px 14px; 
+            padding: 18px 12px; 
             border-bottom: 1px solid var(--border); 
             font-size: 0.95rem; 
             vertical-align: top; 
@@ -819,6 +881,7 @@
                 display: flex;
                 gap: 12px;
                 margin-top: 14px;
+                flex-wrap: wrap;
             }
             
             .shift-mobile-action-btn {
@@ -848,9 +911,24 @@
                 border: 1px solid #0d9664;
             }
             
+            .verify-action {
+                background: var(--warning);
+                color: white;
+                border: none;
+            }
+            
             .shift-mobile-action-btn:hover {
                 transform: translateY(-2px);
                 box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            }
+            
+            .shift-mobile-verified-info {
+                margin-top: 12px;
+                padding-top: 10px;
+                border-top: 1px solid var(--border);
+                font-size: 0.7rem;
+                color: var(--dim);
+                text-align: center;
             }
         }
 
@@ -976,8 +1054,13 @@
 
 <main class="main-content">
     <div class="page-header">
-        <h1 style="margin:0; font-size: 1.6rem;">DAILY SHIFT HISTORY</h1>
-        <p style="margin:6px 0 0; color: var(--dim);">Comprehensive reconciliation of all physical and system balances.</p>
+        <div>
+            <h1 style="margin:0; font-size: 1.6rem;">DAILY SHIFT HISTORY</h1>
+            <p style="margin:6px 0 0; color: var(--dim);">Comprehensive reconciliation of all physical and system balances.</p>
+        </div>
+        <div class="branch-badge" id="branchDisplay">
+            <i class="fas fa-store"></i> <span id="branchName">Loading...</span>
+        </div>
     </div>
 
     <div class="branch-selector-container">
@@ -1003,7 +1086,7 @@
 
     <div class="table-outer">
         <div class="table-container" id="scrollContainer">
-            <table>
+            <table class="shift-history-table">
                 <thead>
                     <tr>
                         <th width="140">DATE</th>
@@ -1014,6 +1097,7 @@
                         <th width="180">VARIANCE</th>
                         <th width="200">VARIANCE REASON</th>
                         <th width="100">BRANCH</th>
+                        <th width="120">VERIFICATION</th>
                     </tr>
                 </thead>
                 <tbody id="audit-body-desktop"></tbody>
@@ -1048,6 +1132,7 @@
     let selectedBranchId = null;
     let branches = {};
     let branchIdMap = {};
+    let verifyingShift = false;
 
     // Helper function to check if a branch is Kitui
     function isKituiBranch(branchId) {
@@ -1060,7 +1145,6 @@
     // Helper functions for bank calculations including new banks for Kitui
     function calculateOpenTotal(sh) {
         let total = (sh.open_cash || 0) + (sh.open_mpesa || 0) + (sh.open_kcb || 0) + (sh.open_equity || 0);
-        // If this is Kitui branch, include new banks
         if (isKituiBranch(sh.branch_id)) {
             total += (sh.open_family_bank || 0) + (sh.open_cooperative_bank || 0);
         }
@@ -1069,14 +1153,12 @@
     
     function calculateCloseTotal(sh) {
         let total = (sh.close_cash || 0) + (sh.close_mpesa || 0) + (sh.close_kcb || 0) + (sh.close_equity || 0) + (sh.close_kcb_bank || 0);
-        // If this is Kitui branch, include new banks
         if (isKituiBranch(sh.branch_id)) {
             total += (sh.close_family_bank || 0) + (sh.close_cooperative_bank || 0);
         }
         return total;
     }
     
-    // Build opening floats HTML (accounts for new banks if Kitui)
     function buildOpeningFloatsHtml(sh) {
         const isKitui = isKituiBranch(sh.branch_id);
         let html = `
@@ -1104,7 +1186,6 @@
         return html;
     }
     
-    // Build closing floats HTML (accounts for new banks if Kitui)
     function buildClosingFloatsHtml(sh) {
         const isKitui = isKituiBranch(sh.branch_id);
         let html = `
@@ -1131,6 +1212,87 @@
         const total = calculateCloseTotal(sh);
         html += `<div class="total-row" style="background:#f0f9ff">Total: ${total.toLocaleString()}</div>`;
         return html;
+    }
+
+    // Function to mark shift as verified
+    window.markShiftVerified = async function(shiftId, shiftDate) {
+        if (verifyingShift) {
+            alert("Please wait, verification in progress...");
+            return;
+        }
+        
+        const confirmMsg = `Are you sure you want to mark this shift as VERIFIED?\n\nShift Date: ${shiftDate}\n\nThis will record that you have reviewed and approved this shift.`;
+        
+        if (!confirm(confirmMsg)) return;
+        
+        verifyingShift = true;
+        
+        try {
+            const { error } = await supabase
+                .from('daily_shifts')
+                .update({
+                    verified: true,
+                    verified_by: currentUser?.email || 'Admin',
+                    verified_at: new Date().toISOString()
+                })
+                .eq('id', shiftId);
+            
+            if (error) throw error;
+            
+            // Show success notification
+            showSuccessNotification('Shift Verified!', `Shift dated ${shiftDate} has been marked as verified`);
+            
+            // Refresh the data
+            await fetchData();
+            
+        } catch (error) {
+            console.error("Error verifying shift:", error);
+            alert("Error verifying shift: " + error.message);
+        } finally {
+            verifyingShift = false;
+        }
+    };
+    
+    // Function to show success notification
+    function showSuccessNotification(message, details = '') {
+        const container = document.getElementById('success-notification-container');
+        if (!container) {
+            // Create container if it doesn't exist
+            const newContainer = document.createElement('div');
+            newContainer.id = 'success-notification-container';
+            newContainer.style.position = 'fixed';
+            newContainer.style.top = '20px';
+            newContainer.style.right = '20px';
+            newContainer.style.zIndex = '9999';
+            document.body.appendChild(newContainer);
+        }
+        
+        const notifContainer = document.getElementById('success-notification-container');
+        const notification = document.createElement('div');
+        notification.className = 'success-notification';
+        notification.style.background = '#10b981';
+        notification.style.color = 'white';
+        notification.style.padding = '15px 25px';
+        notification.style.borderRadius = '12px';
+        notification.style.marginBottom = '10px';
+        notification.style.boxShadow = '0 10px 25px rgba(16, 185, 129, 0.3)';
+        notification.style.animation = 'slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s forwards';
+        notification.style.display = 'flex';
+        notification.style.alignItems = 'center';
+        notification.style.gap = '10px';
+        notification.style.fontWeight = '700';
+        notification.style.borderLeft = '5px solid #0f5c3e';
+        
+        notification.innerHTML = `
+            <i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
+            <div style="flex: 1;">
+                <div style="font-weight: 800;">✅ ${message}</div>
+                ${details ? `<div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">${details}</div>` : ''}
+            </div>
+        `;
+        
+        notifContainer.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
     }
 
     window.toggleMenu = function() {
@@ -1307,13 +1469,12 @@
             const isKitui = isKituiBranch(sh.branch_id);
             const shiftLogs = allTransactions.filter(t => t.shift_id === sh.id);
             
-            // Use pre-calculated totals from the shift table
             const cashSales = sh.total_cash_sales || 0;
             const kcbPaybillSales = sh.total_kcb_paybill_sales || 0;
             const totalRevenue = sh.total_sales_amount || 0;
             
-            // Format the date for the URL (YYYY-MM-DD)
             const shiftDate = new Date(sh.start_time).toISOString().split('T')[0];
+            const formattedDate = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'});
 
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
@@ -1346,10 +1507,8 @@
 
             const startD = new Date(sh.start_time);
             
-            // Build payment methods HTML using pre-calculated totals
             let paymentMethodsHtml = '';
             
-            // Only show if there are sales
             if (cashSales > 0 || kcbPaybillSales > 0 || totalRevenue > 0) {
                 if (cashSales > 0) {
                     paymentMethodsHtml += `
@@ -1371,7 +1530,6 @@
                 paymentMethodsHtml = '<div class="payment-method-item"><span class="payment-label">No sales recorded</span><span class="payment-amount">0</span></div>';
             }
             
-            // Add total revenue at the bottom, wrapped in a link
             paymentMethodsHtml += `
                 <a href="sales-history.html?date=${shiftDate}" class="revenue-card" style="display: block; text-decoration: none; margin-top: 8px;">
                     <div class="payment-method-item" style="margin-top:8px; padding-top:8px; border-top:2px solid var(--border);">
@@ -1381,6 +1539,27 @@
                     <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:4px; text-align:right">CLICK TO VIEW →</div>
                 </a>
             `;
+            
+            // Verification section
+            let verificationHtml = '';
+            if (sh.verified) {
+                const verifiedBy = sh.verified_by || 'Admin';
+                const verifiedAt = sh.verified_at ? new Date(sh.verified_at).toLocaleString() : 'Recently';
+                verificationHtml = `
+                    <div class="verified-badge">
+                        <i class="fas fa-check-circle"></i> VERIFIED
+                    </div>
+                    <div class="verified-info">
+                        by ${verifiedBy}<br>${verifiedAt}
+                    </div>
+                `;
+            } else {
+                verificationHtml = `
+                    <button class="verify-btn" onclick="markShiftVerified('${sh.id}', '${formattedDate}')">
+                        <i class="fas fa-check-double"></i> Mark Verified
+                    </button>
+                `;
+            }
             
             tableHtml += `
                 <tr>
@@ -1415,12 +1594,16 @@
                             Expected: ${expected.toLocaleString()}
                         </div>
                     </td>
-                    <td style="vertical-align: middle;"><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--dim); font-style: italic;">${sh.variance_note || 'No notes added.'}</div></td>
+                    <td style="vertical-align: middle;"><div style="max-height: 100px; overflow-y: auto; font-size: 0.8rem; color: var(--dim); font-style: italic;">${sh.variance_note || 'No notes added.'}</div></td>
                     <td style="vertical-align: middle;"><span class="branch-pill">${branch.code}</span></td>
-                </tr>`;
+                    <td style="vertical-align: middle; text-align: center;">
+                        ${verificationHtml}
+                    </td>
+                </tr>
+            `;
         });
 
-        tbody.innerHTML = tableHtml || '<tr><td colspan="8" style="text-align:center; padding:50px;">No records found.侧</tr>';
+        tbody.innerHTML = tableHtml || '<tr><td colspan="9" style="text-align:center; padding:50px;">No records found.</td></tr>';
     }
 
     function renderMobile(data = allShifts) {
@@ -1434,13 +1617,12 @@
             const isKitui = isKituiBranch(sh.branch_id);
             const shiftLogs = allTransactions.filter(t => t.shift_id === sh.id);
             
-            // Use pre-calculated totals from the shift table
             const cashSales = sh.total_cash_sales || 0;
             const kcbPaybillSales = sh.total_kcb_paybill_sales || 0;
             const totalRevenue = sh.total_sales_amount || 0;
             
-            // Format the date for the URL (YYYY-MM-DD)
             const shiftDate = new Date(sh.start_time).toISOString().split('T')[0];
+            const formattedDate = new Date(sh.start_time).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric'});
 
             const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
             const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
@@ -1472,7 +1654,6 @@
                 varianceText = 'BALANCED';
             }
             
-            // Build payment methods HTML for mobile
             let paymentMethodsHtml = '';
             
             if (cashSales > 0) {
@@ -1496,7 +1677,6 @@
                 paymentMethodsHtml = '<div class="shift-mobile-detail-line"><span class="shift-mobile-detail-label">No sales recorded</span><span class="shift-mobile-detail-value">0</span></div>';
             }
             
-            // Add total, wrapped in a link
             paymentMethodsHtml += `
                 <a href="sales-history.html?date=${shiftDate}" style="text-decoration: none; display: block;">
                     <div class="shift-mobile-total" style="margin-top:8px;">
@@ -1506,7 +1686,6 @@
                 </a>
             `;
             
-            // Build opening floats HTML for mobile
             let openingFloatsHtml = `
                 <div class="shift-mobile-detail-line">
                     <span class="shift-mobile-detail-label">Cash</span>
@@ -1541,7 +1720,6 @@
             
             openingFloatsHtml += `<div class="shift-mobile-total">Total: ${openTotal.toLocaleString()}</div>`;
             
-            // Build closing floats HTML for mobile
             let closingFloatsHtml = `
                 <div class="shift-mobile-detail-line">
                     <span class="shift-mobile-detail-label">Cash</span>
@@ -1579,6 +1757,26 @@
             }
             
             closingFloatsHtml += `<div class="shift-mobile-total" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>`;
+            
+            // Verification section for mobile
+            let verificationHtml = '';
+            if (sh.verified) {
+                const verifiedBy = sh.verified_by || 'Admin';
+                const verifiedAt = sh.verified_at ? new Date(sh.verified_at).toLocaleString() : 'Recently';
+                verificationHtml = `
+                    <div class="shift-mobile-verified-info">
+                        <i class="fas fa-check-circle" style="color: var(--success);"></i> Verified by ${verifiedBy} on ${verifiedAt}
+                    </div>
+                `;
+            } else {
+                verificationHtml = `
+                    <div class="shift-mobile-actions" style="margin-top: 8px;">
+                        <button class="shift-mobile-action-btn verify-action" onclick="markShiftVerified('${sh.id}', '${formattedDate}')" style="background: var(--warning);">
+                            <i class="fas fa-check-double"></i> Mark Verified
+                        </button>
+                    </div>
+                `;
+            }
             
             mobileHtml += `
                 <div class="shift-mobile-card">
@@ -1635,6 +1833,8 @@
                         <a href="sales-history.html?date=${shiftDate}" class="shift-mobile-action-btn sales-action"><i class="fas fa-chart-line"></i> Sales Report</a>
                         <a href="money-history.html" class="shift-mobile-action-btn money-action"><i class="fas fa-money-bill-wave"></i> Money Log</a>
                     </div>
+                    
+                    ${verificationHtml}
                 </div>
             `;
         });
@@ -1701,5 +1901,9 @@
         isMobile = window.innerWidth <= 768;
     });
 </script>
+
+<!-- Success Notification Container -->
+<div id="success-notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+
 </body>
 </html>
