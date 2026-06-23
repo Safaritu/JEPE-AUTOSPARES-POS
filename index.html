@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="robots" content="noindex, nofollow">
-    <title>JEPE AUTOSPARES | Internal Portal</title>
+    <title>JEPE AUTOSPARES · Internal Portal</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -106,6 +106,68 @@
             z-index: 10;
         }
 
+        /* ----- EXPIRY BANNER (on login page) ----- */
+        .expiry-banner {
+            background: #fff6e5;
+            border-left: 8px solid #dc7a2c;
+            border-radius: 20px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 8px 18px -8px rgba(180, 90, 20, 0.15);
+            gap: 10px;
+        }
+
+        .expiry-banner .msg {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+
+        .expiry-banner .msg .icon {
+            font-size: 1.6rem;
+        }
+
+        .expiry-banner .msg h2 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #8a4a1a;
+            margin: 0;
+        }
+
+        .expiry-banner .msg p {
+            color: #6a3f1e;
+            font-weight: 450;
+            font-size: 0.85rem;
+            margin: 0;
+        }
+
+        .expiry-banner .btn-renew {
+            background: #c9551e;
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.15s;
+            box-shadow: 0 6px 14px -4px #b34a1a80;
+            white-space: nowrap;
+        }
+
+        .expiry-banner .btn-renew:hover {
+            background: #a84417;
+            transform: scale(1.02);
+        }
+
+        /* ----- AUTH CARD ----- */
         .auth-card { 
             background: var(--glass); 
             padding: 30px 25px;
@@ -274,7 +336,6 @@
 
         .hidden { display: none !important; }
         
-        /* Branch selection styling */
         .branch-note {
             background: rgba(79, 70, 229, 0.15);
             border-left: 4px solid var(--primary);
@@ -328,10 +389,26 @@
             color: var(--danger);
             margin-left: 2px;
         }
+
+        /* make banner responsive */
+        @media (max-width: 480px) {
+            .expiry-banner {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+            .expiry-banner .msg {
+                justify-content: center;
+            }
+            .expiry-banner .btn-renew {
+                align-self: center;
+            }
+        }
     </style>
 </head>
 <body>
 
+<!-- ===== WELCOME OVERLAY ===== -->
 <div id="welcome-overlay" class="hidden">
     <div class="welcome-content">
         <div class="spinner"></div>
@@ -340,12 +417,28 @@
     </div>
 </div>
 
+<!-- ===== BACKGROUND DECOR ===== -->
 <div class="bg-decor">
     <img src="https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=600" class="bg-img img-bike" alt="Decor">
     <img src="https://images.unsplash.com/photo-1591637333184-19aa84b3e01f?q=80&w=400" class="bg-img img-exhaust" alt="Decor">
 </div>
 
+<!-- ===== MAIN CONTAINER ===== -->
 <div class="container">
+
+    <!-- ===== EXPIRY BANNER (always visible on login) ===== -->
+    <div class="expiry-banner" id="expiryBanner">
+        <div class="msg">
+            <span class="icon">⏳</span>
+            <div>
+                <h2>Your 6‑month license has expired</h2>
+                <p>You can still use the system, but please renew to continue receiving updates & support.</p>
+            </div>
+        </div>
+        <button class="btn-renew" id="scrollToPlansBtn">📋 Choose subscription</button>
+    </div>
+
+    <!-- ===== AUTH CARD ===== -->
     <div class="auth-card">
         <div class="logo-container">
             <svg class="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -376,15 +469,12 @@
         </div>
 
         <div id="register-fields" class="hidden">
-            <!-- NEW: Full Name field for registration -->
             <input type="text" id="full-name" placeholder="Full Name *" autocomplete="name">
-            
             <select id="role" class="branch-selector">
                 <option value="" disabled selected>Select Role *</option>
                 <option value="cashier">👤 Cashier</option>
                 <option value="admin">👑 Administrator</option>
             </select>
-            
             <select id="branch" class="branch-selector">
                 <option value="" disabled selected>Select Branch *</option>
                 <option value="5326e4c6-6d0d-4500-83d9-f322c859b9fb">🏪 MUTOMO BRANCH</option>
@@ -393,7 +483,6 @@
             <div class="form-hint" id="branch-hint">
                 <i class="fas fa-info-circle"></i> You will be assigned to this branch
             </div>
-            
             <div class="branch-note" id="branch-note">
                 <i class="fas fa-store"></i> 
                 <span id="branch-note-text">Cashiers must select their branch. You will only have access to this branch.</span>
@@ -426,7 +515,6 @@
 
     let isLogin = true;
 
-    // Helper function for safe DOM access
     function safeGetElement(id) {
         const element = document.getElementById(id);
         if (!element) {
@@ -488,7 +576,6 @@
                 : 'Already have an account? <b>Sign In</b>';
         }
         
-        // Clear full name field when toggling to login mode (optional, keeps UI clean)
         if (!isLogin) {
             const fullNameInput = safeGetElement('full-name');
             if (fullNameInput) fullNameInput.value = '';
@@ -547,7 +634,6 @@
                 
                 if (error) throw error;
                 
-                // Check if user has profile
                 const { data: profile, error: profileError } = await supabase
                     .from('profiles')
                     .select(`
@@ -569,10 +655,11 @@
                     return;
                 }
                 
+                // After successful login, check role and redirect
                 await checkRoleAndRedirect(data.user.id);
                 
             } else {
-                // SIGN UP
+                // SIGN UP (unchanged)
                 if (!fullName) {
                     showMessage("Please enter your full name", 'error');
                     if (btn) {
@@ -600,7 +687,6 @@
                     return;
                 }
 
-                // Sign up the user - profile will be created by database trigger
                 const { data, error } = await supabase.auth.signUp({ 
                     email, 
                     password,
@@ -617,18 +703,15 @@
                 if (error) throw error;
 
                 if (data.user) {
-                    // Don't try to create profile here - the database trigger will handle it
                     showMessage(
                         '✅ Registration successful! Please check your email to confirm your account. You will be redirected after confirmation.', 
                         'success'
                     );
                     
-                    // Clear form
                     if (emailInput) emailInput.value = '';
                     if (passwordInput) passwordInput.value = '';
                     if (fullNameInput) fullNameInput.value = '';
                     
-                    // Switch back to login mode after 3 seconds
                     setTimeout(() => {
                         window.toggleMode();
                     }, 3000);
@@ -686,7 +769,7 @@
                     : (branchName ? `Assigned to ${branchName}` : 'Loading workspace...');
             }
             
-            // Store session in localStorage for cross-page access
+            // Store session in localStorage
             const session = {
                 user: { id: userId },
                 profile: profile,
@@ -695,8 +778,13 @@
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
             
+            // 🔥 REDIRECT: if admin → subscription page, else cashier
             setTimeout(() => {
-                window.location.href = (profile.role === 'admin') ? 'admin.html' : 'cashier.html';
+                if (profile.role === 'admin') {
+                    window.location.href = 'subscriptions.html';  // your subscription page
+                } else {
+                    window.location.href = 'cashier.html';
+                }
             }, 2000);
         }
     }
@@ -716,6 +804,15 @@
         }
     };
 
+    // ===== SCROLL TO PLANS (banner button) =====
+    // On login page, we can't scroll to plans because they're on another page.
+    // Instead, we show a message or redirect.
+    document.getElementById('scrollToPlansBtn')?.addEventListener('click', function() {
+        // If user is not logged in, we can show a prompt
+        showMessage("🔐 Please sign in first to view subscription plans.", 'error');
+        // Optionally: redirect to subscription page after login
+    });
+
     // Check if user is already logged in
     async function checkExistingSession() {
         const { data: { user } } = await supabase.auth.getUser();
@@ -724,13 +821,10 @@
         }
     }
     
-    // Check for email confirmation redirect
     async function handleEmailConfirmation() {
         const hash = window.location.hash;
         if (hash && hash.includes('access_token')) {
-            // User just confirmed email, show success message
             showMessage('✅ Email confirmed! You can now sign in.', 'success');
-            // Clear the hash
             window.location.hash = '';
         }
     }
@@ -738,5 +832,6 @@
     handleEmailConfirmation();
     checkExistingSession();
 </script>
+
 </body>
 </html>
