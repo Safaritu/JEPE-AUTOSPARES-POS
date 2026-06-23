@@ -577,17 +577,15 @@
     // ===== SESSION TRACKING FUNCTIONS =====
     async function recordSignIn(userId) {
         try {
-            // Get IP and user agent info
             const userAgent = navigator.userAgent;
             
-            // Insert session record
             const { data: sessionData, error: sessionError } = await supabase
                 .from('user_sessions')
                 .insert({
                     user_id: userId,
                     sign_in_time: new Date().toISOString(),
                     user_agent: userAgent,
-                    ip_address: 'client-side' // You can use a service to get real IP
+                    ip_address: 'client-side'
                 })
                 .select('id')
                 .single();
@@ -599,7 +597,6 @@
             
             currentSessionId = sessionData.id;
             
-            // Update profile last_sign_in
             const { error: updateError } = await supabase
                 .from('profiles')
                 .update({ 
@@ -620,7 +617,6 @@
 
     async function recordSignOut(userId, sessionId, durationSeconds) {
         try {
-            // Update session with sign out time and duration
             const { error: sessionError } = await supabase
                 .from('user_sessions')
                 .update({
@@ -633,7 +629,6 @@
                 console.error('Error updating session:', sessionError);
             }
             
-            // Update profile total session time
             const { error: profileError } = await supabase
                 .from('profiles')
                 .update({ 
@@ -644,10 +639,6 @@
             if (profileError) {
                 console.error('Error updating last_sign_out:', profileError);
             }
-            
-            // Note: total_session_time is calculated via a trigger or can be updated here
-            // For simplicity, we'll let a database trigger handle the sum
-            // Or you can query the sum of durations from user_sessions
             
         } catch (err) {
             console.error('Error in recordSignOut:', err);
@@ -670,7 +661,6 @@
             }
         }
         
-        // Clear session
         localStorage.removeItem(SESSION_KEY);
         currentSessionId = null;
         sessionStartTime = null;
@@ -718,13 +708,11 @@
         clearInterval(countdownInterval);
         document.getElementById('sessionWarning').style.display = 'none';
         
-        // Only restart if user is logged in
         if (localStorage.getItem(SESSION_KEY)) {
             startSessionTimer();
         }
     }
 
-    // User activity listeners
     document.addEventListener('click', resetSessionTimer);
     document.addEventListener('keydown', resetSessionTimer);
     document.addEventListener('mousemove', resetSessionTimer);
@@ -811,6 +799,9 @@
         const role = roleSelect ? roleSelect.value : null;
         const branchId = branchSelect ? branchSelect.value : null;
 
+        // Force manual login - clear any existing session first
+        localStorage.removeItem(SESSION_KEY);
+        
         if (!email || !password) {
             showMessage("Please fill all fields", 'error');
             return;
@@ -1003,39 +994,42 @@
         }
     };
 
-    // ===== CHECK EXISTING SESSION =====
+    // ===== FIXED: CHECK EXISTING SESSION - NO AUTO-REDIRECT =====
     async function checkExistingSession() {
         const session = localStorage.getItem(SESSION_KEY);
         if (session) {
             try {
                 const sessionData = JSON.parse(session);
-                // Check if session is still valid
                 const elapsed = (Date.now() - sessionData.loginTime) / 1000;
                 
                 if (elapsed < SESSION_TIMEOUT) {
-                    // Session still valid - resume timer
-                    currentSessionId = sessionData.sessionId || null;
-                    sessionStartTime = sessionData.loginTime || Date.now();
-                    startSessionTimer();
+                    // Session is valid but we DO NOT auto-redirect
+                    // We just show a message or pre-fill email
+                    console.log('Session exists but user must manually login');
                     
-                    if (sessionData.role === 'admin') {
-                        window.location.href = 'subscriptions.html';
-                    } else {
-                        window.location.href = 'cashier.html';
+                    // Optionally pre-fill the email field for convenience
+                    const emailInput = document.getElementById('email');
+                    if (emailInput && sessionData.user?.email) {
+                        emailInput.value = sessionData.user.email;
                     }
-                    return true;
+                    
+                    // Show a subtle notification
+                    showMessage('👋 Welcome back! Please enter your password to continue.', 'success');
+                    
+                    // Return session data but DO NOT redirect
+                    return sessionData;
                 } else {
-                    // Session expired
+                    // Session expired - clear it
                     localStorage.removeItem(SESSION_KEY);
                     showMessage('⏰ Your session has expired. Please login again.', 'error');
-                    return false;
+                    return null;
                 }
             } catch (e) {
                 localStorage.removeItem(SESSION_KEY);
-                return false;
+                return null;
             }
         }
-        return false;
+        return null;
     }
 
     // ===== INIT =====
@@ -1043,12 +1037,13 @@
         showMessage("🔐 Please sign in first to view subscription plans.", 'error');
     });
 
-    // Check for existing session
-    const hasSession = checkExistingSession();
+    // Check for existing session but DO NOT auto-redirect
+    // User must click the login button
+    const existingSession = await checkExistingSession();
     
-    if (!hasSession) {
-        localStorage.removeItem(SESSION_KEY);
-    }
+    // If there's a valid session, we don't redirect - user must enter password and click login
+    console.log('Login page ready - manual login required');
+
 </script>
 
 </body>
