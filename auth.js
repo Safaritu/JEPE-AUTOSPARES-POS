@@ -39,7 +39,7 @@ let sessionTimer = SESSION_TIMEOUT;
 let sessionStartTime = null;
 let currentSessionId = null;
 
-// Initialize session management - FIXED to prevent loop
+// Initialize session management
 export function initSessionManager() {
     // Check if we're on a login page - if so, don't redirect
     const currentPath = window.location.pathname;
@@ -47,19 +47,9 @@ export function initSessionManager() {
     const isLoginPage = loginPages.some(page => currentPath.endsWith(page) || currentPath === '/');
     
     if (isLoginPage) {
-        // On login page, just return session data without redirect
-        const session = localStorage.getItem(SESSION_KEY);
-        if (session) {
-            try {
-                return JSON.parse(session);
-            } catch (e) {
-                return null;
-            }
-        }
         return null;
     }
     
-    // On protected pages, check session
     const sessionData = checkExistingSession();
     
     if (sessionData) {
@@ -68,12 +58,10 @@ export function initSessionManager() {
         return sessionData;
     }
     
-    // No valid session - show expired overlay and redirect
     showSessionExpired();
     return null;
 }
 
-// Show session expired overlay
 function showSessionExpired() {
     const overlay = document.getElementById('sessionExpiredOverlay');
     if (overlay) {
@@ -81,7 +69,6 @@ function showSessionExpired() {
     }
 }
 
-// Check if user has a valid session
 function checkExistingSession() {
     const session = localStorage.getItem(SESSION_KEY);
     if (!session) {
@@ -97,7 +84,6 @@ function checkExistingSession() {
             sessionStartTime = sessionData.loginTime || Date.now();
             return sessionData;
         } else {
-            // Session expired - clear it
             localStorage.removeItem(SESSION_KEY);
             return null;
         }
@@ -107,7 +93,6 @@ function checkExistingSession() {
     }
 }
 
-// Start the session timer
 function startSessionTimer() {
     clearTimeout(sessionTimeoutId);
     clearInterval(countdownInterval);
@@ -205,19 +190,21 @@ function updateSessionLoginTime() {
 }
 
 // ============================================
-// RECORD SIGN OUT WITH PROPER UPDATES
+// RECORD SIGN OUT - FIXED to properly update all columns
 // ============================================
 export async function recordSignOut(userId, sessionId, durationSeconds) {
     try {
         console.log(`📝 Recording sign out for user ${userId}, duration: ${durationSeconds}s`);
         console.log(`📝 Session ID: ${sessionId}`);
         
+        const now = new Date().toISOString();
+        
         // 1. Update user_sessions table
         if (sessionId) {
             const { error: sessionError } = await supabase
                 .from('user_sessions')
                 .update({
-                    sign_out_time: new Date().toISOString(),
+                    sign_out_time: now,
                     duration_seconds: durationSeconds
                 })
                 .eq('id', sessionId);
@@ -232,6 +219,7 @@ export async function recordSignOut(userId, sessionId, durationSeconds) {
         }
         
         // 2. Update profiles table - last_sign_out and total_session_time
+        // First, get current total_session_time
         const { data: profile, error: fetchError } = await supabase
             .from('profiles')
             .select('total_session_time')
@@ -240,6 +228,17 @@ export async function recordSignOut(userId, sessionId, durationSeconds) {
         
         if (fetchError) {
             console.error('❌ Error fetching profile:', fetchError);
+            // Try to update anyway with just last_sign_out
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ 
+                    last_sign_out: now
+                })
+                .eq('id', userId);
+            
+            if (updateError) {
+                console.error('❌ Error updating profile (fallback):', updateError);
+            }
             return;
         }
         
@@ -248,10 +247,11 @@ export async function recordSignOut(userId, sessionId, durationSeconds) {
         
         console.log(`📊 Current total: ${currentTotal}s, Adding: ${durationSeconds}s, New total: ${newTotal}s`);
         
+        // Update both last_sign_out and total_session_time
         const { error: updateError } = await supabase
             .from('profiles')
             .update({ 
-                last_sign_out: new Date().toISOString(),
+                last_sign_out: now,
                 total_session_time: newTotal
             })
             .eq('id', userId);
@@ -259,7 +259,7 @@ export async function recordSignOut(userId, sessionId, durationSeconds) {
         if (updateError) {
             console.error('❌ Error updating profile:', updateError);
         } else {
-            console.log(`✅ Profile updated: last_sign_out = ${new Date().toISOString()}, total_session_time = ${newTotal}s`);
+            console.log(`✅ Profile updated: last_sign_out = ${now}, total_session_time = ${newTotal}s (${Math.floor(newTotal / 60)} minutes)`);
         }
         
     } catch (err) {
@@ -268,7 +268,7 @@ export async function recordSignOut(userId, sessionId, durationSeconds) {
 }
 
 // ============================================
-// HANDLE SESSION TIMEOUT - FIXED to redirect properly
+// HANDLE SESSION TIMEOUT
 // ============================================
 async function handleSessionTimeout() {
     const session = localStorage.getItem(SESSION_KEY);
@@ -294,7 +294,6 @@ async function handleSessionTimeout() {
     const warningEl = document.getElementById('sessionWarning');
     if (warningEl) warningEl.style.display = 'none';
     
-    // Show expired overlay instead of redirecting immediately
     showSessionExpired();
 }
 
@@ -317,18 +316,20 @@ function resetSessionTimer() {
 }
 
 // ============================================
-// RECORD SIGN IN
+// RECORD SIGN IN - FIXED to properly update last_sign_in
 // ============================================
 export async function recordSignIn(userId) {
     try {
         console.log(`📝 Recording sign in for user ${userId}`);
         const userAgent = navigator.userAgent;
+        const now = new Date().toISOString();
         
+        // 1. Insert session record
         const { data: sessionData, error: sessionError } = await supabase
             .from('user_sessions')
             .insert({
                 user_id: userId,
-                sign_in_time: new Date().toISOString(),
+                sign_in_time: now,
                 user_agent: userAgent,
                 ip_address: 'client-side'
             })
@@ -343,17 +344,18 @@ export async function recordSignIn(userId) {
         currentSessionId = sessionData.id;
         console.log(`✅ Session recorded with ID: ${currentSessionId}`);
         
+        // 2. Update profile last_sign_in
         const { error: updateError } = await supabase
             .from('profiles')
             .update({ 
-                last_sign_in: new Date().toISOString()
+                last_sign_in: now
             })
             .eq('id', userId);
         
         if (updateError) {
             console.error('❌ Error updating last_sign_in:', updateError);
         } else {
-            console.log('✅ last_sign_in updated successfully');
+            console.log(`✅ last_sign_in updated successfully: ${now}`);
         }
         
         return sessionData.id;
@@ -389,6 +391,7 @@ export async function logout() {
         }
     }
     
+    // Record sign out BEFORE clearing anything
     if (userId && sessionId) {
         console.log(`📝 Recording sign out for user ${userId}, session ${sessionId}, duration ${duration}s`);
         await recordSignOut(userId, sessionId, duration);
@@ -396,6 +399,7 @@ export async function logout() {
         console.log('⚠️ No session data to record during logout');
     }
     
+    // Now clear everything
     clearSession();
     
     try {
