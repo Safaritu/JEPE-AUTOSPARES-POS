@@ -5,12 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="robots" content="noindex, nofollow">
     
-    <!-- PREVENT CACHING - forces browser to always fetch fresh page -->
+    <!-- PREVENT CACHING -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     
-    <!-- PREVENT APP CACHING / SERVICE WORKER -->
     <meta name="apple-mobile-web-app-capable" content="no">
     <meta name="mobile-web-app-capable" content="no">
     
@@ -116,7 +115,6 @@
             z-index: 10;
         }
 
-        /* ----- EXPIRY BANNER ----- */
         .expiry-banner {
             background: #fff6e5;
             border-left: 8px solid #dc7a2c;
@@ -177,7 +175,6 @@
             transform: scale(1.02);
         }
 
-        /* ----- AUTH CARD ----- */
         .auth-card { 
             background: var(--glass); 
             padding: 30px 25px;
@@ -395,12 +392,6 @@
             text-align: left;
         }
         
-        .required {
-            color: var(--danger);
-            margin-left: 2px;
-        }
-
-        /* Session timeout warning */
         .session-warning {
             position: fixed;
             bottom: 20px;
@@ -441,12 +432,10 @@
 </head>
 <body>
 
-<!-- ===== SESSION TIMEOUT WARNING ===== -->
 <div class="session-warning" id="sessionWarning">
     ⏰ Session expiring soon! <span id="timeoutCountdown">10:00</span>
 </div>
 
-<!-- ===== WELCOME OVERLAY ===== -->
 <div id="welcome-overlay" class="hidden">
     <div class="welcome-content">
         <div class="spinner"></div>
@@ -455,16 +444,13 @@
     </div>
 </div>
 
-<!-- ===== BACKGROUND DECOR ===== -->
 <div class="bg-decor">
     <img src="https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=600" class="bg-img img-bike" alt="Decor">
     <img src="https://images.unsplash.com/photo-1591637333184-19aa84b3e01f?q=80&w=400" class="bg-img img-exhaust" alt="Decor">
 </div>
 
-<!-- ===== MAIN CONTAINER ===== -->
 <div class="container">
 
-    <!-- ===== EXPIRY BANNER ===== -->
     <div class="expiry-banner" id="expiryBanner">
         <div class="msg">
             <span class="icon">⏳</span>
@@ -476,7 +462,6 @@
         <button class="btn-renew" id="scrollToPlansBtn">📋 Choose subscription</button>
     </div>
 
-    <!-- ===== AUTH CARD ===== -->
     <div class="auth-card">
         <div class="logo-container">
             <svg class="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -554,10 +539,12 @@
     let isLogin = true;
     let sessionTimeoutId = null;
     let countdownInterval = null;
-    let sessionTimer = 10 * 60; // 10 minutes in seconds
-    const SESSION_TIMEOUT = 10 * 60; // 10 minutes
+    let sessionTimer = 10 * 60;
+    const SESSION_TIMEOUT = 10 * 60;
     const SESSION_KEY = 'pos_session';
-    const WARNING_THRESHOLD = 60; // show warning 1 minute before timeout
+    const WARNING_THRESHOLD = 60;
+    let sessionStartTime = null;
+    let currentSessionId = null;
 
     function safeGetElement(id) {
         const element = document.getElementById(id);
@@ -587,21 +574,123 @@
         }, 5000);
     }
 
-    // ===== SESSION MANAGEMENT =====
+    // ===== SESSION TRACKING FUNCTIONS =====
+    async function recordSignIn(userId) {
+        try {
+            // Get IP and user agent info
+            const userAgent = navigator.userAgent;
+            
+            // Insert session record
+            const { data: sessionData, error: sessionError } = await supabase
+                .from('user_sessions')
+                .insert({
+                    user_id: userId,
+                    sign_in_time: new Date().toISOString(),
+                    user_agent: userAgent,
+                    ip_address: 'client-side' // You can use a service to get real IP
+                })
+                .select('id')
+                .single();
+            
+            if (sessionError) {
+                console.error('Error recording session:', sessionError);
+                return null;
+            }
+            
+            currentSessionId = sessionData.id;
+            
+            // Update profile last_sign_in
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ 
+                    last_sign_in: new Date().toISOString() 
+                })
+                .eq('id', userId);
+            
+            if (updateError) {
+                console.error('Error updating last_sign_in:', updateError);
+            }
+            
+            return sessionData.id;
+        } catch (err) {
+            console.error('Error in recordSignIn:', err);
+            return null;
+        }
+    }
+
+    async function recordSignOut(userId, sessionId, durationSeconds) {
+        try {
+            // Update session with sign out time and duration
+            const { error: sessionError } = await supabase
+                .from('user_sessions')
+                .update({
+                    sign_out_time: new Date().toISOString(),
+                    duration_seconds: durationSeconds
+                })
+                .eq('id', sessionId);
+            
+            if (sessionError) {
+                console.error('Error updating session:', sessionError);
+            }
+            
+            // Update profile total session time
+            const { error: profileError } = await supabase
+                .from('profiles')
+                .update({ 
+                    last_sign_out: new Date().toISOString() 
+                })
+                .eq('id', userId);
+            
+            if (profileError) {
+                console.error('Error updating last_sign_out:', profileError);
+            }
+            
+            // Note: total_session_time is calculated via a trigger or can be updated here
+            // For simplicity, we'll let a database trigger handle the sum
+            // Or you can query the sum of durations from user_sessions
+            
+        } catch (err) {
+            console.error('Error in recordSignOut:', err);
+        }
+    }
+
+    async function handleSessionTimeout() {
+        const session = localStorage.getItem(SESSION_KEY);
+        if (session) {
+            try {
+                const sessionData = JSON.parse(session);
+                const userId = sessionData.user?.id;
+                
+                if (userId && currentSessionId && sessionStartTime) {
+                    const duration = Math.floor((Date.now() - sessionStartTime) / 1000);
+                    await recordSignOut(userId, currentSessionId, duration);
+                }
+            } catch (e) {
+                console.error('Error during session timeout cleanup:', e);
+            }
+        }
+        
+        // Clear session
+        localStorage.removeItem(SESSION_KEY);
+        currentSessionId = null;
+        sessionStartTime = null;
+        document.getElementById('sessionWarning').style.display = 'none';
+        showMessage('⏰ Session expired. Please login again.', 'error');
+    }
+
+    // ===== SESSION TIMER MANAGEMENT =====
     function startSessionTimer() {
-        // Clear any existing timers
         clearTimeout(sessionTimeoutId);
         clearInterval(countdownInterval);
         sessionTimer = SESSION_TIMEOUT;
+        sessionStartTime = Date.now();
         
         const warningEl = document.getElementById('sessionWarning');
         const countdownEl = document.getElementById('timeoutCountdown');
         
-        // Start countdown
         countdownInterval = setInterval(() => {
             sessionTimer--;
             
-            // Update countdown display
             if (sessionTimer <= WARNING_THRESHOLD) {
                 const minutes = Math.floor(sessionTimer / 60);
                 const seconds = sessionTimer % 60;
@@ -609,7 +698,6 @@
                 warningEl.style.display = 'block';
             }
             
-            // Auto logout at timeout
             if (sessionTimer <= 0) {
                 clearInterval(countdownInterval);
                 clearTimeout(sessionTimeoutId);
@@ -618,7 +706,6 @@
             }
         }, 1000);
         
-        // Also set a timeout as backup
         sessionTimeoutId = setTimeout(() => {
             clearInterval(countdownInterval);
             warningEl.style.display = 'none';
@@ -630,68 +717,30 @@
         clearTimeout(sessionTimeoutId);
         clearInterval(countdownInterval);
         document.getElementById('sessionWarning').style.display = 'none';
-        startSessionTimer();
-    }
-
-    function handleSessionTimeout() {
-        // Clear session from localStorage
-        localStorage.removeItem(SESSION_KEY);
         
-        // Clear any user session data
-        showMessage('⏰ Session expired. Please login again.', 'error');
-        
-        // Redirect to login page if not already there
-        if (!window.location.pathname.includes('login')) {
-            window.location.href = window.location.pathname;
+        // Only restart if user is logged in
+        if (localStorage.getItem(SESSION_KEY)) {
+            startSessionTimer();
         }
     }
 
-    // Reset timer on user activity
+    // User activity listeners
     document.addEventListener('click', resetSessionTimer);
     document.addEventListener('keydown', resetSessionTimer);
     document.addEventListener('mousemove', resetSessionTimer);
     document.addEventListener('scroll', resetSessionTimer);
 
     // ===== PREVENT CACHING =====
-    // Prevent browser from storing the page in cache
     window.addEventListener('load', function() {
-        // Force reload if page is loaded from cache
         if (performance.navigation.type === 2) {
             window.location.reload(true);
         }
     });
 
     // ===== PREVENT "ADD TO HOME SCREEN" OFFLINE ACCESS =====
-    // Check if running as standalone app (installed from browser)
     if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
-        // Force logout and redirect to login page with no-cache headers
         localStorage.removeItem(SESSION_KEY);
-        // Use a meta refresh to ensure fresh load
         document.write('<meta http-equiv="refresh" content="0;url=' + window.location.href + '?t=' + Date.now() + '">');
-    }
-
-    // ===== CHECK EXISTING SESSION =====
-    function checkExistingSession() {
-        const session = localStorage.getItem(SESSION_KEY);
-        if (session) {
-            try {
-                const sessionData = JSON.parse(session);
-                // Check if session is still valid (not expired)
-                // Start timer for this session
-                startSessionTimer();
-                // Session exists, but we're on login page - redirect based on role
-                if (sessionData.role === 'admin') {
-                    window.location.href = 'subscriptions.html';
-                } else {
-                    window.location.href = 'cashier.html';
-                }
-                return true;
-            } catch (e) {
-                localStorage.removeItem(SESSION_KEY);
-                return false;
-            }
-        }
-        return false;
     }
 
     // ===== TOGGLE LOGIN / REGISTER =====
@@ -727,14 +776,9 @@
                 ? 'New staff? <b>Create Account</b>' 
                 : 'Already have an account? <b>Sign In</b>';
         }
-        
-        if (!isLogin) {
-            const fullNameInput = safeGetElement('full-name');
-            if (fullNameInput) fullNameInput.value = '';
-        }
     };
 
-    // Update branch note based on role selection
+    // Update branch note
     const roleElement = safeGetElement('role');
     if (roleElement) {
         roleElement.addEventListener('change', (e) => {
@@ -779,7 +823,6 @@
 
         try {
             if (isLogin) {
-                // LOGIN
                 const { data, error } = await supabase.auth.signInWithPassword({ 
                     email, 
                     password 
@@ -808,24 +851,27 @@
                     return;
                 }
                 
-                // Store session in localStorage
+                // RECORD SIGN IN
+                const sessionId = await recordSignIn(data.user.id);
+                
+                // Store session
                 const session = {
                     user: { id: data.user.id },
                     profile: profile,
                     branch: profile.branches,
                     role: profile.role,
-                    loginTime: Date.now()
+                    loginTime: Date.now(),
+                    sessionId: sessionId
                 };
                 localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+                currentSessionId = sessionId;
+                sessionStartTime = Date.now();
                 
-                // Start session timer
                 startSessionTimer();
-                
-                // Redirect based on role
                 await checkRoleAndRedirect(data.user.id);
                 
             } else {
-                // SIGN UP
+                // SIGN UP (unchanged)
                 if (!fullName) {
                     showMessage("Please enter your full name", 'error');
                     if (btn) {
@@ -922,17 +968,14 @@
             const overlay = safeGetElement('welcome-overlay');
             if (overlay) overlay.classList.remove('hidden');
             
-            const branchName = profile.branches?.name || '';
-            const roleUpper = profile.role.toUpperCase();
-            
             const welcomeName = safeGetElement('welcome-name');
-            if (welcomeName) welcomeName.innerText = `WELCOME ${roleUpper}!`;
+            if (welcomeName) welcomeName.innerText = `WELCOME ${profile.role.toUpperCase()}!`;
             
             const welcomeRole = safeGetElement('welcome-role');
             if (welcomeRole) {
                 welcomeRole.innerText = profile.role === 'admin' 
                     ? 'Administrator Access - All Branches' 
-                    : (branchName ? `Assigned to ${branchName}` : 'Loading workspace...');
+                    : (profile.branches?.name ? `Assigned to ${profile.branches.name}` : 'Loading workspace...');
             }
             
             setTimeout(() => {
@@ -960,28 +1003,51 @@
         }
     };
 
-    // Scroll to plans (banner button)
+    // ===== CHECK EXISTING SESSION =====
+    async function checkExistingSession() {
+        const session = localStorage.getItem(SESSION_KEY);
+        if (session) {
+            try {
+                const sessionData = JSON.parse(session);
+                // Check if session is still valid
+                const elapsed = (Date.now() - sessionData.loginTime) / 1000;
+                
+                if (elapsed < SESSION_TIMEOUT) {
+                    // Session still valid - resume timer
+                    currentSessionId = sessionData.sessionId || null;
+                    sessionStartTime = sessionData.loginTime || Date.now();
+                    startSessionTimer();
+                    
+                    if (sessionData.role === 'admin') {
+                        window.location.href = 'subscriptions.html';
+                    } else {
+                        window.location.href = 'cashier.html';
+                    }
+                    return true;
+                } else {
+                    // Session expired
+                    localStorage.removeItem(SESSION_KEY);
+                    showMessage('⏰ Your session has expired. Please login again.', 'error');
+                    return false;
+                }
+            } catch (e) {
+                localStorage.removeItem(SESSION_KEY);
+                return false;
+            }
+        }
+        return false;
+    }
+
+    // ===== INIT =====
     document.getElementById('scrollToPlansBtn')?.addEventListener('click', function() {
         showMessage("🔐 Please sign in first to view subscription plans.", 'error');
     });
 
-    // ===== INIT =====
-    async function handleEmailConfirmation() {
-        const hash = window.location.hash;
-        if (hash && hash.includes('access_token')) {
-            showMessage('✅ Email confirmed! You can now sign in.', 'success');
-            window.location.hash = '';
-        }
-    }
-    
-    // Check if user is already logged in (prevents direct app access)
+    // Check for existing session
     const hasSession = checkExistingSession();
     
     if (!hasSession) {
-        // If no session, ensure any old session data is cleared
         localStorage.removeItem(SESSION_KEY);
-        // Start fresh
-        handleEmailConfirmation();
     }
 </script>
 
