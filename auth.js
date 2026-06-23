@@ -11,7 +11,7 @@ export const supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
     }
 });
 
-// Branch constants - only MUTOMO and KITUI
+// Branch constants
 export const BRANCHES = {
     MUTOMO: { 
         id: '5326e4c6-6d0d-4500-83d9-f322c859b9fb', 
@@ -26,12 +26,12 @@ export const BRANCHES = {
 };
 
 // ============================================
-// SESSION TIMEOUT MANAGEMENT
+// SESSION MANAGEMENT
 // ============================================
 
 const SESSION_KEY = 'pos_session';
-const SESSION_TIMEOUT = 10 * 60; // 10 minutes in seconds
-const WARNING_THRESHOLD = 60; // Show warning 60 seconds before timeout
+const SESSION_TIMEOUT = 10 * 60;
+const WARNING_THRESHOLD = 60;
 
 let sessionTimeoutId = null;
 let countdownInterval = null;
@@ -39,13 +39,11 @@ let sessionTimer = SESSION_TIMEOUT;
 let sessionStartTime = null;
 let currentSessionId = null;
 
-// Initialize session management - call this on every page
+// Initialize session management
 export function initSessionManager() {
-    // Check if user has valid session
     const sessionData = checkExistingSession();
     
     if (sessionData) {
-        // Start the timer
         startSessionTimer();
         setupActivityListeners();
         return sessionData;
@@ -66,13 +64,12 @@ function checkExistingSession() {
         const elapsed = (Date.now() - sessionData.loginTime) / 1000;
         
         if (elapsed < SESSION_TIMEOUT) {
-            // Session is still valid
             currentSessionId = sessionData.sessionId || null;
             sessionStartTime = sessionData.loginTime || Date.now();
             return sessionData;
         } else {
-            // Session expired - record it and clear
-            handleSessionTimeout();
+            // Session expired - clear it
+            localStorage.removeItem(SESSION_KEY);
             return null;
         }
     } catch (e) {
@@ -88,10 +85,8 @@ function startSessionTimer() {
     sessionTimer = SESSION_TIMEOUT;
     sessionStartTime = Date.now();
     
-    // Update the session in localStorage with new login time
     updateSessionLoginTime();
     
-    // Create or get the warning element
     let warningEl = document.getElementById('sessionWarning');
     if (!warningEl) {
         warningEl = createWarningElement();
@@ -125,11 +120,9 @@ function startSessionTimer() {
     }, SESSION_TIMEOUT * 1000);
 }
 
-// Create the warning element if it doesn't exist
 function createWarningElement() {
     const warningDiv = document.createElement('div');
     warningDiv.id = 'sessionWarning';
-    warningDiv.className = 'session-warning';
     warningDiv.style.cssText = `
         position: fixed;
         bottom: 20px;
@@ -153,7 +146,6 @@ function createWarningElement() {
     `;
     document.body.appendChild(warningDiv);
     
-    // Add animation styles if not already present
     if (!document.getElementById('sessionWarningStyles')) {
         const style = document.createElement('style');
         style.id = 'sessionWarningStyles';
@@ -169,7 +161,6 @@ function createWarningElement() {
     return warningDiv;
 }
 
-// Update session login time
 function updateSessionLoginTime() {
     const session = localStorage.getItem(SESSION_KEY);
     if (session) {
@@ -184,28 +175,33 @@ function updateSessionLoginTime() {
 }
 
 // ============================================
-// FIXED: RECORD SIGN OUT WITH ALL COLUMNS
+// FIXED: RECORD SIGN OUT WITH PROPER UPDATES
 // ============================================
-async function recordSignOut(userId, sessionId, durationSeconds) {
+export async function recordSignOut(userId, sessionId, durationSeconds) {
     try {
         console.log(`📝 Recording sign out for user ${userId}, duration: ${durationSeconds}s`);
+        console.log(`📝 Session ID: ${sessionId}`);
         
         // 1. Update user_sessions table
-        const { error: sessionError } = await supabase
-            .from('user_sessions')
-            .update({
-                sign_out_time: new Date().toISOString(),
-                duration_seconds: durationSeconds
-            })
-            .eq('id', sessionId);
-        
-        if (sessionError) {
-            console.error('❌ Error updating session:', sessionError);
+        if (sessionId) {
+            const { error: sessionError } = await supabase
+                .from('user_sessions')
+                .update({
+                    sign_out_time: new Date().toISOString(),
+                    duration_seconds: durationSeconds
+                })
+                .eq('id', sessionId);
+            
+            if (sessionError) {
+                console.error('❌ Error updating session:', sessionError);
+            } else {
+                console.log('✅ Session updated successfully');
+            }
         } else {
-            console.log('✅ Session updated successfully');
+            console.log('⚠️ No session ID provided, skipping session update');
         }
         
-        // 2. Update profiles table - FIX: Update both last_sign_out and total_session_time
+        // 2. Update profiles table - last_sign_out and total_session_time
         // First, get current total_session_time
         const { data: profile, error: fetchError } = await supabase
             .from('profiles')
@@ -215,35 +211,36 @@ async function recordSignOut(userId, sessionId, durationSeconds) {
         
         if (fetchError) {
             console.error('❌ Error fetching profile:', fetchError);
+            return;
+        }
+        
+        const currentTotal = profile?.total_session_time || 0;
+        const newTotal = currentTotal + durationSeconds;
+        
+        console.log(`📊 Current total: ${currentTotal}s, Adding: ${durationSeconds}s, New total: ${newTotal}s`);
+        
+        // Update both last_sign_out and total_session_time
+        const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ 
+                last_sign_out: new Date().toISOString(),
+                total_session_time: newTotal
+            })
+            .eq('id', userId);
+        
+        if (updateError) {
+            console.error('❌ Error updating profile:', updateError);
         } else {
-            const currentTotal = profile?.total_session_time || 0;
-            const newTotal = currentTotal + durationSeconds;
-            
-            console.log(`📊 Current total: ${currentTotal}s, Adding: ${durationSeconds}s, New total: ${newTotal}s`);
-            
-            // Update both last_sign_out and total_session_time
-            const { error: updateError } = await supabase
-                .from('profiles')
-                .update({ 
-                    last_sign_out: new Date().toISOString(),
-                    total_session_time: newTotal
-                })
-                .eq('id', userId);
-            
-            if (updateError) {
-                console.error('❌ Error updating profile:', updateError);
-            } else {
-                console.log(`✅ Profile updated: last_sign_out = ${new Date().toISOString()}, total_session_time = ${newTotal}s`);
-            }
+            console.log(`✅ Profile updated: last_sign_out = ${new Date().toISOString()}, total_session_time = ${newTotal}s`);
         }
         
     } catch (err) {
-        console.error('❌ Error recording sign out:', err);
+        console.error('❌ Error in recordSignOut:', err);
     }
 }
 
 // ============================================
-// FIXED: HANDLE SESSION TIMEOUT
+// HANDLE SESSION TIMEOUT
 // ============================================
 async function handleSessionTimeout() {
     const session = localStorage.getItem(SESSION_KEY);
@@ -256,8 +253,6 @@ async function handleSessionTimeout() {
                 const duration = Math.floor((Date.now() - sessionStartTime) / 1000);
                 console.log(`⏰ Session timed out after ${duration} seconds`);
                 await recordSignOut(userId, currentSessionId, duration);
-            } else {
-                console.log('⚠️ No session data to record');
             }
         } catch (e) {
             console.error('Error during session timeout cleanup:', e);
@@ -271,7 +266,6 @@ async function handleSessionTimeout() {
     const warningEl = document.getElementById('sessionWarning');
     if (warningEl) warningEl.style.display = 'none';
     
-    showSessionExpiredMessage();
     redirectToLogin();
 }
 
@@ -283,9 +277,7 @@ function setupActivityListeners() {
     });
 }
 
-// Reset session timer
 function resetSessionTimer() {
-    // Only reset if user is logged in
     if (localStorage.getItem(SESSION_KEY)) {
         clearTimeout(sessionTimeoutId);
         clearInterval(countdownInterval);
@@ -295,7 +287,6 @@ function resetSessionTimer() {
     }
 }
 
-// Redirect to login page
 function redirectToLogin() {
     const currentPath = window.location.pathname;
     const loginPages = ['index.html', 'login.html', ''];
@@ -306,35 +297,14 @@ function redirectToLogin() {
     }
 }
 
-// Show session expired message
-function showSessionExpiredMessage() {
-    const container = document.getElementById('message-container');
-    if (container) {
-        container.innerHTML = `
-            <div class="error-message" style="
-                background: rgba(239, 68, 68, 0.15);
-                border-left: 4px solid #ef4444;
-                padding: 12px 15px;
-                border-radius: 10px;
-                margin: 15px 0;
-                color: #fee2e2;
-                text-align: left;
-            ">
-                <i class="fas fa-exclamation-circle"></i> Session expired. Please login again.
-            </div>
-        `;
-    }
-}
-
 // ============================================
-// FIXED: RECORD SIGN IN
+// RECORD SIGN IN
 // ============================================
 export async function recordSignIn(userId) {
     try {
         console.log(`📝 Recording sign in for user ${userId}`);
         const userAgent = navigator.userAgent;
         
-        // Insert session record
         const { data: sessionData, error: sessionError } = await supabase
             .from('user_sessions')
             .insert({
@@ -354,7 +324,6 @@ export async function recordSignIn(userId) {
         currentSessionId = sessionData.id;
         console.log(`✅ Session recorded with ID: ${currentSessionId}`);
         
-        // Update profile last_sign_in
         const { error: updateError } = await supabase
             .from('profiles')
             .update({ 
@@ -376,29 +345,72 @@ export async function recordSignIn(userId) {
 }
 
 // ============================================
+// FIXED: LOGOUT - ENSURES RECORDING HAPPENS
+// ============================================
+export async function logout() {
+    console.log('🚪 Logging out...');
+    
+    // Get session data BEFORE clearing
+    const session = localStorage.getItem(SESSION_KEY);
+    let userId = null;
+    let sessionId = null;
+    let duration = 0;
+    
+    if (session) {
+        try {
+            const sessionData = JSON.parse(session);
+            userId = sessionData.user?.id;
+            sessionId = currentSessionId || sessionData.sessionId;
+            
+            if (sessionStartTime) {
+                duration = Math.floor((Date.now() - sessionStartTime) / 1000);
+                console.log(`📊 Session duration: ${duration} seconds`);
+            }
+        } catch (e) {
+            console.error('Error parsing session data:', e);
+        }
+    }
+    
+    // Record sign out BEFORE clearing anything
+    if (userId && sessionId) {
+        console.log(`📝 Recording sign out for user ${userId}, session ${sessionId}, duration ${duration}s`);
+        await recordSignOut(userId, sessionId, duration);
+    } else {
+        console.log('⚠️ No session data to record during logout');
+    }
+    
+    // Now clear everything
+    clearSession();
+    
+    try {
+        await supabase.auth.signOut();
+    } catch (err) {
+        console.error('Error signing out from Supabase:', err);
+    }
+    
+    window.location.href = 'index.html';
+}
+
+// ============================================
 // EXISTING AUTH FUNCTIONS
 // ============================================
 
-// Get all branches as array
 export function getAllBranches() {
     return Object.values(BRANCHES);
 }
 
-// Get branch by ID
 export function getBranchById(id) {
     if (id === BRANCHES.MUTOMO.id) return BRANCHES.MUTOMO;
     if (id === BRANCHES.KITUI.id) return BRANCHES.KITUI;
     return null;
 }
 
-// Get branch by code
 export function getBranchByCode(code) {
     if (code === 'MUT') return BRANCHES.MUTOMO;
     if (code === 'KIT') return BRANCHES.KITUI;
     return null;
 }
 
-// Helper function to get current user with profile and branch info
 export async function getCurrentUser() {
     try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -430,25 +442,21 @@ export async function getCurrentUser() {
     }
 }
 
-// Helper function to check if user is admin
 export async function isAdmin() {
     const userData = await getCurrentUser();
     return userData?.profile?.role === 'admin';
 }
 
-// Helper function to get user's branch ID
 export async function getUserBranchId() {
     const userData = await getCurrentUser();
     return userData?.profile?.branch_id;
 }
 
-// Helper function to get user's branch details
 export async function getUserBranch() {
     const userData = await getCurrentUser();
     return userData?.profile?.branches;
 }
 
-// Helper function to create user profile after signup
 export async function createUserProfile(userId, email, role, branchId) {
     try {
         const { error } = await supabase
@@ -469,7 +477,6 @@ export async function createUserProfile(userId, email, role, branchId) {
     }
 }
 
-// Helper function to update user profile
 export async function updateUserProfile(userId, updates) {
     try {
         const { error } = await supabase
@@ -485,7 +492,6 @@ export async function updateUserProfile(userId, updates) {
     }
 }
 
-// Helper function to add branch filter to queries
 export async function withBranchFilter(query, customBranchId = null) {
     const userData = await getCurrentUser();
     const isAdminUser = userData?.profile?.role === 'admin';
@@ -501,7 +507,6 @@ export async function withBranchFilter(query, customBranchId = null) {
     return query;
 }
 
-// Helper function to get branch-aware query
 export async function getBranchAwareQuery(table, options = {}) {
     const userData = await getCurrentUser();
     const isAdminUser = userData?.profile?.role === 'admin';
@@ -533,7 +538,6 @@ export async function getBranchAwareQuery(table, options = {}) {
     return query;
 }
 
-// Helper function to require authentication
 export async function requireAuth(redirectTo = 'index.html') {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -543,7 +547,6 @@ export async function requireAuth(redirectTo = 'index.html') {
     return user;
 }
 
-// Helper function to require specific role
 export async function requireRole(role, redirectTo = 'index.html') {
     const user = await requireAuth(redirectTo);
     if (!user) return null;
@@ -562,13 +565,11 @@ export async function requireRole(role, redirectTo = 'index.html') {
     return { user, profile };
 }
 
-// Helper function to get session from localStorage
 export function getSession() {
     const session = localStorage.getItem(SESSION_KEY);
     return session ? JSON.parse(session) : null;
 }
 
-// Helper function to set session with session ID
 export function setSession(user, profile, sessionId = null) {
     const session = {
         user: user,
@@ -582,7 +583,6 @@ export function setSession(user, profile, sessionId = null) {
     return session;
 }
 
-// Helper function to clear session
 export function clearSession() {
     localStorage.removeItem(SESSION_KEY);
     clearTimeout(sessionTimeoutId);
@@ -593,40 +593,9 @@ export function clearSession() {
     if (warningEl) warningEl.style.display = 'none';
 }
 
-// ============================================
-// FIXED: LOGOUT WITH PROPER RECORDING
-// ============================================
-export async function logout() {
-    console.log('🚪 Logging out...');
-    
-    // Record sign out before clearing
-    const session = localStorage.getItem(SESSION_KEY);
-    if (session) {
-        try {
-            const sessionData = JSON.parse(session);
-            const userId = sessionData.user?.id;
-            
-            if (userId && currentSessionId && sessionStartTime) {
-                const duration = Math.floor((Date.now() - sessionStartTime) / 1000);
-                console.log(`📊 Session duration: ${duration} seconds`);
-                await recordSignOut(userId, currentSessionId, duration);
-            } else {
-                console.log('⚠️ No session data to record during logout');
-            }
-        } catch (e) {
-            console.error('Error during logout:', e);
-        }
-    }
-    
-    clearSession();
-    await supabase.auth.signOut();
-    window.location.href = 'index.html';
-}
-
-// Initialize auth state listener
+// Auth state listener
 supabase.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN' && session?.user) {
-        // Fetch and cache profile
         supabase
             .from('profiles')
             .select(`
@@ -650,9 +619,6 @@ supabase.auth.onAuthStateChange((event, session) => {
     }
 });
 
-// ============================================
-// HELPER: Get total session time for a user
-// ============================================
 export async function getUserTotalSessionTime(userId) {
     try {
         const { data, error } = await supabase
@@ -669,9 +635,6 @@ export async function getUserTotalSessionTime(userId) {
     }
 }
 
-// ============================================
-// HELPER: Get user session history
-// ============================================
 export async function getUserSessionHistory(userId, limit = 10) {
     try {
         const { data, error } = await supabase
