@@ -2080,9 +2080,9 @@
         <div class="expired-icon"><i class="fas fa-hourglass-end"></i></div>
         <h2>Session Expired</h2>
         <p>Your session has timed out due to inactivity. Please login again to continue.</p>
-        <button class="btn btn-primary" onclick="window.location.href='index.html'">
-            <i class="fas fa-sign-in-alt"></i> Login Again
-        </button>
+       <button class="btn btn-primary" onclick="handleLoginAgain()">
+    <i class="fas fa-sign-in-alt"></i> Login Again
+</button>
     </div>
 </div>
 
@@ -3773,6 +3773,13 @@
             }
         });
     }
+window.handleLoginAgain = function() {
+    // Clear all session data before redirecting
+    localStorage.removeItem('pos_session');
+    sessionStorage.clear();
+    // Redirect to login page with a logout parameter
+    window.location.href = 'index.html?action=logout';
+};
 
     // ============================================
     // UTILITY FUNCTIONS
