@@ -2533,24 +2533,50 @@
     import { supabase, initSessionManager, getSession, logout as authLogout } from './auth.js';
 
     // ============================================
-    // SESSION MANAGEMENT - Initialize with loop prevention
+    // SESSION MANAGEMENT - Fixed initialization
     // ============================================
     let sessionData = null;
     
+    // Check if we're on the login page or just logged in
+    const urlParams = new URLSearchParams(window.location.search);
+    const isFromLogin = urlParams.get('login') === 'success';
+    
+    if (isFromLogin) {
+        // Remove the parameter to prevent issues on refresh
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
     try {
-        sessionData = initSessionManager();
+        // Only initialize session manager if we have a session in localStorage
+        const session = localStorage.getItem('pos_session');
+        if (session) {
+            sessionData = initSessionManager();
+        } else {
+            console.log('No session found in localStorage');
+        }
     } catch (e) {
         console.error('Session initialization error:', e);
     }
     
-    // Check if session is valid - if not, show expired overlay but DON'T throw error
+    // Check if session is valid - if not, show expired overlay
     if (!sessionData) {
-        console.log('No valid session - showing expired overlay');
-        const overlay = document.getElementById('sessionExpiredOverlay');
-        if (overlay) {
-            overlay.classList.add('active');
+        console.log('No valid session - checking if we should show expired overlay');
+        
+        // Only show expired overlay if we're not on the login page and not just logged in
+        const currentPath = window.location.pathname;
+        const isLoginPage = currentPath.includes('index.html') || currentPath.includes('login.html') || currentPath === '/';
+        
+        if (!isLoginPage && !isFromLogin) {
+            const overlay = document.getElementById('sessionExpiredOverlay');
+            if (overlay) {
+                overlay.classList.add('active');
+            }
+        } else {
+            // If we're on the login page or just logged in, redirect to login
+            if (!isLoginPage) {
+                window.location.href = 'index.html';
+            }
         }
-        // Don't throw error - let user click "Login Again" button
     } else {
         console.log('✅ User authenticated:', sessionData.profile?.full_name || 'User');
         console.log('👤 Role:', sessionData.role);
@@ -2576,13 +2602,41 @@
             }
         }
         
-        setInterval(() => {
+        // Update timer every second
+        const timerInterval = setInterval(() => {
             if (sessionTimerDisplay > 0) {
                 sessionTimerDisplay--;
                 updateSessionTimerDisplay();
             }
         }, 1000);
+        
+        // Store interval ID for cleanup
+        window._sessionTimerInterval = timerInterval;
     }
+
+    // ============================================
+    // HANDLE LOGIN AGAIN - Clear everything and redirect
+    // ============================================
+    window.handleLoginAgain = function() {
+        console.log('🔄 Handling login again - clearing session');
+        // Clear all session data
+        localStorage.removeItem('pos_session');
+        sessionStorage.clear();
+        
+        // Clear any cookies that might be keeping the session alive
+        document.cookie.split(";").forEach(function(c) {
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+        
+        // Clear the timer interval
+        if (window._sessionTimerInterval) {
+            clearInterval(window._sessionTimerInterval);
+            window._sessionTimerInterval = null;
+        }
+        
+        // Redirect to login page with a logout parameter
+        window.location.href = 'index.html?action=logout&t=' + Date.now();
+    };
 
     // ============================================
     // PROFILE SETTINGS FUNCTIONS
@@ -3773,13 +3827,6 @@
             }
         });
     }
-window.handleLoginAgain = function() {
-    // Clear all session data before redirecting
-    localStorage.removeItem('pos_session');
-    sessionStorage.clear();
-    // Redirect to login page with a logout parameter
-    window.location.href = 'index.html?action=logout';
-};
 
     // ============================================
     // UTILITY FUNCTIONS
