@@ -2552,6 +2552,99 @@
     }
 
     // ============================================
+    // SESSION TRACKING - Record Sign In
+    // ============================================
+    async function recordSignIn(userId) {
+        try {
+            console.log(`📝 Recording sign in for user ${userId}`);
+            const now = new Date().toISOString();
+            
+            // Update profile last_sign_in
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ 
+                    last_sign_in: now
+                })
+                .eq('id', userId);
+            
+            if (updateError) {
+                console.error('❌ Error updating last_sign_in:', updateError);
+            } else {
+                console.log(`✅ last_sign_in updated successfully: ${now}`);
+            }
+            
+            return true;
+        } catch (err) {
+            console.error('❌ Error in recordSignIn:', err);
+            return false;
+        }
+    }
+
+    // ============================================
+    // SESSION TRACKING - Record Sign Out
+    // ============================================
+    async function recordSignOut(userId) {
+        try {
+            console.log(`📝 Recording sign out for user ${userId}`);
+            const now = new Date().toISOString();
+            
+            // Get current total_session_time
+            const { data: profile, error: fetchError } = await supabase
+                .from('profiles')
+                .select('total_session_time, last_sign_in')
+                .eq('id', userId)
+                .single();
+            
+            if (fetchError) {
+                console.error('❌ Error fetching profile:', fetchError);
+                // Try to update at least last_sign_out
+                const { error: updateError } = await supabase
+                    .from('profiles')
+                    .update({ 
+                        last_sign_out: now
+                    })
+                    .eq('id', userId);
+                
+                if (updateError) {
+                    console.error('❌ Error updating last_sign_out:', updateError);
+                }
+                return;
+            }
+            
+            // Calculate session duration
+            let durationSeconds = 0;
+            if (profile?.last_sign_in) {
+                const signInTime = new Date(profile.last_sign_in).getTime();
+                const signOutTime = new Date(now).getTime();
+                durationSeconds = Math.floor((signOutTime - signInTime) / 1000);
+            }
+            
+            const currentTotal = profile?.total_session_time || 0;
+            const newTotal = currentTotal + durationSeconds;
+            
+            console.log(`📊 Session duration: ${durationSeconds}s, New total: ${newTotal}s`);
+            
+            // Update both last_sign_out and total_session_time
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ 
+                    last_sign_out: now,
+                    total_session_time: newTotal
+                })
+                .eq('id', userId);
+            
+            if (updateError) {
+                console.error('❌ Error updating profile:', updateError);
+            } else {
+                console.log(`✅ Profile updated: last_sign_out = ${now}, total_session_time = ${newTotal}s (${Math.floor(newTotal / 60)} minutes)`);
+            }
+            
+        } catch (err) {
+            console.error('❌ Error in recordSignOut:', err);
+        }
+    }
+
+    // ============================================
     // HANDLE LOGIN AGAIN - Clear everything and redirect
     // ============================================
     window.handleLoginAgain = function() {
@@ -2763,10 +2856,17 @@
     });
 
     // ============================================
-    // LOGOUT FUNCTION - Simple, like Admin page
+    // LOGOUT FUNCTION - Records sign out
     // ============================================
     window.logoutUser = async function() {
         if(confirm("Are you sure you want to logout?")) {
+            const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
+            const userId = session?.user?.id;
+            
+            if (userId) {
+                await recordSignOut(userId);
+            }
+            
             showSuccessNotification('Logging out', 'See you soon!');
             localStorage.removeItem('pos_session');
             await supabase.auth.signOut();
@@ -2903,6 +3003,10 @@
             
             const session = { user, profile, branch: profile.branches, role: profile.role };
             localStorage.setItem('pos_session', JSON.stringify(session));
+            
+            // Record sign in when user logs in
+            await recordSignIn(user.id);
+            
             return profile;
         } catch (error) {
             console.error("Error loading profile:", error);
