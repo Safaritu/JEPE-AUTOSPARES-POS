@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Saftech · subscription renewal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f2f7fd;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+
+        .wrapper {
+            max-width: 1300px;
+            width: 100%;
+        }
+
+        /* ----- EXPIRATION BANNER ----- */
+        .expiry-banner {
+            background: #fff6e5;
+            border-left: 8px solid #dc7a2c;
+            border-radius: 20px;
+            padding: 1.2rem 2rem;
+            margin-bottom: 2.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 8px 18px -8px rgba(180, 90, 20, 0.15);
+        }
+
+        .expiry-banner .msg {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .expiry-banner .msg .icon {
+            font-size: 2rem;
+        }
+
+        .expiry-banner .msg h2 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #8a4a1a;
+        }
+
+        .expiry-banner .msg p {
+            color: #6a3f1e;
+            font-weight: 450;
+        }
+
+        .expiry-banner .btn-renew {
+            background: #c9551e;
+            color: white;
+            border: none;
+            padding: 0.7rem 2.2rem;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.15s;
+            box-shadow: 0 6px 14px -4px #b34a1a80;
+        }
+
+        .expiry-banner .btn-renew:hover {
+            background: #a84417;
+            transform: scale(1.02);
+        }
+
+        /* ----- SUBSCRIPTION CARDS (4) ----- */
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #0c334e;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .sub-sub {
+            text-align: center;
+            color: #2d4b68;
+            margin-bottom: 2rem;
+            opacity: 0.8;
+            font-size: 1rem;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.2rem;
+            align-items: stretch;
+            margin-bottom: 2.5rem;
+        }
+
+        @media (max-width: 1000px) {
+            .pricing-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.5rem;
+                max-width: 700px;
+                margin: 0 auto 2.5rem auto;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .pricing-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+        }
+
+        /* card style (compact, professional) */
+        .plan-card {
+            background: white;
+            border-radius: 24px;
+            padding: 1.3rem 1.1rem 1.4rem 1.1rem;
+            box-shadow: 0 12px 28px -10px rgba(10, 45, 70, 0.12);
+            border: 1px solid #d9e9f5;
+            display: flex;
+            flex-direction: column;
+            transition: 0.2s;
+            position: relative;
+            height: 100%;
+        }
+
+        .plan-card:hover {
+            border-color: #256fb3;
+            box-shadow: 0 18px 32px -12px #1a4f7a;
+        }
+
+        .current-badge {
+            position: absolute;
+            top: -8px;
+            left: 12px;
+            background: #0a3855;
+            color: white;
+            font-size: 0.6rem;
+            font-weight: 600;
+            padding: 0.2rem 1.1rem;
+            border-radius: 40px;
+            border: 2px solid white;
+            text-transform: uppercase;
+        }
+
+        .recommended-tag {
+            position: absolute;
+            top: -8px;
+            right: 12px;
+            background: #c24a2c;
+            color: white;
+            font-size: 0.6rem;
+            font-weight: 600;
+            padding: 0.2rem 1.1rem;
+            border-radius: 40px;
+            border: 2px solid white;
+        }
+
+        .plan-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #102c40;
+        }
+
+        .price-usd {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #0f2f48;
+            margin: 0.2rem 0 0.1rem;
+        }
+
+        .price-usd small {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #547ea0;
+        }
+
+        .branch-tag {
+            font-size: 0.75rem;
+            color: #1f5282;
+            background: #e3f0fd;
+            padding: 0.2rem 0.9rem;
+            border-radius: 30px;
+            display: inline-block;
+            margin: 0.5rem 0 0.8rem 0;
+            font-weight: 600;
+            border: 1px solid #c2dcf5;
+            align-self: flex-start;
+        }
+
+        .features-list {
+            list-style: none;
+            margin: 0 0 1rem 0;
+            flex: 1;
+        }
+
+        .features-list li {
+            font-size: 0.82rem;
+            margin-bottom: 0.45rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 7px;
+            color: #1c405d;
+            font-weight: 450;
+        }
+
+        .features-list li::before {
+            content: "✓";
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #d6eaff;
+            color: #145a9c;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        .offline-note {
+            background: #ecf5fc;
+            border-radius: 14px;
+            padding: 0.4rem 0.8rem;
+            margin: 0.2rem 0 0.8rem 0;
+            font-size: 0.75rem;
+            border-left: 4px solid #1f6eb0;
+            color: #0d3a5c;
+            font-weight: 500;
+        }
+
+        .offline-note strong {
+            display: block;
+            font-size: 0.78rem;
+            color: #0e4070;
+            margin-bottom: 2px;
+        }
+
+        .btn-select-plan {
+            background: white;
+            color: #123e60;
+            border: 1.5px solid #c0d8f0;
+            padding: 0.6rem 0.5rem;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.15s;
+            margin-top: 0.2rem;
+            background: #f6fafe;
+        }
+
+        .btn-select-plan:hover {
+            background: #175585;
+            border-color: #175585;
+            color: white;
+        }
+
+        .current-card .btn-select-plan {
+            background: #154c73;
+            border-color: #154c73;
+            color: white;
+        }
+        .current-card .btn-select-plan:hover {
+            background: #0a334f;
+        }
+
+        /* ----- PAYMENT DETAILS (hidden by default) ----- */
+        .payment-details {
+            display: none;
+            background: #ffffff;
+            border-radius: 28px;
+            padding: 1.8rem 2rem;
+            margin-top: 1rem;
+            box-shadow: 0 16px 32px -12px rgba(10, 40, 70, 0.2);
+            border: 1px solid #cde0f0;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            transition: 0.2s;
+        }
+
+        .payment-details.visible {
+            display: block;
+        }
+
+        .payment-details h3 {
+            font-size: 1.5rem;
+            color: #0c334e;
+            margin-bottom: 0.75rem;
+        }
+
+        .payment-details .pay-methods {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .pay-method-item {
+            background: #f6fafe;
+            border-radius: 16px;
+            padding: 0.9rem 1.2rem;
+            border-left: 6px solid #1f6eb0;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1a3f5a;
+        }
+
+        .pay-method-item strong {
+            color: #0a3855;
+            font-weight: 700;
+        }
+
+        .pay-method-item .highlight {
+            background: #e3f0fd;
+            padding: 0.2rem 0.8rem;
+            border-radius: 40px;
+            font-family: monospace;
+            font-size: 1rem;
+            margin: 0 4px;
+        }
+
+        .payment-details .note {
+            margin-top: 1rem;
+            color: #2f5a7a;
+            font-size: 0.9rem;
+            border-top: 1px dashed #b8d3ec;
+            padding-top: 1rem;
+        }
+
+        .payment-details .btn-close-pay {
+            background: #e2edf6;
+            border: none;
+            padding: 0.5rem 1.8rem;
+            border-radius: 40px;
+            font-weight: 600;
+            color: #1d4b70;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: 0.15s;
+        }
+
+        .payment-details .btn-close-pay:hover {
+            background: #cbddee;
+        }
+
+        /* footer */
+        .footnote {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.8rem;
+            color: #37658b;
+            opacity: 0.7;
+        }
+
+        /* small alert for demo */
+        #dev-toast {
+            display: none;
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            background: #1c3d57;
+            color: white;
+            padding: 0.8rem 1.8rem;
+            border-radius: 60px;
+            font-weight: 500;
+            box-shadow: 0 12px 28px -6px #0f2a3b;
+            font-size: 0.9rem;
+            z-index: 999;
+            border-left: 6px solid #f6b03d;
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+    <!-- ========= EXPIRATION BANNER ========= -->
+    <div class="expiry-banner" id="expiryBanner">
+        <div class="msg">
+            <span class="icon">⏳</span>
+            <div>
+                <h2>Your 6‑month license has expired</h2>
+                <p>You can still use the system, but please renew to continue receiving updates & support.</p>
+            </div>
+        </div>
+        <button class="btn-renew" id="scrollToPlansBtn">📋 Choose subscription</button>
+    </div>
+
+    <!-- ========= SECTION TITLE ========= -->
+    <h2 class="section-title">Select your new plan</h2>
+    <p class="sub-sub">one cashier per branch · monthly billing</p>
+
+    <!-- ========= 4 SUBSCRIPTION CARDS ========= -->
+    <div class="pricing-grid" id="plansGrid">
+
+        <!-- Starter -->
+        <div class="plan-card">
+            <div class="plan-name">Starter</div>
+            <div class="price-usd">$31.60<small>/mo</small></div>
+            <div class="branch-tag">1 branch · 1 cashier</div>
+            <ul class="features-list">
+                <li>1 admin dashboard</li>
+                <li>Stock tracking (manual)</li>
+                <li>Daily sales email</li>
+                <li>Email support (24h)</li>
+                <li>Printing add‑on ready</li>
+            </ul>
+            <button class="btn-select-plan" data-plan="Starter">Choose Starter</button>
+        </div>
+
+        <!-- Business (current) -->
+        <div class="plan-card current-card" style="border: 2px solid #1b5f93;">
+            <div class="current-badge">✓ CURRENT</div>
+            <div class="plan-name">Business</div>
+            <div class="price-usd">$54.17<small>/mo</small></div>
+            <div class="branch-tag">2 branches · 1 cashier each</div>
+            <ul class="features-list">
+                <li>Unified dashboard</li>
+                <li>Low stock alerts</li>
+                <li>Custom receipts (logo)</li>
+                <li>WhatsApp/email priority</li>
+                <li>Sales reports (PDF/Excel)</li>
+            </ul>
+            <button class="btn-select-plan" data-plan="Business">Choose Business</button>
+        </div>
+
+        <!-- Enterprise+ (recommended) -->
+        <div class="plan-card">
+            <div class="recommended-tag">🔥 RECOMMENDED</div>
+            <div class="plan-name">Enterprise+</div>
+            <div class="price-usd">$60.00<small>/mo</small></div>
+            <div class="branch-tag">up to 4 branches</div>
+            <ul class="features-list">
+                <li><strong>Auto‑email/SMS receipts</strong></li>
+                <li><strong>Free hosting + domain</strong> (1yr)</li>
+                <li><strong>Cashier audit log</strong></li>
+                <li>Thermal/A4 / QR branding</li>
+                <li>CRM & purchase history</li>
+                <li>24/7 priority support</li>
+            </ul>
+            <button class="btn-select-plan" data-plan="Enterprise+">Choose Enterprise+</button>
+        </div>
+
+        <!-- Ultimate -->
+        <div class="plan-card">
+            <div class="plan-name">Ultimate</div>
+            <div class="price-usd">$76.00<small>/mo</small></div>
+            <div class="branch-tag">unlimited branches</div>
+            <div class="offline-note">
+                <strong>📴 offline mode</strong>
+                works without internet · auto‑sync
+            </div>
+            <ul class="features-list">
+                <li>Full printing suite</li>
+                <li>Offline cashier tracking</li>
+                <li>Marketing (email/loyalty)</li>
+                <li>Dedicated manager + API</li>
+                <li>Real‑time multi‑branch sync</li>
+            </ul>
+            <button class="btn-select-plan" data-plan="Ultimate">Choose Ultimate</button>
+        </div>
+    </div>
+
+    <!-- ========= PAYMENT DETAILS (hidden) ========= -->
+    <div class="payment-details" id="paymentDetails">
+        <h3>💳 Complete your subscription</h3>
+        <div class="pay-methods">
+            <div class="pay-method-item">
+                <strong>📱 M‑PESA (Lipa Na M‑PESA)</strong><br>
+                Paybill: <span class="highlight">247 247</span> &nbsp; Account: <span class="highlight">1670185419222</span>
+            </div>
+            <div class="pay-method-item">
+                <strong>📞 Send money via phone</strong><br>
+                Till / Send to: <span class="highlight">0794963537</span> — ALex MALIA
+            </div>
+        </div>
+        <p class="note">
+            ⚡ After payment, your license will be manually updated within 24h.<br>
+            You can keep using the system in the meantime.
+        </p>
+        <button class="btn-close-pay" id="closePaymentBtn">← Back to plans</button>
+    </div>
+
+    <!-- ========= FOOTNOTE ========= -->
+    <p class="footnote">one admin per account · extra cashier seats optional</p>
+</div>
+
+<!-- ========= DEMO TOAST ========= -->
+<div id="dev-toast">✅ Plan selected · show payment details</div>
+
+<script>
+    (function() {
+        // ----- DOM refs -----
+        const paymentDetails = document.getElementById('paymentDetails');
+        const expiryBanner = document.getElementById('expiryBanner');
+        const scrollBtn = document.getElementById('scrollToPlansBtn');
+        const closePaymentBtn = document.getElementById('closePaymentBtn');
+        const toast = document.getElementById('dev-toast');
+
+        // all "Choose" buttons
+        const planButtons = document.querySelectorAll('.btn-select-plan');
+
+        // ----- scroll to plans (from banner) -----
+        scrollBtn.addEventListener('click', function() {
+            document.getElementById('plansGrid').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+
+        // ----- helper: show payment details with toast -----
+        function showPaymentDetails(planName) {
+            // show payment block
+            paymentDetails.classList.add('visible');
+            // tiny toast feedback
+            toast.textContent = `✅ "${planName}" selected · payment details below`;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 4000);
+
+            // scroll to payment smoothly
+            paymentDetails.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // ----- attach click to every plan button -----
+        planButtons.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const plan = this.getAttribute('data-plan') || 'selected plan';
+                showPaymentDetails(plan);
+            });
+        });
+
+        // ----- close payment / back to plans -----
+        closePaymentBtn.addEventListener('click', function() {
+            paymentDetails.classList.remove('visible');
+            // scroll up a bit to plans
+            document.getElementById('plansGrid').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+
+        // ----- if user clicks outside payment, you can close (optional) -----
+        // but we keep it explicit via the button.
+
+        // ----- small extra: if payment is open and user clicks "Choose" again, it updates -----
+        // already handled.
+
+        console.log('Saftech subscription manager ready.');
+    })();
+</script>
+
+<!-- note: the license expiry banner is always visible – we do NOT disable the system -->
+</body>
+</html>
