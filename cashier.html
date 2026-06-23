@@ -2080,9 +2080,9 @@
         <div class="expired-icon"><i class="fas fa-hourglass-end"></i></div>
         <h2>Session Expired</h2>
         <p>Your session has timed out due to inactivity. Please login again to continue.</p>
-       <button class="btn btn-primary" onclick="handleLoginAgain()">
-    <i class="fas fa-sign-in-alt"></i> Login Again
-</button>
+        <button class="btn btn-primary" onclick="handleLoginAgain()">
+            <i class="fas fa-sign-in-alt"></i> Login Again
+        </button>
     </div>
 </div>
 
@@ -2529,89 +2529,26 @@
     </div>
 </div>
 
-    <script type="module">
-    import { supabase, initSessionManager, getSession, logout as authLogout } from './auth.js';
+<script type="module">
+    import { supabase } from './auth.js';
 
     // ============================================
-    // SESSION MANAGEMENT - Fixed initialization
+    // AUTH CHECK - Like Admin page
     // ============================================
-    let sessionData = null;
-    
-    // Check if we're on the login page or just logged in
-    const urlParams = new URLSearchParams(window.location.search);
-    const isFromLogin = urlParams.get('login') === 'success';
-    
-    if (isFromLogin) {
-        // Remove the parameter to prevent issues on refresh
-        window.history.replaceState({}, document.title, window.location.pathname);
-    }
-    
-    try {
-        // Only initialize session manager if we have a session in localStorage
-        const session = localStorage.getItem('pos_session');
-        if (session) {
-            sessionData = initSessionManager();
-        } else {
-            console.log('No session found in localStorage');
-        }
-    } catch (e) {
-        console.error('Session initialization error:', e);
-    }
-    
-    // Check if session is valid - if not, show expired overlay
-    if (!sessionData) {
-        console.log('No valid session - checking if we should show expired overlay');
-        
-        // Only show expired overlay if we're not on the login page and not just logged in
-        const currentPath = window.location.pathname;
-        const isLoginPage = currentPath.includes('index.html') || currentPath.includes('login.html') || currentPath === '/';
-        
-        if (!isLoginPage && !isFromLogin) {
-            const overlay = document.getElementById('sessionExpiredOverlay');
-            if (overlay) {
-                overlay.classList.add('active');
-            }
-        } else {
-            // If we're on the login page or just logged in, redirect to login
-            if (!isLoginPage) {
+    async function checkAuth() {
+        try {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (error || !user) {
+                console.log("No authenticated user, redirecting to login");
                 window.location.href = 'index.html';
+                return false;
             }
+            return user;
+        } catch (error) {
+            console.error("Auth check error:", error);
+            window.location.href = 'index.html';
+            return false;
         }
-    } else {
-        console.log('✅ User authenticated:', sessionData.profile?.full_name || 'User');
-        console.log('👤 Role:', sessionData.role);
-        console.log('🏪 Branch:', sessionData.branch?.name || 'All Branches');
-        
-        // Start session timer display only if authenticated
-        let sessionTimerDisplay = 600;
-        const sessionTimeDisplay = document.getElementById('sessionTimeDisplay');
-        const sessionTimerElement = document.getElementById('sessionTimer');
-        
-        function updateSessionTimerDisplay() {
-            const mins = Math.floor(sessionTimerDisplay / 60);
-            const secs = sessionTimerDisplay % 60;
-            if (sessionTimeDisplay) {
-                sessionTimeDisplay.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-            }
-            if (sessionTimerElement) {
-                if (sessionTimerDisplay <= 60) {
-                    sessionTimerElement.classList.add('warning');
-                } else {
-                    sessionTimerElement.classList.remove('warning');
-                }
-            }
-        }
-        
-        // Update timer every second
-        const timerInterval = setInterval(() => {
-            if (sessionTimerDisplay > 0) {
-                sessionTimerDisplay--;
-                updateSessionTimerDisplay();
-            }
-        }, 1000);
-        
-        // Store interval ID for cleanup
-        window._sessionTimerInterval = timerInterval;
     }
 
     // ============================================
@@ -2628,12 +2565,6 @@
             document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
         });
         
-        // Clear the timer interval
-        if (window._sessionTimerInterval) {
-            clearInterval(window._sessionTimerInterval);
-            window._sessionTimerInterval = null;
-        }
-        
         // Redirect to login page with a logout parameter
         window.location.href = 'index.html?action=logout&t=' + Date.now();
     };
@@ -2646,7 +2577,10 @@
         if (!modal) return;
         modal.style.display = 'flex';
         
-        const profile = sessionData?.profile;
+        // We'll use the session from localStorage or fetch fresh data
+        const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
+        const profile = session?.profile;
+        
         if (profile) {
             const fullNameInput = document.getElementById('profileFullName');
             const emailInput = document.getElementById('profileEmail');
@@ -2754,7 +2688,8 @@
         btn.innerHTML = '<span class="spinner"></span> UPDATING...';
         
         try {
-            const userId = sessionData?.user?.id;
+            const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
+            const userId = session?.user?.id;
             if (!userId) throw new Error('No user ID found');
             
             const { error: updateError } = await supabase
@@ -2789,10 +2724,11 @@
             const profileUserName = document.getElementById('profileUserName');
             if (profileUserName) profileUserName.textContent = fullName;
             
-            const session = getSession();
-            if (session) {
-                session.profile.full_name = fullName;
-                localStorage.setItem('pos_session', JSON.stringify(session));
+            // Update session in localStorage
+            const currentSession = JSON.parse(localStorage.getItem('pos_session') || '{}');
+            if (currentSession.profile) {
+                currentSession.profile.full_name = fullName;
+                localStorage.setItem('pos_session', JSON.stringify(currentSession));
             }
             
             setTimeout(() => {
@@ -2827,11 +2763,14 @@
     });
 
     // ============================================
-    // LOGOUT FUNCTION (uses auth.js logout)
+    // LOGOUT FUNCTION - Simple, like Admin page
     // ============================================
     window.logoutUser = async function() {
         if(confirm("Are you sure you want to logout?")) {
-            await authLogout();
+            showSuccessNotification('Logging out', 'See you soon!');
+            localStorage.removeItem('pos_session');
+            await supabase.auth.signOut();
+            setTimeout(() => { window.location.href = 'index.html'; }, 1500);
         }
     };
 
@@ -2946,7 +2885,6 @@
                     currentBranchId = urlBranchId || session.branch?.id || session.profile.branch_id;
                     return session.profile;
                 }
-                // Don't redirect - let session manager handle it
                 return null;
             }
             
@@ -3898,14 +3836,15 @@
     // INITIALIZATION
     // ============================================
     async function init() {
+        // Check authentication FIRST - like Admin page
+        const user = await checkAuth();
+        if (!user) return;
+        
         try {
             await loadBranches();
             const profile = await loadUserProfile();
             if (!profile) {
-                // If no profile, but sessionData exists, try to continue
-                if (!sessionData) {
-                    return;
-                }
+                return;
             }
 
             const branchId = getCurrentBranchId();
@@ -4076,7 +4015,6 @@
     setInterval(checkLowFloats, 30000);
 
 </script>
-
 
 </body>
 </html>
