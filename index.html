@@ -10,7 +10,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     
-    <title>JEPE AUTOSPARES | Internal Portal</title>
+    <meta name="apple-mobile-web-app-capable" content="no">
+    <meta name="mobile-web-app-capable" content="no">
+    
+    <title>JEPE AUTOSPARES · Internal Portal</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -112,23 +115,19 @@
             z-index: 10;
         }
 
-        /* ============================================
-           LICENSE EXPIRY BANNER - RED VERSION
-           ============================================ */
         .expiry-banner {
-            background: #450a0a;
-            border-left: 8px solid #ef4444;
-            border-radius: 16px;
-            padding: 0.8rem 1.5rem;
+            background: #fff6e5;
+            border-left: 8px solid #dc7a2c;
+            border-radius: 20px;
+            padding: 1rem 1.5rem;
             margin-bottom: 1.5rem;
             width: 100%;
             display: flex;
             flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 6px 24px -6px rgba(239, 68, 68, 0.3);
+            box-shadow: 0 8px 18px -8px rgba(180, 90, 20, 0.15);
             gap: 10px;
-            border: 1px solid rgba(239, 68, 68, 0.3);
         }
 
         .expiry-banner .msg {
@@ -141,64 +140,39 @@
 
         .expiry-banner .msg .icon {
             font-size: 1.6rem;
-            color: #ef4444;
         }
 
         .expiry-banner .msg h2 {
             font-size: 1rem;
             font-weight: 700;
-            color: #fca5a5;
+            color: #8a4a1a;
             margin: 0;
         }
 
         .expiry-banner .msg p {
-            color: #fecaca;
+            color: #6a3f1e;
             font-weight: 450;
             font-size: 0.85rem;
             margin: 0;
         }
 
-        .expiry-banner .msg p strong {
-            color: #f87171;
-            font-weight: 700;
-        }
-
-        .expiry-banner .btn-contact {
-            background: #ef4444;
+        .expiry-banner .btn-renew {
+            background: #c9551e;
             color: white;
             border: none;
             padding: 0.5rem 1.5rem;
             border-radius: 60px;
-            font-weight: 700;
+            font-weight: 600;
             font-size: 0.85rem;
             cursor: pointer;
             transition: 0.15s;
-            box-shadow: 0 4px 16px -4px rgba(239, 68, 68, 0.5);
+            box-shadow: 0 6px 14px -4px #b34a1a80;
             white-space: nowrap;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
         }
 
-        .expiry-banner .btn-contact:hover {
-            background: #dc2626;
+        .expiry-banner .btn-renew:hover {
+            background: #a84417;
             transform: scale(1.02);
-        }
-
-        @media (max-width: 480px) {
-            .expiry-banner {
-                flex-direction: column;
-                align-items: stretch;
-                text-align: center;
-                padding: 0.8rem 1rem;
-            }
-            .expiry-banner .msg {
-                justify-content: center;
-            }
-            .expiry-banner .btn-contact {
-                align-self: center;
-            }
         }
 
         .auth-card { 
@@ -418,13 +392,49 @@
             text-align: left;
         }
         
-        .required {
-            color: var(--danger);
-            margin-left: 2px;
+        .session-warning {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(239, 68, 68, 0.95);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            z-index: 999;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            display: none;
+            animation: slideUp 0.3s ease;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @media (max-width: 480px) {
+            .expiry-banner {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+            .expiry-banner .msg {
+                justify-content: center;
+            }
+            .expiry-banner .btn-renew {
+                align-self: center;
+            }
         }
     </style>
 </head>
 <body>
+
+<div class="session-warning" id="sessionWarning">
+    ⏰ Session expiring soon! <span id="timeoutCountdown">10:00</span>
+</div>
 
 <div id="welcome-overlay" class="hidden">
     <div class="welcome-content">
@@ -440,24 +450,16 @@
 </div>
 
 <div class="container">
-    
-    <!-- ============================================
-         LICENSE EXPIRY BANNER - RED VERSION
-         ============================================ -->
+
     <div class="expiry-banner" id="expiryBanner">
         <div class="msg">
-            <span class="icon">⛔</span>
+            <span class="icon">⏳</span>
             <div>
-                <h2>Your license has expired (JAN 2026 - JUN 2026)</h2>
-               <p style="margin-top: 3px;">Please pay to renew your license or contact the developer to continue receiving updates & support.</p>
-                <p style="margin-top: 3px; font-weight: 600; color: #fca5a5;">
-                    <i class="fas fa-phone"></i> <strong>0794963537</strong>
-                </p>
+                <h2>Your 6‑month license has expired</h2>
+                <p>You can still use the system, but please renew to continue receiving updates & support.</p>
             </div>
         </div>
-        <a href="tel:0794963537" class="btn-contact">
-            <i class="fas fa-phone"></i> Contact Developer
-        </a>
+        <button class="btn-renew" id="scrollToPlansBtn">📋 Choose subscription</button>
     </div>
 
     <div class="auth-card">
@@ -491,13 +493,11 @@
 
         <div id="register-fields" class="hidden">
             <input type="text" id="full-name" placeholder="Full Name *" autocomplete="name">
-            
             <select id="role" class="branch-selector">
                 <option value="" disabled selected>Select Role *</option>
                 <option value="cashier">👤 Cashier</option>
                 <option value="admin">👑 Administrator</option>
             </select>
-            
             <select id="branch" class="branch-selector">
                 <option value="" disabled selected>Select Branch *</option>
                 <option value="5326e4c6-6d0d-4500-83d9-f322c859b9fb">🏪 MUTOMO BRANCH</option>
@@ -506,7 +506,6 @@
             <div class="form-hint" id="branch-hint">
                 <i class="fas fa-info-circle"></i> You will be assigned to this branch
             </div>
-            
             <div class="branch-note" id="branch-note">
                 <i class="fas fa-store"></i> 
                 <span id="branch-note-text">Cashiers must select their branch. You will only have access to this branch.</span>
@@ -538,6 +537,14 @@
     import { supabase, BRANCHES } from './auth.js';
 
     let isLogin = true;
+    let sessionTimeoutId = null;
+    let countdownInterval = null;
+    let sessionTimer = 10 * 60;
+    const SESSION_TIMEOUT = 10 * 60;
+    const SESSION_KEY = 'pos_session';
+    const WARNING_THRESHOLD = 60;
+    let sessionStartTime = null;
+    let currentSessionId = null;
 
     function safeGetElement(id) {
         const element = document.getElementById(id);
@@ -567,6 +574,164 @@
         }, 5000);
     }
 
+    // ===== SESSION TRACKING FUNCTIONS =====
+    async function recordSignIn(userId) {
+        try {
+            const userAgent = navigator.userAgent;
+            
+            const { data: sessionData, error: sessionError } = await supabase
+                .from('user_sessions')
+                .insert({
+                    user_id: userId,
+                    sign_in_time: new Date().toISOString(),
+                    user_agent: userAgent,
+                    ip_address: 'client-side'
+                })
+                .select('id')
+                .single();
+            
+            if (sessionError) {
+                console.error('Error recording session:', sessionError);
+                return null;
+            }
+            
+            currentSessionId = sessionData.id;
+            
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ 
+                    last_sign_in: new Date().toISOString() 
+                })
+                .eq('id', userId);
+            
+            if (updateError) {
+                console.error('Error updating last_sign_in:', updateError);
+            }
+            
+            return sessionData.id;
+        } catch (err) {
+            console.error('Error in recordSignIn:', err);
+            return null;
+        }
+    }
+
+    async function recordSignOut(userId, sessionId, durationSeconds) {
+        try {
+            const { error: sessionError } = await supabase
+                .from('user_sessions')
+                .update({
+                    sign_out_time: new Date().toISOString(),
+                    duration_seconds: durationSeconds
+                })
+                .eq('id', sessionId);
+            
+            if (sessionError) {
+                console.error('Error updating session:', sessionError);
+            }
+            
+            const { error: profileError } = await supabase
+                .from('profiles')
+                .update({ 
+                    last_sign_out: new Date().toISOString() 
+                })
+                .eq('id', userId);
+            
+            if (profileError) {
+                console.error('Error updating last_sign_out:', profileError);
+            }
+            
+        } catch (err) {
+            console.error('Error in recordSignOut:', err);
+        }
+    }
+
+    async function handleSessionTimeout() {
+        const session = localStorage.getItem(SESSION_KEY);
+        if (session) {
+            try {
+                const sessionData = JSON.parse(session);
+                const userId = sessionData.user?.id;
+                
+                if (userId && currentSessionId && sessionStartTime) {
+                    const duration = Math.floor((Date.now() - sessionStartTime) / 1000);
+                    await recordSignOut(userId, currentSessionId, duration);
+                }
+            } catch (e) {
+                console.error('Error during session timeout cleanup:', e);
+            }
+        }
+        
+        localStorage.removeItem(SESSION_KEY);
+        currentSessionId = null;
+        sessionStartTime = null;
+        document.getElementById('sessionWarning').style.display = 'none';
+        showMessage('⏰ Session expired. Please login again.', 'error');
+    }
+
+    // ===== SESSION TIMER MANAGEMENT =====
+    function startSessionTimer() {
+        clearTimeout(sessionTimeoutId);
+        clearInterval(countdownInterval);
+        sessionTimer = SESSION_TIMEOUT;
+        sessionStartTime = Date.now();
+        
+        const warningEl = document.getElementById('sessionWarning');
+        const countdownEl = document.getElementById('timeoutCountdown');
+        
+        countdownInterval = setInterval(() => {
+            sessionTimer--;
+            
+            if (sessionTimer <= WARNING_THRESHOLD) {
+                const minutes = Math.floor(sessionTimer / 60);
+                const seconds = sessionTimer % 60;
+                countdownEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                warningEl.style.display = 'block';
+            }
+            
+            if (sessionTimer <= 0) {
+                clearInterval(countdownInterval);
+                clearTimeout(sessionTimeoutId);
+                warningEl.style.display = 'none';
+                handleSessionTimeout();
+            }
+        }, 1000);
+        
+        sessionTimeoutId = setTimeout(() => {
+            clearInterval(countdownInterval);
+            warningEl.style.display = 'none';
+            handleSessionTimeout();
+        }, SESSION_TIMEOUT * 1000);
+    }
+
+    function resetSessionTimer() {
+        clearTimeout(sessionTimeoutId);
+        clearInterval(countdownInterval);
+        document.getElementById('sessionWarning').style.display = 'none';
+        
+        if (localStorage.getItem(SESSION_KEY)) {
+            startSessionTimer();
+        }
+    }
+
+    document.addEventListener('click', resetSessionTimer);
+    document.addEventListener('keydown', resetSessionTimer);
+    document.addEventListener('mousemove', resetSessionTimer);
+    document.addEventListener('scroll', resetSessionTimer);
+
+    // ===== PREVENT CACHING =====
+    window.addEventListener('load', function() {
+        if (performance.navigation.type === 2) {
+            window.location.reload(true);
+        }
+    });
+
+    // ===== PREVENT "ADD TO HOME SCREEN" OFFLINE ACCESS =====
+    if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
+        localStorage.removeItem(SESSION_KEY);
+        document.write('<meta http-equiv="refresh" content="0;url=' + window.location.href + '?t=' + Date.now() + '">');
+    }
+
+    // ===== TOGGLE LOGIN / REGISTER =====
     window.toggleMode = () => {
         isLogin = !isLogin;
         
@@ -599,13 +764,9 @@
                 ? 'New staff? <b>Create Account</b>' 
                 : 'Already have an account? <b>Sign In</b>';
         }
-        
-        if (!isLogin) {
-            const fullNameInput = safeGetElement('full-name');
-            if (fullNameInput) fullNameInput.value = '';
-        }
     };
 
+    // Update branch note
     const roleElement = safeGetElement('role');
     if (roleElement) {
         roleElement.addEventListener('change', (e) => {
@@ -623,6 +784,7 @@
         });
     }
 
+    // ===== AUTH HANDLER =====
     window.handleAuth = async () => {
         const emailInput = safeGetElement('email');
         const passwordInput = safeGetElement('password');
@@ -638,7 +800,7 @@
         const branchId = branchSelect ? branchSelect.value : null;
 
         // Force manual login - clear any existing session first
-        localStorage.removeItem('pos_session');
+        localStorage.removeItem(SESSION_KEY);
 
         if (!email || !password) {
             showMessage("Please fill all fields", 'error');
@@ -652,7 +814,6 @@
 
         try {
             if (isLogin) {
-                // LOGIN
                 const { data, error } = await supabase.auth.signInWithPassword({ 
                     email, 
                     password 
@@ -681,10 +842,27 @@
                     return;
                 }
                 
+                // RECORD SIGN IN
+                const sessionId = await recordSignIn(data.user.id);
+                
+                // Store session
+                const session = {
+                    user: { id: data.user.id },
+                    profile: profile,
+                    branch: profile.branches,
+                    role: profile.role,
+                    loginTime: Date.now(),
+                    sessionId: sessionId
+                };
+                localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+                currentSessionId = sessionId;
+                sessionStartTime = Date.now();
+                
+                startSessionTimer();
                 await checkRoleAndRedirect(data.user.id);
                 
             } else {
-                // SIGN UP
+                // SIGN UP (unchanged)
                 if (!fullName) {
                     showMessage("Please enter your full name", 'error');
                     if (btn) {
@@ -729,7 +907,7 @@
 
                 if (data.user) {
                     showMessage(
-                        '✅ Registration successful! Please check your email to confirm your account. You will be redirected after confirmation.', 
+                        '✅ Registration successful! Please check your email to confirm your account.', 
                         'success'
                     );
                     
@@ -781,29 +959,22 @@
             const overlay = safeGetElement('welcome-overlay');
             if (overlay) overlay.classList.remove('hidden');
             
-            const branchName = profile.branches?.name || '';
-            const roleUpper = profile.role.toUpperCase();
-            
             const welcomeName = safeGetElement('welcome-name');
-            if (welcomeName) welcomeName.innerText = `WELCOME ${roleUpper}!`;
+            if (welcomeName) welcomeName.innerText = `WELCOME ${profile.role.toUpperCase()}!`;
             
             const welcomeRole = safeGetElement('welcome-role');
             if (welcomeRole) {
                 welcomeRole.innerText = profile.role === 'admin' 
                     ? 'Administrator Access - All Branches' 
-                    : (branchName ? `Assigned to ${branchName}` : 'Loading workspace...');
+                    : (profile.branches?.name ? `Assigned to ${profile.branches.name}` : 'Loading workspace...');
             }
             
-            const session = {
-                user: { id: userId },
-                profile: profile,
-                branch: profile.branches,
-                role: profile.role
-            };
-            localStorage.setItem('pos_session', JSON.stringify(session));
-            
             setTimeout(() => {
-                window.location.href = (profile.role === 'admin') ? 'admin.html' : 'cashier.html';
+                if (profile.role === 'admin') {
+                    window.location.href = 'subscriptions.html';
+                } else {
+                    window.location.href = 'cashier.html';
+                }
             }, 2000);
         }
     }
@@ -824,37 +995,41 @@
     };
 
     // ============================================
-    // FIXED: CHECK EXISTING SESSION - NO AUTO-REDIRECT
+    // FIXED: CHECK EXISTING SESSION - CLEAR ON LOGOUT ACTION
     // ============================================
     async function checkExistingSession() {
-        // Check if user has a valid session in localStorage
-        const session = localStorage.getItem('pos_session');
+        // Check if we just logged out (from session expired overlay)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('action') === 'logout') {
+            // Clear session and remove URL parameter
+            localStorage.removeItem(SESSION_KEY);
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return null;
+        }
+        
+        const session = localStorage.getItem(SESSION_KEY);
         if (session) {
             try {
                 const sessionData = JSON.parse(session);
+                const elapsed = (Date.now() - sessionData.loginTime) / 1000;
                 
-                // Verify with Supabase that the session is still valid
-                const { data: { user }, error } = await supabase.auth.getUser();
-                
-                if (error || !user) {
-                    // Session is invalid - clear it
-                    localStorage.removeItem('pos_session');
+                // If session is still valid, we still DON'T auto-redirect
+                // We just pre-fill the email for convenience
+                if (elapsed < SESSION_TIMEOUT) {
+                    const emailInput = document.getElementById('email');
+                    if (emailInput && sessionData.user?.email) {
+                        emailInput.value = sessionData.user.email;
+                    }
+                    showMessage('👋 Welcome back! Please enter your password to continue.', 'success');
+                    return sessionData;
+                } else {
+                    // Session expired - clear it
+                    localStorage.removeItem(SESSION_KEY);
+                    showMessage('⏰ Your session has expired. Please login again.', 'error');
                     return null;
                 }
-                
-                // Session is valid but we DO NOT auto-redirect
-                // We just pre-fill the email field for convenience
-                const emailInput = document.getElementById('email');
-                if (emailInput && sessionData.user?.email) {
-                    emailInput.value = sessionData.user.email;
-                }
-                
-                // Show a friendly message
-                showMessage('👋 Welcome back! Please enter your password to continue.', 'success');
-                
-                return sessionData;
             } catch (e) {
-                localStorage.removeItem('pos_session');
+                localStorage.removeItem(SESSION_KEY);
                 return null;
             }
         }
@@ -862,7 +1037,7 @@
     }
 
     // ============================================
-    // CHECK EMAIL CONFIRMATION
+    // HANDLE EMAIL CONFIRMATION
     // ============================================
     async function handleEmailConfirmation() {
         const hash = window.location.hash;
@@ -885,5 +1060,6 @@
     console.log('🔐 Login page ready - manual login required');
 
 </script>
+
 </body>
 </html>
