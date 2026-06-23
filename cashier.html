@@ -2529,6 +2529,1500 @@
     </div>
 </div>
 
+    <script type="module">
+    import { supabase, initSessionManager, getSession, logout as authLogout } from './auth.js';
+
+    // ============================================
+    // SESSION MANAGEMENT - Initialize with loop prevention
+    // ============================================
+    let sessionData = null;
+    
+    try {
+        sessionData = initSessionManager();
+    } catch (e) {
+        console.error('Session initialization error:', e);
+    }
+    
+    // Check if session is valid - if not, show expired overlay but DON'T throw error
+    if (!sessionData) {
+        console.log('No valid session - showing expired overlay');
+        const overlay = document.getElementById('sessionExpiredOverlay');
+        if (overlay) {
+            overlay.classList.add('active');
+        }
+        // Don't throw error - let user click "Login Again" button
+    } else {
+        console.log('✅ User authenticated:', sessionData.profile?.full_name || 'User');
+        console.log('👤 Role:', sessionData.role);
+        console.log('🏪 Branch:', sessionData.branch?.name || 'All Branches');
+        
+        // Start session timer display only if authenticated
+        let sessionTimerDisplay = 600;
+        const sessionTimeDisplay = document.getElementById('sessionTimeDisplay');
+        const sessionTimerElement = document.getElementById('sessionTimer');
+        
+        function updateSessionTimerDisplay() {
+            const mins = Math.floor(sessionTimerDisplay / 60);
+            const secs = sessionTimerDisplay % 60;
+            if (sessionTimeDisplay) {
+                sessionTimeDisplay.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            }
+            if (sessionTimerElement) {
+                if (sessionTimerDisplay <= 60) {
+                    sessionTimerElement.classList.add('warning');
+                } else {
+                    sessionTimerElement.classList.remove('warning');
+                }
+            }
+        }
+        
+        setInterval(() => {
+            if (sessionTimerDisplay > 0) {
+                sessionTimerDisplay--;
+                updateSessionTimerDisplay();
+            }
+        }, 1000);
+    }
+
+    // ============================================
+    // PROFILE SETTINGS FUNCTIONS
+    // ============================================
+    window.openProfileSettings = function() {
+        const modal = document.getElementById('profile-settings-modal');
+        if (!modal) return;
+        modal.style.display = 'flex';
+        
+        const profile = sessionData?.profile;
+        if (profile) {
+            const fullNameInput = document.getElementById('profileFullName');
+            const emailInput = document.getElementById('profileEmail');
+            const avatarName = document.getElementById('avatarName');
+            const avatarEmail = document.getElementById('avatarEmail');
+            const avatarCircle = document.getElementById('avatarCircle');
+            
+            if (fullNameInput) fullNameInput.value = profile.full_name || '';
+            if (emailInput) emailInput.value = profile.email || '';
+            if (avatarName) avatarName.textContent = profile.full_name || 'User';
+            if (avatarEmail) avatarEmail.textContent = profile.email || '';
+            
+            if (avatarCircle) {
+                const initials = (profile.full_name || 'User').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                avatarCircle.textContent = initials || 'U';
+            }
+        }
+        
+        const currentPassword = document.getElementById('currentPassword');
+        const newPassword = document.getElementById('newPassword');
+        const confirmPassword = document.getElementById('confirmPassword');
+        const strengthBar = document.getElementById('strengthBar');
+        const profileUpdateSuccess = document.getElementById('profileUpdateSuccess');
+        
+        if (currentPassword) currentPassword.value = '';
+        if (newPassword) newPassword.value = '';
+        if (confirmPassword) confirmPassword.value = '';
+        if (strengthBar) {
+            strengthBar.className = 'strength-bar';
+            strengthBar.style.width = '0%';
+        }
+        if (profileUpdateSuccess) profileUpdateSuccess.classList.remove('show');
+    };
+
+    window.closeProfileSettings = function() {
+        const modal = document.getElementById('profile-settings-modal');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window.checkPasswordStrength = function(password) {
+        const bar = document.getElementById('strengthBar');
+        const hint = document.getElementById('passwordHint');
+        
+        if (!bar || !hint) return;
+        
+        if (!password || password.length === 0) {
+            bar.className = 'strength-bar';
+            bar.style.width = '0%';
+            hint.textContent = 'Minimum 8 characters with letters and numbers';
+            return;
+        }
+        
+        let score = 0;
+        if (password.length >= 8) score++;
+        if (password.length >= 12) score++;
+        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+        if (/\d/.test(password)) score++;
+        if (/[^a-zA-Z0-9]/.test(password)) score++;
+        
+        let level = 'weak';
+        let text = 'Weak password';
+        if (score >= 5) { level = 'very-strong'; text = 'Very strong password!'; }
+        else if (score >= 4) { level = 'strong'; text = 'Strong password'; }
+        else if (score >= 3) { level = 'medium'; text = 'Medium strength'; }
+        
+        bar.className = `strength-bar ${level}`;
+        hint.textContent = text;
+    };
+
+    window.updateProfile = async function() {
+        const fullNameInput = document.getElementById('profileFullName');
+        const currentPasswordInput = document.getElementById('currentPassword');
+        const newPasswordInput = document.getElementById('newPassword');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        
+        const fullName = fullNameInput ? fullNameInput.value.trim() : '';
+        const currentPassword = currentPasswordInput ? currentPasswordInput.value : '';
+        const newPassword = newPasswordInput ? newPasswordInput.value : '';
+        const confirmPassword = confirmPasswordInput ? confirmPasswordInput.value : '';
+        
+        if (!fullName) {
+            alert('Please enter your full name');
+            return;
+        }
+        
+        if (newPassword || currentPassword || confirmPassword) {
+            if (!currentPassword) {
+                alert('Please enter your current password');
+                return;
+            }
+            if (newPassword.length < 8) {
+                alert('New password must be at least 8 characters');
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                alert('Passwords do not match');
+                return;
+            }
+        }
+        
+        const btn = document.querySelector('#profile-settings-modal .btn-primary');
+        if (!btn) return;
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> UPDATING...';
+        
+        try {
+            const userId = sessionData?.user?.id;
+            if (!userId) throw new Error('No user ID found');
+            
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ full_name: fullName })
+                .eq('id', userId);
+            
+            if (updateError) throw updateError;
+            
+            if (newPassword) {
+                const { error: passwordError } = await supabase.auth.updateUser({
+                    password: newPassword
+                });
+                if (passwordError) throw passwordError;
+            }
+            
+            const successEl = document.getElementById('profileUpdateSuccess');
+            if (successEl) {
+                successEl.textContent = '✅ Profile updated successfully!';
+                successEl.classList.add('show');
+            }
+            
+            const avatarCircle = document.getElementById('avatarCircle');
+            if (avatarCircle) {
+                const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                avatarCircle.textContent = initials || 'U';
+            }
+            
+            const avatarName = document.getElementById('avatarName');
+            if (avatarName) avatarName.textContent = fullName;
+            
+            const profileUserName = document.getElementById('profileUserName');
+            if (profileUserName) profileUserName.textContent = fullName;
+            
+            const session = getSession();
+            if (session) {
+                session.profile.full_name = fullName;
+                localStorage.setItem('pos_session', JSON.stringify(session));
+            }
+            
+            setTimeout(() => {
+                if (successEl) successEl.classList.remove('show');
+            }, 4000);
+            
+        } catch (error) {
+            alert('Error updating profile: ' + error.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    };
+
+    // ============================================
+    // TOGGLE PROFILE DROPDOWN
+    // ============================================
+    window.toggleProfileDropdown = function() {
+        const dropdown = document.getElementById('profileDropdown');
+        if (dropdown) {
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        }
+    };
+
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('profileDropdown');
+        const profileBtn = document.getElementById('profileBtn');
+        
+        if (profileBtn && !profileBtn.contains(event.target) && dropdown && !dropdown.contains(event.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    // ============================================
+    // LOGOUT FUNCTION (uses auth.js logout)
+    // ============================================
+    window.logoutUser = async function() {
+        if(confirm("Are you sure you want to logout?")) {
+            await authLogout();
+        }
+    };
+
+    // ============================================
+    // NAVIGATION
+    // ============================================
+    window.toggleNav = function() {
+        const navBanner = document.getElementById('navBanner');
+        if (navBanner) navBanner.classList.toggle('active');
+        const onboardingHand = document.getElementById('onboardingHand');
+        if (onboardingHand) onboardingHand.style.display = 'none';
+        sessionStorage.setItem('menuClicked', 'true');
+    };
+
+    // ============================================
+    // VARIABLES
+    // ============================================
+    let inventory = [];
+    let currentShift = null;
+    let selectedItem = null;
+    let historyLimit = 10;
+    let allShifts = [];
+    let allTransactions = [];
+    let currentKcbSalesTotal = 0;
+    let currentUser = null;
+    let timeCheckInterval = null;
+    let refundingSale = null;
+    let currentUserProfile = null;
+    let currentBranchId = null;
+    let branches = {};
+    let isCreatingShift = false;
+    let isClosingShift = false;
+    let isKituiBranch = false;
+
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+    async function getCurrentActiveShiftId(branchId) {
+        try {
+            const { data, error } = await supabase
+                .from('daily_shifts')
+                .select('id')
+                .eq('branch_id', branchId)
+                .eq('status', 'Open')
+                .maybeSingle();
+            
+            if (error) throw error;
+            return data?.id || null;
+        } catch (error) {
+            console.error("Error getting active shift:", error);
+            return null;
+        }
+    }
+
+    function getBranchIdFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('branch');
+    }
+
+    function getCurrentBranchId() {
+        const urlBranchId = getBranchIdFromUrl();
+        if (urlBranchId) {
+            return urlBranchId;
+        }
+        const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
+        return session.branch?.id || currentBranchId;
+    }
+
+    function checkIfKituiBranch() {
+        const branchId = getCurrentBranchId();
+        if (!branchId || !branches[branchId]) return false;
+        const branchName = branches[branchId].name.toLowerCase();
+        return branchName.includes('kitui') || branchId === 'kitui';
+    }
+
+    function toggleKituiBankElements(show) {
+        const elements = [
+            'float-family-bank-item', 'float-cooperative-bank-item',
+            'family-bank-open', 'cooperative-bank-open',
+            'family-bank-close', 'cooperative-bank-close'
+        ];
+        elements.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = show ? 'block' : 'none';
+        });
+        
+        const options = document.querySelectorAll('.family-bank-option, .cooperative-bank-option');
+        options.forEach(el => el.style.display = show ? 'block' : 'none');
+        
+        const floatCard = document.getElementById('float-status-card');
+        if (floatCard) {
+            floatCard.style.gridTemplateColumns = show ? 'repeat(7, 1fr)' : 'repeat(5, 1fr)';
+        }
+    }
+
+    async function loadBranches() {
+        const { data } = await supabase.from('branches').select('*');
+        branches = {};
+        data?.forEach(b => { branches[b.id] = b; });
+        return branches;
+    }
+
+    async function loadUserProfile() {
+        try {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (error || !user) {
+                const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
+                if (session.user && session.profile) {
+                    currentUser = session.user;
+                    currentUserProfile = session.profile;
+                    const urlBranchId = getBranchIdFromUrl();
+                    currentBranchId = urlBranchId || session.branch?.id || session.profile.branch_id;
+                    return session.profile;
+                }
+                // Don't redirect - let session manager handle it
+                return null;
+            }
+            
+            currentUser = user;
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select(`*, branches ( id, name, code, location )`)
+                .eq('id', user.id)
+                .single();
+            
+            if (profileError) throw profileError;
+            currentUserProfile = profile;
+            
+            const urlBranchId = getBranchIdFromUrl();
+            currentBranchId = urlBranchId || profile.branch_id;
+            
+            const session = { user, profile, branch: profile.branches, role: profile.role };
+            localStorage.setItem('pos_session', JSON.stringify(session));
+            return profile;
+        } catch (error) {
+            console.error("Error loading profile:", error);
+            return null;
+        }
+    }
+
+    function showSuccessNotification(message, details = '') {
+        const container = document.getElementById('success-notification-container');
+        if (!container) return;
+        const notification = document.createElement('div');
+        notification.className = 'success-notification';
+        let icon = '✅';
+        if (message.includes('Shift started')) icon = '🚀';
+        else if (message.includes('Shift closed')) icon = '🔒';
+        else if (message.includes('Money')) icon = '💰';
+        else if (message.includes('Refund')) icon = '🔄';
+        else if (message.includes('refreshed')) icon = '🔄';
+        
+        notification.innerHTML = `
+            <i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
+            <div style="flex: 1;">
+                <div style="font-weight: 800;">${icon} ${message}</div>
+                ${details ? `<div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">${details}</div>` : ''}
+            </div>
+        `;
+        container.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    }
+
+    function showErrorMessage(message) {
+        const container = document.getElementById('success-notification-container');
+        if (!container) return;
+        const notification = document.createElement('div');
+        notification.className = 'success-notification';
+        notification.style.background = '#ef4444';
+        notification.innerHTML = `
+            <i class="fas fa-exclamation-triangle" style="font-size: 1.5rem;"></i>
+            <div style="flex: 1;">
+                <div style="font-weight: 800;">⚠️ ${message}</div>
+                <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Please check your connection and try again</div>
+            </div>
+        `;
+        container.appendChild(notification);
+        setTimeout(() => notification.remove(), 5000);
+    }
+
+    // ============================================
+    // REFUND FUNCTIONS
+    // ============================================
+    window.openRefundModal = function(sale) {
+        refundingSale = sale;
+        const itemName = document.getElementById('refund-item-name');
+        const originalAmount = document.getElementById('refund-original-amount');
+        const refundQuantity = document.getElementById('refund-quantity');
+        const refundAmount = document.getElementById('refund-amount');
+        const refundReason = document.getElementById('refund-reason');
+        
+        if (itemName) itemName.textContent = sale.item_name || 'Unknown Item';
+        if (originalAmount) originalAmount.textContent = sale.total_amount.toLocaleString();
+        if (refundQuantity) refundQuantity.textContent = sale.quantity;
+        if (refundAmount) refundAmount.value = sale.total_amount;
+        if (refundReason) refundReason.value = '';
+        
+        const modal = document.getElementById('refund-modal');
+        if (modal) modal.style.display = 'flex';
+    };
+
+    window.closeRefundModal = function() {
+        const modal = document.getElementById('refund-modal');
+        if (modal) modal.style.display = 'none';
+        refundingSale = null;
+    };
+
+    window.processRefund = async function() {
+        if (!refundingSale || !currentShift) return;
+        const refundMethod = document.getElementById('refund-method')?.value || 'Cash';
+        const refundAmount = parseFloat(document.getElementById('refund-amount')?.value || 0);
+        const refundReason = document.getElementById('refund-reason')?.value || 'Item return';
+        const branchId = getCurrentBranchId();
+        
+        if (!refundAmount || refundAmount <= 0) {
+            alert("Please enter a valid refund amount");
+            return;
+        }
+        if (refundAmount > refundingSale.total_amount) {
+            alert("Refund amount cannot exceed original sale amount");
+            return;
+        }
+        if (!confirm(`Confirm Refund:\n\nItem: ${refundingSale.item_name}\nAmount: Ksh ${refundAmount.toLocaleString()}\nMethod: ${refundMethod}`)) return;
+        
+        const submitBtn = document.querySelector('#refund-modal .btn-danger');
+        if (!submitBtn) return;
+        const originalBtnText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner"></span> PROCESSING...';
+        
+        try {
+            await supabase.from('sales').insert([{
+                shift_id: currentShift.id,
+                product_id: refundingSale.product_id,
+                item_name: `REFUND: ${refundingSale.item_name}`,
+                part_type: refundingSale.part_type,
+                quantity: -refundingSale.quantity,
+                unit_price: refundingSale.unit_price,
+                total_amount: -refundAmount,
+                payment_method: refundMethod,
+                cost_price: refundingSale.cost_price || 0,
+                amount: -refundAmount,
+                category: refundingSale.category,
+                user_id: currentUser.id,
+                weight_category: refundingSale.weight_category,
+                discount_reason: refundReason,
+                refunded: true,
+                refund_method: refundMethod,
+                refund_reason: refundReason,
+                refunded_at: new Date().toISOString(),
+                branch_id: branchId
+            }]);
+            
+            await supabase.from('sales').update({ refunded: true, refund_method: refundMethod, refund_reason: refundReason, refunded_at: new Date().toISOString() }).eq('id', refundingSale.id);
+            await supabase.from('cash_transactions').insert([{ shift_id: currentShift.id, type: 'Money Out', category: refundMethod, amount: refundAmount, description: `Refund: ${refundingSale.item_name}${refundReason ? ' - ' + refundReason : ''}`, branch_id: branchId, user_id: currentUser.id }]);
+            
+            const { data: product } = await supabase.from('products').select('stock_quantity').eq('id', refundingSale.product_id).single();
+            if (product) {
+                await supabase.from('products').update({ stock_quantity: product.stock_quantity + refundingSale.quantity }).eq('id', refundingSale.product_id);
+            }
+            
+            closeRefundModal();
+            await fetchInventory();
+            await loadShiftData();
+            showSuccessNotification('Refund processed successfully!', `Ksh ${refundAmount.toLocaleString()} refunded via ${refundMethod}`);
+        } catch (error) {
+            console.error("Refund error:", error);
+            alert("Error processing refund: " + error.message);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+        }
+    };
+
+    // ============================================
+    // INVENTORY FUNCTIONS
+    // ============================================
+    async function fetchInventory() {
+        try {
+            const branchId = getCurrentBranchId();
+            if (!branchId) return;
+            const { data } = await supabase.from('products').select('*').eq('branch_id', branchId);
+            if (data) {
+                inventory = data;
+                refreshProductDatalist();
+                if (selectedItem) {
+                    const updated = inventory.find(p => p.id === selectedItem.id);
+                    if (updated) { selectedItem = updated; updateStockDisplay(updated); }
+                }
+            }
+        } catch (error) { console.error("Error fetching inventory:", error); }
+    }
+
+    function refreshProductDatalist() {
+        const pList = document.getElementById('pList');
+        if (pList) { pList.innerHTML = inventory.map(p => `<option value="${formatItemName(p)}">`).join(''); }
+    }
+
+    function formatItemName(p) {
+        let name = p.name;
+        if (p.category === 'Gas' && p.weight_category) name += ` (${p.weight_category})`;
+        if (p.part_type && p.part_type !== 'N/A') name += ` [${p.part_type}]`;
+        return name;
+    }
+
+    function updateStockDisplay(item) {
+        const hStock = document.getElementById('hint-stock');
+        if (hStock) {
+            if (item.category === 'Gas') {
+                hStock.innerText = `Full: ${item.stock_quantity} | Empty: ${item.empty_quantity || 0}`;
+            } else {
+                hStock.innerText = `Stock: ${item.stock_quantity}`;
+            }
+            hStock.style.display = 'inline-block';
+            if (item.stock_quantity <= 0) {
+                hStock.innerText = item.category === 'Gas' ? "OUT OF FULL STOCK" : "OUT OF STOCK";
+                hStock.classList.add('low-stock-alert');
+            } else if (item.stock_quantity < 5) {
+                hStock.classList.add('low-stock-alert');
+            } else {
+                hStock.classList.remove('low-stock-alert');
+            }
+        }
+    }
+
+    // ============================================
+    // SALE FORM FUNCTIONS
+    // ============================================
+    window.toggleSplitFields = function() {
+        const method = document.getElementById('pMethod')?.value;
+        const splitFields = document.getElementById('split-fields');
+        if (splitFields) {
+            splitFields.style.display = method === 'Split' ? 'grid' : 'none';
+        }
+        if (method === 'Split') calculateSplit();
+    };
+
+    window.calculateSplit = function() {
+        const price = parseFloat(document.getElementById('pPrice')?.value || 0);
+        const qty = parseInt(document.getElementById('pQty')?.value || 0);
+        const total = price * qty;
+        const cash = parseFloat(document.getElementById('split-cash')?.value || 0);
+        const splitOnline = document.getElementById('split-online');
+        if (splitOnline) {
+            splitOnline.value = (total - cash).toFixed(2);
+        }
+    };
+
+    function updateTotal() {
+        const price = parseFloat(document.getElementById('pPrice')?.value || 0);
+        const qty = parseInt(document.getElementById('pQty')?.value || 0);
+        const totalText = document.getElementById('total-text');
+        if (totalText) totalText.innerText = (price * qty).toLocaleString();
+        if (document.getElementById('pMethod')?.value === 'Split') calculateSplit();
+    }
+
+    const pPrice = document.getElementById('pPrice');
+    const pQty = document.getElementById('pQty');
+    if (pPrice) pPrice.addEventListener('input', updateTotal);
+    if (pQty) pQty.addEventListener('input', updateTotal);
+
+    // ============================================
+    // SALE SUBMISSION
+    // ============================================
+    const saleForm = document.getElementById('sale-form');
+    if (saleForm) {
+        saleForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submit-sale-btn');
+            const branchId = getCurrentBranchId();
+            const activeShiftId = await getCurrentActiveShiftId(branchId);
+            
+            if (!activeShiftId) { alert("❌ You must open a shift first before making sales!"); return; }
+            if (!selectedItem) { alert("Select a valid item."); return; }
+            if (selectedItem.category === 'Gas') {
+                const notice = document.getElementById('gas-redirect-notice');
+                if (notice) { notice.style.display = 'flex'; setTimeout(() => { if (notice.style.display === 'flex') notice.style.display = 'none'; }, 5000); }
+                return;
+            }
+
+            const price = parseFloat(document.getElementById('pPrice')?.value || 0);
+            const qty = parseInt(document.getElementById('pQty')?.value || 0);
+            const total = price * qty;
+            const method = document.getElementById('pMethod')?.value || 'Cash';
+
+            if (price < (selectedItem.min_price || 0)) {
+                const discReason = prompt(`Price below Min. Reason:`);
+                if (!discReason) return;
+                selectedItem.tempReason = discReason;
+            }
+            if (qty > selectedItem.stock_quantity) { alert("Insufficient stock!"); return; }
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner"></span> RECORDING...';
+            }
+
+            let salesToInsert = [];
+            const baseSale = {
+                shift_id: activeShiftId,
+                product_id: selectedItem.id,
+                quantity: qty,
+                unit_price: price,
+                cost_price: selectedItem.cost_price || 0,
+                part_type: selectedItem.part_type || 'N/A',
+                discount_reason: selectedItem.tempReason || "",
+                user_id: currentUser.id,
+                category: selectedItem.category,
+                weight_category: selectedItem.weight_category,
+                branch_id: branchId
+            };
+
+            if (method === 'Split') {
+                const cashAmt = parseFloat(document.getElementById('split-cash')?.value || 0);
+                const onlineAmt = total - cashAmt;
+                salesToInsert.push({ ...baseSale, item_name: `${formatItemName(selectedItem)} (Split-C)`, total_amount: cashAmt, payment_method: 'Cash' });
+                salesToInsert.push({ ...baseSale, item_name: `${formatItemName(selectedItem)} (Split-O)`, quantity: 0, total_amount: onlineAmt, payment_method: 'KCB Paybill' });
+            } else {
+                salesToInsert.push({ ...baseSale, item_name: formatItemName(selectedItem), total_amount: total, payment_method: method });
+            }
+
+            try {
+                await supabase.from('sales').insert(salesToInsert);
+                await supabase.from('products').update({ stock_quantity: selectedItem.stock_quantity - qty }).eq('id', selectedItem.id);
+
+                if (method === "Debt") {
+                    const customerName = prompt("Customer Name (required):");
+                    if (!customerName) { if (btn) { btn.disabled = false; btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>'; } return; }
+                    const customerPhone = prompt("Customer Phone (optional):", "");
+                    await supabase.from('debtors').insert([{ customer_name: customerName, customer_phone: customerPhone || null, product_id: selectedItem.id, amount_owed: total, branch_id: branchId, status: 'Unpaid' }]);
+                }
+
+                await fetchInventory();
+                await loadShiftData();
+                const saleFormElement = document.getElementById('sale-form');
+                if (saleFormElement) saleFormElement.reset();
+                const pSearch = document.getElementById('pSearch');
+                if (pSearch) pSearch.value = '';
+                const hintStock = document.getElementById('hint-stock');
+                if (hintStock) hintStock.style.display = 'none';
+                const hintMin = document.getElementById('hint-min');
+                if (hintMin) hintMin.style.display = 'none';
+                const totalText = document.getElementById('total-text');
+                if (totalText) totalText.innerText = '0';
+                const gasExchangeNote = document.getElementById('gas-exchange-note');
+                if (gasExchangeNote) gasExchangeNote.style.display = 'none';
+                selectedItem = null;
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
+                }
+                await loadHistory();
+                showSuccessNotification('Sale recorded successfully!', `Ksh ${total.toLocaleString()} - ${method}`);
+            } catch (error) {
+                console.error("Sale Error:", error);
+                alert("❌ Error: " + error.message);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
+                }
+            }
+        });
+    }
+
+    // ============================================
+    // SHIFT DATA FUNCTIONS
+    // ============================================
+    async function loadShiftData() {
+        try {
+            if (!currentShift) return;
+            const branchId = getCurrentBranchId();
+            const [salesRes, transRes] = await Promise.all([
+                supabase.from('sales').select('*').eq('shift_id', currentShift.id).eq('branch_id', branchId).order('created_at', { ascending: false }),
+                supabase.from('cash_transactions').select('*').eq('shift_id', currentShift.id).eq('branch_id', branchId).order('created_at', { ascending: false })
+            ]);
+
+            const sales = salesRes.data || [];
+            const trans = transRes.data || [];
+
+            const kcbPaybillSales = sales.filter(s => s.payment_method === 'KCB Paybill' && !s.refunded && s.total_amount > 0).reduce((a, b) => a + b.total_amount, 0);
+            const kcbPaybillMoneyIn = trans.filter(t => t.type === 'Money In' && t.category === 'KCB Paybill').reduce((a, b) => a + b.amount, 0);
+            currentKcbSalesTotal = kcbPaybillSales + kcbPaybillMoneyIn;
+            
+            const liveKcbBox = document.getElementById('live-kcb-box');
+            if (liveKcbBox) liveKcbBox.innerText = currentKcbSalesTotal.toLocaleString();
+            const cBank = document.getElementById('c-bank');
+            if (cBank) cBank.value = currentKcbSalesTotal;
+
+            const liveSalesBody = document.getElementById('live-sales-body');
+            if (liveSalesBody) {
+                liveSalesBody.innerHTML = sales.map(s => `
+                    <tr class="${s.refunded ? 'refunded-row' : ''}">
+                        <td data-label="Time">${new Date(s.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                        <td data-label="Item"><b>${s.item_name}</b>${s.refunded ? '<span class="refunded-badge">REFUNDED</span>' : ''}${s.total_amount < 0 ? '<span class="refunded-badge" style="background:#b91c1c">REFUND</span>' : ''}${s.category === 'Gas' ? '<span class="gas-badge">GAS</span>' : ''}${s.payment_method === 'Debt' ? '<span class="refunded-badge" style="background:var(--warning)">DEBT</span>' : ''}${s.payment_method === 'KCB Paybill' ? '<span class="kcb-paybill-badge">KCB PAYBILL</span>' : ''}</td>
+                        <td data-label="Qty" class="${s.quantity < 0 ? 'text-danger' : ''}">${s.quantity < 0 ? `-${Math.abs(s.quantity)}` : s.quantity}</td>
+                        <td data-label="Total" class="${s.total_amount < 0 ? 'text-danger' : ''}">Ksh ${s.total_amount.toLocaleString()}</td>
+                        <td data-label="Method">${s.refunded ? 'Refund via ' : ''}${s.payment_method}</td>
+                        <td data-label="Action" class="action-column">${!s.refunded && s.quantity > 0 && s.total_amount > 0 ? `<button class="btn-refund" onclick='openRefundModal(${JSON.stringify(s).replace(/'/g, "\\'")})'><i class="fas fa-undo-alt"></i> Refund</button>` : ''}</td>
+                    </tr>
+                `).join('');
+            }
+
+            let totalMoneyIn = 0, totalMoneyOut = 0;
+            trans.forEach(t => { if (t.type === 'Money In') totalMoneyIn += t.amount; else if (t.type === 'Money Out') totalMoneyOut += t.amount; });
+            const totalMoneyInFull = document.getElementById('total-money-in-full');
+            const totalMoneyOutFull = document.getElementById('total-money-out-full');
+            if (totalMoneyInFull) totalMoneyInFull.textContent = `Ksh ${totalMoneyIn.toLocaleString()}`;
+            if (totalMoneyOutFull) totalMoneyOutFull.textContent = `Ksh ${totalMoneyOut.toLocaleString()}`;
+
+            const liveTransBody = document.getElementById('live-trans-body');
+            if (liveTransBody) {
+                liveTransBody.innerHTML = trans.map(t => {
+                    const isKcbPaybill = t.category === 'KCB Paybill';
+                    const isFamilyBank = t.category === 'Family Bank Float';
+                    const isCooperativeBank = t.category === 'Cooperative Bank Float';
+                    let bankBadge = '';
+                    if (isFamilyBank) bankBadge = '<span class="family-bank-badge">FAMILY BANK</span>';
+                    if (isCooperativeBank) bankBadge = '<span class="cooperative-bank-badge">COOPERATIVE BANK</span>';
+                    return `<tr class="${t.type === 'Money In' ? 'money-in-row' : 'money-out-row'} ${(isKcbPaybill || isFamilyBank || isCooperativeBank) ? 'kcb-live-box' : ''}">
+                        <td data-label="Time">${new Date(t.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                        <td data-label="Reason">${t.description}${bankBadge}</td>
+                        <td data-label="Amount">Ksh ${t.amount.toLocaleString()}</td>
+                        <td data-label="Type" class="${t.type === 'Money In' ? 'text-success' : 'text-danger'}">${t.type}</td>
+                        <td data-label="Wallet">${t.category}${(isKcbPaybill || isFamilyBank || isCooperativeBank) ? ' 💰' : ''}</td>
+                    </tr>`;
+                }).join('');
+            }
+            checkLowFloats();
+        } catch (error) { console.error("Error loading shift data:", error); }
+    }
+
+    // ============================================
+    // SHIFT START/CLOSE FUNCTIONS
+    // ============================================
+    const confirmOpenBtn = document.getElementById('confirm-open');
+    if (confirmOpenBtn) {
+        confirmOpenBtn.addEventListener('click', async function() {
+            if (isCreatingShift) { alert("Please wait, shift is being created..."); return; }
+            const branchId = getCurrentBranchId();
+            const existingOpenShift = await checkForOpenShift(branchId);
+            if (existingOpenShift) {
+                alert("❌ There is already an open shift for this branch. Please close it first.");
+                this.disabled = false;
+                this.innerHTML = 'START DAY';
+                const openModal = document.getElementById('open-modal');
+                if (openModal) openModal.style.display = 'none';
+                return;
+            }
+
+            const cash = parseFloat(document.getElementById('o-cash')?.value || 0);
+            const mpesa = parseFloat(document.getElementById('o-mpesa')?.value || 0);
+            const kcb = parseFloat(document.getElementById('o-kcb')?.value || 0);
+            const equity = parseFloat(document.getElementById('o-equity')?.value || 0);
+            let familyBank = 0, cooperativeBank = 0;
+            if (isKituiBranch) {
+                familyBank = parseFloat(document.getElementById('o-family-bank')?.value || 0);
+                cooperativeBank = parseFloat(document.getElementById('o-cooperative-bank')?.value || 0);
+            }
+            
+            let confirmMessage = `Are these the correct opening floats?\n\nCash: Ksh ${cash.toLocaleString()}\nMpesa: Ksh ${mpesa.toLocaleString()}\nKCB Float: Ksh ${kcb.toLocaleString()}\nEquity Float: Ksh ${equity.toLocaleString()}`;
+            if (isKituiBranch) confirmMessage += `\nFamily Bank Float: Ksh ${familyBank.toLocaleString()}\nCooperative Bank Float: Ksh ${cooperativeBank.toLocaleString()}`;
+            confirmMessage += `\n\nTotal: Ksh ${(cash + mpesa + kcb + equity + familyBank + cooperativeBank).toLocaleString()}`;
+            if (!confirm(confirmMessage)) return;
+
+            isCreatingShift = true;
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner"></span> STARTING...';
+
+            const openData = { user_id: currentUser.id, branch_id: branchId, open_cash: cash, open_mpesa: mpesa, open_kcb: kcb, open_equity: equity, status: 'Open', start_time: new Date().toISOString() };
+            if (isKituiBranch) { openData.open_family_bank = familyBank; openData.open_cooperative_bank = cooperativeBank; }
+
+            try {
+                const { error } = await supabase.from('daily_shifts').insert([openData]);
+                if (error) throw error;
+                showSuccessNotification('Shift started successfully!');
+                setTimeout(() => location.reload(), 1500);
+            } catch (error) {
+                console.error("Start shift error:", error);
+                alert("Error starting shift: " + error.message);
+                this.disabled = false;
+                this.innerHTML = 'START DAY';
+            } finally { isCreatingShift = false; }
+        });
+    }
+
+    window.showCloseModal = function() {
+        const closeModal = document.getElementById('close-modal');
+        if (closeModal) closeModal.style.display = 'flex';
+    };
+
+    const confirmCloseBtn = document.getElementById('confirm-close');
+    if (confirmCloseBtn) {
+        confirmCloseBtn.addEventListener('click', function() {
+            const clM = parseFloat(document.getElementById('c-mpesa')?.value || 0);
+            const clK = parseFloat(document.getElementById('c-kcb')?.value || 0);
+            const clE = parseFloat(document.getElementById('c-equity')?.value || 0);
+            const clC = parseFloat(document.getElementById('c-cash')?.value || 0);
+            if (clM === 0 && clK === 0 && clE === 0 && clC === 0) {
+                alert("❌ Please enter closing amounts for all floats before closing the shift.");
+                return;
+            }
+            showCloseConfirmation();
+        });
+    }
+
+    function showCloseConfirmation() {
+        const clM = parseFloat(document.getElementById('c-mpesa')?.value || 0);
+        const clK = parseFloat(document.getElementById('c-kcb')?.value || 0);
+        const clE = parseFloat(document.getElementById('c-equity')?.value || 0);
+        const clC = parseFloat(document.getElementById('c-cash')?.value || 0);
+        const clB = currentKcbSalesTotal;
+        let clFamilyBank = 0, clCooperativeBank = 0;
+        if (isKituiBranch) {
+            clFamilyBank = parseFloat(document.getElementById('c-family-bank')?.value || 0);
+            clCooperativeBank = parseFloat(document.getElementById('c-cooperative-bank')?.value || 0);
+        }
+        const closeModal = document.getElementById('close-modal');
+        if (closeModal) closeModal.style.display = 'none';
+
+        const card = document.createElement('div');
+        card.className = 'overlay';
+        card.id = 'close-confirm-card';
+        card.style.display = 'flex';
+        let bankRowsHtml = '';
+        if (isKituiBranch) {
+            bankRowsHtml = `
+                <div style="background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                    <small style="display: block; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase;">Family Bank</small>
+                    <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">Ksh ${clFamilyBank.toLocaleString()}</span>
+                </div>
+                <div style="background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                    <small style="display: block; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase;">Cooperative Bank</small>
+                    <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">Ksh ${clCooperativeBank.toLocaleString()}</span>
+                </div>
+            `;
+        }
+
+        card.innerHTML = `
+            <div class="modal" style="max-width: 550px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="color: var(--danger); margin: 0;">🔒 Confirm Closing Amounts</h3>
+                    <button onclick="closeConfirmationCard()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-dim);">✕</button>
+                </div>
+                <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin: 15px 0;">
+                    <h4 style="margin: 0 0 15px 0; font-size: 0.9rem; color: var(--text);">Please verify the closing amounts:</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div style="background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase;">Mpesa</small>
+                            <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">Ksh ${clM.toLocaleString()}</span>
+                        </div>
+                        <div style="background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase;">KCB Float</small>
+                            <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">Ksh ${clK.toLocaleString()}</span>
+                        </div>
+                        <div style="background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase;">Equity</small>
+                            <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">Ksh ${clE.toLocaleString()}</span>
+                        </div>
+                        <div style="background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+                            <small style="display: block; color: var(--text-dim); font-size: 0.65rem; text-transform: uppercase;">Cash</small>
+                            <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">Ksh ${clC.toLocaleString()}</span>
+                        </div>
+                        ${bankRowsHtml}
+                        <div style="grid-column: span 2; background: #f0f9ff; padding: 15px; border-radius: 10px; border: 1px solid #bae6fd;">
+                            <small style="display: block; color: #0369a1; font-size: 0.7rem; text-transform: uppercase;">KCB Paybill</small>
+                            <span style="font-weight: 800; font-size: 1.3rem; color: var(--primary);">Ksh ${clB.toLocaleString()}</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; padding: 12px; background: #fff7ed; border-radius: 8px; border-left: 4px solid var(--warning);">
+                        <small style="color: #9a3412; font-weight: 600;"><i class="fas fa-info-circle"></i> Please verify all amounts are correct before proceeding.</small>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-danger" style="flex: 1;" onclick="processFinalClose()">✅ CONFIRM & CLOSE</button>
+                    <button class="btn" style="flex: 1; background: #e2e8f0;" onclick="closeConfirmationCard()">✕ CANCEL</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(card);
+    }
+
+    window.closeConfirmationCard = function() {
+        const card = document.getElementById('close-confirm-card');
+        if (card) card.remove();
+        const closeModal = document.getElementById('close-modal');
+        if (closeModal) closeModal.style.display = 'flex';
+    };
+
+    window.processFinalClose = async function() {
+        if (isClosingShift) { alert("Please wait, shift is being closed..."); return; }
+        const card = document.getElementById('close-confirm-card');
+        if (!card) return;
+
+        const clM = parseFloat(document.getElementById('c-mpesa')?.value || 0);
+        const clK = parseFloat(document.getElementById('c-kcb')?.value || 0);
+        const clE = parseFloat(document.getElementById('c-equity')?.value || 0);
+        const clC = parseFloat(document.getElementById('c-cash')?.value || 0);
+        const clB = currentKcbSalesTotal;
+        let clFamilyBank = 0, clCooperativeBank = 0;
+        if (isKituiBranch) {
+            clFamilyBank = parseFloat(document.getElementById('c-family-bank')?.value || 0);
+            clCooperativeBank = parseFloat(document.getElementById('c-cooperative-bank')?.value || 0);
+        }
+        card.remove();
+
+        isClosingShift = true;
+        const btn = document.getElementById('confirm-close');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> FINALIZING...';
+        }
+
+        try {
+            const { data: sales } = await supabase.from('sales').select('total_amount').eq('shift_id', currentShift.id).neq('payment_method', 'Debt').eq('refunded', false).gt('total_amount', 0);
+            const { data: trans } = await supabase.from('cash_transactions').select('amount, type').eq('shift_id', currentShift.id);
+
+            const totalSales = (sales || []).reduce((a, b) => a + b.total_amount, 0);
+            const moneyIn = (trans || []).filter(t => t.type === 'Money In').reduce((a, b) => a + b.amount, 0);
+            const moneyOut = (trans || []).filter(t => t.type === 'Money Out').reduce((a, b) => a + b.amount, 0);
+
+            let openTotal = currentShift.open_cash + currentShift.open_mpesa + currentShift.open_kcb + currentShift.open_equity;
+            if (isKituiBranch) openTotal += (currentShift.open_family_bank || 0) + (currentShift.open_cooperative_bank || 0);
+
+            const expected = (openTotal + totalSales + moneyIn) - moneyOut;
+            let closeTotal = clM + clK + clE + clB + clC;
+            if (isKituiBranch) closeTotal += clFamilyBank + clCooperativeBank;
+            const variance = closeTotal - expected;
+
+            let note = "";
+            if (Math.abs(variance) < 1) { note = "Balanced"; } else {
+                const sign = variance > 0 ? "+" : "-";
+                note = prompt(`Variance: ${sign}${Math.abs(variance).toFixed(2)}. Please enter reason:`);
+                if (!note) { isClosingShift = false; if (btn) { btn.disabled = false; btn.innerHTML = 'FINALIZE & CLOSE'; } return; }
+            }
+
+            const updateData = { close_mpesa: clM, close_kcb: clK, close_equity: clE, close_kcb_bank: clB, close_cash: clC, status: 'Closed', end_time: new Date().toISOString(), variance_note: note, system_expected_total: expected };
+            if (isKituiBranch) { updateData.close_family_bank = clFamilyBank; updateData.close_cooperative_bank = clCooperativeBank; }
+
+            const { error } = await supabase.from('daily_shifts').update(updateData).eq('id', currentShift.id);
+            if (error) throw error;
+
+            showSuccessNotification('Shift closed successfully!', `Variance: ${variance === 0 ? 'Balanced' : variance.toFixed(2)}`);
+            setTimeout(() => location.reload(), 1500);
+        } catch (error) {
+            console.error("Close shift error:", error);
+            alert("Error closing shift: " + error.message);
+            isClosingShift = false;
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = 'FINALIZE & CLOSE';
+            }
+        }
+    };
+
+    // ============================================
+    // HISTORY FUNCTIONS
+    // ============================================
+    async function loadHistory(searchQuery = "") {
+        try {
+            const branchId = getCurrentBranchId();
+            const { data: shifts, error } = await supabase.from('daily_shifts').select('*').eq('branch_id', branchId).order('start_time', { ascending: false }).limit(historyLimit);
+            if (error) throw error;
+            allShifts = shifts || [];
+            const { data: transactions } = await supabase.from('cash_transactions').select('shift_id, amount, type').eq('branch_id', branchId);
+            allTransactions = transactions || [];
+
+            if (window.innerWidth <= 768) {
+                renderMobileHistory(allShifts, allTransactions, searchQuery);
+            } else {
+                renderDesktopHistory(allShifts, allTransactions, searchQuery);
+            }
+        } catch (error) { console.error("Fetch Error:", error); }
+    }
+
+    function renderDesktopHistory(shifts, transData, query = "") {
+        const desktopTbody = document.getElementById('history-body');
+        if (!desktopTbody) return;
+        const filtered = shifts.filter(sh => {
+            const dateStr = new Date(sh.start_time).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toLowerCase();
+            return dateStr.includes(query.toLowerCase());
+        });
+
+        let tableHtml = '';
+        filtered.forEach(sh => {
+            const shiftLogs = transData.filter(t => t.shift_id === sh.id);
+            const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
+            const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
+            const cashSales = sh.total_cash_sales || 0;
+            const kcbPaybillSales = sh.total_kcb_paybill_sales || 0;
+            const totalRevenue = sh.total_sales_amount || 0;
+            const shiftDate = new Date(sh.start_time).toISOString().split('T')[0];
+
+            let openTotal = (sh.open_cash || 0) + (sh.open_mpesa || 0) + (sh.open_kcb || 0) + (sh.open_kcb_bank || 0) + (sh.open_equity || 0);
+            let closeTotal = (sh.close_cash || 0) + (sh.close_mpesa || 0) + (sh.close_kcb || 0) + (sh.close_kcb_bank || 0) + (sh.close_equity || 0);
+            if (isKituiBranch) { openTotal += (sh.open_family_bank || 0) + (sh.open_cooperative_bank || 0); closeTotal += (sh.close_family_bank || 0) + (sh.close_cooperative_bank || 0); }
+
+            const isClosed = sh.status === 'Closed';
+            const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
+            const varianceVal = isClosed ? (closeTotal - expected) : 0;
+            let varianceDisplay = '', varianceClass = '';
+            if (!isClosed) { varianceDisplay = 'SHIFT ACTIVE'; varianceClass = 'active-shift'; }
+            else if (varianceVal > 0) { varianceDisplay = '+' + varianceVal.toLocaleString(); varianceClass = 'var-positive'; }
+            else if (varianceVal < 0) { varianceDisplay = varianceVal.toLocaleString(); varianceClass = 'var-negative'; }
+            else { varianceDisplay = '0'; varianceClass = 'var-balanced'; }
+
+            const startD = new Date(sh.start_time);
+            let openingFloatsHtml = `
+                <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash || 0).toLocaleString()}</span></div>
+                <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa || 0).toLocaleString()}</span></div>
+                <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb || 0).toLocaleString()}</span></div>
+                <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity || 0).toLocaleString()}</span></div>`;
+            if (isKituiBranch) {
+                openingFloatsHtml += `
+                    <div class="account-line"><span class="account-label">Family Bank</span><span class="account-val">${(sh.open_family_bank || 0).toLocaleString()}</span></div>
+                    <div class="account-line"><span class="account-label">Cooperative Bank</span><span class="account-val">${(sh.open_cooperative_bank || 0).toLocaleString()}</span></div>`;
+            }
+            openingFloatsHtml += `<div class="total-row">Total: ${openTotal.toLocaleString()}</div>`;
+
+            let closingFloatsHtml = `
+                <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.close_cash || 0).toLocaleString()}</span></div>
+                <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.close_mpesa || 0).toLocaleString()}</span></div>
+                <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.close_kcb || 0).toLocaleString()}</span></div>
+                <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.close_equity || 0).toLocaleString()}</span></div>
+                <div class="account-line"><span class="account-label">Paybill</span><span class="account-val">${(sh.close_kcb_bank || 0).toLocaleString()}</span></div>`;
+            if (isKituiBranch) {
+                closingFloatsHtml += `
+                    <div class="account-line"><span class="account-label">Family Bank</span><span class="account-val">${(sh.close_family_bank || 0).toLocaleString()}</span></div>
+                    <div class="account-line"><span class="account-label">Cooperative Bank</span><span class="account-val">${(sh.close_cooperative_bank || 0).toLocaleString()}</span></div>`;
+            }
+            closingFloatsHtml += `<div class="total-row" style="background:#f0f9ff">Total: ${closeTotal.toLocaleString()}</div>`;
+
+            let paymentMethodsHtml = `
+                <div class="payment-method-item"><span class="payment-label">Cash Sales</span><span class="payment-amount positive">+${cashSales.toLocaleString()}</span></div>
+                <div class="payment-method-item"><span class="payment-label">KCB Paybill</span><span class="payment-amount positive">+${kcbPaybillSales.toLocaleString()}</span></div>
+                <a href="sales_reports.html?date=${shiftDate}" class="revenue-card" style="display: block; text-decoration: none; margin-top: 8px;">
+                    <div class="payment-method-item" style="margin-top:8px; padding-top:8px; border-top:2px solid var(--border);">
+                        <span class="payment-label" style="font-weight:800;">TOTAL SALES</span>
+                        <span class="payment-amount" style="font-weight:800; color:var(--primary);">+${totalRevenue.toLocaleString()}</span>
+                    </div>
+                    <div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:4px; text-align:right">CLICK TO VIEW ➔</div>
+                </a>
+            `;
+
+            tableHtml += `
+                <tr>
+                    <td class="date-cell">
+                        <b>${startD.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</b>
+                        <span class="time-pill">IN: ${startD.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span><br>
+                        <span class="time-pill">${sh.end_time ? 'OUT: ' + new Date(sh.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'ACTIVE'}</span>
+                    </td>
+                    <td>${openingFloatsHtml}</td>
+                    <td style="vertical-align: middle;"><div style="background: #f8fafc; padding: 10px; border-radius: 8px;">${paymentMethodsHtml}</div></td>
+                    <td><a href="moneyinout.html" class="revenue-card"><div class="account-line"><span class="account-label">In</span><span class="account-val" style="color:var(--success)">+${moneyIn.toLocaleString()}</span></div><div class="account-line"><span class="account-label">Out</span><span class="account-val" style="color:var(--danger)">-${moneyOut.toLocaleString()}</span></div><div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:8px; text-align:right">CLICK TO VIEW →</div></a></td>
+                    <td>${closingFloatsHtml}</td>
+                    <td><span class="status-badge ${varianceClass}">${varianceDisplay}</span><div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 8px; text-align: center;">Expected: ${expected.toLocaleString()}</div></td>
+                    <td><div style="max-height: 120px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim); font-style: italic;">${sh.variance_note && sh.variance_note !== 'Balanced' ? sh.variance_note.split(' - ')[1] || sh.variance_note : sh.variance_note || 'No notes added.'}</div></td>
+                </tr>
+            `;
+        });
+        desktopTbody.innerHTML = tableHtml || '<tr><td colspan="7" style="text-align:center; padding:50px;">No records found.</td></tr>';
+    }
+
+    function renderMobileHistory(shifts, transData, query = "") {
+        const mobileContainer = document.getElementById('mobile-shifts-container');
+        const desktopContainer = document.querySelector('.shift-history-table-container');
+        if (!mobileContainer) return;
+        if (desktopContainer) desktopContainer.style.display = 'none';
+        mobileContainer.style.display = 'block';
+
+        const filtered = shifts.filter(sh => {
+            const dateStr = new Date(sh.start_time).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toLowerCase();
+            return dateStr.includes(query.toLowerCase());
+        });
+
+        let mobileHtml = '';
+        filtered.forEach(sh => {
+            const shiftLogs = transData.filter(t => t.shift_id === sh.id);
+            const moneyIn = shiftLogs.filter(t => t.type === 'Money In').reduce((s, t) => s + (t.amount || 0), 0);
+            const moneyOut = shiftLogs.filter(t => t.type === 'Money Out').reduce((s, t) => s + (t.amount || 0), 0);
+            const cashSales = sh.total_cash_sales || 0;
+            const kcbPaybillSales = sh.total_kcb_paybill_sales || 0;
+            const totalRevenue = sh.total_sales_amount || 0;
+            const shiftDate = new Date(sh.start_time).toISOString().split('T')[0];
+
+            let openTotal = (sh.open_cash || 0) + (sh.open_mpesa || 0) + (sh.open_kcb || 0) + (sh.open_kcb_bank || 0) + (sh.open_equity || 0);
+            let closeTotal = (sh.close_cash || 0) + (sh.close_mpesa || 0) + (sh.close_kcb || 0) + (sh.close_kcb_bank || 0) + (sh.close_equity || 0);
+            if (isKituiBranch) { openTotal += (sh.open_family_bank || 0) + (sh.open_cooperative_bank || 0); closeTotal += (sh.close_family_bank || 0) + (sh.close_cooperative_bank || 0); }
+
+            const isClosed = sh.status === 'Closed';
+            const expected = sh.system_expected_total || (openTotal + totalRevenue + moneyIn - moneyOut);
+            const varianceVal = isClosed ? (closeTotal - expected) : 0;
+            const startD = new Date(sh.start_time);
+            let varianceClass = '';
+            if (!isClosed) varianceClass = 'active-shift';
+            else if (varianceVal > 0) varianceClass = 'var-positive';
+            else if (varianceVal < 0) varianceClass = 'var-negative';
+            else varianceClass = 'var-balanced';
+
+            const varianceNote = sh.variance_note && sh.variance_note !== 'Balanced' ? (sh.variance_note.split(' - ')[1] || sh.variance_note) : sh.variance_note;
+
+            mobileHtml += `
+                <div class="shift-mobile-card">
+                    <div class="shift-mobile-header">
+                        <div class="shift-mobile-date">${startD.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                        <div class="shift-mobile-status ${varianceClass}">${isClosed ? (varianceVal > 0 ? `+${varianceVal.toLocaleString()}` : varianceVal < 0 ? varianceVal.toLocaleString() : 'Balanced') : 'Active'}</div>
+                    </div>
+                    <div class="shift-mobile-grid">
+                        <div class="shift-mobile-section">
+                            <div class="shift-mobile-section-title">Opening Floats</div>
+                            <div style="font-size: 0.8rem;">
+                                <div>Cash: ${(sh.open_cash || 0).toLocaleString()}</div>
+                                <div>Mpesa: ${(sh.open_mpesa || 0).toLocaleString()}</div>
+                                <div>KCB: ${(sh.open_kcb || 0).toLocaleString()}</div>
+                                ${isKituiBranch ? `<div>Family Bank: ${(sh.open_family_bank || 0).toLocaleString()}</div><div>Cooperative: ${(sh.open_cooperative_bank || 0).toLocaleString()}</div>` : ''}
+                                <div style="font-weight:700; margin-top:5px;">Total: ${openTotal.toLocaleString()}</div>
+                            </div>
+                        </div>
+                        <div class="shift-mobile-section">
+                            <div class="shift-mobile-section-title">Sales</div>
+                            <div class="shift-mobile-details">
+                                <div class="shift-mobile-detail-line"><span>Cash</span><span style="color:var(--success)">+${cashSales.toLocaleString()}</span></div>
+                                <div class="shift-mobile-detail-line"><span>KCB Paybill</span><span style="color:var(--success)">+${kcbPaybillSales.toLocaleString()}</span></div>
+                                <a href="sales_reports.html?date=${shiftDate}" style="text-decoration: none; display: block;"><div class="shift-mobile-total" style="margin-top:8px;">Total Sales: +${totalRevenue.toLocaleString()}<div style="font-size:0.6rem; color:var(--primary); font-weight:800; margin-top:4px;">➔ CLICK TO VIEW</div></div></a>
+                            </div>
+                        </div>
+                        <div class="shift-mobile-section">
+                            <div class="shift-mobile-section-title">Money In/Out</div>
+                            <div style="font-size: 0.8rem;">
+                                <div style="color:var(--success)">In: ${moneyIn.toLocaleString()}</div>
+                                <div style="color:var(--danger)">Out: ${moneyOut.toLocaleString()}</div>
+                            </div>
+                        </div>
+                        <div class="shift-mobile-section">
+                            <div class="shift-mobile-section-title">Closing Floats</div>
+                            <div style="font-size: 0.8rem;">
+                                <div>Cash: ${(sh.close_cash || 0).toLocaleString()}</div>
+                                <div>Mpesa: ${(sh.close_mpesa || 0).toLocaleString()}</div>
+                                <div>KCB: ${(sh.close_kcb || 0).toLocaleString()}</div>
+                                ${isKituiBranch ? `<div>Family Bank: ${(sh.close_family_bank || 0).toLocaleString()}</div><div>Cooperative: ${(sh.close_cooperative_bank || 0).toLocaleString()}</div>` : ''}
+                                <div style="font-weight:700; margin-top:5px;">Total: ${closeTotal.toLocaleString()}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 10px;">
+                        <div>Expected: ${expected.toLocaleString()}</div>
+                        <div>Variance Note: ${varianceNote || 'No notes'}</div>
+                    </div>
+                </div>
+            `;
+        });
+        mobileContainer.innerHTML = mobileHtml || '<div style="text-align:center; padding:50px;">No records found.</div>';
+    }
+
+    // ============================================
+    // MONEY IN/OUT
+    // ============================================
+    const recordExpenseBtn = document.getElementById('record-expense-btn');
+    if (recordExpenseBtn) {
+        recordExpenseBtn.addEventListener('click', async function() {
+            const amt = parseFloat(document.getElementById('exp-amt')?.value || 0);
+            const desc = document.getElementById('exp-desc')?.value || '';
+            const branchId = getCurrentBranchId();
+            if (!amt || !desc || !currentShift) { alert("❌ Please fill all fields and make sure a shift is active"); return; }
+
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner"></span> RECORDING...';
+
+            try {
+                const { error } = await supabase.from('cash_transactions').insert([{
+                    shift_id: currentShift.id,
+                    type: document.getElementById('exp-type')?.value || 'Money Out',
+                    category: document.getElementById('exp-method')?.value || 'Cash',
+                    amount: amt,
+                    description: desc,
+                    branch_id: branchId,
+                    user_id: currentUser.id
+                }]);
+
+                if (!error) {
+                    const expAmt = document.getElementById('exp-amt');
+                    const expDesc = document.getElementById('exp-desc');
+                    if (expAmt) expAmt.value = '';
+                    if (expDesc) expDesc.value = '';
+                    await loadShiftData();
+                    this.disabled = false;
+                    this.innerHTML = 'RECORD MONEY';
+                    showSuccessNotification('Transaction recorded successfully!', `${document.getElementById('exp-type')?.value || 'Money Out'}: Ksh ${amt.toLocaleString()} via ${document.getElementById('exp-method')?.value || 'Cash'}`);
+                } else { throw error; }
+            } catch (error) {
+                alert("❌ Error recording transaction: " + error.message);
+                this.disabled = false;
+                this.innerHTML = 'RECORD MONEY';
+            }
+        });
+    }
+
+    // ============================================
+    // UTILITY FUNCTIONS
+    // ============================================
+    function checkLowFloats() {
+        const floatItems = [
+            { id: 'float-cash-item', element: document.getElementById('float-cash'), value: parseFloat(document.getElementById('float-cash')?.innerText.replace(/,/g, '')) || 0 },
+            { id: 'float-mpesa-item', element: document.getElementById('float-mpesa'), value: parseFloat(document.getElementById('float-mpesa')?.innerText.replace(/,/g, '')) || 0 },
+            { id: 'float-kcb-item', element: document.getElementById('float-kcb'), value: parseFloat(document.getElementById('float-kcb')?.innerText.replace(/,/g, '')) || 0 },
+            { id: 'float-equity-item', element: document.getElementById('float-equity'), value: parseFloat(document.getElementById('float-equity')?.innerText.replace(/,/g, '')) || 0 }
+        ];
+        if (isKituiBranch) {
+            floatItems.push({ id: 'float-family-bank-item', element: document.getElementById('float-family-bank'), value: parseFloat(document.getElementById('float-family-bank')?.innerText.replace(/,/g, '')) || 0 });
+            floatItems.push({ id: 'float-cooperative-bank-item', element: document.getElementById('float-cooperative-bank'), value: parseFloat(document.getElementById('float-cooperative-bank')?.innerText.replace(/,/g, '')) || 0 });
+        }
+        floatItems.forEach(item => {
+            const floatItemElement = document.getElementById(item.id);
+            if (floatItemElement) {
+                floatItemElement.classList.remove('low-float-warning', 'danger-alert');
+                if (item.value < 2000 && item.value > 0) floatItemElement.classList.add('danger-alert');
+                else if (item.value < 5000 && item.value > 0) floatItemElement.classList.add('low-float-warning');
+            }
+        });
+    }
+
+    window.redirectToGasHub = function() {
+        const branchId = getCurrentBranchId();
+        window.location.href = branchId ? `cashiergashub.html?branch=${branchId}` : 'cashiergashub.html';
+    };
+
+    window.refreshData = async function() {
+        const btn = event?.target?.closest('button');
+        if (!btn) return;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner"></span>';
+        btn.disabled = true;
+        try {
+            await Promise.all([fetchInventory(), loadShiftData(), loadHistory()]);
+            showSuccessNotification('Data refreshed successfully!');
+        } catch (error) {
+            console.error("Refresh error:", error);
+            showErrorMessage("Failed to refresh data");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    };
+
+    function updateGreeting() {
+        const hour = new Date().getHours();
+        const greetingTitle = document.getElementById('greeting-title');
+        const greetingSubtitle = document.getElementById('greeting-subtitle');
+        const greetingTime = document.getElementById('greeting-time');
+        let greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
+        if (greetingTitle) greetingTitle.textContent = greeting + '!';
+        if (greetingSubtitle) greetingSubtitle.textContent = currentShift ? 'Your shift is active. Keep up the great work!' : 'Ready to start your shift?';
+        if (greetingTime) greetingTime.textContent = new Date().toLocaleString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    async function checkForOpenShift(branchId) {
+        try {
+            const { data, error } = await supabase.from('daily_shifts').select('id, status, start_time').eq('branch_id', branchId).eq('status', 'Open').maybeSingle();
+            if (error) throw error;
+            return data;
+        } catch (error) { console.error("Error checking open shift:", error); return null; }
+    }
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+    async function init() {
+        try {
+            await loadBranches();
+            const profile = await loadUserProfile();
+            if (!profile) {
+                // If no profile, but sessionData exists, try to continue
+                if (!sessionData) {
+                    return;
+                }
+            }
+
+            const branchId = getCurrentBranchId();
+            const branchNameHeader = document.getElementById('branch-name-header');
+            if (branchNameHeader && branchId && branches[branchId]) {
+                branchNameHeader.innerHTML = `<i class="fas fa-store"></i> ${branches[branchId].name}`;
+            }
+
+            isKituiBranch = checkIfKituiBranch();
+            toggleKituiBankElements(isKituiBranch);
+
+            if (isKituiBranch) {
+                const expMethodSelect = document.getElementById('exp-method');
+                if (expMethodSelect) {
+                    let hasFamilyBank = false, hasCooperativeBank = false;
+                    for (let i = 0; i < expMethodSelect.options.length; i++) {
+                        if (expMethodSelect.options[i].value === 'Family Bank Float') hasFamilyBank = true;
+                        if (expMethodSelect.options[i].value === 'Cooperative Bank Float') hasCooperativeBank = true;
+                    }
+                    if (!hasFamilyBank) {
+                        const familyOption = document.createElement('option');
+                        familyOption.value = 'Family Bank Float';
+                        familyOption.textContent = '🏦 Family Bank Float';
+                        familyOption.style.color = '#059669';
+                        familyOption.style.fontWeight = '700';
+                        expMethodSelect.appendChild(familyOption);
+                    }
+                    if (!hasCooperativeBank) {
+                        const coopOption = document.createElement('option');
+                        coopOption.value = 'Cooperative Bank Float';
+                        coopOption.textContent = '🏦 Cooperative Bank Float';
+                        coopOption.style.color = '#7c3aed';
+                        coopOption.style.fontWeight = '700';
+                        expMethodSelect.appendChild(coopOption);
+                    }
+                }
+            }
+
+            updateGreeting();
+            setInterval(updateGreeting, 60000);
+
+            const [prodRes, shiftRes] = await Promise.all([
+                supabase.from('products').select('*').eq('branch_id', branchId),
+                supabase.from('daily_shifts').select('*').eq('branch_id', branchId).eq('status', 'Open').maybeSingle()
+            ]);
+
+            inventory = prodRes.data || [];
+            refreshProductDatalist();
+
+            const actionBtnContainer = document.getElementById('shift-action-container');
+            if (shiftRes.data) {
+                currentShift = shiftRes.data;
+                if (actionBtnContainer) {
+                    actionBtnContainer.innerHTML = `
+                        <button class="btn btn-danger special-action-btn" onclick="showCloseModal()">🔴 CLOSE DAY</button>
+                        <button class="btn" onclick="refreshData()" style="background: #e2e8f0; padding: 8px 12px; font-size: 0.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    `;
+                }
+                const floatCash = document.getElementById('float-cash');
+                const floatMpesa = document.getElementById('float-mpesa');
+                const floatKcb = document.getElementById('float-kcb');
+                const floatEquity = document.getElementById('float-equity');
+                if (floatCash) floatCash.innerText = (currentShift.open_cash || 0).toLocaleString();
+                if (floatMpesa) floatMpesa.innerText = (currentShift.open_mpesa || 0).toLocaleString();
+                if (floatKcb) floatKcb.innerText = (currentShift.open_kcb || 0).toLocaleString();
+                if (floatEquity) floatEquity.innerText = (currentShift.open_equity || 0).toLocaleString();
+                if (isKituiBranch) {
+                    const floatFamilyBank = document.getElementById('float-family-bank');
+                    const floatCooperativeBank = document.getElementById('float-cooperative-bank');
+                    if (floatFamilyBank) floatFamilyBank.innerText = (currentShift.open_family_bank || 0).toLocaleString();
+                    if (floatCooperativeBank) floatCooperativeBank.innerText = (currentShift.open_cooperative_bank || 0).toLocaleString();
+                }
+                await loadShiftData();
+                updateGreeting();
+                setTimeout(checkLowFloats, 500);
+            } else {
+                if (actionBtnContainer) {
+                    actionBtnContainer.innerHTML = `
+                        <button class="btn btn-primary special-action-btn start-btn-large" onclick="document.getElementById('open-modal').style.display='flex'">🚀 START DAY</button>
+                        <button class="btn" onclick="refreshData()" style="background: #e2e8f0; padding: 8px 12px; font-size: 0.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    `;
+                }
+            }
+            await loadHistory();
+        } catch (error) { console.error("Error in init:", error); }
+    }
+
+    // ============================================
+    // EVENT LISTENERS
+    // ============================================
+    const pSearch = document.getElementById('pSearch');
+    if (pSearch) {
+        pSearch.addEventListener('input', (e) => {
+            selectedItem = inventory.find(p => formatItemName(p) === e.target.value);
+            const notice = document.getElementById('gas-redirect-notice');
+            if (notice) notice.style.display = 'none';
+            if (selectedItem) {
+                const pPriceInput = document.getElementById('pPrice');
+                if (pPriceInput) pPriceInput.value = selectedItem.selling_price;
+                const hintMin = document.getElementById('hint-min');
+                if (hintMin) { hintMin.innerText = `Min: ${selectedItem.min_price || 0}`; hintMin.style.display = 'inline-block'; }
+                updateStockDisplay(selectedItem);
+                updateTotal();
+                if (selectedItem.category === 'Gas') {
+                    const gasExchangeNote = document.getElementById('gas-exchange-note');
+                    if (gasExchangeNote) gasExchangeNote.style.display = 'block';
+                    if (notice) notice.style.display = 'flex';
+                } else {
+                    const gasExchangeNote = document.getElementById('gas-exchange-note');
+                    if (gasExchangeNote) gasExchangeNote.style.display = 'none';
+                }
+            } else {
+                const gasExchangeNote = document.getElementById('gas-exchange-note');
+                if (gasExchangeNote) gasExchangeNote.style.display = 'none';
+            }
+        });
+    }
+
+    const historySearch = document.getElementById('history-search');
+    if (historySearch) {
+        historySearch.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = allShifts.filter(sh => {
+                const dateStr = new Date(sh.start_time).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toLowerCase();
+                return dateStr.includes(term);
+            });
+            if (window.innerWidth <= 768) renderMobileHistory(filtered, allTransactions, term);
+            else renderDesktopHistory(filtered, allTransactions, term);
+        });
+    }
+
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', () => { historyLimit += 10; loadHistory(); });
+    }
+
+    const scrollContainer = document.getElementById('scrollContainer');
+    const scrollHint = document.getElementById('scrollHint');
+    if (scrollContainer && scrollHint) {
+        scrollContainer.addEventListener('scroll', () => {
+            if (scrollContainer.scrollLeft > 20) {
+                scrollHint.style.opacity = '0';
+                setTimeout(() => scrollHint.style.display = 'none', 500);
+            }
+        });
+    }
+
+    window.addEventListener('resize', function() {
+        if (allShifts.length > 0) {
+            if (window.innerWidth <= 768) renderMobileHistory(allShifts, allTransactions);
+            else { renderDesktopHistory(allShifts, allTransactions); 
+                const desktopContainer = document.querySelector('.shift-history-table-container');
+                const mobileContainer = document.getElementById('mobile-shifts-container');
+                if (desktopContainer) desktopContainer.style.display = 'block';
+                if (mobileContainer) mobileContainer.style.display = 'none';
+            }
+        }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') { init(); checkLowFloats(); }
+    });
+
+    // ============================================
+    // START APP
+    // ============================================
+    init();
+    setInterval(checkLowFloats, 30000);
+
+</script>
+
 
 </body>
 </html>
