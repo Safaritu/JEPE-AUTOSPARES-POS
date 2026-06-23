@@ -4,6 +4,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="robots" content="noindex, nofollow">
+    
+    <!-- PREVENT CACHING - forces browser to always fetch fresh page -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <!-- PREVENT APP CACHING / SERVICE WORKER -->
+    <meta name="apple-mobile-web-app-capable" content="no">
+    <meta name="mobile-web-app-capable" content="no">
+    
     <title>JEPE AUTOSPARES · Internal Portal</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -106,7 +116,7 @@
             z-index: 10;
         }
 
-        /* ----- EXPIRY BANNER (on login page) ----- */
+        /* ----- EXPIRY BANNER ----- */
         .expiry-banner {
             background: #fff6e5;
             border-left: 8px solid #dc7a2c;
@@ -390,7 +400,30 @@
             margin-left: 2px;
         }
 
-        /* make banner responsive */
+        /* Session timeout warning */
+        .session-warning {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(239, 68, 68, 0.95);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            z-index: 999;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            display: none;
+            animation: slideUp 0.3s ease;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
         @media (max-width: 480px) {
             .expiry-banner {
                 flex-direction: column;
@@ -407,6 +440,11 @@
     </style>
 </head>
 <body>
+
+<!-- ===== SESSION TIMEOUT WARNING ===== -->
+<div class="session-warning" id="sessionWarning">
+    ⏰ Session expiring soon! <span id="timeoutCountdown">10:00</span>
+</div>
 
 <!-- ===== WELCOME OVERLAY ===== -->
 <div id="welcome-overlay" class="hidden">
@@ -426,7 +464,7 @@
 <!-- ===== MAIN CONTAINER ===== -->
 <div class="container">
 
-    <!-- ===== EXPIRY BANNER (always visible on login) ===== -->
+    <!-- ===== EXPIRY BANNER ===== -->
     <div class="expiry-banner" id="expiryBanner">
         <div class="msg">
             <span class="icon">⏳</span>
@@ -514,6 +552,12 @@
     import { supabase, BRANCHES } from './auth.js';
 
     let isLogin = true;
+    let sessionTimeoutId = null;
+    let countdownInterval = null;
+    let sessionTimer = 10 * 60; // 10 minutes in seconds
+    const SESSION_TIMEOUT = 10 * 60; // 10 minutes
+    const SESSION_KEY = 'pos_session';
+    const WARNING_THRESHOLD = 60; // show warning 1 minute before timeout
 
     function safeGetElement(id) {
         const element = document.getElementById(id);
@@ -543,6 +587,114 @@
         }, 5000);
     }
 
+    // ===== SESSION MANAGEMENT =====
+    function startSessionTimer() {
+        // Clear any existing timers
+        clearTimeout(sessionTimeoutId);
+        clearInterval(countdownInterval);
+        sessionTimer = SESSION_TIMEOUT;
+        
+        const warningEl = document.getElementById('sessionWarning');
+        const countdownEl = document.getElementById('timeoutCountdown');
+        
+        // Start countdown
+        countdownInterval = setInterval(() => {
+            sessionTimer--;
+            
+            // Update countdown display
+            if (sessionTimer <= WARNING_THRESHOLD) {
+                const minutes = Math.floor(sessionTimer / 60);
+                const seconds = sessionTimer % 60;
+                countdownEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                warningEl.style.display = 'block';
+            }
+            
+            // Auto logout at timeout
+            if (sessionTimer <= 0) {
+                clearInterval(countdownInterval);
+                clearTimeout(sessionTimeoutId);
+                warningEl.style.display = 'none';
+                handleSessionTimeout();
+            }
+        }, 1000);
+        
+        // Also set a timeout as backup
+        sessionTimeoutId = setTimeout(() => {
+            clearInterval(countdownInterval);
+            warningEl.style.display = 'none';
+            handleSessionTimeout();
+        }, SESSION_TIMEOUT * 1000);
+    }
+
+    function resetSessionTimer() {
+        clearTimeout(sessionTimeoutId);
+        clearInterval(countdownInterval);
+        document.getElementById('sessionWarning').style.display = 'none';
+        startSessionTimer();
+    }
+
+    function handleSessionTimeout() {
+        // Clear session from localStorage
+        localStorage.removeItem(SESSION_KEY);
+        
+        // Clear any user session data
+        showMessage('⏰ Session expired. Please login again.', 'error');
+        
+        // Redirect to login page if not already there
+        if (!window.location.pathname.includes('login')) {
+            window.location.href = window.location.pathname;
+        }
+    }
+
+    // Reset timer on user activity
+    document.addEventListener('click', resetSessionTimer);
+    document.addEventListener('keydown', resetSessionTimer);
+    document.addEventListener('mousemove', resetSessionTimer);
+    document.addEventListener('scroll', resetSessionTimer);
+
+    // ===== PREVENT CACHING =====
+    // Prevent browser from storing the page in cache
+    window.addEventListener('load', function() {
+        // Force reload if page is loaded from cache
+        if (performance.navigation.type === 2) {
+            window.location.reload(true);
+        }
+    });
+
+    // ===== PREVENT "ADD TO HOME SCREEN" OFFLINE ACCESS =====
+    // Check if running as standalone app (installed from browser)
+    if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
+        // Force logout and redirect to login page with no-cache headers
+        localStorage.removeItem(SESSION_KEY);
+        // Use a meta refresh to ensure fresh load
+        document.write('<meta http-equiv="refresh" content="0;url=' + window.location.href + '?t=' + Date.now() + '">');
+    }
+
+    // ===== CHECK EXISTING SESSION =====
+    function checkExistingSession() {
+        const session = localStorage.getItem(SESSION_KEY);
+        if (session) {
+            try {
+                const sessionData = JSON.parse(session);
+                // Check if session is still valid (not expired)
+                // Start timer for this session
+                startSessionTimer();
+                // Session exists, but we're on login page - redirect based on role
+                if (sessionData.role === 'admin') {
+                    window.location.href = 'subscriptions.html';
+                } else {
+                    window.location.href = 'cashier.html';
+                }
+                return true;
+            } catch (e) {
+                localStorage.removeItem(SESSION_KEY);
+                return false;
+            }
+        }
+        return false;
+    }
+
+    // ===== TOGGLE LOGIN / REGISTER =====
     window.toggleMode = () => {
         isLogin = !isLogin;
         
@@ -600,6 +752,7 @@
         });
     }
 
+    // ===== AUTH HANDLER =====
     window.handleAuth = async () => {
         const emailInput = safeGetElement('email');
         const passwordInput = safeGetElement('password');
@@ -655,11 +808,24 @@
                     return;
                 }
                 
-                // After successful login, check role and redirect
+                // Store session in localStorage
+                const session = {
+                    user: { id: data.user.id },
+                    profile: profile,
+                    branch: profile.branches,
+                    role: profile.role,
+                    loginTime: Date.now()
+                };
+                localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+                
+                // Start session timer
+                startSessionTimer();
+                
+                // Redirect based on role
                 await checkRoleAndRedirect(data.user.id);
                 
             } else {
-                // SIGN UP (unchanged)
+                // SIGN UP
                 if (!fullName) {
                     showMessage("Please enter your full name", 'error');
                     if (btn) {
@@ -704,7 +870,7 @@
 
                 if (data.user) {
                     showMessage(
-                        '✅ Registration successful! Please check your email to confirm your account. You will be redirected after confirmation.', 
+                        '✅ Registration successful! Please check your email to confirm your account.', 
                         'success'
                     );
                     
@@ -769,19 +935,9 @@
                     : (branchName ? `Assigned to ${branchName}` : 'Loading workspace...');
             }
             
-            // Store session in localStorage
-            const session = {
-                user: { id: userId },
-                profile: profile,
-                branch: profile.branches,
-                role: profile.role
-            };
-            localStorage.setItem('pos_session', JSON.stringify(session));
-            
-            // 🔥 REDIRECT: if admin → subscription page, else cashier
             setTimeout(() => {
                 if (profile.role === 'admin') {
-                    window.location.href = 'subscriptions.html';  // your subscription page
+                    window.location.href = 'subscriptions.html';
                 } else {
                     window.location.href = 'cashier.html';
                 }
@@ -804,23 +960,12 @@
         }
     };
 
-    // ===== SCROLL TO PLANS (banner button) =====
-    // On login page, we can't scroll to plans because they're on another page.
-    // Instead, we show a message or redirect.
+    // Scroll to plans (banner button)
     document.getElementById('scrollToPlansBtn')?.addEventListener('click', function() {
-        // If user is not logged in, we can show a prompt
         showMessage("🔐 Please sign in first to view subscription plans.", 'error');
-        // Optionally: redirect to subscription page after login
     });
 
-    // Check if user is already logged in
-    async function checkExistingSession() {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            await checkRoleAndRedirect(user.id);
-        }
-    }
-    
+    // ===== INIT =====
     async function handleEmailConfirmation() {
         const hash = window.location.hash;
         if (hash && hash.includes('access_token')) {
@@ -829,8 +974,15 @@
         }
     }
     
-    handleEmailConfirmation();
-    checkExistingSession();
+    // Check if user is already logged in (prevents direct app access)
+    const hasSession = checkExistingSession();
+    
+    if (!hasSession) {
+        // If no session, ensure any old session data is cleared
+        localStorage.removeItem(SESSION_KEY);
+        // Start fresh
+        handleEmailConfirmation();
+    }
 </script>
 
 </body>
