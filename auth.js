@@ -39,8 +39,27 @@ let sessionTimer = SESSION_TIMEOUT;
 let sessionStartTime = null;
 let currentSessionId = null;
 
-// Initialize session management
+// Initialize session management - FIXED to prevent loop
 export function initSessionManager() {
+    // Check if we're on a login page - if so, don't redirect
+    const currentPath = window.location.pathname;
+    const loginPages = ['index.html', 'login.html', ''];
+    const isLoginPage = loginPages.some(page => currentPath.endsWith(page) || currentPath === '/');
+    
+    if (isLoginPage) {
+        // On login page, just return session data without redirect
+        const session = localStorage.getItem(SESSION_KEY);
+        if (session) {
+            try {
+                return JSON.parse(session);
+            } catch (e) {
+                return null;
+            }
+        }
+        return null;
+    }
+    
+    // On protected pages, check session
     const sessionData = checkExistingSession();
     
     if (sessionData) {
@@ -49,7 +68,17 @@ export function initSessionManager() {
         return sessionData;
     }
     
+    // No valid session - show expired overlay and redirect
+    showSessionExpired();
     return null;
+}
+
+// Show session expired overlay
+function showSessionExpired() {
+    const overlay = document.getElementById('sessionExpiredOverlay');
+    if (overlay) {
+        overlay.classList.add('active');
+    }
 }
 
 // Check if user has a valid session
@@ -143,6 +172,7 @@ function createWarningElement() {
     `;
     warningDiv.innerHTML = `
         ⏰ Session expiring soon! <span id="timeoutCountdown">10:00</span>
+        <button class="close-warning" onclick="this.parentElement.style.display='none'" style="background:none;border:none;color:white;font-size:1.2rem;cursor:pointer;margin-left:10px;">×</button>
     `;
     document.body.appendChild(warningDiv);
     
@@ -175,7 +205,7 @@ function updateSessionLoginTime() {
 }
 
 // ============================================
-// FIXED: RECORD SIGN OUT WITH PROPER UPDATES
+// RECORD SIGN OUT WITH PROPER UPDATES
 // ============================================
 export async function recordSignOut(userId, sessionId, durationSeconds) {
     try {
@@ -202,7 +232,6 @@ export async function recordSignOut(userId, sessionId, durationSeconds) {
         }
         
         // 2. Update profiles table - last_sign_out and total_session_time
-        // First, get current total_session_time
         const { data: profile, error: fetchError } = await supabase
             .from('profiles')
             .select('total_session_time')
@@ -219,7 +248,6 @@ export async function recordSignOut(userId, sessionId, durationSeconds) {
         
         console.log(`📊 Current total: ${currentTotal}s, Adding: ${durationSeconds}s, New total: ${newTotal}s`);
         
-        // Update both last_sign_out and total_session_time
         const { error: updateError } = await supabase
             .from('profiles')
             .update({ 
@@ -240,7 +268,7 @@ export async function recordSignOut(userId, sessionId, durationSeconds) {
 }
 
 // ============================================
-// HANDLE SESSION TIMEOUT
+// HANDLE SESSION TIMEOUT - FIXED to redirect properly
 // ============================================
 async function handleSessionTimeout() {
     const session = localStorage.getItem(SESSION_KEY);
@@ -266,7 +294,8 @@ async function handleSessionTimeout() {
     const warningEl = document.getElementById('sessionWarning');
     if (warningEl) warningEl.style.display = 'none';
     
-    redirectToLogin();
+    // Show expired overlay instead of redirecting immediately
+    showSessionExpired();
 }
 
 // Reset timer on user activity
@@ -284,16 +313,6 @@ function resetSessionTimer() {
         const warningEl = document.getElementById('sessionWarning');
         if (warningEl) warningEl.style.display = 'none';
         startSessionTimer();
-    }
-}
-
-function redirectToLogin() {
-    const currentPath = window.location.pathname;
-    const loginPages = ['index.html', 'login.html', ''];
-    const isLoginPage = loginPages.some(page => currentPath.endsWith(page) || currentPath === '/');
-    
-    if (!isLoginPage && !currentPath.includes('subscriptions')) {
-        window.location.href = 'index.html';
     }
 }
 
@@ -345,12 +364,11 @@ export async function recordSignIn(userId) {
 }
 
 // ============================================
-// FIXED: LOGOUT - ENSURES RECORDING HAPPENS
+// LOGOUT - ENSURES RECORDING HAPPENS
 // ============================================
 export async function logout() {
     console.log('🚪 Logging out...');
     
-    // Get session data BEFORE clearing
     const session = localStorage.getItem(SESSION_KEY);
     let userId = null;
     let sessionId = null;
@@ -371,7 +389,6 @@ export async function logout() {
         }
     }
     
-    // Record sign out BEFORE clearing anything
     if (userId && sessionId) {
         console.log(`📝 Recording sign out for user ${userId}, session ${sessionId}, duration ${duration}s`);
         await recordSignOut(userId, sessionId, duration);
@@ -379,7 +396,6 @@ export async function logout() {
         console.log('⚠️ No session data to record during logout');
     }
     
-    // Now clear everything
     clearSession();
     
     try {
