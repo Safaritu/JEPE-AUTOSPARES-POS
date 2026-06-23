@@ -71,10 +71,8 @@ function checkExistingSession() {
             sessionStartTime = sessionData.loginTime || Date.now();
             return sessionData;
         } else {
-            // Session expired
-            localStorage.removeItem(SESSION_KEY);
-            showSessionExpiredMessage();
-            redirectToLogin();
+            // Session expired - record it and clear
+            handleSessionTimeout();
             return null;
         }
     } catch (e) {
@@ -185,7 +183,68 @@ function updateSessionLoginTime() {
     }
 }
 
-// Handle session timeout - record sign out and redirect
+// ============================================
+// FIXED: RECORD SIGN OUT WITH ALL COLUMNS
+// ============================================
+async function recordSignOut(userId, sessionId, durationSeconds) {
+    try {
+        console.log(`📝 Recording sign out for user ${userId}, duration: ${durationSeconds}s`);
+        
+        // 1. Update user_sessions table
+        const { error: sessionError } = await supabase
+            .from('user_sessions')
+            .update({
+                sign_out_time: new Date().toISOString(),
+                duration_seconds: durationSeconds
+            })
+            .eq('id', sessionId);
+        
+        if (sessionError) {
+            console.error('❌ Error updating session:', sessionError);
+        } else {
+            console.log('✅ Session updated successfully');
+        }
+        
+        // 2. Update profiles table - FIX: Update both last_sign_out and total_session_time
+        // First, get current total_session_time
+        const { data: profile, error: fetchError } = await supabase
+            .from('profiles')
+            .select('total_session_time')
+            .eq('id', userId)
+            .single();
+        
+        if (fetchError) {
+            console.error('❌ Error fetching profile:', fetchError);
+        } else {
+            const currentTotal = profile?.total_session_time || 0;
+            const newTotal = currentTotal + durationSeconds;
+            
+            console.log(`📊 Current total: ${currentTotal}s, Adding: ${durationSeconds}s, New total: ${newTotal}s`);
+            
+            // Update both last_sign_out and total_session_time
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ 
+                    last_sign_out: new Date().toISOString(),
+                    total_session_time: newTotal
+                })
+                .eq('id', userId);
+            
+            if (updateError) {
+                console.error('❌ Error updating profile:', updateError);
+            } else {
+                console.log(`✅ Profile updated: last_sign_out = ${new Date().toISOString()}, total_session_time = ${newTotal}s`);
+            }
+        }
+        
+    } catch (err) {
+        console.error('❌ Error recording sign out:', err);
+    }
+}
+
+// ============================================
+// FIXED: HANDLE SESSION TIMEOUT
+// ============================================
 async function handleSessionTimeout() {
     const session = localStorage.getItem(SESSION_KEY);
     if (session) {
@@ -195,7 +254,10 @@ async function handleSessionTimeout() {
             
             if (userId && currentSessionId && sessionStartTime) {
                 const duration = Math.floor((Date.now() - sessionStartTime) / 1000);
+                console.log(`⏰ Session timed out after ${duration} seconds`);
                 await recordSignOut(userId, currentSessionId, duration);
+            } else {
+                console.log('⚠️ No session data to record');
             }
         } catch (e) {
             console.error('Error during session timeout cleanup:', e);
@@ -211,39 +273,6 @@ async function handleSessionTimeout() {
     
     showSessionExpiredMessage();
     redirectToLogin();
-}
-
-// Record sign out to database
-async function recordSignOut(userId, sessionId, durationSeconds) {
-    try {
-        // Update user_sessions
-        const { error: sessionError } = await supabase
-            .from('user_sessions')
-            .update({
-                sign_out_time: new Date().toISOString(),
-                duration_seconds: durationSeconds
-            })
-            .eq('id', sessionId);
-        
-        if (sessionError) {
-            console.error('Error updating session:', sessionError);
-        }
-        
-        // Update profile last_sign_out
-        const { error: profileError } = await supabase
-            .from('profiles')
-            .update({ 
-                last_sign_out: new Date().toISOString() 
-            })
-            .eq('id', userId);
-        
-        if (profileError) {
-            console.error('Error updating last_sign_out:', profileError);
-        }
-        
-    } catch (err) {
-        console.error('Error recording sign out:', err);
-    }
 }
 
 // Reset timer on user activity
@@ -298,7 +327,56 @@ function showSessionExpiredMessage() {
 }
 
 // ============================================
-// EXISTING AUTH FUNCTIONS (unchanged below)
+// FIXED: RECORD SIGN IN
+// ============================================
+export async function recordSignIn(userId) {
+    try {
+        console.log(`📝 Recording sign in for user ${userId}`);
+        const userAgent = navigator.userAgent;
+        
+        // Insert session record
+        const { data: sessionData, error: sessionError } = await supabase
+            .from('user_sessions')
+            .insert({
+                user_id: userId,
+                sign_in_time: new Date().toISOString(),
+                user_agent: userAgent,
+                ip_address: 'client-side'
+            })
+            .select('id')
+            .single();
+        
+        if (sessionError) {
+            console.error('❌ Error recording session:', sessionError);
+            return null;
+        }
+        
+        currentSessionId = sessionData.id;
+        console.log(`✅ Session recorded with ID: ${currentSessionId}`);
+        
+        // Update profile last_sign_in
+        const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ 
+                last_sign_in: new Date().toISOString()
+            })
+            .eq('id', userId);
+        
+        if (updateError) {
+            console.error('❌ Error updating last_sign_in:', updateError);
+        } else {
+            console.log('✅ last_sign_in updated successfully');
+        }
+        
+        return sessionData.id;
+    } catch (err) {
+        console.error('❌ Error in recordSignIn:', err);
+        return null;
+    }
+}
+
+// ============================================
+// EXISTING AUTH FUNCTIONS
 // ============================================
 
 // Get all branches as array
@@ -515,8 +593,12 @@ export function clearSession() {
     if (warningEl) warningEl.style.display = 'none';
 }
 
-// Logout helper with session recording
+// ============================================
+// FIXED: LOGOUT WITH PROPER RECORDING
+// ============================================
 export async function logout() {
+    console.log('🚪 Logging out...');
+    
     // Record sign out before clearing
     const session = localStorage.getItem(SESSION_KEY);
     if (session) {
@@ -526,7 +608,10 @@ export async function logout() {
             
             if (userId && currentSessionId && sessionStartTime) {
                 const duration = Math.floor((Date.now() - sessionStartTime) / 1000);
+                console.log(`📊 Session duration: ${duration} seconds`);
                 await recordSignOut(userId, currentSessionId, duration);
+            } else {
+                console.log('⚠️ No session data to record during logout');
             }
         } catch (e) {
             console.error('Error during logout:', e);
@@ -566,47 +651,40 @@ supabase.auth.onAuthStateChange((event, session) => {
 });
 
 // ============================================
-// NEW: Record sign in function
+// HELPER: Get total session time for a user
 // ============================================
-
-export async function recordSignIn(userId) {
+export async function getUserTotalSessionTime(userId) {
     try {
-        const userAgent = navigator.userAgent;
-        
-        // Insert session record
-        const { data: sessionData, error: sessionError } = await supabase
-            .from('user_sessions')
-            .insert({
-                user_id: userId,
-                sign_in_time: new Date().toISOString(),
-                user_agent: userAgent,
-                ip_address: 'client-side'
-            })
-            .select('id')
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('total_session_time')
+            .eq('id', userId)
             .single();
         
-        if (sessionError) {
-            console.error('Error recording session:', sessionError);
-            return null;
-        }
+        if (error) throw error;
+        return data?.total_session_time || 0;
+    } catch (error) {
+        console.error('Error getting total session time:', error);
+        return 0;
+    }
+}
+
+// ============================================
+// HELPER: Get user session history
+// ============================================
+export async function getUserSessionHistory(userId, limit = 10) {
+    try {
+        const { data, error } = await supabase
+            .from('user_sessions')
+            .select('*')
+            .eq('user_id', userId)
+            .order('sign_in_time', { ascending: false })
+            .limit(limit);
         
-        currentSessionId = sessionData.id;
-        
-        // Update profile last_sign_in
-        const { error: updateError } = await supabase
-            .from('profiles')
-            .update({ 
-                last_sign_in: new Date().toISOString() 
-            })
-            .eq('id', userId);
-        
-        if (updateError) {
-            console.error('Error updating last_sign_in:', updateError);
-        }
-        
-        return sessionData.id;
-    } catch (err) {
-        console.error('Error in recordSignIn:', err);
-        return null;
+        if (error) throw error;
+        return data || [];
+    } catch (error) {
+        console.error('Error getting session history:', error);
+        return [];
     }
 }
