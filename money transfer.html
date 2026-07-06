@@ -1,1 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JEPE AUTOSPARES | Money Transfer</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #3730a3;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-dim: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --cash-color: #10b981;
+            --mpesa-color: #8b5cf6;
+            --kcb-color: #2563eb;
+            --equity-color: #f59e0b;
+            --family-bank-color: #059669;
+            --cooperative-color: #7c3aed;
+            --paybill-color: #dc2626;
+        }
 
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg);
+            padding: 20px;
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            padding: 20px 30px;
+            border-radius: 20px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header h1 i {
+            color: var(--primary);
+        }
+
+        .header .back-btn {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+
+        .header .role-badge {
+            background: rgba(79, 70, 229, 0.3);
+            color: #818cf8;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            border: 1px solid rgba(79, 70, 229, 0.3);
+        }
+
+        /* Account Balances */
+        .balances-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .balance-card {
+            background: white;
+            border-radius: 16px;
+            padding: 15px 18px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            transition: all 0.2s;
+            cursor: default;
+        }
+
+        .balance-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
+
+        .balance-card .label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .balance-card .label i {
+            font-size: 0.8rem;
+        }
+
+        .balance-card .amount {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-top: 4px;
+        }
+
+        .balance-card .amount.positive { color: var(--success); }
+        .balance-card .amount.negative { color: var(--danger); }
+
+        .balance-card.cash .label i { color: var(--cash-color); }
+        .balance-card.mpesa .label i { color: var(--mpesa-color); }
+        .balance-card.kcb .label i { color: var(--kcb-color); }
+        .balance-card.equity .label i { color: var(--equity-color); }
+        .balance-card.family-bank .label i { color: var(--family-bank-color); }
+        .balance-card.cooperative .label i { color: var(--cooperative-color); }
+        .balance-card.paybill .label i { color: var(--paybill-color); }
+
+        /* Paybill hidden for cashiers - they can't see balance */
+        .balance-card.paybill.hidden-for-cashier {
+            display: none !important;
+        }
+
+        /* Paybill visible for admins */
+        .balance-card.paybill.visible-for-admin {
+            display: block;
+        }
+
+        /* Transfer Card */
+        .transfer-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px 30px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            margin-bottom: 25px;
+        }
+
+        .transfer-card h2 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary-dark);
+        }
+
+        .transfer-card h2 i {
+            color: var(--primary);
+        }
+
+        .transfer-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .transfer-form .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .form-group select,
+        .form-group input {
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            font-size: 0.95rem;
+            font-family: inherit;
+            background: #f8fafc;
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            background: white;
+        }
+
+        .form-group select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 36px;
+            cursor: pointer;
+        }
+
+        .form-group .hint {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        .form-group select:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .transfer-btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .transfer-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.3);
+        }
+
+        .transfer-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .transfer-btn i {
+            font-size: 1.1rem;
+        }
+
+        /* Transfer History */
+        .history-section {
+            background: white;
+            border-radius: 20px;
+            padding: 20px 25px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .history-header h3 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-dark);
+        }
+
+        .history-header h3 i {
+            color: var(--primary);
+        }
+
+        .history-table-wrapper {
+            overflow-x: auto;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+
+        .history-table th {
+            text-align: left;
+            padding: 12px 15px;
+            background: #f8fafc;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            font-weight: 800;
+            border-bottom: 2px solid var(--border);
+            white-space: nowrap;
+        }
+
+        .history-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.85rem;
+            vertical-align: middle;
+        }
+
+        .history-table tr:hover td {
+            background: #f8fafc;
+        }
+
+        .transfer-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .transfer-badge.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .transfer-badge.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .account-from {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+        }
+
+        .account-from .arrow {
+            color: var(--text-dim);
+            margin: 0 4px;
+        }
+
+        .account-from .to {
+            color: var(--primary);
+        }
+
+        .amount-col {
+            font-weight: 700;
+        }
+
+        .amount-col.positive {
+            color: var(--success);
+        }
+
+        .amount-col.negative {
+            color: var(--danger);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-dim);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: var(--border);
+            margin-bottom: 15px;
+        }
+
+        .empty-state p {
+            font-size: 0.95rem;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            z-index: 9999;
+            animation: slideInRight 0.3s ease, fadeOut 0.3s ease 3.5s forwards;
+            max-width: 400px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+        .toast.info { background: var(--primary); }
+        .toast.warning { background: var(--warning); }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; transform: translateX(100%); }
+        }
+
+        .toast i { font-size: 1.2rem; }
+
+        /* Spinner */
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Lock icon for restricted accounts */
+        .lock-icon {
+            color: var(--warning);
+            font-size: 0.7rem;
+            margin-left: 4px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body { padding: 12px; }
+            .header { padding: 15px 20px; flex-direction: column; align-items: stretch; text-align: center; }
+            .header h1 { font-size: 1.2rem; justify-content: center; }
+            .balances-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .balance-card .amount { font-size: 1rem; }
+            .transfer-card { padding: 18px 15px; }
+            .transfer-form { grid-template-columns: 1fr; }
+            .transfer-form .full-width { grid-column: 1; }
+            .history-section { padding: 15px; }
+            .history-table-wrapper { margin: 0 -15px; padding: 0 15px; }
+        }
+
+        @media (max-width: 480px) {
+            .balances-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+            .balance-card { padding: 10px 12px; }
+            .balance-card .amount { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+            <h1>
+                <i class="fas fa-exchange-alt"></i>
+                Money Transfers
+            </h1>
+            <span class="role-badge" id="roleBadge">
+                <i class="fas fa-user-shield"></i> Admin
+            </span>
+        </div>
+        <a href="admin.html" class="back-btn">
+            <i class="fas fa-arrow-left"></i>
+            Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Account Balances -->
+    <div class="balances-grid" id="balancesGrid">
+        <div class="balance-card cash">
+            <div class="label"><i class="fas fa-money-bill-wave"></i> Cash</div>
+            <div class="amount positive" id="bal-cash">Ksh 0</div>
+        </div>
+        <div class="balance-card mpesa">
+            <div class="label"><i class="fas fa-mobile-alt"></i> M-PESA</div>
+            <div class="amount" id="bal-mpesa">Ksh 0</div>
+        </div>
+        <div class="balance-card kcb">
+            <div class="label"><i class="fas fa-university"></i> KCB Float</div>
+            <div class="amount" id="bal-kcb">Ksh 0</div>
+        </div>
+        <div class="balance-card equity">
+            <div class="label"><i class="fas fa-university"></i> Equity Float</div>
+            <div class="amount" id="bal-equity">Ksh 0</div>
+        </div>
+        <div class="balance-card family-bank" id="familyBankCard" style="display:none;">
+            <div class="label"><i class="fas fa-university"></i> Family Bank</div>
+            <div class="amount" id="bal-family-bank">Ksh 0</div>
+        </div>
+        <div class="balance-card cooperative" id="cooperativeBankCard" style="display:none;">
+            <div class="label"><i class="fas fa-university"></i> Cooperative Bank</div>
+            <div class="amount" id="bal-cooperative">Ksh 0</div>
+        </div>
+        <!-- KCB Paybill - Hidden for Cashiers, Visible for Admins -->
+        <div class="balance-card paybill hidden-for-cashier" id="paybillCard">
+            <div class="label"><i class="fas fa-credit-card"></i> KCB Paybill</div>
+            <div class="amount" id="bal-paybill">Ksh 0</div>
+        </div>
+    </div>
+
+    <!-- Transfer Form -->
+    <div class="transfer-card">
+        <h2><i class="fas fa-arrow-right-arrow-left"></i> Transfer Funds</h2>
+        <form id="transferForm" class="transfer-form">
+            <div class="form-group">
+                <label><i class="fas fa-arrow-right"></i> From Account</label>
+                <select id="fromAccount" required>
+                    <option value="">Select account...</option>
+                    <option value="cash">💵 Cash</option>
+                    <option value="mpesa">📱 M-PESA</option>
+                    <option value="kcb">🏦 KCB Float</option>
+                    <option value="equity">🏦 Equity Float</option>
+                    <option value="family_bank" class="family-bank-option" style="display:none;">🏦 Family Bank</option>
+                    <option value="cooperative" class="cooperative-bank-option" style="display:none;">🏦 Cooperative Bank</option>
+                    <!-- Cashiers can transfer TO Paybill, but not FROM Paybill -->
+                    <!-- So Paybill is always in "To" dropdown but not in "From" for cashiers -->
+                    <option value="paybill" class="paybill-from-option" style="display:none;">💳 KCB Paybill</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-arrow-left"></i> To Account</label>
+                <select id="toAccount" required>
+                    <option value="">Select account...</option>
+                    <option value="cash">💵 Cash</option>
+                    <option value="mpesa">📱 M-PESA</option>
+                    <option value="kcb">🏦 KCB Float</option>
+                    <option value="equity">🏦 Equity Float</option>
+                    <option value="family_bank" class="family-bank-option" style="display:none;">🏦 Family Bank</option>
+                    <option value="cooperative" class="cooperative-bank-option" style="display:none;">🏦 Cooperative Bank</option>
+                    <!-- Cashiers can transfer TO Paybill -->
+                    <option value="paybill" class="paybill-to-option">💳 KCB Paybill</option>
+                </select>
+            </div>
+
+            <div class="form-group full-width">
+                <label><i class="fas fa-coins"></i> Amount (Ksh)</label>
+                <input type="number" id="amount" placeholder="Enter amount" min="1" step="0.01" required>
+                <span class="hint" id="balanceHint">Available balance: Ksh 0</span>
+            </div>
+
+            <div class="form-group full-width">
+                <label><i class="fas fa-pen"></i> Description (Optional)</label>
+                <input type="text" id="description" placeholder="e.g., Transfer to M-PESA for float">
+            </div>
+
+            <div class="form-group full-width">
+                <button type="submit" class="transfer-btn" id="transferBtn">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Transfer Now</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Transfer History -->
+    <div class="history-section">
+        <div class="history-header">
+            <h3><i class="fas fa-clock"></i> Transfer History</h3>
+            <button onclick="loadHistory()" style="background: #f1f5f9; border: none; padding: 8px 16px; border-radius: 30px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.8rem;">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+        <div class="history-table-wrapper">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Amount</th>
+                        <th>Description</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="historyBody">
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <i class="fas fa-inbox"></i>
+                                <p>No transfers recorded yet</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script type="module">
+    import { supabase } from './auth.js';
+
+    // ============================================
+    // ACCOUNT BALANCES
+    // ============================================
+    let balances = {
+        cash: 0,
+        mpesa: 0,
+        kcb: 0,
+        equity: 0,
+        family_bank: 0,
+        cooperative: 0,
+        paybill: 0
+    };
+
+    let currentBranchId = null;
+    let branches = {};
+    let isKituiBranch = false;
+    let currentUser = null;
+    let userRole = null;
+
+    // ============================================
+    // GET CURRENT BRANCH
+    // ============================================
+    function getCurrentBranchId() {
+        const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
+        return session.branch?.id || session.profile?.branch_id || null;
+    }
+
+    function checkIfKituiBranch() {
+        const branchId = getCurrentBranchId();
+        if (!branchId || !branches[branchId]) return false;
+        const branchName = branches[branchId].name.toLowerCase();
+        return branchName.includes('kitui') || branchId === 'kitui';
+    }
+
+    // ============================================
+    // LOAD BRANCHES
+    // ============================================
+    async function loadBranches() {
+        const { data } = await supabase.from('branches').select('*');
+        branches = {};
+        data?.forEach(b => { branches[b.id] = b; });
+        return branches;
+    }
+
+    // ============================================
+    // LOAD USER PROFILE & ROLE
+    // ============================================
+    async function loadUserProfile() {
+        try {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (error || !user) {
+                window.location.href = 'index.html';
+                return null;
+            }
+            currentUser = user;
+
+            // Get user profile to check role
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+
+            if (profileError) {
+                console.error('Error fetching profile:', profileError);
+                userRole = 'cashier';
+            } else {
+                userRole = profile?.role || 'cashier';
+            }
+
+            // Update role badge
+            const badge = document.getElementById('roleBadge');
+            if (badge) {
+                if (userRole === 'admin') {
+                    badge.innerHTML = '<i class="fas fa-user-shield"></i> Admin';
+                    badge.style.color = '#818cf8';
+                } else {
+                    badge.innerHTML = '<i class="fas fa-user"></i> Cashier';
+                    badge.style.color = '#94a3b8';
+                }
+            }
+
+            // Show/hide KCB Paybill balance based on role
+            // Cashiers: Hidden, Admins: Visible
+            togglePaybillAccess(userRole === 'admin');
+
+            return user;
+        } catch (error) {
+            console.error("Error loading profile:", error);
+            window.location.href = 'index.html';
+            return null;
+        }
+    }
+
+    // ============================================
+    // TOGGLE PAYBILL ACCESS (Admin only for viewing)
+    // ============================================
+    function togglePaybillAccess(isAdmin) {
+        // KCB Paybill balance card - Hidden for cashiers, Visible for admins
+        const paybillCard = document.getElementById('paybillCard');
+        if (paybillCard) {
+            if (isAdmin) {
+                paybillCard.classList.remove('hidden-for-cashier');
+                paybillCard.classList.add('visible-for-admin');
+                paybillCard.style.display = 'block';
+            } else {
+                paybillCard.classList.add('hidden-for-cashier');
+                paybillCard.classList.remove('visible-for-admin');
+                paybillCard.style.display = 'none';
+            }
+        }
+
+        // Cashiers can transfer TO Paybill, but not FROM Paybill
+        // So Paybill is always in "To" dropdown, but only in "From" for admins
+        const paybillFromOptions = document.querySelectorAll('.paybill-from-option');
+        const paybillToOptions = document.querySelectorAll('.paybill-to-option');
+        
+        // "From" dropdown: Paybill only for admins
+        paybillFromOptions.forEach(el => {
+            el.style.display = isAdmin ? 'block' : 'none';
+        });
+        
+        // "To" dropdown: Paybill visible to everyone
+        paybillToOptions.forEach(el => {
+            el.style.display = 'block';
+        });
+
+        // If not admin, remove paybill from "From" select if selected
+        if (!isAdmin) {
+            const fromSelect = document.getElementById('fromAccount');
+            if (fromSelect.value === 'paybill') {
+                fromSelect.value = '';
+                updateBalanceHint();
+            }
+        }
+    }
+
+    // ============================================
+    // LOAD BALANCES
+    // ============================================
+    async function loadBalances() {
+        try {
+            const branchId = getCurrentBranchId();
+            if (!branchId) {
+                console.warn("No branch ID found");
+                return;
+            }
+
+            // Get latest shift for this branch
+            const { data: shifts, error } = await supabase
+                .from('daily_shifts')
+                .select('*')
+                .eq('branch_id', branchId)
+                .order('start_time', { ascending: false })
+                .limit(1);
+
+            if (error) throw error;
+
+            if (shifts && shifts.length > 0) {
+                const shift = shifts[0];
+                balances.cash = shift.open_cash || 0;
+                balances.mpesa = shift.open_mpesa || 0;
+                balances.kcb = shift.open_kcb || 0;
+                balances.equity = shift.open_equity || 0;
+                balances.family_bank = shift.open_family_bank || 0;
+                balances.cooperative = shift.open_cooperative_bank || 0;
+                balances.paybill = shift.close_kcb_bank || 0;
+            }
+
+            // If admin, get KCB Paybill sales (cashiers don't see this)
+            if (userRole === 'admin') {
+                // Get KCB Paybill sales
+                const { data: paybillSales } = await supabase
+                    .from('sales')
+                    .select('total_amount')
+                    .eq('payment_method', 'KCB Paybill')
+                    .eq('branch_id', branchId)
+                    .gt('total_amount', 0);
+
+                if (paybillSales) {
+                    const totalPaybill = paybillSales.reduce((sum, s) => sum + (s.total_amount || 0), 0);
+                    balances.paybill = totalPaybill;
+                }
+
+                // Get Money In for KCB Paybill
+                const { data: paybillIn } = await supabase
+                    .from('cash_transactions')
+                    .select('amount')
+                    .eq('category', 'KCB Paybill')
+                    .eq('type', 'Money In')
+                    .eq('branch_id', branchId);
+
+                if (paybillIn) {
+                    const totalIn = paybillIn.reduce((sum, t) => sum + (t.amount || 0), 0);
+                    balances.paybill += totalIn;
+                }
+
+                // Get Money Out for KCB Paybill
+                const { data: paybillOut } = await supabase
+                    .from('cash_transactions')
+                    .select('amount')
+                    .eq('category', 'KCB Paybill')
+                    .eq('type', 'Money Out')
+                    .eq('branch_id', branchId);
+
+                if (paybillOut) {
+                    const totalOut = paybillOut.reduce((sum, t) => sum + (t.amount || 0), 0);
+                    balances.paybill -= totalOut;
+                }
+            }
+
+            updateBalancesDisplay();
+
+        } catch (error) {
+            console.error("Error loading balances:", error);
+        }
+    }
+
+    // ============================================
+    // UPDATE BALANCES DISPLAY
+    // ============================================
+    function updateBalancesDisplay() {
+        document.getElementById('bal-cash').textContent = `Ksh ${balances.cash.toLocaleString()}`;
+        document.getElementById('bal-mpesa').textContent = `Ksh ${balances.mpesa.toLocaleString()}`;
+        document.getElementById('bal-kcb').textContent = `Ksh ${balances.kcb.toLocaleString()}`;
+        document.getElementById('bal-equity').textContent = `Ksh ${balances.equity.toLocaleString()}`;
+        document.getElementById('bal-family-bank').textContent = `Ksh ${balances.family_bank.toLocaleString()}`;
+        document.getElementById('bal-cooperative').textContent = `Ksh ${balances.cooperative.toLocaleString()}`;
+        
+        // Only show paybill if admin
+        if (userRole === 'admin') {
+            document.getElementById('bal-paybill').textContent = `Ksh ${balances.paybill.toLocaleString()}`;
+        }
+
+        // Update balance hint
+        updateBalanceHint();
+    }
+
+    // ============================================
+    // UPDATE BALANCE HINT
+    // ============================================
+    function updateBalanceHint() {
+        const fromAccount = document.getElementById('fromAccount').value;
+        const hint = document.getElementById('balanceHint');
+        if (fromAccount && balances[fromAccount] !== undefined) {
+            hint.textContent = `Available balance: Ksh ${balances[fromAccount].toLocaleString()}`;
+        } else {
+            hint.textContent = 'Select an account to see balance';
+        }
+    }
+
+    // ============================================
+    // TOGGLE BANK OPTIONS (Kitui branch)
+    // ============================================
+    function toggleKituiBankOptions(show) {
+        const familyOptions = document.querySelectorAll('.family-bank-option');
+        const coopOptions = document.querySelectorAll('.cooperative-bank-option');
+        const familyCard = document.getElementById('familyBankCard');
+        const coopCard = document.getElementById('cooperativeBankCard');
+
+        familyOptions.forEach(el => el.style.display = show ? 'block' : 'none');
+        coopOptions.forEach(el => el.style.display = show ? 'block' : 'none');
+
+        if (familyCard) familyCard.style.display = show ? 'block' : 'none';
+        if (coopCard) coopCard.style.display = show ? 'block' : 'none';
+    }
+
+    // ============================================
+    // SHOW TOAST NOTIFICATION
+    // ============================================
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        if (!container) {
+            const div = document.createElement('div');
+            div.id = 'toast-container';
+            document.body.appendChild(div);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+
+        const icons = {
+            success: 'fa-check-circle',
+            error: 'fa-exclamation-circle',
+            info: 'fa-info-circle',
+            warning: 'fa-exclamation-triangle'
+        };
+
+        toast.innerHTML = `
+            <i class="fas ${icons[type] || icons.info}"></i>
+            <span>${message}</span>
+        `;
+
+        document.getElementById('toast-container').appendChild(toast);
+
+        setTimeout(() => {
+            if (toast.parentNode) toast.remove();
+        }, 4000);
+    }
+
+    // ============================================
+    // PROCESS TRANSFER
+    // ============================================
+    async function processTransfer(event) {
+        event.preventDefault();
+
+        const fromAccount = document.getElementById('fromAccount').value;
+        const toAccount = document.getElementById('toAccount').value;
+        const amount = parseFloat(document.getElementById('amount').value);
+        const description = document.getElementById('description').value || 'Transfer';
+        const btn = document.getElementById('transferBtn');
+
+        if (!fromAccount || !toAccount) {
+            showToast('Please select both accounts', 'error');
+            return;
+        }
+
+        if (fromAccount === toAccount) {
+            showToast('Cannot transfer to the same account', 'error');
+            return;
+        }
+
+        // Check if cashier is trying to transfer FROM Paybill (not allowed)
+        if (userRole !== 'admin' && fromAccount === 'paybill') {
+            showToast('Access denied: You cannot transfer FROM KCB Paybill. Only admins can.', 'error');
+            return;
+        }
+
+        // Cashiers CAN transfer TO Paybill - this is allowed
+        if (userRole !== 'admin' && toAccount === 'paybill') {
+            // This is allowed - no restriction
+            console.log('Cashier transferring to Paybill - allowed');
+        }
+
+        if (!amount || amount <= 0) {
+            showToast('Please enter a valid amount', 'error');
+            return;
+        }
+
+        if (amount > balances[fromAccount]) {
+            showToast(`Insufficient balance in ${formatAccountName(fromAccount)}`, 'error');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Processing...';
+
+        try {
+            const branchId = getCurrentBranchId();
+            const user = await loadUserProfile();
+
+            if (!branchId || !user) {
+                throw new Error('Authentication required');
+            }
+
+            // Create transaction records
+            const now = new Date().toISOString();
+
+            // Record Money Out (from account)
+            const { error: outError } = await supabase
+                .from('cash_transactions')
+                .insert({
+                    shift_id: null,
+                    type: 'Money Out',
+                    category: formatAccountName(fromAccount),
+                    amount: amount,
+                    description: `Transfer to ${formatAccountName(toAccount)}${description ? ': ' + description : ''}`,
+                    branch_id: branchId,
+                    user_id: user.id,
+                    created_at: now
+                });
+
+            if (outError) throw outError;
+
+            // Record Money In (to account)
+            const { error: inError } = await supabase
+                .from('cash_transactions')
+                .insert({
+                    shift_id: null,
+                    type: 'Money In',
+                    category: formatAccountName(toAccount),
+                    amount: amount,
+                    description: `Transfer from ${formatAccountName(fromAccount)}${description ? ': ' + description : ''}`,
+                    branch_id: branchId,
+                    user_id: user.id,
+                    created_at: now
+                });
+
+            if (inError) throw inError;
+
+            // Update balances
+            balances[fromAccount] -= amount;
+            balances[toAccount] += amount;
+            updateBalancesDisplay();
+
+            showToast(`Transfer successful: Ksh ${amount.toLocaleString()} from ${formatAccountName(fromAccount)} to ${formatAccountName(toAccount)}`, 'success');
+
+            // Reset form
+            document.getElementById('amount').value = '';
+            document.getElementById('description').value = '';
+
+            // Reload history
+            await loadHistory();
+
+        } catch (error) {
+            console.error("Transfer error:", error);
+            showToast(`Transfer failed: ${error.message}`, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-exchange-alt"></i> Transfer Now';
+        }
+    }
+
+    // ============================================
+    // FORMAT ACCOUNT NAME
+    // ============================================
+    function formatAccountName(account) {
+        const names = {
+            cash: 'Cash',
+            mpesa: 'M-PESA',
+            kcb: 'KCB Float',
+            equity: 'Equity Float',
+            family_bank: 'Family Bank',
+            cooperative: 'Cooperative Bank',
+            paybill: 'KCB Paybill'
+        };
+        return names[account] || account;
+    }
+
+    // ============================================
+    // LOAD TRANSFER HISTORY
+    // ============================================
+    async function loadHistory() {
+        try {
+            const branchId = getCurrentBranchId();
+            if (!branchId) return;
+
+            // Get all cash transactions that are transfers
+            const { data: transactions, error } = await supabase
+                .from('cash_transactions')
+                .select('*')
+                .eq('branch_id', branchId)
+                .order('created_at', { ascending: false })
+                .limit(50);
+
+            if (error) throw error;
+
+            // Filter transfers (where description contains "Transfer")
+            const transfers = transactions.filter(t =>
+                t.description && t.description.toLowerCase().includes('transfer')
+            );
+
+            renderHistory(transfers);
+
+        } catch (error) {
+            console.error("Error loading history:", error);
+        }
+    }
+
+    // ============================================
+    // RENDER HISTORY
+    // ============================================
+    function renderHistory(transfers) {
+        const tbody = document.getElementById('historyBody');
+
+        if (!transfers || transfers.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>No transfers recorded yet</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        // Group transfers by pair (Money Out and corresponding Money In)
+        const grouped = {};
+        transfers.forEach(t => {
+            const key = t.created_at;
+            if (!grouped[key]) grouped[key] = [];
+            grouped[key].push(t);
+        });
+
+        let html = '';
+        Object.keys(grouped).forEach(key => {
+            const items = grouped[key];
+            const out = items.find(t => t.type === 'Money Out');
+            const inT = items.find(t => t.type === 'Money In');
+
+            if (out && inT) {
+                const date = new Date(out.created_at);
+                const dateStr = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                // Extract from/to from descriptions
+                const fromMatch = out.description.match(/Transfer to (.+?)(?:$|:)/);
+                const toMatch = inT.description.match(/Transfer from (.+?)(?:$|:)/);
+                const from = fromMatch ? fromMatch[1] : out.category;
+                const to = toMatch ? toMatch[1] : inT.category;
+
+                html += `
+                    <tr>
+                        <td>${dateStr} ${timeStr}</td>
+                        <td><span class="account-from">${from}</span></td>
+                        <td><span class="account-from"><span class="to">${to}</span></span></td>
+                        <td class="amount-col positive">Ksh ${out.amount.toLocaleString()}</td>
+                        <td>${out.description}</td>
+                        <td><span class="transfer-badge success">Completed</span></td>
+                    </tr>
+                `;
+            }
+        });
+
+        tbody.innerHTML = html || `
+            <tr>
+                <td colspan="6">
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No transfers recorded yet</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    // ============================================
+    // EVENT LISTENERS
+    // ============================================
+    document.getElementById('fromAccount').addEventListener('change', updateBalanceHint);
+    document.getElementById('toAccount').addEventListener('change', () => {
+        const from = document.getElementById('fromAccount').value;
+        const to = document.getElementById('toAccount').value;
+        if (from && to && from === to) {
+            showToast('Cannot transfer to the same account', 'warning');
+        }
+    });
+
+    document.getElementById('transferForm').addEventListener('submit', processTransfer);
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+    async function init() {
+        const user = await loadUserProfile();
+        if (!user) return;
+
+        await loadBranches();
+
+        // Check if Kitui branch
+        const branchId = getCurrentBranchId();
+        if (branchId && branches[branchId]) {
+            const branchName = branches[branchId].name.toLowerCase();
+            isKituiBranch = branchName.includes('kitui') || branchId === 'kitui';
+            toggleKituiBankOptions(isKituiBranch);
+        }
+
+        await loadBalances();
+        await loadHistory();
+
+        console.log('✅ Money Transfer page initialized');
+        console.log(`👤 User role: ${userRole}`);
+        console.log(`🔒 KCB Paybill visible: ${userRole === 'admin'}`);
+        console.log(`📤 Cashiers can transfer TO Paybill: YES`);
+        console.log(`📥 Cashiers can transfer FROM Paybill: NO`);
+    }
+
+    // Make functions globally accessible for inline onclick
+    window.loadHistory = loadHistory;
+    window.loadBalances = loadBalances;
+
+    init();
+
+</script>
+
+</body>
+</html>
