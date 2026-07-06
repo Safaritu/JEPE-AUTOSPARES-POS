@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* ... (same CSS as before) ... */
         :root {
             --primary: #4f46e5;
             --primary-dark: #3730a3;
@@ -157,12 +156,13 @@
         .balance-card.cooperative .label i { color: var(--cooperative-color); }
         .balance-card.paybill .label i { color: var(--paybill-color); }
 
+        /* Paybill hidden for cashiers, visible for admins */
         .balance-card.paybill.hidden-for-cashier {
             display: none !important;
         }
 
         .balance-card.paybill.visible-for-admin {
-            display: block;
+            display: block !important;
         }
 
         /* Transfer Card */
@@ -568,6 +568,7 @@
             <div class="label"><i class="fas fa-university"></i> Cooperative Bank</div>
             <div class="amount" id="bal-cooperative">Ksh 0</div>
         </div>
+        <!-- KCB Paybill - Admin Only -->
         <div class="balance-card paybill hidden-for-cashier" id="paybillCard">
             <div class="label"><i class="fas fa-credit-card"></i> KCB Paybill</div>
             <div class="amount" id="bal-paybill">Ksh 0</div>
@@ -588,6 +589,7 @@
                     <option value="equity">🏦 Equity Float</option>
                     <option value="family_bank" class="family-bank-option" style="display:none;">🏦 Family Bank</option>
                     <option value="cooperative" class="cooperative-bank-option" style="display:none;">🏦 Cooperative Bank</option>
+                    <!-- KCB Paybill - Admin Only for FROM -->
                     <option value="paybill" class="paybill-from-option" style="display:none;">💳 KCB Paybill</option>
                 </select>
             </div>
@@ -602,6 +604,7 @@
                     <option value="equity">🏦 Equity Float</option>
                     <option value="family_bank" class="family-bank-option" style="display:none;">🏦 Family Bank</option>
                     <option value="cooperative" class="cooperative-bank-option" style="display:none;">🏦 Cooperative Bank</option>
+                    <!-- KCB Paybill - Everyone can transfer TO Paybill -->
                     <option value="paybill" class="paybill-to-option">💳 KCB Paybill</option>
                 </select>
             </div>
@@ -779,6 +782,7 @@
                 }
             }
 
+            // SHOW/TOGGLE PAYBILL BASED ON ROLE
             togglePaybillAccess(userRole === 'admin');
 
             return user;
@@ -786,6 +790,56 @@
             console.error("Error loading profile:", error);
             window.location.href = 'index.html';
             return null;
+        }
+    }
+
+    // ============================================
+    // TOGGLE PAYBILL ACCESS - Admin Only
+    // ============================================
+    function togglePaybillAccess(isAdmin) {
+        // 1. KCB Paybill balance card - Admin only
+        const paybillCard = document.getElementById('paybillCard');
+        if (paybillCard) {
+            if (isAdmin) {
+                paybillCard.classList.remove('hidden-for-cashier');
+                paybillCard.classList.add('visible-for-admin');
+                paybillCard.style.display = 'block';
+                console.log('✅ KCB Paybill card visible (Admin)');
+            } else {
+                paybillCard.classList.add('hidden-for-cashier');
+                paybillCard.classList.remove('visible-for-admin');
+                paybillCard.style.display = 'none';
+                console.log('🔒 KCB Paybill card hidden (Cashier)');
+            }
+        }
+
+        // 2. "From" dropdown: Paybill option - Admin only
+        const paybillFromOptions = document.querySelectorAll('.paybill-from-option');
+        paybillFromOptions.forEach(el => {
+            el.style.display = isAdmin ? 'block' : 'none';
+        });
+
+        // 3. "To" dropdown: Paybill option - Everyone (Cashiers can transfer TO Paybill)
+        const paybillToOptions = document.querySelectorAll('.paybill-to-option');
+        paybillToOptions.forEach(el => {
+            el.style.display = 'block';
+        });
+
+        // 4. If not admin, remove paybill from "From" select if selected
+        if (!isAdmin) {
+            const fromSelect = document.getElementById('fromAccount');
+            if (fromSelect.value === 'paybill') {
+                fromSelect.value = '';
+                updateBalanceHint();
+            }
+        }
+
+        // 5. Update balance for paybill (only if admin)
+        if (isAdmin) {
+            const paybillBal = document.getElementById('bal-paybill');
+            if (paybillBal) {
+                paybillBal.textContent = `Ksh ${balances.paybill.toLocaleString()}`;
+            }
         }
     }
 
@@ -840,35 +894,6 @@
     }
 
     // ============================================
-    // TOGGLE PAYBILL ACCESS
-    // ============================================
-    function togglePaybillAccess(isAdmin) {
-        const paybillCard = document.getElementById('paybillCard');
-        if (paybillCard) {
-            paybillCard.style.display = isAdmin ? 'block' : 'none';
-        }
-
-        const paybillFromOptions = document.querySelectorAll('.paybill-from-option');
-        const paybillToOptions = document.querySelectorAll('.paybill-to-option');
-        
-        paybillFromOptions.forEach(el => {
-            el.style.display = isAdmin ? 'block' : 'none';
-        });
-        
-        paybillToOptions.forEach(el => {
-            el.style.display = 'block';
-        });
-
-        if (!isAdmin) {
-            const fromSelect = document.getElementById('fromAccount');
-            if (fromSelect.value === 'paybill') {
-                fromSelect.value = '';
-                updateBalanceHint();
-            }
-        }
-    }
-
-    // ============================================
     // LOAD BALANCES
     // ============================================
     async function loadBalances() {
@@ -900,7 +925,9 @@
                 balances.paybill = shift.close_kcb_bank || 0;
             }
 
+            // If admin, calculate full Paybill balance including sales and transactions
             if (userRole === 'admin') {
+                // Get KCB Paybill sales
                 const { data: paybillSales } = await supabase
                     .from('sales')
                     .select('total_amount')
@@ -913,6 +940,7 @@
                     balances.paybill = totalPaybill;
                 }
 
+                // Get Money In for KCB Paybill
                 const { data: paybillIn } = await supabase
                     .from('cash_transactions')
                     .select('amount')
@@ -925,6 +953,7 @@
                     balances.paybill += totalIn;
                 }
 
+                // Get Money Out for KCB Paybill
                 const { data: paybillOut } = await supabase
                     .from('cash_transactions')
                     .select('amount')
@@ -956,8 +985,13 @@
         document.getElementById('bal-family-bank').textContent = `Ksh ${balances.family_bank.toLocaleString()}`;
         document.getElementById('bal-cooperative').textContent = `Ksh ${balances.cooperative.toLocaleString()}`;
         
+        // Only show paybill if admin
         if (userRole === 'admin') {
-            document.getElementById('bal-paybill').textContent = `Ksh ${balances.paybill.toLocaleString()}`;
+            const paybillBal = document.getElementById('bal-paybill');
+            if (paybillBal) {
+                paybillBal.textContent = `Ksh ${balances.paybill.toLocaleString()}`;
+                paybillBal.parentElement.style.display = 'block';
+            }
         }
 
         updateBalanceHint();
@@ -1047,6 +1081,7 @@
             return;
         }
 
+        // Check if cashier is trying to transfer FROM Paybill (not allowed)
         if (userRole !== 'admin' && fromAccount === 'paybill') {
             showToast('Access denied: You cannot transfer FROM KCB Paybill. Only admins can.', 'error');
             return;
@@ -1087,7 +1122,7 @@
             const { error: outError } = await supabase
                 .from('cash_transactions')
                 .insert({
-                    shift_id: currentShift.id, // Link to current shift
+                    shift_id: currentShift.id,
                     type: 'Money Out',
                     category: categoryFrom,
                     amount: amount,
@@ -1103,7 +1138,7 @@
             const { error: inError } = await supabase
                 .from('cash_transactions')
                 .insert({
-                    shift_id: currentShift.id, // Link to current shift
+                    shift_id: currentShift.id,
                     type: 'Money In',
                     category: categoryTo,
                     amount: amount,
