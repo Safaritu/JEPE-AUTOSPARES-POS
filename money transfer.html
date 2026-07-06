@@ -601,13 +601,13 @@
     </div>
 
     <!-- Branch Selector - Admin Only -->
-    <div class="branch-selector-container" id="branchSelectorContainer">
+    <div class="branch-selector-container visible" id="branchSelectorContainer">
         <div class="label">
             <i class="fas fa-store-alt"></i>
             Select Branch
         </div>
         <select id="branchSelector" onchange="handleBranchChange()">
-            <option value="">Loading branches...</option>
+            <option value="all" selected>🏢 ALL BRANCHES</option>
         </select>
         <div class="branch-badge" id="currentBranchBadge">
             <i class="fas fa-check-circle"></i>
@@ -626,7 +626,7 @@
         </div>
     </div>
 
-    <!-- Account Balances -->
+    <!-- Account Balances - Shows consolidated totals when "All Branches" selected -->
     <div class="balances-grid" id="balancesGrid">
         <div class="balance-card cash">
             <div class="label"><i class="fas fa-money-bill-wave"></i> Cash</div>
@@ -773,6 +773,7 @@
     let currentUser = null;
     let userRole = null;
     let currentShift = null;
+    let isAllBranches = true;
 
     // ============================================
     // GO BACK TO APPROPRIATE DASHBOARD
@@ -837,9 +838,9 @@
             branchIdMap[b.code] = b.id;
         });
 
-        // Populate branch selector
+        // Populate branch selector - "All Branches" selected by default
         const selector = document.getElementById('branchSelector');
-        let options = '<option value="all">🏢 ALL BRANCHES</option>';
+        let options = '<option value="all" selected>🏢 ALL BRANCHES</option>';
         data?.forEach(b => {
             options += `<option value="${b.code}">🏪 ${b.name}</option>`;
         });
@@ -857,18 +858,21 @@
 
         if (selectedCode === 'all') {
             selectedBranchId = null;
+            isAllBranches = true;
             document.getElementById('currentBranchDisplay').textContent = 'All Branches';
+            // Hide Kitui-specific bank options when viewing all branches
+            toggleKituiBankOptions(false);
         } else {
             const branchId = getBranchIdFromCode(selectedCode);
             if (branchId) {
                 selectedBranchId = branchId;
+                isAllBranches = false;
                 document.getElementById('currentBranchDisplay').textContent = branches[branchId]?.name || 'Selected Branch';
+                // Check if selected branch is Kitui
+                isKituiBranch = checkIfKituiBranch(selectedBranchId);
+                toggleKituiBankOptions(isKituiBranch);
             }
         }
-
-        // Check if selected branch is Kitui
-        isKituiBranch = checkIfKituiBranch(selectedBranchId);
-        toggleKituiBankOptions(isKituiBranch);
 
         // Reload data for selected branch
         loadBalances();
@@ -984,11 +988,48 @@
     }
 
     // ============================================
+    // TOGGLE KITUI BANK OPTIONS
+    // ============================================
+    function toggleKituiBankOptions(show) {
+        const familyOptions = document.querySelectorAll('.family-bank-option');
+        const coopOptions = document.querySelectorAll('.cooperative-bank-option');
+        const familyCard = document.getElementById('familyBankCard');
+        const coopCard = document.getElementById('cooperativeBankCard');
+
+        familyOptions.forEach(el => el.style.display = show ? 'block' : 'none');
+        coopOptions.forEach(el => el.style.display = show ? 'block' : 'none');
+
+        if (familyCard) familyCard.style.display = show ? 'block' : 'none';
+        if (coopCard) coopCard.style.display = show ? 'block' : 'none';
+    }
+
+    // ============================================
     // LOAD CURRENT SHIFT
     // ============================================
     async function loadCurrentShift() {
         try {
             const branchId = selectedBranchId || getCurrentBranchId();
+            
+            // If "All Branches" is selected, get the latest shift from any branch
+            if (isAllBranches) {
+                const { data: shifts, error } = await supabase
+                    .from('daily_shifts')
+                    .select('*')
+                    .eq('status', 'Open')
+                    .order('start_time', { ascending: false })
+                    .limit(1);
+
+                if (error) throw error;
+
+                if (shifts && shifts.length > 0) {
+                    currentShift = shifts[0];
+                    return currentShift;
+                }
+
+                currentShift = null;
+                return null;
+            }
+
             if (!branchId) return null;
 
             const { data: shifts, error } = await supabase
@@ -1025,86 +1066,120 @@
             statusText.textContent = 'OPEN';
             statusText.className = 'open';
             const startDate = new Date(currentShift.start_time);
-            shiftInfo.textContent = `Started: ${startDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} at ${startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+            const branchName = branches[currentShift.branch_id]?.name || 'Unknown Branch';
+            shiftInfo.textContent = `${branchName} · Started: ${startDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} at ${startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
         } else {
             statusText.textContent = 'NO OPEN SHIFT';
             statusText.className = 'closed';
-            shiftInfo.textContent = 'Please open a shift before making transfers';
+            shiftInfo.textContent = isAllBranches ? 'No open shifts in any branch' : 'Please open a shift before making transfers';
         }
     }
 
     // ============================================
-    // LOAD BALANCES
+    // LOAD BALANCES - Consolidated for All Branches
     // ============================================
     async function loadBalances() {
         try {
-            const branchId = selectedBranchId || getCurrentBranchId();
-            if (!branchId) {
-                console.warn("No branch ID found");
+            // Reset balances
+            balances = {
+                cash: 0,
+                mpesa: 0,
+                kcb: 0,
+                equity: 0,
+                family_bank: 0,
+                cooperative: 0,
+                paybill: 0
+            };
+
+            let branchIds = [];
+
+            if (isAllBranches) {
+                // Get all branch IDs
+                branchIds = Object.keys(branches);
+            } else {
+                const branchId = selectedBranchId || getCurrentBranchId();
+                if (branchId) {
+                    branchIds = [branchId];
+                }
+            }
+
+            if (branchIds.length === 0) {
+                console.warn("No branches found");
+                updateBalancesDisplay();
                 return;
             }
 
-            // Get latest shift for this branch
-            const { data: shifts, error } = await supabase
-                .from('daily_shifts')
-                .select('*')
-                .eq('branch_id', branchId)
-                .order('start_time', { ascending: false })
-                .limit(1);
+            // For each branch, get the latest shift and accumulate balances
+            for (const branchId of branchIds) {
+                const { data: shifts, error } = await supabase
+                    .from('daily_shifts')
+                    .select('*')
+                    .eq('branch_id', branchId)
+                    .order('start_time', { ascending: false })
+                    .limit(1);
 
-            if (error) throw error;
+                if (error) {
+                    console.error(`Error loading shift for branch ${branchId}:`, error);
+                    continue;
+                }
 
-            if (shifts && shifts.length > 0) {
-                const shift = shifts[0];
-                balances.cash = shift.open_cash || 0;
-                balances.mpesa = shift.open_mpesa || 0;
-                balances.kcb = shift.open_kcb || 0;
-                balances.equity = shift.open_equity || 0;
-                balances.family_bank = shift.open_family_bank || 0;
-                balances.cooperative = shift.open_cooperative_bank || 0;
-                balances.paybill = shift.close_kcb_bank || 0;
+                if (shifts && shifts.length > 0) {
+                    const shift = shifts[0];
+                    balances.cash += shift.open_cash || 0;
+                    balances.mpesa += shift.open_mpesa || 0;
+                    balances.kcb += shift.open_kcb || 0;
+                    balances.equity += shift.open_equity || 0;
+                    balances.family_bank += shift.open_family_bank || 0;
+                    balances.cooperative += shift.open_cooperative_bank || 0;
+                    balances.paybill += shift.close_kcb_bank || 0;
+                }
             }
 
             // If admin, calculate full Paybill balance including sales and transactions
             if (userRole === 'admin') {
-                // Get KCB Paybill sales
-                const { data: paybillSales } = await supabase
-                    .from('sales')
-                    .select('total_amount')
-                    .eq('payment_method', 'KCB Paybill')
-                    .eq('branch_id', branchId)
-                    .gt('total_amount', 0);
+                let totalPaybillSales = 0;
+                let totalPaybillIn = 0;
+                let totalPaybillOut = 0;
 
-                if (paybillSales) {
-                    const totalPaybill = paybillSales.reduce((sum, s) => sum + (s.total_amount || 0), 0);
-                    balances.paybill = totalPaybill;
+                for (const branchId of branchIds) {
+                    // Get KCB Paybill sales
+                    const { data: paybillSales } = await supabase
+                        .from('sales')
+                        .select('total_amount')
+                        .eq('payment_method', 'KCB Paybill')
+                        .eq('branch_id', branchId)
+                        .gt('total_amount', 0);
+
+                    if (paybillSales) {
+                        totalPaybillSales += paybillSales.reduce((sum, s) => sum + (s.total_amount || 0), 0);
+                    }
+
+                    // Get Money In for KCB Paybill
+                    const { data: paybillIn } = await supabase
+                        .from('cash_transactions')
+                        .select('amount')
+                        .eq('category', 'KCB Paybill')
+                        .eq('type', 'Money In')
+                        .eq('branch_id', branchId);
+
+                    if (paybillIn) {
+                        totalPaybillIn += paybillIn.reduce((sum, t) => sum + (t.amount || 0), 0);
+                    }
+
+                    // Get Money Out for KCB Paybill
+                    const { data: paybillOut } = await supabase
+                        .from('cash_transactions')
+                        .select('amount')
+                        .eq('category', 'KCB Paybill')
+                        .eq('type', 'Money Out')
+                        .eq('branch_id', branchId);
+
+                    if (paybillOut) {
+                        totalPaybillOut += paybillOut.reduce((sum, t) => sum + (t.amount || 0), 0);
+                    }
                 }
 
-                // Get Money In for KCB Paybill
-                const { data: paybillIn } = await supabase
-                    .from('cash_transactions')
-                    .select('amount')
-                    .eq('category', 'KCB Paybill')
-                    .eq('type', 'Money In')
-                    .eq('branch_id', branchId);
-
-                if (paybillIn) {
-                    const totalIn = paybillIn.reduce((sum, t) => sum + (t.amount || 0), 0);
-                    balances.paybill += totalIn;
-                }
-
-                // Get Money Out for KCB Paybill
-                const { data: paybillOut } = await supabase
-                    .from('cash_transactions')
-                    .select('amount')
-                    .eq('category', 'KCB Paybill')
-                    .eq('type', 'Money Out')
-                    .eq('branch_id', branchId);
-
-                if (paybillOut) {
-                    const totalOut = paybillOut.reduce((sum, t) => sum + (t.amount || 0), 0);
-                    balances.paybill -= totalOut;
-                }
+                balances.paybill = totalPaybillSales + totalPaybillIn - totalPaybillOut;
             }
 
             updateBalancesDisplay();
@@ -1147,22 +1222,6 @@
         } else {
             hint.textContent = 'Select an account to see balance';
         }
-    }
-
-    // ============================================
-    // TOGGLE BANK OPTIONS (Kitui branch)
-    // ============================================
-    function toggleKituiBankOptions(show) {
-        const familyOptions = document.querySelectorAll('.family-bank-option');
-        const coopOptions = document.querySelectorAll('.cooperative-bank-option');
-        const familyCard = document.getElementById('familyBankCard');
-        const coopCard = document.getElementById('cooperativeBankCard');
-
-        familyOptions.forEach(el => el.style.display = show ? 'block' : 'none');
-        coopOptions.forEach(el => el.style.display = show ? 'block' : 'none');
-
-        if (familyCard) familyCard.style.display = show ? 'block' : 'none';
-        if (coopCard) coopCard.style.display = show ? 'block' : 'none';
     }
 
     // ============================================
@@ -1246,7 +1305,8 @@
         btn.innerHTML = '<span class="spinner"></span> Processing...';
 
         try {
-            const branchId = selectedBranchId || getCurrentBranchId();
+            // Use the shift's branch ID for the transfer
+            const branchId = currentShift.branch_id;
             const user = await loadUserProfile();
 
             if (!branchId || !user) {
@@ -1294,7 +1354,8 @@
             balances[toAccount] += amount;
             updateBalancesDisplay();
 
-            showToast(`✅ Transfer successful: Ksh ${amount.toLocaleString()} from ${categoryFrom} to ${categoryTo}`, 'success');
+            const branchName = branches[branchId]?.name || 'Unknown Branch';
+            showToast(`✅ Transfer successful: Ksh ${amount.toLocaleString()} from ${categoryFrom} to ${categoryTo} (${branchName})`, 'success');
 
             // Reset form
             document.getElementById('amount').value = '';
@@ -1329,17 +1390,21 @@
     }
 
     // ============================================
-    // LOAD TRANSFER HISTORY
+    // LOAD TRANSFER HISTORY - All Branches
     // ============================================
     async function loadHistory() {
         try {
-            const branchId = selectedBranchId || getCurrentBranchId();
-            if (!branchId) return;
-
-            const { data: transactions, error } = await supabase
+            let branchId = selectedBranchId || getCurrentBranchId();
+            let query = supabase
                 .from('cash_transactions')
-                .select('*')
-                .eq('branch_id', branchId)
+                .select('*');
+
+            // If "All Branches" is selected, get transactions from all branches
+            if (!isAllBranches && branchId) {
+                query = query.eq('branch_id', branchId);
+            }
+
+            const { data: transactions, error } = await query
                 .order('created_at', { ascending: false })
                 .limit(50);
 
@@ -1399,6 +1464,9 @@
                 const from = fromMatch ? fromMatch[1] : out.category;
                 const to = toMatch ? toMatch[1] : inT.category;
 
+                // Get branch name
+                const branchName = branches[out.branch_id]?.name || 'Unknown';
+
                 html += `
                     <tr>
                         <td>${dateStr} ${timeStr}</td>
@@ -1406,7 +1474,7 @@
                         <td><span class="account-from"><span class="to">${to}</span></span></td>
                         <td class="amount-col positive">Ksh ${out.amount.toLocaleString()}</td>
                         <td>${out.description}</td>
-                        <td><span class="transfer-badge success">Completed</span></td>
+                        <td><span class="transfer-badge success">${branchName}</span></td>
                     </tr>
                 `;
             }
@@ -1447,27 +1515,12 @@
 
         await loadBranches();
 
-        const branchId = getCurrentBranchId();
-        if (branchId && branches[branchId]) {
-            const branchName = branches[branchId].name.toLowerCase();
-            isKituiBranch = branchName.includes('kitui') || branchId === 'kitui';
-            toggleKituiBankOptions(isKituiBranch);
-        }
-
-        // Set default branch selector to user's branch or first branch
-        if (userRole === 'admin') {
-            const selector = document.getElementById('branchSelector');
-            if (branchId && branches[branchId]) {
-                const branchCode = branches[branchId].code;
-                selector.value = branchCode;
-                selectedBranchId = branchId;
-                document.getElementById('currentBranchDisplay').textContent = branches[branchId].name;
-            } else {
-                selector.value = 'all';
-                selectedBranchId = null;
-                document.getElementById('currentBranchDisplay').textContent = 'All Branches';
-            }
-        }
+        // Default: All Branches selected
+        selectedBranchId = null;
+        isAllBranches = true;
+        document.getElementById('currentBranchDisplay').textContent = 'All Branches';
+        document.getElementById('branchSelector').value = 'all';
+        toggleKituiBankOptions(false);
 
         await loadCurrentShift();
         updateShiftIndicator();
@@ -1480,8 +1533,7 @@
         console.log(`🔒 KCB Paybill visible: ${userRole === 'admin'}`);
         console.log(`📤 Cashiers can transfer TO Paybill: YES`);
         console.log(`📥 Cashiers can transfer FROM Paybill: NO`);
-        console.log(`📋 Current shift: ${currentShift ? currentShift.id : 'None'}`);
-        console.log(`🏢 Selected branch: ${selectedBranchId ? branches[selectedBranchId]?.name : 'All Branches'}`);
+        console.log(`🏢 All Branches mode: ${isAllBranches}`);
     }
 
     window.loadHistory = loadHistory;
