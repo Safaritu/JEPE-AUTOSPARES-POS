@@ -462,13 +462,6 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Lock icon for restricted accounts */
-        .lock-icon {
-            color: var(--warning);
-            font-size: 0.7rem;
-            margin-left: 4px;
-        }
-
         /* Responsive */
         @media (max-width: 768px) {
             body { padding: 12px; }
@@ -505,10 +498,10 @@
                 <i class="fas fa-user-shield"></i> Admin
             </span>
         </div>
-        <a href="admin.html" class="back-btn">
+        <button class="back-btn" onclick="goBack()">
             <i class="fas fa-arrow-left"></i>
             Back to Dashboard
-        </a>
+        </button>
     </div>
 
     <!-- Account Balances -->
@@ -656,6 +649,47 @@
     let isKituiBranch = false;
     let currentUser = null;
     let userRole = null;
+
+    // ============================================
+    // GO BACK TO APPROPRIATE DASHBOARD
+    // ============================================
+    window.goBack = function() {
+        // Check if we came from a specific page via referrer
+        const referrer = document.referrer;
+        
+        // If referrer contains cashier, go to cashier.html
+        if (referrer.includes('cashier')) {
+            window.location.href = 'cashier.html';
+            return;
+        }
+        
+        // If referrer contains admin, go to admin.html
+        if (referrer.includes('admin')) {
+            window.location.href = 'admin.html';
+            return;
+        }
+        
+        // If we have the user role from session, use it
+        if (userRole === 'admin') {
+            window.location.href = 'admin.html';
+        } else if (userRole === 'cashier') {
+            window.location.href = 'cashier.html';
+        } else {
+            // Fallback: try to get role from localStorage session
+            try {
+                const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
+                if (session.role === 'admin') {
+                    window.location.href = 'admin.html';
+                } else if (session.role === 'cashier') {
+                    window.location.href = 'cashier.html';
+                } else {
+                    window.location.href = 'admin.html';
+                }
+            } catch (e) {
+                window.location.href = 'admin.html';
+            }
+        }
+    };
 
     // ============================================
     // GET CURRENT BRANCH
@@ -964,12 +998,6 @@
         if (userRole !== 'admin' && fromAccount === 'paybill') {
             showToast('Access denied: You cannot transfer FROM KCB Paybill. Only admins can.', 'error');
             return;
-        }
-
-        // Cashiers CAN transfer TO Paybill - this is allowed
-        if (userRole !== 'admin' && toAccount === 'paybill') {
-            // This is allowed - no restriction
-            console.log('Cashier transferring to Paybill - allowed');
         }
 
         if (!amount || amount <= 0) {
