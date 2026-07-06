@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* ... (same CSS as before) ... */
         :root {
             --primary: #4f46e5;
             --primary-dark: #3730a3;
@@ -156,12 +157,10 @@
         .balance-card.cooperative .label i { color: var(--cooperative-color); }
         .balance-card.paybill .label i { color: var(--paybill-color); }
 
-        /* Paybill hidden for cashiers - they can't see balance */
         .balance-card.paybill.hidden-for-cashier {
             display: none !important;
         }
 
-        /* Paybill visible for admins */
         .balance-card.paybill.visible-for-admin {
             display: block;
         }
@@ -188,6 +187,37 @@
 
         .transfer-card h2 i {
             color: var(--primary);
+        }
+
+        .shift-indicator {
+            background: #f8fafc;
+            padding: 12px 18px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .shift-indicator .shift-status {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .shift-indicator .shift-status .open {
+            color: var(--success);
+        }
+
+        .shift-indicator .shift-status .closed {
+            color: var(--danger);
+        }
+
+        .shift-indicator .shift-info {
+            color: var(--text-dim);
+            font-size: 0.8rem;
         }
 
         .transfer-form {
@@ -413,7 +443,6 @@
             font-size: 0.95rem;
         }
 
-        /* Toast notification */
         .toast {
             position: fixed;
             top: 20px;
@@ -447,7 +476,6 @@
 
         .toast i { font-size: 1.2rem; }
 
-        /* Spinner */
         .spinner {
             display: inline-block;
             width: 18px;
@@ -462,7 +490,6 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             body { padding: 12px; }
             .header { padding: 15px 20px; flex-direction: column; align-items: stretch; text-align: center; }
@@ -504,6 +531,17 @@
         </button>
     </div>
 
+    <!-- Shift Indicator -->
+    <div class="shift-indicator" id="shiftIndicator">
+        <div class="shift-status">
+            <i class="fas fa-clock"></i>
+            Current Shift: <span id="shiftStatusText" class="open">Loading...</span>
+        </div>
+        <div class="shift-info" id="shiftInfo">
+            <i class="fas fa-calendar-alt"></i> <span id="shiftTime">Loading...</span>
+        </div>
+    </div>
+
     <!-- Account Balances -->
     <div class="balances-grid" id="balancesGrid">
         <div class="balance-card cash">
@@ -530,7 +568,6 @@
             <div class="label"><i class="fas fa-university"></i> Cooperative Bank</div>
             <div class="amount" id="bal-cooperative">Ksh 0</div>
         </div>
-        <!-- KCB Paybill - Hidden for Cashiers, Visible for Admins -->
         <div class="balance-card paybill hidden-for-cashier" id="paybillCard">
             <div class="label"><i class="fas fa-credit-card"></i> KCB Paybill</div>
             <div class="amount" id="bal-paybill">Ksh 0</div>
@@ -551,8 +588,6 @@
                     <option value="equity">🏦 Equity Float</option>
                     <option value="family_bank" class="family-bank-option" style="display:none;">🏦 Family Bank</option>
                     <option value="cooperative" class="cooperative-bank-option" style="display:none;">🏦 Cooperative Bank</option>
-                    <!-- Cashiers can transfer TO Paybill, but not FROM Paybill -->
-                    <!-- So Paybill is always in "To" dropdown but not in "From" for cashiers -->
                     <option value="paybill" class="paybill-from-option" style="display:none;">💳 KCB Paybill</option>
                 </select>
             </div>
@@ -567,7 +602,6 @@
                     <option value="equity">🏦 Equity Float</option>
                     <option value="family_bank" class="family-bank-option" style="display:none;">🏦 Family Bank</option>
                     <option value="cooperative" class="cooperative-bank-option" style="display:none;">🏦 Cooperative Bank</option>
-                    <!-- Cashiers can transfer TO Paybill -->
                     <option value="paybill" class="paybill-to-option">💳 KCB Paybill</option>
                 </select>
             </div>
@@ -649,33 +683,26 @@
     let isKituiBranch = false;
     let currentUser = null;
     let userRole = null;
+    let currentShift = null;
 
     // ============================================
     // GO BACK TO APPROPRIATE DASHBOARD
     // ============================================
     window.goBack = function() {
-        // Check if we came from a specific page via referrer
         const referrer = document.referrer;
-        
-        // If referrer contains cashier, go to cashier.html
         if (referrer.includes('cashier')) {
             window.location.href = 'cashier.html';
             return;
         }
-        
-        // If referrer contains admin, go to admin.html
         if (referrer.includes('admin')) {
             window.location.href = 'admin.html';
             return;
         }
-        
-        // If we have the user role from session, use it
         if (userRole === 'admin') {
             window.location.href = 'admin.html';
         } else if (userRole === 'cashier') {
             window.location.href = 'cashier.html';
         } else {
-            // Fallback: try to get role from localStorage session
             try {
                 const session = JSON.parse(localStorage.getItem('pos_session') || '{}');
                 if (session.role === 'admin') {
@@ -728,7 +755,6 @@
             }
             currentUser = user;
 
-            // Get user profile to check role
             const { data: profile, error: profileError } = await supabase
                 .from('profiles')
                 .select('role')
@@ -742,7 +768,6 @@
                 userRole = profile?.role || 'cashier';
             }
 
-            // Update role badge
             const badge = document.getElementById('roleBadge');
             if (badge) {
                 if (userRole === 'admin') {
@@ -754,8 +779,6 @@
                 }
             }
 
-            // Show/hide KCB Paybill balance based on role
-            // Cashiers: Hidden, Admins: Visible
             togglePaybillAccess(userRole === 'admin');
 
             return user;
@@ -767,39 +790,75 @@
     }
 
     // ============================================
-    // TOGGLE PAYBILL ACCESS (Admin only for viewing)
+    // LOAD CURRENT SHIFT
+    // ============================================
+    async function loadCurrentShift() {
+        try {
+            const branchId = getCurrentBranchId();
+            if (!branchId) return null;
+
+            const { data: shifts, error } = await supabase
+                .from('daily_shifts')
+                .select('*')
+                .eq('branch_id', branchId)
+                .eq('status', 'Open')
+                .order('start_time', { ascending: false })
+                .limit(1);
+
+            if (error) throw error;
+
+            if (shifts && shifts.length > 0) {
+                currentShift = shifts[0];
+                return currentShift;
+            }
+
+            currentShift = null;
+            return null;
+        } catch (error) {
+            console.error("Error loading shift:", error);
+            return null;
+        }
+    }
+
+    // ============================================
+    // UPDATE SHIFT INDICATOR
+    // ============================================
+    function updateShiftIndicator() {
+        const statusText = document.getElementById('shiftStatusText');
+        const shiftInfo = document.getElementById('shiftTime');
+
+        if (currentShift) {
+            statusText.textContent = 'OPEN';
+            statusText.className = 'open';
+            const startDate = new Date(currentShift.start_time);
+            shiftInfo.textContent = `Started: ${startDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} at ${startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+        } else {
+            statusText.textContent = 'NO OPEN SHIFT';
+            statusText.className = 'closed';
+            shiftInfo.textContent = 'Please open a shift before making transfers';
+        }
+    }
+
+    // ============================================
+    // TOGGLE PAYBILL ACCESS
     // ============================================
     function togglePaybillAccess(isAdmin) {
-        // KCB Paybill balance card - Hidden for cashiers, Visible for admins
         const paybillCard = document.getElementById('paybillCard');
         if (paybillCard) {
-            if (isAdmin) {
-                paybillCard.classList.remove('hidden-for-cashier');
-                paybillCard.classList.add('visible-for-admin');
-                paybillCard.style.display = 'block';
-            } else {
-                paybillCard.classList.add('hidden-for-cashier');
-                paybillCard.classList.remove('visible-for-admin');
-                paybillCard.style.display = 'none';
-            }
+            paybillCard.style.display = isAdmin ? 'block' : 'none';
         }
 
-        // Cashiers can transfer TO Paybill, but not FROM Paybill
-        // So Paybill is always in "To" dropdown, but only in "From" for admins
         const paybillFromOptions = document.querySelectorAll('.paybill-from-option');
         const paybillToOptions = document.querySelectorAll('.paybill-to-option');
         
-        // "From" dropdown: Paybill only for admins
         paybillFromOptions.forEach(el => {
             el.style.display = isAdmin ? 'block' : 'none';
         });
         
-        // "To" dropdown: Paybill visible to everyone
         paybillToOptions.forEach(el => {
             el.style.display = 'block';
         });
 
-        // If not admin, remove paybill from "From" select if selected
         if (!isAdmin) {
             const fromSelect = document.getElementById('fromAccount');
             if (fromSelect.value === 'paybill') {
@@ -841,9 +900,7 @@
                 balances.paybill = shift.close_kcb_bank || 0;
             }
 
-            // If admin, get KCB Paybill sales (cashiers don't see this)
             if (userRole === 'admin') {
-                // Get KCB Paybill sales
                 const { data: paybillSales } = await supabase
                     .from('sales')
                     .select('total_amount')
@@ -856,7 +913,6 @@
                     balances.paybill = totalPaybill;
                 }
 
-                // Get Money In for KCB Paybill
                 const { data: paybillIn } = await supabase
                     .from('cash_transactions')
                     .select('amount')
@@ -869,7 +925,6 @@
                     balances.paybill += totalIn;
                 }
 
-                // Get Money Out for KCB Paybill
                 const { data: paybillOut } = await supabase
                     .from('cash_transactions')
                     .select('amount')
@@ -901,12 +956,10 @@
         document.getElementById('bal-family-bank').textContent = `Ksh ${balances.family_bank.toLocaleString()}`;
         document.getElementById('bal-cooperative').textContent = `Ksh ${balances.cooperative.toLocaleString()}`;
         
-        // Only show paybill if admin
         if (userRole === 'admin') {
             document.getElementById('bal-paybill').textContent = `Ksh ${balances.paybill.toLocaleString()}`;
         }
 
-        // Update balance hint
         updateBalanceHint();
     }
 
@@ -973,7 +1026,7 @@
     }
 
     // ============================================
-    // PROCESS TRANSFER
+    // PROCESS TRANSFER - WITH SHIFT INTEGRATION
     // ============================================
     async function processTransfer(event) {
         event.preventDefault();
@@ -994,7 +1047,6 @@
             return;
         }
 
-        // Check if cashier is trying to transfer FROM Paybill (not allowed)
         if (userRole !== 'admin' && fromAccount === 'paybill') {
             showToast('Access denied: You cannot transfer FROM KCB Paybill. Only admins can.', 'error');
             return;
@@ -1010,6 +1062,12 @@
             return;
         }
 
+        // Check if shift is open
+        if (!currentShift) {
+            showToast('⚠️ No open shift found. Please open a shift before making transfers.', 'warning');
+            return;
+        }
+
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner"></span> Processing...';
 
@@ -1021,18 +1079,19 @@
                 throw new Error('Authentication required');
             }
 
-            // Create transaction records
             const now = new Date().toISOString();
+            const categoryFrom = formatAccountName(fromAccount);
+            const categoryTo = formatAccountName(toAccount);
 
-            // Record Money Out (from account)
+            // Record Money Out (from account) - LINKED TO SHIFT
             const { error: outError } = await supabase
                 .from('cash_transactions')
                 .insert({
-                    shift_id: null,
+                    shift_id: currentShift.id, // Link to current shift
                     type: 'Money Out',
-                    category: formatAccountName(fromAccount),
+                    category: categoryFrom,
                     amount: amount,
-                    description: `Transfer to ${formatAccountName(toAccount)}${description ? ': ' + description : ''}`,
+                    description: `Transfer to ${categoryTo}${description ? ': ' + description : ''}`,
                     branch_id: branchId,
                     user_id: user.id,
                     created_at: now
@@ -1040,15 +1099,15 @@
 
             if (outError) throw outError;
 
-            // Record Money In (to account)
+            // Record Money In (to account) - LINKED TO SHIFT
             const { error: inError } = await supabase
                 .from('cash_transactions')
                 .insert({
-                    shift_id: null,
+                    shift_id: currentShift.id, // Link to current shift
                     type: 'Money In',
-                    category: formatAccountName(toAccount),
+                    category: categoryTo,
                     amount: amount,
-                    description: `Transfer from ${formatAccountName(fromAccount)}${description ? ': ' + description : ''}`,
+                    description: `Transfer from ${categoryFrom}${description ? ': ' + description : ''}`,
                     branch_id: branchId,
                     user_id: user.id,
                     created_at: now
@@ -1061,7 +1120,7 @@
             balances[toAccount] += amount;
             updateBalancesDisplay();
 
-            showToast(`Transfer successful: Ksh ${amount.toLocaleString()} from ${formatAccountName(fromAccount)} to ${formatAccountName(toAccount)}`, 'success');
+            showToast(`✅ Transfer successful: Ksh ${amount.toLocaleString()} from ${categoryFrom} to ${categoryTo}`, 'success');
 
             // Reset form
             document.getElementById('amount').value = '';
@@ -1072,7 +1131,7 @@
 
         } catch (error) {
             console.error("Transfer error:", error);
-            showToast(`Transfer failed: ${error.message}`, 'error');
+            showToast(`❌ Transfer failed: ${error.message}`, 'error');
         } finally {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-exchange-alt"></i> Transfer Now';
@@ -1103,7 +1162,6 @@
             const branchId = getCurrentBranchId();
             if (!branchId) return;
 
-            // Get all cash transactions that are transfers
             const { data: transactions, error } = await supabase
                 .from('cash_transactions')
                 .select('*')
@@ -1113,7 +1171,6 @@
 
             if (error) throw error;
 
-            // Filter transfers (where description contains "Transfer")
             const transfers = transactions.filter(t =>
                 t.description && t.description.toLowerCase().includes('transfer')
             );
@@ -1145,7 +1202,6 @@
             return;
         }
 
-        // Group transfers by pair (Money Out and corresponding Money In)
         const grouped = {};
         transfers.forEach(t => {
             const key = t.created_at;
@@ -1164,7 +1220,6 @@
                 const dateStr = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
                 const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-                // Extract from/to from descriptions
                 const fromMatch = out.description.match(/Transfer to (.+?)(?:$|:)/);
                 const toMatch = inT.description.match(/Transfer from (.+?)(?:$|:)/);
                 const from = fromMatch ? fromMatch[1] : out.category;
@@ -1218,13 +1273,15 @@
 
         await loadBranches();
 
-        // Check if Kitui branch
         const branchId = getCurrentBranchId();
         if (branchId && branches[branchId]) {
             const branchName = branches[branchId].name.toLowerCase();
             isKituiBranch = branchName.includes('kitui') || branchId === 'kitui';
             toggleKituiBankOptions(isKituiBranch);
         }
+
+        await loadCurrentShift();
+        updateShiftIndicator();
 
         await loadBalances();
         await loadHistory();
@@ -1234,9 +1291,9 @@
         console.log(`🔒 KCB Paybill visible: ${userRole === 'admin'}`);
         console.log(`📤 Cashiers can transfer TO Paybill: YES`);
         console.log(`📥 Cashiers can transfer FROM Paybill: NO`);
+        console.log(`📋 Current shift: ${currentShift ? currentShift.id : 'None'}`);
     }
 
-    // Make functions globally accessible for inline onclick
     window.loadHistory = loadHistory;
     window.loadBalances = loadBalances;
 
