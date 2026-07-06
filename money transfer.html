@@ -101,6 +101,73 @@
             border: 1px solid rgba(79, 70, 229, 0.3);
         }
 
+        /* Branch Selector - Admin Only */
+        .branch-selector-container {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 12px 20px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .branch-selector-container.visible {
+            display: flex;
+        }
+
+        .branch-selector-container .label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .branch-selector-container .label i {
+            color: var(--primary);
+        }
+
+        .branch-selector-container select {
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 2px solid var(--primary);
+            background: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text);
+            cursor: pointer;
+            min-width: 220px;
+            outline: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234f46e5' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 40px;
+        }
+
+        .branch-selector-container select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+        }
+
+        .branch-selector-container .branch-badge {
+            background: var(--primary);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
         /* Account Balances */
         .balances-grid {
             display: grid;
@@ -501,6 +568,8 @@
             .transfer-form .full-width { grid-column: 1; }
             .history-section { padding: 15px; }
             .history-table-wrapper { margin: 0 -15px; padding: 0 15px; }
+            .branch-selector-container { flex-direction: column; align-items: stretch; }
+            .branch-selector-container select { width: 100%; }
         }
 
         @media (max-width: 480px) {
@@ -529,6 +598,21 @@
             <i class="fas fa-arrow-left"></i>
             Back to Dashboard
         </button>
+    </div>
+
+    <!-- Branch Selector - Admin Only -->
+    <div class="branch-selector-container" id="branchSelectorContainer">
+        <div class="label">
+            <i class="fas fa-store-alt"></i>
+            Select Branch
+        </div>
+        <select id="branchSelector" onchange="handleBranchChange()">
+            <option value="">Loading branches...</option>
+        </select>
+        <div class="branch-badge" id="currentBranchBadge">
+            <i class="fas fa-check-circle"></i>
+            <span id="currentBranchDisplay">All Branches</span>
+        </div>
     </div>
 
     <!-- Shift Indicator -->
@@ -682,7 +766,9 @@
     };
 
     let currentBranchId = null;
+    let selectedBranchId = null;
     let branches = {};
+    let branchIdMap = {};
     let isKituiBranch = false;
     let currentUser = null;
     let userRole = null;
@@ -729,8 +815,11 @@
         return session.branch?.id || session.profile?.branch_id || null;
     }
 
-    function checkIfKituiBranch() {
-        const branchId = getCurrentBranchId();
+    function getBranchIdFromCode(code) {
+        return branchIdMap[code] || null;
+    }
+
+    function checkIfKituiBranch(branchId) {
         if (!branchId || !branches[branchId]) return false;
         const branchName = branches[branchId].name.toLowerCase();
         return branchName.includes('kitui') || branchId === 'kitui';
@@ -742,9 +831,50 @@
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
         branches = {};
-        data?.forEach(b => { branches[b.id] = b; });
+        branchIdMap = {};
+        data?.forEach(b => {
+            branches[b.id] = b;
+            branchIdMap[b.code] = b.id;
+        });
+
+        // Populate branch selector
+        const selector = document.getElementById('branchSelector');
+        let options = '<option value="all">🏢 ALL BRANCHES</option>';
+        data?.forEach(b => {
+            options += `<option value="${b.code}">🏪 ${b.name}</option>`;
+        });
+        selector.innerHTML = options;
+
         return branches;
     }
+
+    // ============================================
+    // HANDLE BRANCH CHANGE
+    // ============================================
+    window.handleBranchChange = function() {
+        const selector = document.getElementById('branchSelector');
+        const selectedCode = selector.value;
+
+        if (selectedCode === 'all') {
+            selectedBranchId = null;
+            document.getElementById('currentBranchDisplay').textContent = 'All Branches';
+        } else {
+            const branchId = getBranchIdFromCode(selectedCode);
+            if (branchId) {
+                selectedBranchId = branchId;
+                document.getElementById('currentBranchDisplay').textContent = branches[branchId]?.name || 'Selected Branch';
+            }
+        }
+
+        // Check if selected branch is Kitui
+        isKituiBranch = checkIfKituiBranch(selectedBranchId);
+        toggleKituiBankOptions(isKituiBranch);
+
+        // Reload data for selected branch
+        loadBalances();
+        loadCurrentShift();
+        loadHistory();
+    };
 
     // ============================================
     // LOAD USER PROFILE & ROLE
@@ -779,6 +909,16 @@
                 } else {
                     badge.innerHTML = '<i class="fas fa-user"></i> Cashier';
                     badge.style.color = '#94a3b8';
+                }
+            }
+
+            // Show branch selector ONLY for Admins
+            const branchSelector = document.getElementById('branchSelectorContainer');
+            if (branchSelector) {
+                if (userRole === 'admin') {
+                    branchSelector.classList.add('visible');
+                } else {
+                    branchSelector.classList.remove('visible');
                 }
             }
 
@@ -848,7 +988,7 @@
     // ============================================
     async function loadCurrentShift() {
         try {
-            const branchId = getCurrentBranchId();
+            const branchId = selectedBranchId || getCurrentBranchId();
             if (!branchId) return null;
 
             const { data: shifts, error } = await supabase
@@ -898,7 +1038,7 @@
     // ============================================
     async function loadBalances() {
         try {
-            const branchId = getCurrentBranchId();
+            const branchId = selectedBranchId || getCurrentBranchId();
             if (!branchId) {
                 console.warn("No branch ID found");
                 return;
@@ -990,7 +1130,6 @@
             const paybillBal = document.getElementById('bal-paybill');
             if (paybillBal) {
                 paybillBal.textContent = `Ksh ${balances.paybill.toLocaleString()}`;
-                paybillBal.parentElement.style.display = 'block';
             }
         }
 
@@ -1107,7 +1246,7 @@
         btn.innerHTML = '<span class="spinner"></span> Processing...';
 
         try {
-            const branchId = getCurrentBranchId();
+            const branchId = selectedBranchId || getCurrentBranchId();
             const user = await loadUserProfile();
 
             if (!branchId || !user) {
@@ -1194,7 +1333,7 @@
     // ============================================
     async function loadHistory() {
         try {
-            const branchId = getCurrentBranchId();
+            const branchId = selectedBranchId || getCurrentBranchId();
             if (!branchId) return;
 
             const { data: transactions, error } = await supabase
@@ -1315,6 +1454,21 @@
             toggleKituiBankOptions(isKituiBranch);
         }
 
+        // Set default branch selector to user's branch or first branch
+        if (userRole === 'admin') {
+            const selector = document.getElementById('branchSelector');
+            if (branchId && branches[branchId]) {
+                const branchCode = branches[branchId].code;
+                selector.value = branchCode;
+                selectedBranchId = branchId;
+                document.getElementById('currentBranchDisplay').textContent = branches[branchId].name;
+            } else {
+                selector.value = 'all';
+                selectedBranchId = null;
+                document.getElementById('currentBranchDisplay').textContent = 'All Branches';
+            }
+        }
+
         await loadCurrentShift();
         updateShiftIndicator();
 
@@ -1327,6 +1481,7 @@
         console.log(`📤 Cashiers can transfer TO Paybill: YES`);
         console.log(`📥 Cashiers can transfer FROM Paybill: NO`);
         console.log(`📋 Current shift: ${currentShift ? currentShift.id : 'None'}`);
+        console.log(`🏢 Selected branch: ${selectedBranchId ? branches[selectedBranchId]?.name : 'All Branches'}`);
     }
 
     window.loadHistory = loadHistory;
