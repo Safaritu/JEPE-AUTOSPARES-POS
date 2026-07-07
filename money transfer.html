@@ -557,6 +557,48 @@
             to { transform: rotate(360deg); }
         }
 
+        /* Loading overlay for faster branch switching */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9998;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-overlay .loader {
+            background: white;
+            padding: 30px 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+
+        .loading-overlay .loader .spinner-lg {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        .loading-overlay .loader p {
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+
         @media (max-width: 768px) {
             body { padding: 12px; }
             .header { padding: 15px 20px; flex-direction: column; align-items: stretch; text-align: center; }
@@ -580,6 +622,14 @@
     </style>
 </head>
 <body>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loader">
+        <div class="spinner-lg"></div>
+        <p>Loading data...</p>
+    </div>
+</div>
 
 <div class="container">
 
@@ -626,7 +676,7 @@
         </div>
     </div>
 
-    <!-- Account Balances - Shows consolidated totals when "All Branches" selected -->
+    <!-- Account Balances -->
     <div class="balances-grid" id="balancesGrid">
         <div class="balance-card cash">
             <div class="label"><i class="fas fa-money-bill-wave"></i> Cash</div>
@@ -774,6 +824,18 @@
     let userRole = null;
     let currentShift = null;
     let isAllBranches = true;
+    let isLoading = false;
+
+    // ============================================
+    // LOADING OVERLAY
+    // ============================================
+    function showLoading() {
+        document.getElementById('loadingOverlay').classList.add('active');
+    }
+
+    function hideLoading() {
+        document.getElementById('loadingOverlay').classList.remove('active');
+    }
 
     // ============================================
     // GO BACK TO APPROPRIATE DASHBOARD
@@ -838,7 +900,6 @@
             branchIdMap[b.code] = b.id;
         });
 
-        // Populate branch selector - "All Branches" selected by default
         const selector = document.getElementById('branchSelector');
         let options = '<option value="all" selected>🏢 ALL BRANCHES</option>';
         data?.forEach(b => {
@@ -850,34 +911,47 @@
     }
 
     // ============================================
-    // HANDLE BRANCH CHANGE
+    // HANDLE BRANCH CHANGE - With loading
     // ============================================
-    window.handleBranchChange = function() {
-        const selector = document.getElementById('branchSelector');
-        const selectedCode = selector.value;
+    window.handleBranchChange = async function() {
+        if (isLoading) return;
+        isLoading = true;
+        showLoading();
 
-        if (selectedCode === 'all') {
-            selectedBranchId = null;
-            isAllBranches = true;
-            document.getElementById('currentBranchDisplay').textContent = 'All Branches';
-            // Hide Kitui-specific bank options when viewing all branches
-            toggleKituiBankOptions(false);
-        } else {
-            const branchId = getBranchIdFromCode(selectedCode);
-            if (branchId) {
-                selectedBranchId = branchId;
-                isAllBranches = false;
-                document.getElementById('currentBranchDisplay').textContent = branches[branchId]?.name || 'Selected Branch';
-                // Check if selected branch is Kitui
-                isKituiBranch = checkIfKituiBranch(selectedBranchId);
-                toggleKituiBankOptions(isKituiBranch);
+        try {
+            const selector = document.getElementById('branchSelector');
+            const selectedCode = selector.value;
+
+            if (selectedCode === 'all') {
+                selectedBranchId = null;
+                isAllBranches = true;
+                document.getElementById('currentBranchDisplay').textContent = 'All Branches';
+                toggleKituiBankOptions(false);
+            } else {
+                const branchId = getBranchIdFromCode(selectedCode);
+                if (branchId) {
+                    selectedBranchId = branchId;
+                    isAllBranches = false;
+                    document.getElementById('currentBranchDisplay').textContent = branches[branchId]?.name || 'Selected Branch';
+                    isKituiBranch = checkIfKituiBranch(selectedBranchId);
+                    toggleKituiBankOptions(isKituiBranch);
+                }
             }
-        }
 
-        // Reload data for selected branch
-        loadBalances();
-        loadCurrentShift();
-        loadHistory();
+            // Load all data in parallel for speed
+            await Promise.all([
+                loadBalances(),
+                loadCurrentShift(),
+                loadHistory()
+            ]);
+
+        } catch (error) {
+            console.error("Error changing branch:", error);
+            showToast('Error loading branch data', 'error');
+        } finally {
+            isLoading = false;
+            hideLoading();
+        }
     };
 
     // ============================================
@@ -916,7 +990,6 @@
                 }
             }
 
-            // Show branch selector ONLY for Admins
             const branchSelector = document.getElementById('branchSelectorContainer');
             if (branchSelector) {
                 if (userRole === 'admin') {
@@ -926,7 +999,6 @@
                 }
             }
 
-            // SHOW/TOGGLE PAYBILL BASED ON ROLE
             togglePaybillAccess(userRole === 'admin');
 
             return user;
@@ -941,35 +1013,29 @@
     // TOGGLE PAYBILL ACCESS - Admin Only
     // ============================================
     function togglePaybillAccess(isAdmin) {
-        // 1. KCB Paybill balance card - Admin only
         const paybillCard = document.getElementById('paybillCard');
         if (paybillCard) {
             if (isAdmin) {
                 paybillCard.classList.remove('hidden-for-cashier');
                 paybillCard.classList.add('visible-for-admin');
                 paybillCard.style.display = 'block';
-                console.log('✅ KCB Paybill card visible (Admin)');
             } else {
                 paybillCard.classList.add('hidden-for-cashier');
                 paybillCard.classList.remove('visible-for-admin');
                 paybillCard.style.display = 'none';
-                console.log('🔒 KCB Paybill card hidden (Cashier)');
             }
         }
 
-        // 2. "From" dropdown: Paybill option - Admin only
         const paybillFromOptions = document.querySelectorAll('.paybill-from-option');
         paybillFromOptions.forEach(el => {
             el.style.display = isAdmin ? 'block' : 'none';
         });
 
-        // 3. "To" dropdown: Paybill option - Everyone (Cashiers can transfer TO Paybill)
         const paybillToOptions = document.querySelectorAll('.paybill-to-option');
         paybillToOptions.forEach(el => {
             el.style.display = 'block';
         });
 
-        // 4. If not admin, remove paybill from "From" select if selected
         if (!isAdmin) {
             const fromSelect = document.getElementById('fromAccount');
             if (fromSelect.value === 'paybill') {
@@ -978,7 +1044,6 @@
             }
         }
 
-        // 5. Update balance for paybill (only if admin)
         if (isAdmin) {
             const paybillBal = document.getElementById('bal-paybill');
             if (paybillBal) {
@@ -1010,7 +1075,6 @@
         try {
             const branchId = selectedBranchId || getCurrentBranchId();
             
-            // If "All Branches" is selected, get the latest shift from any branch
             if (isAllBranches) {
                 const { data: shifts, error } = await supabase
                     .from('daily_shifts')
@@ -1071,7 +1135,7 @@
         } else {
             statusText.textContent = 'NO OPEN SHIFT';
             statusText.className = 'closed';
-            shiftInfo.textContent = isAllBranches ? 'No open shifts in any branch' : 'Please open a shift before making transfers';
+            shiftInfo.textContent = isAllBranches ? 'No open shifts in any branch' : 'No open shift - transfers still allowed';
         }
     }
 
@@ -1094,7 +1158,6 @@
             let branchIds = [];
 
             if (isAllBranches) {
-                // Get all branch IDs
                 branchIds = Object.keys(branches);
             } else {
                 const branchId = selectedBranchId || getCurrentBranchId();
@@ -1104,27 +1167,29 @@
             }
 
             if (branchIds.length === 0) {
-                console.warn("No branches found");
                 updateBalancesDisplay();
                 return;
             }
 
-            // For each branch, get the latest shift and accumulate balances
-            for (const branchId of branchIds) {
-                const { data: shifts, error } = await supabase
+            // Fetch all shifts in parallel for speed
+            const shiftPromises = branchIds.map(branchId => 
+                supabase
                     .from('daily_shifts')
                     .select('*')
                     .eq('branch_id', branchId)
                     .order('start_time', { ascending: false })
-                    .limit(1);
+                    .limit(1)
+            );
 
-                if (error) {
-                    console.error(`Error loading shift for branch ${branchId}:`, error);
-                    continue;
+            const shiftResults = await Promise.all(shiftPromises);
+            
+            shiftResults.forEach((result, index) => {
+                if (result.error) {
+                    console.error(`Error loading shift for branch ${branchIds[index]}:`, result.error);
+                    return;
                 }
-
-                if (shifts && shifts.length > 0) {
-                    const shift = shifts[0];
+                if (result.data && result.data.length > 0) {
+                    const shift = result.data[0];
                     balances.cash += shift.open_cash || 0;
                     balances.mpesa += shift.open_mpesa || 0;
                     balances.kcb += shift.open_kcb || 0;
@@ -1133,7 +1198,7 @@
                     balances.cooperative += shift.open_cooperative_bank || 0;
                     balances.paybill += shift.close_kcb_bank || 0;
                 }
-            }
+            });
 
             // If admin, calculate full Paybill balance including sales and transactions
             if (userRole === 'admin') {
@@ -1141,43 +1206,56 @@
                 let totalPaybillIn = 0;
                 let totalPaybillOut = 0;
 
-                for (const branchId of branchIds) {
-                    // Get KCB Paybill sales
-                    const { data: paybillSales } = await supabase
+                // Fetch all in parallel for speed
+                const salesPromises = branchIds.map(branchId =>
+                    supabase
                         .from('sales')
                         .select('total_amount')
                         .eq('payment_method', 'KCB Paybill')
                         .eq('branch_id', branchId)
-                        .gt('total_amount', 0);
+                        .gt('total_amount', 0)
+                );
 
-                    if (paybillSales) {
-                        totalPaybillSales += paybillSales.reduce((sum, s) => sum + (s.total_amount || 0), 0);
+                const salesResults = await Promise.all(salesPromises);
+                salesResults.forEach(result => {
+                    if (result.data) {
+                        totalPaybillSales += result.data.reduce((sum, s) => sum + (s.total_amount || 0), 0);
                     }
+                });
 
-                    // Get Money In for KCB Paybill
-                    const { data: paybillIn } = await supabase
+                // Get Money In for KCB Paybill
+                const inPromises = branchIds.map(branchId =>
+                    supabase
                         .from('cash_transactions')
                         .select('amount')
                         .eq('category', 'KCB Paybill')
                         .eq('type', 'Money In')
-                        .eq('branch_id', branchId);
+                        .eq('branch_id', branchId)
+                );
 
-                    if (paybillIn) {
-                        totalPaybillIn += paybillIn.reduce((sum, t) => sum + (t.amount || 0), 0);
+                const inResults = await Promise.all(inPromises);
+                inResults.forEach(result => {
+                    if (result.data) {
+                        totalPaybillIn += result.data.reduce((sum, t) => sum + (t.amount || 0), 0);
                     }
+                });
 
-                    // Get Money Out for KCB Paybill
-                    const { data: paybillOut } = await supabase
+                // Get Money Out for KCB Paybill
+                const outPromises = branchIds.map(branchId =>
+                    supabase
                         .from('cash_transactions')
                         .select('amount')
                         .eq('category', 'KCB Paybill')
                         .eq('type', 'Money Out')
-                        .eq('branch_id', branchId);
+                        .eq('branch_id', branchId)
+                );
 
-                    if (paybillOut) {
-                        totalPaybillOut += paybillOut.reduce((sum, t) => sum + (t.amount || 0), 0);
+                const outResults = await Promise.all(outPromises);
+                outResults.forEach(result => {
+                    if (result.data) {
+                        totalPaybillOut += result.data.reduce((sum, t) => sum + (t.amount || 0), 0);
                     }
-                }
+                });
 
                 balances.paybill = totalPaybillSales + totalPaybillIn - totalPaybillOut;
             }
@@ -1200,7 +1278,6 @@
         document.getElementById('bal-family-bank').textContent = `Ksh ${balances.family_bank.toLocaleString()}`;
         document.getElementById('bal-cooperative').textContent = `Ksh ${balances.cooperative.toLocaleString()}`;
         
-        // Only show paybill if admin
         if (userRole === 'admin') {
             const paybillBal = document.getElementById('bal-paybill');
             if (paybillBal) {
@@ -1258,7 +1335,7 @@
     }
 
     // ============================================
-    // PROCESS TRANSFER - WITH SHIFT INTEGRATION
+    // PROCESS TRANSFER - Allows transfer without open shift
     // ============================================
     async function processTransfer(event) {
         event.preventDefault();
@@ -1279,6 +1356,13 @@
             return;
         }
 
+        // CHECK: If admin is in "All Branches" mode, require branch selection
+        if (isAllBranches && userRole === 'admin') {
+            showToast('⚠️ Please select a specific branch before making a transfer', 'warning');
+            document.getElementById('branchSelector').focus();
+            return;
+        }
+
         // Check if cashier is trying to transfer FROM Paybill (not allowed)
         if (userRole !== 'admin' && fromAccount === 'paybill') {
             showToast('Access denied: You cannot transfer FROM KCB Paybill. Only admins can.', 'error');
@@ -1295,18 +1379,12 @@
             return;
         }
 
-        // Check if shift is open
-        if (!currentShift) {
-            showToast('⚠️ No open shift found. Please open a shift before making transfers.', 'warning');
-            return;
-        }
-
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner"></span> Processing...';
 
         try {
-            // Use the shift's branch ID for the transfer
-            const branchId = currentShift.branch_id;
+            // Use selected branch or current branch
+            const branchId = selectedBranchId || getCurrentBranchId();
             const user = await loadUserProfile();
 
             if (!branchId || !user) {
@@ -1317,35 +1395,48 @@
             const categoryFrom = formatAccountName(fromAccount);
             const categoryTo = formatAccountName(toAccount);
 
-            // Record Money Out (from account) - LINKED TO SHIFT
+            // If no open shift, create a transfer without shift_id
+            const shiftId = currentShift ? currentShift.id : null;
+
+            // Record Money Out (from account)
+            const outData = {
+                type: 'Money Out',
+                category: categoryFrom,
+                amount: amount,
+                description: `Transfer to ${categoryTo}${description ? ': ' + description : ''}`,
+                branch_id: branchId,
+                user_id: user.id,
+                created_at: now
+            };
+
+            if (shiftId) {
+                outData.shift_id = shiftId;
+            }
+
             const { error: outError } = await supabase
                 .from('cash_transactions')
-                .insert({
-                    shift_id: currentShift.id,
-                    type: 'Money Out',
-                    category: categoryFrom,
-                    amount: amount,
-                    description: `Transfer to ${categoryTo}${description ? ': ' + description : ''}`,
-                    branch_id: branchId,
-                    user_id: user.id,
-                    created_at: now
-                });
+                .insert(outData);
 
             if (outError) throw outError;
 
-            // Record Money In (to account) - LINKED TO SHIFT
+            // Record Money In (to account)
+            const inData = {
+                type: 'Money In',
+                category: categoryTo,
+                amount: amount,
+                description: `Transfer from ${categoryFrom}${description ? ': ' + description : ''}`,
+                branch_id: branchId,
+                user_id: user.id,
+                created_at: now
+            };
+
+            if (shiftId) {
+                inData.shift_id = shiftId;
+            }
+
             const { error: inError } = await supabase
                 .from('cash_transactions')
-                .insert({
-                    shift_id: currentShift.id,
-                    type: 'Money In',
-                    category: categoryTo,
-                    amount: amount,
-                    description: `Transfer from ${categoryFrom}${description ? ': ' + description : ''}`,
-                    branch_id: branchId,
-                    user_id: user.id,
-                    created_at: now
-                });
+                .insert(inData);
 
             if (inError) throw inError;
 
@@ -1355,7 +1446,8 @@
             updateBalancesDisplay();
 
             const branchName = branches[branchId]?.name || 'Unknown Branch';
-            showToast(`✅ Transfer successful: Ksh ${amount.toLocaleString()} from ${categoryFrom} to ${categoryTo} (${branchName})`, 'success');
+            const shiftStatus = shiftId ? ' (with shift)' : ' (no shift)';
+            showToast(`✅ Transfer successful: Ksh ${amount.toLocaleString()} from ${categoryFrom} to ${categoryTo} (${branchName}${shiftStatus})`, 'success');
 
             // Reset form
             document.getElementById('amount').value = '';
@@ -1399,7 +1491,6 @@
                 .from('cash_transactions')
                 .select('*');
 
-            // If "All Branches" is selected, get transactions from all branches
             if (!isAllBranches && branchId) {
                 query = query.eq('branch_id', branchId);
             }
@@ -1464,7 +1555,6 @@
                 const from = fromMatch ? fromMatch[1] : out.category;
                 const to = toMatch ? toMatch[1] : inT.category;
 
-                // Get branch name
                 const branchName = branches[out.branch_id]?.name || 'Unknown';
 
                 html += `
@@ -1534,6 +1624,7 @@
         console.log(`📤 Cashiers can transfer TO Paybill: YES`);
         console.log(`📥 Cashiers can transfer FROM Paybill: NO`);
         console.log(`🏢 All Branches mode: ${isAllBranches}`);
+        console.log(`📋 Transfers allowed without open shift: YES`);
     }
 
     window.loadHistory = loadHistory;
