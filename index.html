@@ -366,32 +366,145 @@
             margin: 5px 0 10px;
             padding-left: 5px;
         }
-        
-        .success-message {
-            background: rgba(16, 185, 129, 0.15);
-            border-left: 4px solid var(--success);
-            padding: 12px 15px;
-            border-radius: 10px;
-            margin: 15px 0;
-            color: #d1fae5;
-            text-align: left;
+
+        /* ============================================
+           UPDATED: TOAST NOTIFICATION - ALWAYS VISIBLE
+           ============================================ */
+        .toast-container {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 99999;
+            width: 90%;
+            max-width: 420px;
+            pointer-events: none;
         }
-        
-        .success-message i {
+
+        .toast-message {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(16px);
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            pointer-events: auto;
+            animation: toastIn 0.4s ease forwards;
+            transition: all 0.3s ease;
+        }
+
+        .toast-message.removing {
+            animation: toastOut 0.3s ease forwards;
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes toastOut {
+            from {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+        }
+
+        .toast-message .toast-icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toast-message .toast-icon.success {
             color: var(--success);
-            margin-right: 8px;
+            background: rgba(16, 185, 129, 0.15);
         }
-        
-        .error-message {
+
+        .toast-message .toast-icon.error {
+            color: var(--danger);
             background: rgba(239, 68, 68, 0.15);
-            border-left: 4px solid var(--danger);
-            padding: 12px 15px;
-            border-radius: 10px;
-            margin: 15px 0;
-            color: #fee2e2;
-            text-align: left;
         }
-        
+
+        .toast-message .toast-icon.info {
+            color: var(--accent);
+            background: rgba(129, 140, 248, 0.15);
+        }
+
+        .toast-message .toast-content {
+            flex: 1;
+        }
+
+        .toast-message .toast-content .toast-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: white;
+            display: block;
+        }
+
+        .toast-message .toast-content .toast-text {
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            margin-top: 2px;
+            display: block;
+        }
+
+        .toast-message .toast-close {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 4px;
+            margin: -4px;
+            pointer-events: auto;
+            transition: color 0.2s;
+            width: auto;
+        }
+
+        .toast-message .toast-close:hover {
+            color: white;
+        }
+
+        .toast-message.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .toast-message.error {
+            border-left: 4px solid var(--danger);
+        }
+
+        .toast-message.info {
+            border-left: 4px solid var(--accent);
+        }
+
+        .toast-message.warning {
+            border-left: 4px solid var(--warning);
+        }
+
+        /* Remove old message container styles */
+        #message-container {
+            display: none !important;
+        }
+
         .session-warning {
             position: fixed;
             bottom: 20px;
@@ -427,6 +540,13 @@
             .expiry-banner .btn-renew {
                 align-self: center;
             }
+            .toast-container {
+                bottom: 20px;
+                width: 95%;
+            }
+            .toast-message {
+                padding: 14px 16px;
+            }
         }
     </style>
 </head>
@@ -443,6 +563,11 @@
         <p id="welcome-role">Initializing Workspace...</p>
     </div>
 </div>
+
+<!-- ============================================
+     TOAST NOTIFICATION CONTAINER - ALWAYS VISIBLE
+     ============================================ -->
+<div class="toast-container" id="toastContainer"></div>
 
 <div class="bg-decor">
     <img src="https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=600" class="bg-img img-bike" alt="Decor">
@@ -480,7 +605,8 @@
         <h2 id="auth-title">Staff Sign In</h2>
         <p class="tagline" id="auth-subtitle">Premium Parts Management</p>
         
-        <div id="message-container"></div>
+        <!-- Hidden message container - replaced by toast -->
+        <div id="message-container" style="display:none;"></div>
         
         <input type="email" id="email" placeholder="Your Email" autocomplete="email">
         <input type="password" id="password" placeholder="Password" autocomplete="current-password">
@@ -554,27 +680,58 @@
         return element;
     }
 
-    function showMessage(text, type = 'error') {
-        const container = document.getElementById('message-container');
+    // ============================================
+    // TOAST NOTIFICATION - ALWAYS VISIBLE
+    // ============================================
+    function showToast(message, type = 'info', duration = 5000) {
+        const container = document.getElementById('toastContainer');
         if (!container) return;
-        
-        const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
-        const bgClass = type === 'success' ? 'success-message' : 'error-message';
-        
-        container.innerHTML = `
-            <div class="${bgClass}">
-                <i class="fas fa-${icon}"></i> ${text}
+
+        const icons = {
+            success: 'fa-check-circle',
+            error: 'fa-exclamation-circle',
+            warning: 'fa-exclamation-triangle',
+            info: 'fa-info-circle'
+        };
+
+        const titles = {
+            success: '✅ Success',
+            error: '❌ Error',
+            warning: '⚠️ Warning',
+            info: 'ℹ️ Info'
+        };
+
+        const toast = document.createElement('div');
+        toast.className = `toast-message ${type}`;
+        toast.innerHTML = `
+            <div class="toast-icon ${type}">
+                <i class="fas ${icons[type] || icons.info}"></i>
             </div>
+            <div class="toast-content">
+                <span class="toast-title">${titles[type] || 'Info'}</span>
+                <span class="toast-text">${message}</span>
+            </div>
+            <button class="toast-close" onclick="this.closest('.toast-message').remove()">
+                <i class="fas fa-times"></i>
+            </button>
         `;
-        
+
+        container.appendChild(toast);
+
+        // Auto remove after duration
         setTimeout(() => {
-            if (container) {
-                container.innerHTML = '';
+            if (toast.parentNode) {
+                toast.classList.add('removing');
+                setTimeout(() => {
+                    if (toast.parentNode) toast.remove();
+                }, 300);
             }
-        }, 5000);
+        }, duration);
     }
 
-    // ===== SESSION TRACKING FUNCTIONS =====
+    // ============================================
+    // SESSION TRACKING FUNCTIONS
+    // ============================================
     async function recordSignIn(userId) {
         try {
             const userAgent = navigator.userAgent;
@@ -665,7 +822,7 @@
         currentSessionId = null;
         sessionStartTime = null;
         document.getElementById('sessionWarning').style.display = 'none';
-        showMessage('⏰ Session expired. Please login again.', 'error');
+        showToast('⏰ Session expired. Please login again.', 'error', 6000);
     }
 
     // ===== SESSION TIMER MANAGEMENT =====
@@ -803,7 +960,7 @@
         localStorage.removeItem(SESSION_KEY);
 
         if (!email || !password) {
-            showMessage("Please fill all fields", 'error');
+            showToast("Please fill all fields", 'error', 4000);
             return;
         }
 
@@ -834,7 +991,7 @@
                     .single();
                 
                 if (profileError || !profile) {
-                    showMessage("Profile not found. Please contact admin.", 'error');
+                    showToast("Profile not found. Please contact admin.", 'error', 4000);
                     if (btn) {
                         btn.disabled = false;
                         btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
@@ -862,9 +1019,9 @@
                 await checkRoleAndRedirect(data.user.id);
                 
             } else {
-                // SIGN UP (unchanged)
+                // SIGN UP
                 if (!fullName) {
-                    showMessage("Please enter your full name", 'error');
+                    showToast("Please enter your full name", 'error', 4000);
                     if (btn) {
                         btn.disabled = false;
                         btn.innerHTML = '<i class="fas fa-user-plus"></i> Register Now';
@@ -873,7 +1030,7 @@
                 }
                 
                 if (!role) {
-                    showMessage("Please select your role", 'error');
+                    showToast("Please select your role", 'error', 4000);
                     if (btn) {
                         btn.disabled = false;
                         btn.innerHTML = '<i class="fas fa-user-plus"></i> Register Now';
@@ -882,7 +1039,17 @@
                 }
                 
                 if (!branchId) {
-                    showMessage("Please select your branch", 'error');
+                    showToast("Please select your branch", 'error', 4000);
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-user-plus"></i> Register Now';
+                    }
+                    return;
+                }
+
+                // Check password length
+                if (password.length < 6) {
+                    showToast("Password must be at least 6 characters", 'warning', 4000);
                     if (btn) {
                         btn.disabled = false;
                         btn.innerHTML = '<i class="fas fa-user-plus"></i> Register Now';
@@ -906,9 +1073,10 @@
                 if (error) throw error;
 
                 if (data.user) {
-                    showMessage(
+                    showToast(
                         '✅ Registration successful! Please check your email to confirm your account.', 
-                        'success'
+                        'success', 
+                        6000
                     );
                     
                     if (emailInput) emailInput.value = '';
@@ -921,7 +1089,7 @@
                 }
             }
         } catch (err) {
-            showMessage(err.message, 'error');
+            showToast(err.message, 'error', 5000);
         } finally {
             if (btn) {
                 if (!isLogin) {
@@ -951,7 +1119,7 @@
         
         if (error) {
             console.error("Error fetching profile:", error);
-            showMessage("Profile not found. Please contact admin.", 'error');
+            showToast("Profile not found. Please contact admin.", 'error', 4000);
             return;
         }
         
@@ -970,7 +1138,6 @@
             }
             
             setTimeout(() => {
-                // FIXED: Admin goes to admin.html, Cashier goes to cashier.html
                 if (profile.role === 'admin') {
                     window.location.href = 'admin.html';
                 } else {
@@ -989,14 +1156,14 @@
         });
 
         if (error) {
-            showMessage(error.message, 'error');
+            showToast(error.message, 'error', 4000);
         } else {
-            showMessage("✅ Password reset link has been sent to your email!", 'success');
+            showToast("✅ Password reset link has been sent to your email!", 'success', 5000);
         }
     };
 
     // ============================================
-    // FIXED: CHECK EXISTING SESSION - CLEAR ON LOGOUT ACTION
+    // CHECK EXISTING SESSION - CLEAR ON LOGOUT ACTION
     // ============================================
     async function checkExistingSession() {
         // Check if we just logged out (from session expired overlay)
@@ -1021,12 +1188,12 @@
                     if (emailInput && sessionData.user?.email) {
                         emailInput.value = sessionData.user.email;
                     }
-                    showMessage('👋 Welcome back! Please enter your password to continue.', 'success');
+                    showToast('👋 Welcome back! Please enter your password to continue.', 'info', 4000);
                     return sessionData;
                 } else {
                     // Session expired - clear it
                     localStorage.removeItem(SESSION_KEY);
-                    showMessage('⏰ Your session has expired. Please login again.', 'error');
+                    showToast('⏰ Your session has expired. Please login again.', 'error', 4000);
                     return null;
                 }
             } catch (e) {
@@ -1043,7 +1210,7 @@
     async function handleEmailConfirmation() {
         const hash = window.location.hash;
         if (hash && hash.includes('access_token')) {
-            showMessage('✅ Email confirmed! You can now sign in.', 'success');
+            showToast('✅ Email confirmed! You can now sign in.', 'success', 5000);
             window.location.hash = '';
         }
     }
