@@ -620,7 +620,6 @@
             border-radius: 16px; 
             border: 1px solid #f1f5f9; 
             transition: all 0.2s;
-            position: relative;
         }
         .float-item:hover {
             background: white;
@@ -628,35 +627,35 @@
             box-shadow: 0 4px 15px rgba(79, 70, 229, 0.1);
         }
 
-        /* LOW FLOAT WARNING - RED HIGHLIGHT */
-        .float-item.low-float-warning {
+        /* INDIVIDUAL FLOAT WARNING - RED HIGHLIGHT FOR LOW AMOUNTS */
+        .float-detail.low-float {
             border: 2px solid #ef4444 !important;
             background: #fef2f2 !important;
-            animation: pulse-border 2s infinite;
             position: relative;
+            animation: pulse-float-border 2s infinite;
         }
 
-        .float-item.low-float-warning::before {
-            content: "⚠️ LOW";
+        .float-detail.low-float::after {
+            content: "⚠️";
             position: absolute;
-            top: -10px;
+            top: -8px;
             right: -5px;
             background: #ef4444;
             color: white;
             font-size: 0.55rem;
             font-weight: 800;
-            padding: 2px 10px;
+            padding: 2px 8px;
             border-radius: 20px;
             border: 2px solid white;
             box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
             letter-spacing: 0.5px;
         }
 
-        .float-item.low-float-warning .float-detail span {
+        .float-detail.low-float span {
             color: #b91c1c !important;
         }
 
-        @keyframes pulse-border {
+        @keyframes pulse-float-border {
             0% { border-color: #ef4444; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.2); }
             50% { border-color: #fca5a5; box-shadow: 0 0 15px rgba(239, 68, 68, 0.3); }
             100% { border-color: #ef4444; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.2); }
@@ -696,6 +695,12 @@
             padding: 10px;
             border-radius: 10px;
             border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .float-detail:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
         .float-detail small {
             font-size: 0.6rem;
@@ -708,9 +713,6 @@
             font-size: 0.95rem;
             font-weight: 800;
             color: var(--admin-dark);
-        }
-        .float-detail span.low-amount {
-            color: #b91c1c !important;
         }
         .new-bank-badge {
             background: var(--family-bank);
@@ -1605,30 +1607,9 @@
         return value < LOW_FLOAT_THRESHOLD;
     }
 
-    // Helper function to build floats HTML including new banks for Kitui with LOW FLOAT WARNING
+    // Helper function to build floats HTML - LOW FLOAT WARNING ONLY ON INDIVIDUAL FLOATS
     function buildBranchFloatsHTML(branch, shift) {
         const isKitui = isKituiBranch(branch.id);
-        
-        // Check if any float is low to mark the entire card
-        let hasLowFloat = false;
-        let floatValues = [];
-        
-        if (shift) {
-            const floats = [
-                shift.open_mpesa || 0,
-                shift.open_cash || 0,
-                shift.open_kcb || 0,
-                shift.open_equity || 0
-            ];
-            if (isKitui) {
-                floats.push(shift.open_family_bank || 0);
-                floats.push(shift.open_cooperative_bank || 0);
-            }
-            hasLowFloat = floats.some(v => isLowFloat(v));
-        }
-        
-        let lowFloatClass = hasLowFloat ? 'low-float-warning' : '';
-        let lowFloatIndicator = hasLowFloat ? '⚠️ LOW FLOATS' : '';
         
         let floatsDetails = '';
         
@@ -1638,36 +1619,45 @@
             const kcbVal = shift.open_kcb || 0;
             const equityVal = shift.open_equity || 0;
             
+            // Check each float individually and add warning class if low
+            const mpesaLow = isLowFloat(mpesaVal);
+            const cashLow = isLowFloat(cashVal);
+            const kcbLow = isLowFloat(kcbVal);
+            const equityLow = isLowFloat(equityVal);
+            
             floatsDetails = `
-                <div class="float-detail">
+                <div class="float-detail ${mpesaLow ? 'low-float' : ''}">
                     <small>M-PESA</small>
-                    <span class="${isLowFloat(mpesaVal) ? 'low-amount' : ''}">Ksh ${mpesaVal.toLocaleString()}</span>
+                    <span>Ksh ${mpesaVal.toLocaleString()}</span>
                 </div>
-                <div class="float-detail">
+                <div class="float-detail ${cashLow ? 'low-float' : ''}">
                     <small>CASH</small>
-                    <span class="${isLowFloat(cashVal) ? 'low-amount' : ''}">Ksh ${cashVal.toLocaleString()}</span>
+                    <span>Ksh ${cashVal.toLocaleString()}</span>
                 </div>
-                <div class="float-detail">
+                <div class="float-detail ${kcbLow ? 'low-float' : ''}">
                     <small>KCB</small>
-                    <span class="${isLowFloat(kcbVal) ? 'low-amount' : ''}">Ksh ${kcbVal.toLocaleString()}</span>
+                    <span>Ksh ${kcbVal.toLocaleString()}</span>
                 </div>
-                <div class="float-detail">
+                <div class="float-detail ${equityLow ? 'low-float' : ''}">
                     <small>EQUITY</small>
-                    <span class="${isLowFloat(equityVal) ? 'low-amount' : ''}">Ksh ${equityVal.toLocaleString()}</span>
+                    <span>Ksh ${equityVal.toLocaleString()}</span>
                 </div>
             `;
             
             if (isKitui) {
                 const familyVal = shift.open_family_bank || 0;
                 const coopVal = shift.open_cooperative_bank || 0;
+                const familyLow = isLowFloat(familyVal);
+                const coopLow = isLowFloat(coopVal);
+                
                 floatsDetails += `
-                    <div class="float-detail">
+                    <div class="float-detail ${familyLow ? 'low-float' : ''}">
                         <small>FAMILY BANK <span class="new-bank-badge">NEW</span></small>
-                        <span class="${isLowFloat(familyVal) ? 'low-amount' : ''}">Ksh ${familyVal.toLocaleString()}</span>
+                        <span>Ksh ${familyVal.toLocaleString()}</span>
                     </div>
-                    <div class="float-detail">
+                    <div class="float-detail ${coopLow ? 'low-float' : ''}">
                         <small>COOPERATIVE <span class="new-bank-badge coop-badge">NEW</span></small>
-                        <span class="${isLowFloat(coopVal) ? 'low-amount' : ''}">Ksh ${coopVal.toLocaleString()}</span>
+                        <span>Ksh ${coopVal.toLocaleString()}</span>
                     </div>
                 `;
             }
@@ -1680,7 +1670,7 @@
         }
         
         return `
-            <div class="float-item ${lowFloatClass}">
+            <div class="float-item">
                 <div class="branch-label">
                     <span><i class="fas fa-store"></i> ${branch.name}</span>
                     ${shift ? `
@@ -1693,11 +1683,6 @@
                         </span>
                     `}
                 </div>
-                ${hasLowFloat ? `
-                    <div style="background: #fef2f2; color: #b91c1c; padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-align: center; margin-bottom: 10px; border: 1px solid #fecaca;">
-                        ⚠️ Some floats below ${LOW_FLOAT_THRESHOLD.toLocaleString()} Ksh
-                    </div>
-                ` : ''}
                 <div class="float-details">
                     ${floatsDetails}
                 </div>
