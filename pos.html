@@ -802,32 +802,6 @@
             color: var(--text-dim);
         }
 
-        .success-message {
-            background: var(--success);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 40px;
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
     </style>
 </head>
 <body>
@@ -1005,11 +979,9 @@
     </div>
 </div>
 
-<!-- Success Message Container -->
-<div id="successMessage" style="display: none;"></div>
-
 <script type="module">
     import { supabase } from './auth.js';
+    import { showToast, confirmModal } from './ui.js';
 
     let allProducts = [];
     let cart = [];
@@ -1196,7 +1168,7 @@
             if (existing.qty < product.stock_quantity) {
                 existing.qty++;
             } else {
-                alert("Cannot add more than available stock!");
+                showToast("Cannot add more than available stock!", 'warning');
                 return;
             }
         } else {
@@ -1215,7 +1187,7 @@
             cart = cart.filter(i => i.id !== id);
         } else if (item.qty > product.stock_quantity) {
             item.qty = product.stock_quantity;
-            alert("Cannot exceed available stock!");
+            showToast("Cannot exceed available stock!", 'warning');
         }
         
         renderCart();
@@ -1298,7 +1270,7 @@
         document.getElementById('split-info').innerHTML = `Paybill Portion: Ksh ${paybill.toLocaleString()}`;
         
         if (paybill < 0) {
-            alert("Cash amount cannot exceed total!");
+            showToast("Cash amount cannot exceed total!", 'warning');
             document.getElementById('split-cash').value = total;
             updateSplitInfo();
         }
@@ -1306,27 +1278,12 @@
 
     // ==================== CHECKOUT FUNCTIONS ====================
 
-    function showSuccessMessage(message) {
-        const container = document.getElementById('successMessage');
-        container.innerHTML = `
-            <div class="success-message">
-                <i class="fas fa-check-circle"></i>
-                <span>${message}</span>
-            </div>
-        `;
-        container.style.display = 'block';
-
-        setTimeout(() => {
-            container.style.display = 'none';
-        }, 3000);
-    }
-
     window.processCheckout = async () => {
         // Check if shift is active
         await checkShift();
 
         if (!currentShift) {
-            alert("❌ No active shift found. Please open a shift in the Cashier Dashboard first!");
+            showToast("No active shift found. Please open a shift in the Cashier Dashboard first!", 'error');
             return;
         }
 
@@ -1337,7 +1294,7 @@
         if (method === 'Split') {
             splitCash = parseFloat(document.getElementById('split-cash').value) || 0;
             if (splitCash <= 0 || splitCash >= total) {
-                alert("Please enter a valid cash amount for split payment. Cash must be between 0 and total amount.");
+                showToast("Please enter a valid cash amount for split payment. Cash must be between 0 and total amount.", 'warning');
                 return;
             }
         }
@@ -1348,12 +1305,17 @@
             customerName = document.getElementById('debt-customer-name').value.trim();
             customerPhone = document.getElementById('debt-customer-phone').value.trim();
             if (!customerName) {
-                alert("❌ Customer name is required for credit sales!");
+                showToast("Customer name is required for credit sales!", 'error');
                 return;
             }
         }
 
-        if (!confirm(`Confirm sale of Ksh ${total.toLocaleString()} via ${method}?`)) return;
+        const confirmed = await confirmModal({
+            title: 'Confirm Sale',
+            message: `Confirm sale of Ksh ${total.toLocaleString()} via ${method}?`,
+            confirmText: 'Confirm Sale'
+        });
+        if (!confirmed) return;
 
         const checkoutBtn = document.getElementById('checkout-btn');
         const originalText = checkoutBtn.innerHTML;
@@ -1380,7 +1342,7 @@
             if (error) throw error;
 
             // Show success message
-            showSuccessMessage(`✅ Sale completed! Total: Ksh ${total.toLocaleString()} via ${method}`);
+            showToast(`Sale completed! Total: Ksh ${total.toLocaleString()} via ${method}`, 'success');
 
             // Clear cart and refresh
             cart = [];
@@ -1392,7 +1354,7 @@
 
         } catch (error) {
             console.error("Error processing checkout:", error);
-            alert("Error processing sale: " + error.message);
+            showToast("Error processing sale: " + error.message, 'error');
         } finally {
             checkoutBtn.innerHTML = originalText;
             checkoutBtn.disabled = cart.length === 0;
