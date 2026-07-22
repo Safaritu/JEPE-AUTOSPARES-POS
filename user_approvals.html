@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="robots" content="noindex, nofollow">
+    <title>User Approvals | JEPE ADMIN</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --admin-dark: #0f172a;
+            --admin-accent: #4f46e5;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-dim: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .top-bar {
+            background: linear-gradient(135deg, #1e293b, var(--admin-dark));
+            color: white;
+            padding: 20px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .top-bar h1 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .top-bar p {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 3px;
+        }
+
+        .top-bar-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .btn {
+            padding: 10px 18px;
+            border-radius: 30px;
+            border: none;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn:hover:not(:disabled) { transform: translateY(-2px); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-outline { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-accent { background: var(--admin-accent); color: white; }
+
+        .container { padding: 25px; max-width: 1200px; margin: 0 auto; }
+
+        .card {
+            background: var(--card);
+            border-radius: 20px;
+            border: 1px solid #eef2f6;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .card-header h2 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--admin-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .count-pill {
+            background: #eef2ff;
+            color: var(--admin-accent);
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .table-container { overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; }
+
+        th {
+            text-align: left;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-dim);
+            padding: 10px 12px;
+            border-bottom: 2px solid var(--border);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 14px 12px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.9rem;
+            vertical-align: middle;
+        }
+
+        tr:last-child td { border-bottom: none; }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-pending { background: #fef3c7; color: #92400e; }
+        .badge-approved { background: #dcfce7; color: #15803d; }
+        .badge-rejected { background: #fee2e2; color: #b91c1c; }
+        .badge-admin { background: #ede9fe; color: #6d28d9; }
+        .badge-cashier { background: #e0f2fe; color: #0369a1; }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-dim);
+        }
+
+        .empty-state i { font-size: 2rem; margin-bottom: 10px; color: #cbd5e1; }
+
+        .loading-spinner { text-align: center; padding: 30px; color: var(--text-dim); }
+
+        .spinner {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            border: 3px solid rgba(79,70,229,0.15);
+            border-top-color: var(--admin-accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .spinner.btn-spinner { width: 14px; height: 14px; border-width: 2px; border-top-color: white; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .row-actions .btn { padding: 7px 14px; font-size: 0.75rem; }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            padding: 20px;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);
+        }
+
+        .modal h3 {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--admin-dark);
+            margin-bottom: 8px;
+        }
+
+        .modal p {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .modal select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            outline: none;
+            background: white;
+        }
+
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+        .toast-container {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: var(--admin-dark);
+            color: white;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            border-left: 4px solid var(--admin-accent);
+            max-width: 320px;
+        }
+
+        .toast.success { border-left-color: var(--success); }
+        .toast.error { border-left-color: var(--danger); }
+
+        .self-note { font-size: 0.7rem; color: var(--text-dim); font-style: italic; }
+
+        @media (max-width: 640px) {
+            .container { padding: 15px; }
+            .card { padding: 18px; }
+            th, td { font-size: 0.8rem; padding: 10px 8px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="top-bar">
+    <div>
+        <h1><i class="fas fa-user-shield"></i> User Approvals</h1>
+        <p>Review new sign-ups and manage staff roles</p>
+    </div>
+    <div class="top-bar-actions">
+        <a href="admin.html" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Dashboard</a>
+        <button class="btn btn-danger" onclick="logoutUser()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fas fa-hourglass-half"></i> Pending Approvals</h2>
+            <span class="count-pill" id="pending-count">0</span>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Requested Branch</th>
+                        <th>Requested</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="pending-body">
+                    <tr><td colspan="5"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fas fa-users"></i> Existing Users</h2>
+            <span class="count-pill" id="users-count">0</span>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Branch</th>
+                        <th>Role</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="users-body">
+                    <tr><td colspan="5"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Approve Modal -->
+<div class="modal-overlay" id="approve-modal">
+    <div class="modal">
+        <h3><i class="fas fa-check-circle" style="color:var(--success);"></i> Approve Account</h3>
+        <p id="approve-modal-text">Approve this account?</p>
+        <label style="font-size:0.75rem; font-weight:700; color:var(--text-dim); display:block; margin-bottom:6px;">ASSIGN ROLE</label>
+        <select id="approve-role-select">
+            <option value="cashier" selected>👤 Cashier</option>
+            <option value="admin">👑 Administrator</option>
+        </select>
+        <div class="modal-actions">
+            <button class="btn btn-outline" style="color:var(--text); background:#f1f5f9;" onclick="closeModal('approve-modal')">Cancel</button>
+            <button class="btn btn-success" id="approve-confirm-btn" onclick="confirmApprove()"><i class="fas fa-check"></i> Approve</button>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal-overlay" id="reject-modal">
+    <div class="modal">
+        <h3><i class="fas fa-times-circle" style="color:var(--danger);"></i> Reject Account</h3>
+        <p id="reject-modal-text">Reject this account request? They will not be able to sign in.</p>
+        <div class="modal-actions">
+            <button class="btn btn-outline" style="color:var(--text); background:#f1f5f9;" onclick="closeModal('reject-modal')">Cancel</button>
+            <button class="btn btn-danger" id="reject-confirm-btn" onclick="confirmReject()"><i class="fas fa-times"></i> Reject</button>
+        </div>
+    </div>
+</div>
+
+<!-- Promote/Demote Modal -->
+<div class="modal-overlay" id="role-modal">
+    <div class="modal">
+        <h3 id="role-modal-title"><i class="fas fa-user-cog"></i> Change Role</h3>
+        <p id="role-modal-text">Change this user's role?</p>
+        <div class="modal-actions">
+            <button class="btn btn-outline" style="color:var(--text); background:#f1f5f9;" onclick="closeModal('role-modal')">Cancel</button>
+            <button class="btn btn-accent" id="role-confirm-btn" onclick="confirmRoleChange()"><i class="fas fa-user-cog"></i> Confirm</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script type="module">
+    import { supabase } from './auth.js';
+
+    let currentAdminId = null;
+    let selectedPending = null;
+    let selectedForReject = null;
+    let selectedForRoleChange = null;
+
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 5000);
+    }
+
+    window.closeModal = (id) => {
+        document.getElementById(id).classList.remove('active');
+    };
+
+    function openModal(id) {
+        document.getElementById(id).classList.add('active');
+    }
+
+    // ==================== AUTH + ROLE GATE ====================
+    // Neither admin.html nor cashier.html check role today (both only check
+    // "is anyone logged in"). This page is the first to require role==='admin'.
+    async function checkAdminAuth() {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error || !user) {
+            window.location.href = 'index.html';
+            return null;
+        }
+
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('role, status')
+            .eq('id', user.id)
+            .single();
+
+        if (profileError || !profile || profile.status !== 'approved') {
+            window.location.href = 'index.html';
+            return null;
+        }
+
+        if (profile.role !== 'admin') {
+            window.location.href = 'cashier.html';
+            return null;
+        }
+
+        currentAdminId = user.id;
+        return user;
+    }
+
+    window.logoutUser = async () => {
+        localStorage.removeItem('pos_session');
+        await supabase.auth.signOut();
+        window.location.href = 'index.html';
+    };
+
+    // ==================== PENDING APPROVALS ====================
+    async function loadPending() {
+        const tbody = document.getElementById('pending-body');
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('id, email, full_name, branch_id, updated_at, branches ( name, code )')
+            .eq('status', 'pending')
+            .order('updated_at', { ascending: false });
+
+        if (error) {
+            console.error('Error loading pending profiles:', error);
+            tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Could not load pending accounts.</p></div></td></tr>`;
+            return;
+        }
+
+        document.getElementById('pending-count').textContent = data.length;
+
+        if (data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i class="fas fa-inbox"></i><p>No pending sign-ups right now.</p></div></td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = data.map(p => {
+            const date = new Date(p.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            const branchName = p.branches?.name || 'Unknown';
+            return `
+                <tr>
+                    <td><b>${p.full_name || '(no name)'}</b></td>
+                    <td>${p.email}</td>
+                    <td>${branchName}</td>
+                    <td>${date}</td>
+                    <td>
+                        <div class="row-actions">
+                            <button class="btn btn-success" onclick="openApprove('${p.id}', '${escapeAttr(p.full_name || p.email)}')"><i class="fas fa-check"></i> Approve</button>
+                            <button class="btn btn-danger" onclick="openReject('${p.id}', '${escapeAttr(p.full_name || p.email)}')"><i class="fas fa-times"></i> Reject</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function escapeAttr(str) {
+        return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    window.openApprove = (id, name) => {
+        selectedPending = id;
+        document.getElementById('approve-modal-text').textContent = `Approve ${name}'s account and assign their role:`;
+        document.getElementById('approve-role-select').value = 'cashier';
+        openModal('approve-modal');
+    };
+
+    window.confirmApprove = async () => {
+        const role = document.getElementById('approve-role-select').value;
+        const btn = document.getElementById('approve-confirm-btn');
+        const original = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner btn-spinner"></span> Approving...';
+        btn.disabled = true;
+
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ status: 'approved', role })
+                .eq('id', selectedPending);
+
+            if (error) throw error;
+
+            showToast('✅ Account approved successfully.', 'success');
+            closeModal('approve-modal');
+            await loadPending();
+            await loadUsers();
+        } catch (err) {
+            console.error('Error approving account:', err);
+            showToast('Error approving account: ' + err.message, 'error');
+        } finally {
+            btn.innerHTML = original;
+            btn.disabled = false;
+        }
+    };
+
+    window.openReject = (id, name) => {
+        selectedForReject = id;
+        document.getElementById('reject-modal-text').textContent = `Reject ${name}'s account request? They will not be able to sign in.`;
+        openModal('reject-modal');
+    };
+
+    window.confirmReject = async () => {
+        const btn = document.getElementById('reject-confirm-btn');
+        const original = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner btn-spinner"></span> Rejecting...';
+        btn.disabled = true;
+
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ status: 'rejected' })
+                .eq('id', selectedForReject);
+
+            if (error) throw error;
+
+            showToast('Account request rejected.', 'success');
+            closeModal('reject-modal');
+            await loadPending();
+        } catch (err) {
+            console.error('Error rejecting account:', err);
+            showToast('Error rejecting account: ' + err.message, 'error');
+        } finally {
+            btn.innerHTML = original;
+            btn.disabled = false;
+        }
+    };
+
+    // ==================== EXISTING USERS ====================
+    async function loadUsers() {
+        const tbody = document.getElementById('users-body');
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('id, email, full_name, role, branch_id, branches ( name, code )')
+            .eq('status', 'approved')
+            .order('full_name', { ascending: true });
+
+        if (error) {
+            console.error('Error loading users:', error);
+            tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Could not load users.</p></div></td></tr>`;
+            return;
+        }
+
+        document.getElementById('users-count').textContent = data.length;
+
+        if (data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i class="fas fa-users-slash"></i><p>No approved users yet.</p></div></td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = data.map(u => {
+            const branchName = u.branches?.name || '—';
+            const isSelf = u.id === currentAdminId;
+            const isAdmin = u.role === 'admin';
+            const roleBadge = isAdmin
+                ? '<span class="badge badge-admin">Admin</span>'
+                : '<span class="badge badge-cashier">Cashier</span>';
+
+            const actionBtn = isSelf
+                ? '<span class="self-note">This is you</span>'
+                : isAdmin
+                    ? `<button class="btn btn-warning" onclick="openRoleChange('${u.id}', '${escapeAttr(u.full_name || u.email)}', 'cashier')"><i class="fas fa-arrow-down"></i> Demote to Cashier</button>`
+                    : `<button class="btn btn-accent" onclick="openRoleChange('${u.id}', '${escapeAttr(u.full_name || u.email)}', 'admin')"><i class="fas fa-arrow-up"></i> Promote to Admin</button>`;
+
+            return `
+                <tr>
+                    <td><b>${u.full_name || '(no name)'}</b></td>
+                    <td>${u.email}</td>
+                    <td>${branchName}</td>
+                    <td>${roleBadge}</td>
+                    <td><div class="row-actions">${actionBtn}</div></td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    window.openRoleChange = (id, name, newRole) => {
+        selectedForRoleChange = { id, newRole };
+        const verb = newRole === 'admin' ? 'promote' : 'demote';
+        document.getElementById('role-modal-title').innerHTML =
+            `<i class="fas fa-user-cog"></i> ${newRole === 'admin' ? 'Promote' : 'Demote'} User`;
+        document.getElementById('role-modal-text').textContent =
+            `Are you sure you want to ${verb} ${name} to ${newRole === 'admin' ? 'Administrator' : 'Cashier'}?`;
+        openModal('role-modal');
+    };
+
+    window.confirmRoleChange = async () => {
+        if (!selectedForRoleChange) return;
+        const btn = document.getElementById('role-confirm-btn');
+        const original = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner btn-spinner"></span> Updating...';
+        btn.disabled = true;
+
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ role: selectedForRoleChange.newRole })
+                .eq('id', selectedForRoleChange.id);
+
+            if (error) throw error;
+
+            showToast('✅ Role updated successfully.', 'success');
+            closeModal('role-modal');
+            await loadUsers();
+        } catch (err) {
+            console.error('Error updating role:', err);
+            showToast('Error updating role: ' + err.message, 'error');
+        } finally {
+            btn.innerHTML = original;
+            btn.disabled = false;
+        }
+    };
+
+    // ==================== INIT ====================
+    async function init() {
+        const user = await checkAdminAuth();
+        if (!user) return;
+        await loadPending();
+        await loadUsers();
+    }
+
+    init();
+</script>
+</body>
+</html>

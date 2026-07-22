@@ -540,11 +540,6 @@
 
         <div id="register-fields" class="hidden">
             <input type="text" id="full-name" placeholder="Full Name *" autocomplete="name">
-            <select id="role" class="branch-selector">
-                <option value="" disabled selected>Select Role *</option>
-                <option value="cashier">👤 Cashier</option>
-                <option value="admin">👑 Administrator</option>
-            </select>
             <select id="branch" class="branch-selector">
                 <option value="" disabled selected>Select Branch *</option>
                 <option value="5326e4c6-6d0d-4500-83d9-f322c859b9fb">🏪 MUTOMO BRANCH</option>
@@ -554,8 +549,8 @@
                 <i class="fas fa-info-circle"></i> You will be assigned to this branch
             </div>
             <div class="branch-note" id="branch-note">
-                <i class="fas fa-store"></i> 
-                <span id="branch-note-text">Cashiers must select their branch. You will only have access to this branch.</span>
+                <i class="fas fa-store"></i>
+                <span id="branch-note-text">New accounts require admin approval before you can sign in. You'll be assigned to the branch you select below.</span>
             </div>
         </div>
 
@@ -843,37 +838,17 @@
         }
     };
 
-    // Update branch note
-    const roleElement = safeGetElement('role');
-    if (roleElement) {
-        roleElement.addEventListener('change', (e) => {
-            const role = e.target.value;
-            const noteText = safeGetElement('branch-note-text');
-            const branchHint = safeGetElement('branch-hint');
-            
-            if (role === 'admin') {
-                if (noteText) noteText.innerText = 'Administrators can access all branches. Branch selection is for reference only.';
-                if (branchHint) branchHint.innerHTML = '<i class="fas fa-globe"></i> Branch is for reference - you will have access to all branches';
-            } else {
-                if (noteText) noteText.innerText = 'Cashiers must select their branch. You will only have access to this branch.';
-                if (branchHint) branchHint.innerHTML = '<i class="fas fa-store"></i> You will be assigned to this branch';
-            }
-        });
-    }
-
     // ===== AUTH HANDLER =====
     window.handleAuth = async () => {
         const emailInput = safeGetElement('email');
         const passwordInput = safeGetElement('password');
         const fullNameInput = safeGetElement('full-name');
-        const roleSelect = safeGetElement('role');
         const branchSelect = safeGetElement('branch');
         const btn = safeGetElement('main-btn');
-        
+
         const email = emailInput ? emailInput.value.trim() : '';
         const password = passwordInput ? passwordInput.value : '';
         const fullName = fullNameInput ? fullNameInput.value.trim() : '';
-        const role = roleSelect ? roleSelect.value : null;
         const branchId = branchSelect ? branchSelect.value : null;
 
         // Force manual login - clear any existing session first
@@ -949,15 +924,6 @@
                     return;
                 }
                 
-                if (!role) {
-                    showToast("Please select your role", 'error', 4000);
-                    if (btn) {
-                        btn.disabled = false;
-                        btn.innerHTML = '<i class="fas fa-user-plus"></i> Register Now';
-                    }
-                    return;
-                }
-                
                 if (!branchId) {
                     showToast("Please select your branch", 'error', 4000);
                     if (btn) {
@@ -977,26 +943,25 @@
                     return;
                 }
 
-                const { data, error } = await supabase.auth.signUp({ 
-                    email, 
+                const { data, error } = await supabase.auth.signUp({
+                    email,
                     password,
                     options: {
-                        data: { 
+                        data: {
                             full_name: fullName,
-                            role: role, 
-                            branch_id: branchId 
+                            branch_id: branchId
                         },
                         emailRedirectTo: window.location.origin + '/cashier.html'
                     }
                 });
-                
+
                 if (error) throw error;
 
                 if (data.user) {
                     showToast(
-                        '✅ Registration successful! Please check your email to confirm your account.', 
-                        'success', 
-                        6000
+                        '✅ Registration successful! Please check your email to confirm your account. An admin must then approve your account before you can sign in.',
+                        'success',
+                        8000
                     );
                     
                     if (emailInput) emailInput.value = '';
@@ -1027,7 +992,8 @@
         const { data: profile, error } = await supabase
             .from('profiles')
             .select(`
-                role, 
+                role,
+                status,
                 branch_id,
                 branches (
                     name,
@@ -1036,13 +1002,25 @@
             `)
             .eq('id', userId)
             .single();
-        
+
         if (error) {
             console.error("Error fetching profile:", error);
             showToast("Profile not found. Please contact admin.", 'error', 4000);
             return;
         }
-        
+
+        if (profile && profile.status !== 'approved') {
+            localStorage.removeItem(SESSION_KEY);
+            await supabase.auth.signOut();
+
+            if (profile.status === 'rejected') {
+                showToast('Your account request was not approved. Please contact your administrator.', 'error', 7000);
+            } else {
+                showToast('Your account is pending admin approval. You will be able to sign in once an admin approves it.', 'info', 7000);
+            }
+            return;
+        }
+
         if (profile) {
             const overlay = safeGetElement('welcome-overlay');
             if (overlay) overlay.classList.remove('hidden');
