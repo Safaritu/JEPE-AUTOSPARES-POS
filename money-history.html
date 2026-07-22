@@ -626,7 +626,7 @@
 </div>
 
 <script type="module">
-    import { supabase } from './auth.js';
+    import { supabase, requireRole } from './auth.js';
     
     let limit = 50; // Increased initial limit
     let allTransactions = [];
@@ -979,6 +979,9 @@
 
     // Initialize
     async function init() {
+        const authResult = await requireRole('admin', 'cashier.html');
+        if (!authResult) return;
+
         console.log("========== INITIALIZING PAGE ==========");
         await loadBranches();
         await loadUserProfile();

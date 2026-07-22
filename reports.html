@@ -905,7 +905,7 @@
 </div>
 
 <script type="module">
-    import { supabase } from './auth.js';
+    import { supabase, requireRole } from './auth.js';
 
     let allProducts = [], allSales = [], filteredSales = [];
     let displayLimit = 15;
@@ -1253,6 +1253,9 @@
     window.handleLogout = async () => { localStorage.removeItem('pos_session'); await supabase.auth.signOut(); window.location.href = 'index.html'; };
 
     async function init() {
+        const authResult = await requireRole('admin', 'cashier.html');
+        if (!authResult) return;
+
         await loadBranches();
         await loadUserProfile();
         document.getElementById('dateRange').textContent = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });

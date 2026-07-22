@@ -831,7 +831,7 @@
 </div>
 
 <script type="module">
-    import { supabase } from './auth.js';
+    import { supabase, requireRole } from './auth.js';
     
     let limit = 50;
     let allSales = [];
@@ -1383,6 +1383,9 @@
     };
 
     document.addEventListener('DOMContentLoaded', async function() {
+        const authResult = await requireRole('admin', 'cashier.html');
+        if (!authResult) return;
+
         await loadBranches();
         await loadUserProfile();
         

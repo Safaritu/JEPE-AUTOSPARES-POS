@@ -1161,7 +1161,7 @@
 </div>
 
 <script type="module">
-    import { supabase } from './auth.js';
+    import { supabase, requireRole } from './auth.js';
 
     let allSuppliers = [], allOrders = [], allPayments = [], allProducts = [];
     let orderLimit = 10;
@@ -1661,6 +1661,9 @@
 
     // ==================== INITIALIZATION ====================
     async function init() {
+        const authResult = await requireRole('admin', 'cashier.html');
+        if (!authResult) return;
+
         await loadBranches();
         await loadUserProfile();
         

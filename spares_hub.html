@@ -557,7 +557,7 @@
     </div>
 
     <script type="module">
-        import { supabase } from './auth.js';
+        import { supabase, requireRole } from './auth.js';
 
         let displayLimit = 15;
         let allPerformanceData = [];
@@ -929,6 +929,9 @@
         });
 
         async function init() {
+            const authResult = await requireRole('admin', 'cashier.html');
+            if (!authResult) return;
+
             console.log("========== INITIALIZING PAGE ==========");
             
             await loadBranches();

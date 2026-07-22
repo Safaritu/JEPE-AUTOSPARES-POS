@@ -684,7 +684,7 @@
 </div>
 
 <script type="module">
-    import { supabase } from './auth.js';
+    import { supabase, requireRole } from './auth.js';
 
     let currentUser = null;
     let currentBranchId = null;
@@ -1022,6 +1022,9 @@
 
     // ==================== INITIALIZATION ====================
     async function init() {
+        const authResult = await requireRole('admin', 'cashier.html');
+        if (!authResult) return;
+
         await loadBranches();
         await loadUserProfile();
         
