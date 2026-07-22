@@ -570,18 +570,24 @@ export async function requireAuth(redirectTo = 'index.html') {
 export async function requireRole(role, redirectTo = 'index.html') {
     const user = await requireAuth(redirectTo);
     if (!user) return null;
-    
+
     const { data: profile } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, status')
         .eq('id', user.id)
         .single();
-    
-    if (profile?.role !== role) {
+
+    if (!profile || profile.status !== 'approved') {
+        await supabase.auth.signOut();
+        window.location.href = 'index.html';
+        return null;
+    }
+
+    if (profile.role !== role) {
         window.location.href = redirectTo;
         return null;
     }
-    
+
     return { user, profile };
 }
 

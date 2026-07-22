@@ -1557,7 +1557,7 @@
 </div>
 
 <script type="module">
-    import { supabase } from './auth.js';
+    import { supabase, requireRole } from './auth.js';
 
     // ============================================
     // AUTH CHECK
@@ -2349,9 +2349,12 @@
     };
 
     async function init() {
+        const authResult = await requireRole('admin', 'cashier.html');
+        if (!authResult) return;
+
         const user = await checkAuth();
         if (!user) return;
-        
+
         await loadBranches();
         await loadUserProfile();
         
