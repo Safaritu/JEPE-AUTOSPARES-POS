@@ -477,6 +477,8 @@
                         <option value="13kg">13 KG</option>
                         <option value="50kg">50 KG</option>
                     </select>
+                    <input type="number" id="complete_price" placeholder="Complete Cylinder Selling Price">
+                    <input type="number" id="complete_cost" placeholder="Complete Cylinder Cost">
                 </div>
                 <div class="form-row" id="tuktuk-row" style="display:none;">
                     <select id="tuktuk_type">
@@ -803,6 +805,24 @@
             empty_quantity: 0,
             branch_id: branchId
         };
+
+        // complete_price/complete_cost price the "complete new cylinder"
+        // bundle separately from the refill price above; cylinder_price
+        // (empty-cylinder-only price) is derived the same way sales_editor.html
+        // computes it. Non-gas products still need cylinder_price set since
+        // the column is NOT NULL.
+        if (category === 'Gas') {
+            const completePrice = parseFloat(document.getElementById('complete_price').value) || 0;
+            const completeCost = parseFloat(document.getElementById('complete_cost').value) || 0;
+            payload.complete_price = completePrice;
+            payload.complete_cost = completeCost;
+            const cylinderPrice = completePrice - payload.selling_price;
+            payload.cylinder_price = cylinderPrice > 0 ? cylinderPrice : 0;
+        } else {
+            payload.complete_price = null;
+            payload.complete_cost = null;
+            payload.cylinder_price = 0;
+        }
 
         if (category === 'Tuktuk') {
             payload.tuktuk_type = document.getElementById('tuktuk_type').value;

@@ -1160,18 +1160,18 @@
         const cat = document.getElementById('prod-category').value;
         const typeSelect = document.getElementById('prod-type');
         
-        // Hide all conditional fields first
+        // Hide all conditional fields first - min-selling-price-container is
+        // NOT in this list, it applies to every category, not just Gas
         document.getElementById('type-container').style.display = 'none';
         document.getElementById('weight-container').style.display = 'none';
         document.getElementById('cylinder-price-container').style.display = 'none';
-        document.getElementById('min-selling-price-container').style.display = 'none';
         document.getElementById('tuktuk-container').style.display = 'none';
         document.getElementById('empty-container').style.display = 'none';
-        
+        document.getElementById('min-selling-price-container').style.display = 'block';
+
         if (cat === 'Gas') {
             document.getElementById('weight-container').style.display = 'block';
             document.getElementById('cylinder-price-container').style.display = 'block';
-            document.getElementById('min-selling-price-container').style.display = 'block';
             document.getElementById('empty-container').style.display = 'block';
             document.getElementById('type-container').style.display = 'block';
             typeSelect.innerHTML = `
@@ -1268,6 +1268,7 @@
             stock_quantity: parseInt(document.getElementById('prod-stock').value) || 0,
             cost_price: parseFloat(document.getElementById('prod-cost').value) || 0,
             selling_price: parseFloat(document.getElementById('prod-sell').value) || 0,
+            min_selling_price: parseFloat(document.getElementById('prod-min-sell').value) || 0,
             empty_quantity: category === 'Gas' ? (parseInt(document.getElementById('prod-empty').value) || 0) : 0,
             branch_id: branchId
         };
@@ -1275,7 +1276,6 @@
         // Add gas-specific fields
         if (category === 'Gas') {
             data.cylinder_price = parseInt(document.getElementById('prod-cylinder-price').value) || 0;
-            data.min_selling_price = parseFloat(document.getElementById('prod-min-sell').value) || 0;
         }
 
         // Add TUKTUK type if category is Tuktuk

@@ -575,6 +575,8 @@
                         <option value="13kg">13 KG</option>
                         <option value="50kg">50 KG</option>
                     </select>
+                    <input type="number" id="complete_price" placeholder="Complete Cylinder Selling Price">
+                    <input type="number" id="complete_cost" placeholder="Complete Cylinder Cost">
                 </div>
                 <!-- TUKTUK specific fields (initially hidden) - FIXED VALUES TO MATCH DATABASE -->
                 <div class="form-row" id="tuktuk-row" style="display:none;">
@@ -1026,15 +1028,28 @@
             supplier_id: document.getElementById('prod-supplier').value || null,
             cost_price: parseFloat(document.getElementById('cost').value) || 0,
             selling_price: parseFloat(document.getElementById('sell').value) || 0,
-            min_price: parseFloat(document.getElementById('min_p').value) || 0,
             min_selling_price: parseFloat(document.getElementById('min_p').value) || 0,
             stock_quantity: parseInt(document.getElementById('stock').value) || 0,
             branch_id: branchToUse
         };
-        
-        // Handle Gas category
+
+        // Handle Gas category - complete_price/complete_cost price the
+        // "complete new cylinder" bundle separately from the refill price
+        // above; cylinder_price (empty-cylinder-only price) is derived the
+        // same way sales_editor.html already computes it. Non-gas products
+        // still need cylinder_price set since the column is NOT NULL.
         if (category === 'Gas') {
             payload.weight_category = document.getElementById('weight_cat').value;
+            const completePrice = parseFloat(document.getElementById('complete_price').value) || 0;
+            const completeCost = parseFloat(document.getElementById('complete_cost').value) || 0;
+            payload.complete_price = completePrice;
+            payload.complete_cost = completeCost;
+            const cylinderPrice = completePrice - payload.selling_price;
+            payload.cylinder_price = cylinderPrice > 0 ? cylinderPrice : 0;
+        } else {
+            payload.complete_price = null;
+            payload.complete_cost = null;
+            payload.cylinder_price = 0;
         }
         
         // FIXED: Handle TUKTUK category properly

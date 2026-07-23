@@ -406,7 +406,7 @@
                     discount_reason,
                     branch_id,
                     products!inner (
-                        min_price
+                        min_selling_price
                     )
                 `)
                 .not('discount_reason', 'is', null)
@@ -452,7 +452,7 @@
             let mobileCards = "";
 
             audits.forEach(row => {
-                const minPrice = row.products?.min_price || 0;
+                const minPrice = row.products?.min_selling_price || 0;
                 const variance = minPrice - row.unit_price;
                 const totalLoss = variance * row.quantity;
                 const dateStr = new Date(row.created_at).toLocaleDateString('en-GB');

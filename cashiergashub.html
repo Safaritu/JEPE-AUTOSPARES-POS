@@ -1164,8 +1164,13 @@
                 if (cashPart <= 0 || cashPart >= total) {
                     throw new Error("Invalid split amounts. Cash must be between 0 and total.");
                 }
-                
-                // Create CASH sale record
+
+                // Create CASH sale record - carries the real quantity and cost,
+                // same as cashier.html's split pattern. The Paybill leg below
+                // is zeroed on quantity so cost/profit isn't double-counted
+                // across the two rows, and both rows are sent in a single
+                // insert so they share one created_at timestamp - reports
+                // that group split legs by timestamp depend on this.
                 const cashSaleRecord = {
                     shift_id: activeShift.id,
                     product_id: outgoingItem.id,
@@ -1182,17 +1187,19 @@
                     user_id: currentUser.id,
                     payment_method: 'Cash'
                 };
-                
-                // Create PAYBILL sale record
+
+                // Create PAYBILL sale record - quantity/cost zeroed so this
+                // leg contributes 0 to stock/cost math; only its share of
+                // total_amount matters for revenue.
                 const paybillSaleRecord = {
                     shift_id: activeShift.id,
                     product_id: outgoingItem.id,
                     item_name: `${itemName} (Split-Paybill)`,
-                    quantity: qty,
+                    quantity: 0,
                     unit_price: price,
                     total_amount: paybillPart,
                     amount: paybillPart,
-                    cost_price: costPricePerUnit,
+                    cost_price: 0,
                     discount_reason: discountReason,
                     category: 'Gas',
                     weight_category: outgoingItem.weight_category,
@@ -1200,20 +1207,13 @@
                     user_id: currentUser.id,
                     payment_method: 'KCB Paybill'
                 };
-                
-                // Insert both sale records
-                const { error: cashErr } = await supabase
+
+                const { error: splitErr } = await supabase
                     .from('sales')
-                    .insert([cashSaleRecord]);
-                    
-                if (cashErr) throw cashErr;
-                
-                const { error: paybillErr } = await supabase
-                    .from('sales')
-                    .insert([paybillSaleRecord]);
-                    
-                if (paybillErr) throw paybillErr;
-                
+                    .insert([cashSaleRecord, paybillSaleRecord]);
+
+                if (splitErr) throw splitErr;
+
             } else {
                 // SINGLE sale record - FIXED: Only insert ONE record
                 const saleRecord = {

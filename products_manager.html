@@ -64,13 +64,13 @@
 
             <div>
                 <label>Category</label>
-                <select id="prod-category">
+                <select id="prod-category" onchange="document.getElementById('gas-row').style.display = this.value === 'Gas' ? 'grid' : 'none';">
                     <option value="Spare Part">Spare Part</option>
                     <option value="Motorbike">Motorbike</option>
                     <option value="Gas">Gas</option>
                 </select>
             </div>
-            
+
             <div>
                 <label>Part Type</label>
                 <select id="prod-type">
@@ -84,6 +84,11 @@
             <div><label>Sell Price</label><input type="number" id="prod-sell" required></div>
             <div><label>Min Price</label><input type="number" id="prod-min" value="0"></div>
             <div><label>Stock Qty</label><input type="number" id="prod-stock" value="0"></div>
+        </div>
+
+        <div class="grid-form" id="gas-row" style="display:none; margin-top:15px;">
+            <div><label>Complete Cylinder Selling Price</label><input type="number" id="prod-complete-price" value="0"></div>
+            <div><label>Complete Cylinder Cost</label><input type="number" id="prod-complete-cost" value="0"></div>
         </div>
 
         <div style="display:flex; gap:10px; margin-top:25px;">
@@ -149,6 +154,7 @@
         document.getElementById('prod-id').value = "";
         document.getElementById('prod-name').value = "";
         document.getElementById('prod-supplier').value = "";
+        document.getElementById('gas-row').style.display = "none";
         document.getElementById('productModal').style.display = "flex";
     };
 
@@ -164,25 +170,48 @@
         document.getElementById('prod-type').value = p.part_type;
         document.getElementById('prod-cost').value = p.cost_price;
         document.getElementById('prod-sell').value = p.selling_price;
-        document.getElementById('prod-min').value = p.min_price;
+        document.getElementById('prod-min').value = p.min_selling_price;
         document.getElementById('prod-stock').value = p.stock_quantity;
+        const isGas = p.category === 'Gas';
+        document.getElementById('gas-row').style.display = isGas ? 'grid' : 'none';
+        document.getElementById('prod-complete-price').value = p.complete_price || 0;
+        document.getElementById('prod-complete-cost').value = p.complete_cost || 0;
         document.getElementById('productModal').style.display = "flex";
     };
 
     window.saveProduct = async () => {
         const id = document.getElementById('prod-id').value;
+        const category = document.getElementById('prod-category').value;
+        const sellingPrice = parseFloat(document.getElementById('prod-sell').value);
         const productData = {
             name: document.getElementById('prod-name').value,
             supplier_id: document.getElementById('prod-supplier').value || null,
-            category: document.getElementById('prod-category').value,
+            category: category,
             part_type: document.getElementById('prod-type').value,
             cost_price: parseFloat(document.getElementById('prod-cost').value),
-            selling_price: parseFloat(document.getElementById('prod-sell').value),
-            min_price: parseFloat(document.getElementById('prod-min').value),
+            selling_price: sellingPrice,
+            min_selling_price: parseFloat(document.getElementById('prod-min').value),
             stock_quantity: parseInt(document.getElementById('prod-stock').value)
         };
 
-        const { error } = id 
+        // complete_price/complete_cost price the "complete new cylinder"
+        // bundle separately from the refill price above; cylinder_price is
+        // derived the same way sales_editor.html computes it. Non-gas
+        // products still need cylinder_price set since it's NOT NULL.
+        if (category === 'Gas') {
+            const completePrice = parseFloat(document.getElementById('prod-complete-price').value) || 0;
+            const completeCost = parseFloat(document.getElementById('prod-complete-cost').value) || 0;
+            productData.complete_price = completePrice;
+            productData.complete_cost = completeCost;
+            const cylinderPrice = completePrice - sellingPrice;
+            productData.cylinder_price = cylinderPrice > 0 ? cylinderPrice : 0;
+        } else {
+            productData.complete_price = null;
+            productData.complete_cost = null;
+            productData.cylinder_price = 0;
+        }
+
+        const { error } = id
             ? await supabase.from('products').update(productData).eq('id', id)
             : await supabase.from('products').insert([productData]);
 
