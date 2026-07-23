@@ -618,6 +618,56 @@
             color: var(--text-dim);
         }
 
+        /* --- GAS SALE MODAL --- */
+        .gas-sale-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+            z-index: 100000;
+            padding: 20px;
+        }
+        .gas-sale-overlay.active { display: flex; }
+        .gas-sale-modal {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 25px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);
+        }
+        .gas-sale-modal h3 { font-size: 1.1rem; font-weight: 800; color: var(--text-main); margin-bottom: 15px; }
+        .gas-sale-modal label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-dim); margin-bottom: 5px; text-transform: uppercase; }
+        .gas-sale-modal input, .gas-sale-modal select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            font-family: inherit;
+        }
+        .gas-sale-type-row { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
+        .gas-sale-type-row label { display: flex; align-items: center; gap: 6px; font-weight: 700; text-transform: none; font-size: 0.85rem; cursor: pointer; color: var(--text-main); margin-bottom: 0; }
+        .gas-sale-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .gas-sale-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; }
+        .gas-sale-actions button {
+            padding: 12px 20px;
+            border-radius: 30px;
+            border: none;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        #pos-gas-cancel-btn { background: #f1f5f9; color: var(--text-main); }
+        #pos-gas-submit-btn { background: var(--primary); color: white; }
+
     </style>
 </head>
 <body>
@@ -745,10 +795,53 @@
     </div>
 </div>
 
+<!-- Gas Sale Modal - gas items sell immediately through here, not the cart -->
+<div id="gas-sale-overlay" class="gas-sale-overlay">
+    <div class="gas-sale-modal">
+        <h3 id="gas-sale-title">Gas Sale</h3>
+        <div class="gas-sale-type-row">
+            <label><input type="radio" name="pos-gas-type" value="refill" checked onchange="handlePosGasTypeChange()"> Refill (Exchange Empty)</label>
+            <label><input type="radio" name="pos-gas-type" value="complete" onchange="handlePosGasTypeChange()"> Complete (New Cylinder)</label>
+        </div>
+        <div id="pos-gas-exchange-row">
+            <label>Exchanging empty for</label>
+            <select id="pos-gas-incoming-select">
+                <option value="same">-- Same brand as above --</option>
+            </select>
+        </div>
+        <div class="gas-sale-field-row">
+            <div>
+                <label>Quantity</label>
+                <input type="number" id="pos-gas-qty" value="1" min="1">
+            </div>
+            <div>
+                <label>Price (Ksh)</label>
+                <input type="number" id="pos-gas-price" step="0.01">
+            </div>
+        </div>
+        <label>Payment Method</label>
+        <select id="pos-gas-method" onchange="togglePosGasSplit()">
+            <option value="Cash">Cash</option>
+            <option value="KCB Paybill">KCB Paybill</option>
+            <option value="Split">Split: Cash + KCB Paybill</option>
+            <option value="Debt">Debtor (Owed)</option>
+        </select>
+        <div id="pos-gas-split-row" style="display:none;">
+            <label>Cash Paid</label>
+            <input type="number" id="pos-gas-split-cash" placeholder="0.00">
+        </div>
+        <div class="gas-sale-actions">
+            <button type="button" id="pos-gas-cancel-btn" onclick="closeGasSaleModal()">Cancel</button>
+            <button type="button" id="pos-gas-submit-btn" onclick="submitPosGasSale()">Record Sale</button>
+        </div>
+    </div>
+</div>
+
 <script type="module">
     import { supabase } from './auth.js';
-    import { showToast, confirmModal } from './ui.js';
+    import { showToast, confirmModal, promptModal } from './ui.js';
     import { mountCashierNav } from './cashier-nav.js';
+    import { gasMinAllowed, recordGasSale } from './gas-sale.js';
 
     let allProducts = [];
     let cart = [];
@@ -756,6 +849,7 @@
     let currentBranchId = null;
     let currentBranch = null;
     let currentShift = null;
+    let gasModalItem = null;
 
     // ==================== BRANCH FUNCTIONS ====================
 
@@ -900,9 +994,10 @@
 
         grid.innerHTML = products.map(p => {
             const stockLevel = getStockLevel(p.stock_quantity);
+            const clickHandler = p.category === 'Gas' ? `openGasSaleModal('${p.id}')` : `addToCart('${p.id}')`;
             return `
-                <div class="product-card" onclick="addToCart('${p.id}')">
-                    <div class="product-name">${p.name}</div>
+                <div class="product-card" onclick="${clickHandler}">
+                    <div class="product-name">${p.name}${p.category === 'Gas' ? ' <i class="fas fa-fire" style="color: var(--warning); font-size: 0.8rem;"></i>' : ''}</div>
                     <div class="product-price">Ksh ${p.selling_price.toLocaleString()}</div>
                     <div class="product-stock">
                         <span class="stock-dot ${stockLevel.class}"></span>
@@ -1006,6 +1101,125 @@
             updateSplitInfo();
         }
     }
+
+    // ==================== GAS SALE FUNCTIONS ====================
+    // Gas items don't go through the cart/process_checkout RPC at all -
+    // they sell immediately through this modal, same logic as
+    // cashiergashub.html (refill vs complete new cylinder, with empty
+    // cylinder exchange), via the shared gas-sale.js module.
+
+    window.openGasSaleModal = (id) => {
+        gasModalItem = allProducts.find(p => p.id === id);
+        if (!gasModalItem) return;
+
+        document.getElementById('gas-sale-title').textContent = `Gas Sale - ${gasModalItem.name} (${gasModalItem.weight_category || ''})`;
+        document.querySelector('input[name="pos-gas-type"][value="refill"]').checked = true;
+        document.getElementById('pos-gas-qty').value = 1;
+        document.getElementById('pos-gas-method').value = 'Cash';
+        document.getElementById('pos-gas-split-cash').value = '';
+        document.getElementById('pos-gas-split-row').style.display = 'none';
+
+        const select = document.getElementById('pos-gas-incoming-select');
+        const gasItems = allProducts.filter(p => p.category === 'Gas');
+        select.innerHTML = '<option value="same">-- Same brand as above --</option>' +
+            gasItems.map(g => `<option value="${g.id}">${g.name} (${g.weight_category})</option>`).join('');
+        select.value = 'same';
+
+        handlePosGasTypeChange();
+        document.getElementById('gas-sale-overlay').classList.add('active');
+    };
+
+    window.closeGasSaleModal = () => {
+        document.getElementById('gas-sale-overlay').classList.remove('active');
+        gasModalItem = null;
+    };
+
+    window.handlePosGasTypeChange = () => {
+        if (!gasModalItem) return;
+        const type = document.querySelector('input[name="pos-gas-type"]:checked')?.value || 'refill';
+        document.getElementById('pos-gas-exchange-row').style.display = type === 'refill' ? 'block' : 'none';
+        document.getElementById('pos-gas-price').value = type === 'refill' ? gasModalItem.selling_price : (gasModalItem.complete_price || 0);
+    };
+
+    window.togglePosGasSplit = () => {
+        const isSplit = document.getElementById('pos-gas-method').value === 'Split';
+        document.getElementById('pos-gas-split-row').style.display = isSplit ? 'block' : 'none';
+    };
+
+    window.submitPosGasSale = async () => {
+        if (!gasModalItem) return;
+
+        await checkShift();
+        if (!currentShift) {
+            showToast("No active shift found. Please open a shift in the Cashier Dashboard first!", 'error');
+            return;
+        }
+
+        const type = document.querySelector('input[name="pos-gas-type"]:checked')?.value || 'refill';
+        const qty = parseInt(document.getElementById('pos-gas-qty').value) || 0;
+        const price = parseFloat(document.getElementById('pos-gas-price').value) || 0;
+        const method = document.getElementById('pos-gas-method').value;
+
+        if (!qty || qty <= 0 || !price) {
+            showToast("Please fill quantity and price correctly.", 'warning');
+            return;
+        }
+        if (qty > gasModalItem.stock_quantity) {
+            showToast(`Insufficient full stock! Available: ${gasModalItem.stock_quantity}`, 'warning');
+            return;
+        }
+
+        const minAllowed = gasMinAllowed(type, gasModalItem);
+        let discountReason = null;
+        if (price < minAllowed) {
+            discountReason = await promptModal({ title: 'Discount Reason', label: `Price is below minimum (Ksh ${minAllowed}). Enter reason for discount:`, required: true });
+            if (!discountReason) return;
+        }
+
+        let customerName = null;
+        let customerPhone = null;
+        if (method === 'Debt') {
+            customerName = await promptModal({ title: 'Credit Sale', label: 'Customer Name (required for debt)', required: true });
+            if (!customerName) { showToast("Customer name is required for debt sales!", 'error'); return; }
+            customerPhone = await promptModal({ title: 'Credit Sale', label: 'Customer Phone (optional)' });
+        }
+
+        const incomingId = type === 'refill' ? (document.getElementById('pos-gas-incoming-select').value || 'same') : null;
+        const splitCash = method === 'Split' ? (parseFloat(document.getElementById('pos-gas-split-cash').value) || 0) : null;
+
+        const submitBtn = document.getElementById('pos-gas-submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner"></span> RECORDING...';
+
+        try {
+            const branchId = getCurrentBranchId();
+            await recordGasSale({
+                type,
+                outgoingItem: gasModalItem,
+                incomingId,
+                qty,
+                price,
+                method,
+                splitCash,
+                discountReason,
+                shiftId: currentShift.id,
+                branchId,
+                userId: currentUser.id,
+                customerName,
+                customerPhone
+            });
+
+            showToast(`Gas sale completed! Ksh ${(price * qty).toLocaleString()} via ${method}`, 'success');
+            closeGasSaleModal();
+            await loadProducts();
+        } catch (error) {
+            console.error("Gas sale error:", error);
+            showToast("Error: " + error.message, 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Record Sale';
+        }
+    };
 
     // ==================== SPLIT PAYMENT FUNCTIONS ====================
 
