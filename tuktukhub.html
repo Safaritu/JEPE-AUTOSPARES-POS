@@ -505,12 +505,7 @@
                 role: profile.role
             };
             localStorage.setItem('pos_session', JSON.stringify(session));
-            
-            const sidebarBranchName = document.querySelector('#sidebarBranchName span');
-            if (profile.branches && sidebarBranchName) {
-                sidebarBranchName.textContent = profile.branches.name;
-            }
-            
+
             return profile;
         } catch (error) {
             console.error("Error loading profile:", error);
@@ -520,10 +515,6 @@
                 currentUser = session.user;
                 currentBranchId = session.branch?.id;
                 currentBranch = session.branch;
-                if (currentBranch) {
-                    const sidebarBranchName = document.querySelector('#sidebarBranchName span');
-                    if (sidebarBranchName) sidebarBranchName.textContent = currentBranch.name;
-                }
                 return session.profile;
             }
             window.location.href = 'index.html';

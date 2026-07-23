@@ -290,8 +290,6 @@
             currentBranchId = profile.branch_id;
             currentBranch = profile.branches;
             localStorage.setItem('pos_session', JSON.stringify({user,profile,branch:profile.branches,role:profile.role}));
-            const sidebarBranchName = document.querySelector('#sidebarBranchName span');
-            if (profile.branches && sidebarBranchName) sidebarBranchName.textContent = profile.branches.name;
             const { data: shift } = await supabase.from('daily_shifts').select('*').eq('branch_id', currentBranchId).eq('status', 'Open').maybeSingle();
             currentShift = shift;
             return profile;

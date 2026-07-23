@@ -1489,21 +1489,18 @@
             let branchId = selectedBranchId || getCurrentBranchId();
             let query = supabase
                 .from('cash_transactions')
-                .select('*');
+                .select('*')
+                .ilike('description', '%transfer%');
 
             if (!isAllBranches && branchId) {
                 query = query.eq('branch_id', branchId);
             }
 
-            const { data: transactions, error } = await query
+            const { data: transfers, error } = await query
                 .order('created_at', { ascending: false })
                 .limit(50);
 
             if (error) throw error;
-
-            const transfers = transactions.filter(t =>
-                t.description && t.description.toLowerCase().includes('transfer')
-            );
 
             renderHistory(transfers);
 
@@ -1605,12 +1602,19 @@
 
         await loadBranches();
 
-        // Default: All Branches selected
+        // Admins default to All Branches (and must narrow down before
+        // transferring - see the isAllBranches check in processTransfer).
+        // Cashiers have no branch selector shown to them at all, so they
+        // must be scoped to their own branch here, or every query on this
+        // page (balances, shift, history) would silently pull consolidated
+        // data across every branch instead of just theirs.
         selectedBranchId = null;
-        isAllBranches = true;
-        document.getElementById('currentBranchDisplay').textContent = 'All Branches';
-        document.getElementById('branchSelector').value = 'all';
-        toggleKituiBankOptions(false);
+        isAllBranches = (userRole === 'admin');
+        const ownBranchId = getCurrentBranchId();
+        const ownBranchName = branches[ownBranchId]?.name;
+        document.getElementById('currentBranchDisplay').textContent = isAllBranches ? 'All Branches' : (ownBranchName || 'Your Branch');
+        document.getElementById('branchSelector').value = isAllBranches ? 'all' : (branches[ownBranchId]?.code || 'all');
+        toggleKituiBankOptions(!isAllBranches && checkIfKituiBranch(ownBranchId));
 
         await loadCurrentShift();
         updateShiftIndicator();
