@@ -153,10 +153,25 @@
             display: block; 
             margin-bottom: 5px; 
         }
-        .balance-preview .val { 
-            font-size: 2.2rem; 
-            font-weight: 800; 
-            color: #fff; 
+        .balance-preview .val {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #fff;
+        }
+        .balance-preview-row {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .balance-preview-row .val-sub {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #cbd5e1;
+        }
+        .balance-preview-row .divider {
+            width: 1px;
+            background: rgba(255,255,255,0.15);
         }
 
         /* Stats Row */
@@ -446,8 +461,17 @@
         </div>
 
         <div class="balance-preview">
-            <label>Live KCB Paybill Balance</label>
-            <div id="live-pb-total" class="val">Ksh 0.00</div>
+            <div class="balance-preview-row">
+                <div>
+                    <label>Total Money From Start</label>
+                    <div id="stat-from-start" class="val-sub">Ksh 0.00</div>
+                </div>
+                <div class="divider"></div>
+                <div>
+                    <label>Live KCB Paybill Balance</label>
+                    <div id="live-pb-total" class="val">Ksh 0.00</div>
+                </div>
+            </div>
         </div>
 
         <div class="stats-grid">
@@ -646,31 +670,48 @@
     async function calculateTotals() {
         try {
             const branchFilter = selectedBranchId || currentBranchId;
-            
+
             let salesQuery = supabase
                 .from('sales')
                 .select('total_amount')
                 .eq('payment_method', 'KCB Paybill');
-            
+
             if (branchFilter) {
                 salesQuery = salesQuery.eq('branch_id', branchFilter);
             }
-            
+
             const { data: sales } = await salesQuery;
-                
+
             let recordsQuery = supabase
                 .from('admin_expenses')
                 .select('amount, type')
                 .eq('payment_source', 'KCB Paybill');
-            
+
             if (branchFilter) {
                 recordsQuery = recordsQuery.eq('branch_id', branchFilter);
             }
-            
+
             const { data: records } = await recordsQuery;
 
+            // Transfers made via money transfer.html / cashier.html's Money IN/OUT
+            // card / bank.html also move money into and out of KCB Paybill, through
+            // cash_transactions rather than this page's own admin_expenses table -
+            // without pulling those in too, a transfer like Cash -> KCB Paybill would
+            // never show up here even though it really changed the Paybill balance.
+            let txInQuery = supabase.from('cash_transactions').select('amount')
+                .eq('category', 'KCB Paybill').eq('type', 'Money In');
+            let txOutQuery = supabase.from('cash_transactions').select('amount')
+                .eq('category', 'KCB Paybill').eq('type', 'Money Out');
+            if (branchFilter) {
+                txInQuery = txInQuery.eq('branch_id', branchFilter);
+                txOutQuery = txOutQuery.eq('branch_id', branchFilter);
+            }
+            const [{ data: txIn }, { data: txOut }] = await Promise.all([txInQuery, txOutQuery]);
+
             const totalSales = sales?.reduce((sum, s) => sum + parseFloat(s.total_amount || 0), 0) || 0;
-            
+            const totalTransfersIn = txIn?.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0) || 0;
+            const totalTransfersOut = txOut?.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0) || 0;
+
             let manualFunding = 0;
             let manualExpense = 0;
 
@@ -680,11 +721,15 @@
                 else manualExpense += val;
             });
 
-            const finalBalance = totalSales + manualFunding - manualExpense;
-            
+            const totalFunded = manualFunding + totalTransfersIn;
+            const totalDeducted = manualExpense + totalTransfersOut;
+            const totalFromStart = totalSales + totalFunded;
+            const finalBalance = totalFromStart - totalDeducted;
+
             document.getElementById('live-pb-total').innerText = `Ksh ${finalBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-            document.getElementById('stat-funding').innerText = `Ksh ${manualFunding.toLocaleString()}`;
-            document.getElementById('stat-expense').innerText = `Ksh ${manualExpense.toLocaleString()}`;
+            document.getElementById('stat-from-start').innerText = `Ksh ${totalFromStart.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            document.getElementById('stat-funding').innerText = `Ksh ${totalFunded.toLocaleString()}`;
+            document.getElementById('stat-expense').innerText = `Ksh ${totalDeducted.toLocaleString()}`;
         } catch (error) {
             console.error("Error calculating totals:", error);
         }
