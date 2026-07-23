@@ -840,16 +840,11 @@
     // ============================================
     // GO BACK TO APPROPRIATE DASHBOARD
     // ============================================
+    // Routes off the role loadUserProfile() already fetched fresh from the
+    // database - not document.referrer, which is empty for direct URL/
+    // bookmark navigation and was overriding the correct role-based
+    // decision with a stale/wrong guess.
     window.goBack = function() {
-        const referrer = document.referrer;
-        if (referrer.includes('cashier')) {
-            window.location.href = 'cashier.html';
-            return;
-        }
-        if (referrer.includes('admin')) {
-            window.location.href = 'admin.html';
-            return;
-        }
         if (userRole === 'admin') {
             window.location.href = 'admin.html';
         } else if (userRole === 'cashier') {
@@ -862,10 +857,10 @@
                 } else if (session.role === 'cashier') {
                     window.location.href = 'cashier.html';
                 } else {
-                    window.location.href = 'admin.html';
+                    window.location.href = 'index.html';
                 }
             } catch (e) {
-                window.location.href = 'admin.html';
+                window.location.href = 'index.html';
             }
         }
     };
