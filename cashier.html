@@ -2407,7 +2407,7 @@
                 <option value="Money In">Money In</option>
             </select>
             <input type="text" id="exp-desc" placeholder="Reason (e.g. Loading Fee, Lunch)" style="width:100%; margin-bottom:12px; padding: 12px; border-radius: 8px;">
-            <select id="exp-method" style="width:100%; margin-bottom:15px; padding: 12px; border-radius: 8px;">
+            <select id="exp-method" style="width:100%; margin-bottom:12px; padding: 12px; border-radius: 8px;">
                 <option value="Cash">Cash</option>
                 <option value="Mpesa">Mpesa</option>
                 <option value="KCB Float">KCB Float</option>
@@ -2417,6 +2417,19 @@
                 <option value="Family Bank Float" style="color: #059669; font-weight: 700;" class="family-bank-option" style="display: none;">🏦 Family Bank Float</option>
                 <option value="Cooperative Bank Float" style="color: #7c3aed; font-weight: 700;" class="cooperative-bank-option" style="display: none;">🏦 Cooperative Bank Float</option>
             </select>
+            <div id="exp-destination-wrap" style="display:none; margin-bottom:15px;">
+                <label style="display:block; font-size:0.7rem; font-weight:700; color:var(--text-dim); margin-bottom:6px; text-transform:uppercase;">Push to account (only if this is moving money between your own accounts, not a real expense)</label>
+                <select id="exp-destination" style="width:100%; padding: 12px; border-radius: 8px;">
+                    <option value="">-- None (this is a real expense/withdrawal) --</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Mpesa">Mpesa</option>
+                    <option value="KCB Float">KCB Float</option>
+                    <option value="Equity Float">Equity Float</option>
+                    <option value="KCB Paybill">💰 KCB Paybill (Live Box)</option>
+                    <option value="Family Bank Float" class="family-bank-option" style="display: none;">🏦 Family Bank Float</option>
+                    <option value="Cooperative Bank Float" class="cooperative-bank-option" style="display: none;">🏦 Cooperative Bank Float</option>
+                </select>
+            </div>
             <button id="record-expense-btn" class="btn btn-sync" style="width: 100%; padding: 14px; font-size: 0.9rem;">RECORD MONEY</button>
         </div>
     </div>
@@ -3838,37 +3851,66 @@
     // ============================================
     // MONEY IN/OUT
     // ============================================
+    const expTypeSelect = document.getElementById('exp-type');
+    const expDestinationWrap = document.getElementById('exp-destination-wrap');
+    if (expTypeSelect && expDestinationWrap) {
+        expTypeSelect.addEventListener('change', function() {
+            const isMoneyOut = this.value === 'Money Out';
+            expDestinationWrap.style.display = isMoneyOut ? 'block' : 'none';
+            if (!isMoneyOut) document.getElementById('exp-destination').value = '';
+        });
+        // Money Out is the default selection, so show it from the start
+        expDestinationWrap.style.display = expTypeSelect.value === 'Money Out' ? 'block' : 'none';
+    }
+
     const recordExpenseBtn = document.getElementById('record-expense-btn');
     if (recordExpenseBtn) {
         recordExpenseBtn.addEventListener('click', async function() {
             const amt = parseFloat(document.getElementById('exp-amt')?.value || 0);
             const desc = document.getElementById('exp-desc')?.value || '';
+            const type = document.getElementById('exp-type')?.value || 'Money Out';
+            const source = document.getElementById('exp-method')?.value || 'Cash';
+            const destination = type === 'Money Out' ? (document.getElementById('exp-destination')?.value || '') : '';
             const branchId = getCurrentBranchId();
             if (!amt || !desc || !currentShift) { showToast("Please fill all fields and make sure a shift is active", 'warning'); return; }
+            if (destination && destination === source) { showToast("Push-to account must be different from the account above", 'warning'); return; }
 
             this.disabled = true;
             this.innerHTML = '<span class="spinner"></span> RECORDING...';
 
             try {
-                const { error } = await supabase.from('cash_transactions').insert([{
-                    shift_id: currentShift.id,
-                    type: document.getElementById('exp-type')?.value || 'Money Out',
-                    category: document.getElementById('exp-method')?.value || 'Cash',
-                    amount: amt,
-                    description: desc,
-                    branch_id: branchId,
-                    user_id: currentUser.id
-                }]);
+                const now = new Date().toISOString();
+                let rows;
+                let successDetail;
+
+                if (destination) {
+                    // Internal transfer between the branch's own accounts - record
+                    // both legs so the net effect on end-of-day totals is zero,
+                    // and tag the descriptions the same way money transfer.html
+                    // does so this pairs up correctly in its history view too.
+                    rows = [
+                        { shift_id: currentShift.id, type: 'Money Out', category: source, amount: amt, description: `Transfer to ${destination}: ${desc}`, branch_id: branchId, user_id: currentUser.id, created_at: now },
+                        { shift_id: currentShift.id, type: 'Money In', category: destination, amount: amt, description: `Transfer from ${source}: ${desc}`, branch_id: branchId, user_id: currentUser.id, created_at: now }
+                    ];
+                    successDetail = `Ksh ${amt.toLocaleString()} moved from ${source} to ${destination}`;
+                } else {
+                    rows = [{ shift_id: currentShift.id, type, category: source, amount: amt, description: desc, branch_id: branchId, user_id: currentUser.id, created_at: now }];
+                    successDetail = `${type}: Ksh ${amt.toLocaleString()} via ${source}`;
+                }
+
+                const { error } = await supabase.from('cash_transactions').insert(rows);
 
                 if (!error) {
                     const expAmt = document.getElementById('exp-amt');
                     const expDesc = document.getElementById('exp-desc');
+                    const expDestination = document.getElementById('exp-destination');
                     if (expAmt) expAmt.value = '';
                     if (expDesc) expDesc.value = '';
+                    if (expDestination) expDestination.value = '';
                     await loadShiftData();
                     this.disabled = false;
                     this.innerHTML = 'RECORD MONEY';
-                    showSuccessNotification('Transaction recorded successfully!', `${document.getElementById('exp-type')?.value || 'Money Out'}: Ksh ${amt.toLocaleString()} via ${document.getElementById('exp-method')?.value || 'Cash'}`);
+                    showSuccessNotification('Transaction recorded successfully!', successDetail);
                 } else { throw error; }
             } catch (error) {
                 showToast("Error recording transaction: " + error.message, 'error');
