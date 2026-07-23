@@ -1523,13 +1523,7 @@
             if (profile.branches && sidebarBranchName) {
                 sidebarBranchName.textContent = profile.branches.name;
             }
-            
-            // Update branch name in header
-            const branchNameSpan = document.getElementById('branchName');
-            if (branchNameSpan && profile.branches) {
-                branchNameSpan.textContent = profile.branches.name;
-            }
-            
+
             return profile;
         } catch (error) {
             console.error("Error loading profile:", error);
@@ -1537,21 +1531,23 @@
         }
     }
 
+    function updateBranchDisplay() {
+        const text = selectedBranchId
+            ? ((branches[selectedBranchId] && branches[selectedBranchId].name) || 'SELECTED BRANCH')
+            : 'ALL BRANCHES';
+        const currentBranchDisplay = document.getElementById('currentBranchDisplay');
+        const branchName = document.getElementById('branchName');
+        if (currentBranchDisplay) currentBranchDisplay.textContent = text;
+        if (branchName) branchName.textContent = text;
+    }
+
     window.handleBranchChange = async function() {
         const selector = document.getElementById('branchSelector');
         const selectedValue = selector.value;
-        
-        const branchDisplay = document.getElementById('currentBranchDisplay');
-        
-        if (selectedValue === 'all') {
-            branchDisplay.textContent = 'ALL BRANCHES';
-            selectedBranchId = null;
-        } else {
-            selectedBranchId = selectedValue;
-            const branch = branches[selectedBranchId];
-            branchDisplay.textContent = branch ? branch.name : 'SELECTED BRANCH';
-        }
-        
+
+        selectedBranchId = selectedValue === 'all' ? null : selectedValue;
+        updateBranchDisplay();
+
         await fetchData();
     };
 
@@ -2094,7 +2090,8 @@
         
         document.getElementById('branchSelector').value = 'all';
         selectedBranchId = null;
-        
+        updateBranchDisplay();
+
         await fetchData();
         
         isMobile = window.innerWidth <= 768;
