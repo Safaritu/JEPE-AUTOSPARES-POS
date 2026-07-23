@@ -1177,7 +1177,8 @@
             );
 
             const shiftResults = await Promise.all(shiftPromises);
-            
+
+            const shiftStartByBranch = {};
             shiftResults.forEach((result, index) => {
                 if (result.error) {
                     console.error(`Error loading shift for branch ${branchIds[index]}:`, result.error);
@@ -1191,69 +1192,74 @@
                     balances.equity += shift.open_equity || 0;
                     balances.family_bank += shift.open_family_bank || 0;
                     balances.cooperative += shift.open_cooperative_bank || 0;
-                    balances.paybill += shift.close_kcb_bank || 0;
+                    shiftStartByBranch[branchIds[index]] = shift.start_time;
                 }
             });
 
-            // If admin, calculate full Paybill balance including sales and transactions
-            if (userRole === 'admin') {
-                let totalPaybillSales = 0;
-                let totalPaybillIn = 0;
-                let totalPaybillOut = 0;
+            // Add what's actually moved since the till was opened, so a cashier who
+            // sold more than the opening float isn't blocked by a stale opening-only
+            // balance. 'Bank' sales don't say which bank (one CHECK-constraint value
+            // covers KCB/Equity/Family/Cooperative floats), so only Cash/Mpesa/Paybill
+            // sales can be attributed - the 4 float accounts rely on transfers/expenses
+            // only. Paybill has no physical "opening count" (it's a bank wallet, not a
+            // till), so its activity is counted all-time rather than since-shift.
+            const salesAccounts = [
+                { key: 'cash', method: 'Cash', sinceShift: true },
+                { key: 'mpesa', method: 'Mpesa', sinceShift: true },
+                { key: 'paybill', method: 'KCB Paybill', sinceShift: false }
+            ];
+            const txAccounts = [
+                { key: 'cash', category: 'Cash', sinceShift: true },
+                { key: 'mpesa', category: 'M-PESA', sinceShift: true },
+                { key: 'kcb', category: 'KCB Float', sinceShift: true },
+                { key: 'equity', category: 'Equity Float', sinceShift: true },
+                { key: 'family_bank', category: 'Family Bank', sinceShift: true },
+                { key: 'cooperative', category: 'Cooperative Bank', sinceShift: true },
+                { key: 'paybill', category: 'KCB Paybill', sinceShift: false }
+            ];
 
-                // Fetch all in parallel for speed
-                const salesPromises = branchIds.map(branchId =>
-                    supabase
-                        .from('sales')
-                        .select('total_amount')
-                        .eq('payment_method', 'KCB Paybill')
-                        .eq('branch_id', branchId)
-                        .gt('total_amount', 0)
-                );
-
-                const salesResults = await Promise.all(salesPromises);
-                salesResults.forEach(result => {
-                    if (result.data) {
-                        totalPaybillSales += result.data.reduce((sum, s) => sum + (s.total_amount || 0), 0);
+            const salesPromises = [];
+            salesAccounts.forEach(acc => {
+                branchIds.forEach(branchId => {
+                    let q = supabase.from('sales').select('total_amount')
+                        .eq('payment_method', acc.method).eq('branch_id', branchId).gt('total_amount', 0);
+                    if (acc.sinceShift && shiftStartByBranch[branchId]) {
+                        q = q.gte('created_at', shiftStartByBranch[branchId]);
                     }
+                    salesPromises.push(q.then(res => ({ key: acc.key, res })));
                 });
+            });
 
-                // Get Money In for KCB Paybill
-                const inPromises = branchIds.map(branchId =>
-                    supabase
-                        .from('cash_transactions')
-                        .select('amount')
-                        .eq('category', 'KCB Paybill')
-                        .eq('type', 'Money In')
-                        .eq('branch_id', branchId)
-                );
-
-                const inResults = await Promise.all(inPromises);
-                inResults.forEach(result => {
-                    if (result.data) {
-                        totalPaybillIn += result.data.reduce((sum, t) => sum + (t.amount || 0), 0);
+            const inPromises = [];
+            const outPromises = [];
+            txAccounts.forEach(acc => {
+                branchIds.forEach(branchId => {
+                    let qIn = supabase.from('cash_transactions').select('amount')
+                        .eq('category', acc.category).eq('type', 'Money In').eq('branch_id', branchId);
+                    let qOut = supabase.from('cash_transactions').select('amount')
+                        .eq('category', acc.category).eq('type', 'Money Out').eq('branch_id', branchId);
+                    if (acc.sinceShift && shiftStartByBranch[branchId]) {
+                        qIn = qIn.gte('created_at', shiftStartByBranch[branchId]);
+                        qOut = qOut.gte('created_at', shiftStartByBranch[branchId]);
                     }
+                    inPromises.push(qIn.then(res => ({ key: acc.key, res })));
+                    outPromises.push(qOut.then(res => ({ key: acc.key, res })));
                 });
+            });
 
-                // Get Money Out for KCB Paybill
-                const outPromises = branchIds.map(branchId =>
-                    supabase
-                        .from('cash_transactions')
-                        .select('amount')
-                        .eq('category', 'KCB Paybill')
-                        .eq('type', 'Money Out')
-                        .eq('branch_id', branchId)
-                );
+            const [salesResults, inResults, outResults] = await Promise.all([
+                Promise.all(salesPromises), Promise.all(inPromises), Promise.all(outPromises)
+            ]);
 
-                const outResults = await Promise.all(outPromises);
-                outResults.forEach(result => {
-                    if (result.data) {
-                        totalPaybillOut += result.data.reduce((sum, t) => sum + (t.amount || 0), 0);
-                    }
-                });
-
-                balances.paybill = totalPaybillSales + totalPaybillIn - totalPaybillOut;
-            }
+            salesResults.forEach(({ key, res }) => {
+                if (res.data) balances[key] += res.data.reduce((sum, s) => sum + (s.total_amount || 0), 0);
+            });
+            inResults.forEach(({ key, res }) => {
+                if (res.data) balances[key] += res.data.reduce((sum, t) => sum + (t.amount || 0), 0);
+            });
+            outResults.forEach(({ key, res }) => {
+                if (res.data) balances[key] -= res.data.reduce((sum, t) => sum + (t.amount || 0), 0);
+            });
 
             updateBalancesDisplay();
 
