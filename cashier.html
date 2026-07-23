@@ -1217,15 +1217,33 @@
             padding: 15px; 
         }
 
-        .modal { 
-            background: #fff; 
-            padding: 22px; 
-            border-radius: 18px; 
-            width: 100%; 
-            max-width: 500px; 
-            max-height: 90vh; 
-            overflow-y: auto; 
+        .modal {
+            background: #fff;
+            padding: 22px;
+            border-radius: 18px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
         }
+        .modal-close {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: #f1f5f9;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 1.1rem;
+            color: var(--text-main);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-close:hover { background: #e2e8f0; }
 
         @media (min-width: 768px) {
             .modal {
@@ -1805,19 +1823,20 @@
             margin: 0 auto; 
         }
 
-        .nav-card { 
-            background: rgba(255, 255, 255, 0.08); 
-            border: 1px solid rgba(255, 255, 255, 0.1); 
-            border-radius: 14px; 
-            padding: 14px 8px; 
-            text-align: center; 
-            color: white; 
-            text-decoration: none; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            gap: 5px; 
+        .nav-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 14px 8px;
+            text-align: center;
+            color: white;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
         }
+        .nav-card.wide { grid-column: span 2; }
 
         @media (min-width: 768px) {
             .nav-grid { gap: 12px; }
@@ -2219,12 +2238,12 @@
     <button style="position:fixed; top:20px; right:20px; background:rgba(255,255,255,0.1); border:none; color:white; width:45px; height:45px; border-radius:50%; font-size:1.2rem; z-index: 3100;" onclick="toggleNav()">✕</button>
     <div class="nav-header-title">CASHIER HUB</div>
     <div class="nav-grid">
-        <a href="cashier.html" class="nav-card" style="background: var(--admin-accent)"><span>📊</span><small>Dashboard</small></a>
+        <a href="cashier.html" class="nav-card wide" style="background: var(--admin-accent)"><span>📊</span><small>Dashboard</small></a>
 
         <div class="nav-section-label">Sell</div>
         <a href="cashiergashub.html" class="nav-card"><span>⛽</span><small>Gas Hub</small></a>
         <a href="pos.html" class="nav-card"><span>🛒</span><small>Cart Shop</small></a>
-        <a href="bank.html" class="nav-card"><span>🏦</span><small>Terminal</small></a>
+        <a href="bank.html" class="nav-card wide"><span>🏦</span><small>Terminal</small></a>
 
         <div class="nav-section-label">Money</div>
         <a href="moneyinout.html" class="nav-card"><span>💸</span><small>Money IN/OUT</small></a>
@@ -2235,7 +2254,7 @@
         <div class="nav-section-label">Inventory</div>
         <a href="cashier_inventory.html" class="nav-card"><span>➕</span><small>Add Stock</small></a>
         <a href="sale edit cashier.html" class="nav-card"><span>✏️</span><small>Edit Sales</small></a>
-        <a href="low-stock-cashier.html" class="nav-card"><span>⚠️</span><small>Low Stock</small></a>
+        <a href="low-stock-cashier.html" class="nav-card wide"><span>⚠️</span><small>Low Stock</small></a>
 
         <div class="nav-section-label">Customers & Suppliers</div>
         <a href="sales_reports.html" class="nav-card"><span>📈</span><small>Sales History</small></a>
@@ -2526,6 +2545,7 @@
 <!-- Start Shift Modal - Updated with Family Bank and Cooperative Bank for Kitui -->
 <div id="open-modal" class="overlay">
     <div class="modal">
+        <button type="button" class="modal-close" onclick="document.getElementById('open-modal').style.display='none'">✕</button>
         <h3 style="margin-top:0; font-size:1.3rem;">🚀 Start Shift</h3>
         <div class="grid-inputs" style="grid-template-columns: 1fr 1fr;" id="open-floats-container">
             <div class="input-group"><label>Actual Cash</label><input type="number" id="o-cash" value="0"></div>
@@ -2982,16 +3002,22 @@
     }
 
     function toggleKituiBankElements(show) {
-        const elements = [
-            'float-family-bank-item', 'float-cooperative-bank-item',
-            'family-bank-open', 'cooperative-bank-open',
-            'family-bank-close', 'cooperative-bank-close'
-        ];
-        elements.forEach(id => {
+        // These two are real element ids (the dashboard float row).
+        const idElements = ['float-family-bank-item', 'float-cooperative-bank-item'];
+        idElements.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.style.display = show ? 'block' : 'none';
         });
-        
+
+        // These four are class names on the Start/End Shift modal fields, not
+        // ids - getElementById on them always returned null, so the modals
+        // never actually showed Family/Cooperative Bank for Kitui even though
+        // the dashboard float row above did.
+        const classElements = document.querySelectorAll(
+            '.family-bank-open, .cooperative-bank-open, .family-bank-close, .cooperative-bank-close'
+        );
+        classElements.forEach(el => { el.style.display = show ? 'flex' : 'none'; });
+
         const options = document.querySelectorAll('.family-bank-option, .cooperative-bank-option');
         options.forEach(el => el.style.display = show ? 'block' : 'none');
         
