@@ -30,6 +30,7 @@ const ADMIN_LINKS = [
     { href: 'admin_expenses.html', icon: 'fa-credit-card', label: 'Paybill Manager' },
     { href: 'products_manager.html', icon: 'fa-box', label: 'Product Manager' },
     { href: 'user_approvals.html', icon: 'fa-user-check', label: 'User Approvals' },
+    { href: 'Monthly Performance Report.html', icon: 'fa-chart-pie', label: 'Monthly Insights' },
     { divider: true },
     { href: 'admin.html', icon: 'fa-home', label: 'HOME' }
 ];

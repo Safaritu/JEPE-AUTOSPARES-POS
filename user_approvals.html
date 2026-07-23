@@ -29,6 +29,11 @@
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
+            margin-left: 70px;
+        }
+
+        @media (max-width: 1024px) {
+            body { margin-left: 0; padding-top: 64px; }
         }
 
         .top-bar {
@@ -275,10 +280,6 @@
         <h1><i class="fas fa-user-shield"></i> User Approvals</h1>
         <p>Review new sign-ups and manage staff roles</p>
     </div>
-    <div class="top-bar-actions">
-        <a href="admin.html" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Dashboard</a>
-        <button class="btn btn-danger" onclick="logoutUser()"><i class="fas fa-sign-out-alt"></i> Logout</button>
-    </div>
 </div>
 
 <div class="container">
@@ -375,7 +376,8 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <script type="module">
-    import { supabase } from './auth.js';
+    import { supabase, requireRole } from './auth.js';
+    import { mountAdminNav } from './admin-nav.js';
 
     let currentAdminId = null;
     let selectedPending = null;
@@ -398,42 +400,6 @@
     function openModal(id) {
         document.getElementById(id).classList.add('active');
     }
-
-    // ==================== AUTH + ROLE GATE ====================
-    // Neither admin.html nor cashier.html check role today (both only check
-    // "is anyone logged in"). This page is the first to require role==='admin'.
-    async function checkAdminAuth() {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (error || !user) {
-            window.location.href = 'index.html';
-            return null;
-        }
-
-        const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('role, status')
-            .eq('id', user.id)
-            .single();
-
-        if (profileError || !profile || profile.status !== 'approved') {
-            window.location.href = 'index.html';
-            return null;
-        }
-
-        if (profile.role !== 'admin') {
-            window.location.href = 'cashier.html';
-            return null;
-        }
-
-        currentAdminId = user.id;
-        return user;
-    }
-
-    window.logoutUser = async () => {
-        localStorage.removeItem('pos_session');
-        await supabase.auth.signOut();
-        window.location.href = 'index.html';
-    };
 
     // ==================== PENDING APPROVALS ====================
     async function loadPending() {
@@ -635,8 +601,10 @@
 
     // ==================== INIT ====================
     async function init() {
-        const user = await checkAdminAuth();
-        if (!user) return;
+        mountAdminNav();
+        const authResult = await requireRole('admin', 'cashier.html');
+        if (!authResult) return;
+        currentAdminId = authResult.user.id;
         await loadPending();
         await loadUsers();
     }

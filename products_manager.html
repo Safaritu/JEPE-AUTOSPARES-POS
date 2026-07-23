@@ -7,11 +7,8 @@
     <style>
         :root { --blue: #2563eb; --slate: #1e293b; --green: #10b981; --red: #ef4444; --light: #f1f5f9; }
         body { font-family: sans-serif; background: var(--light); margin: 0; display: flex; }
-        .sidebar { width: 240px; background: var(--slate); height: 100vh; color: white; padding: 20px; position: fixed; }
-        .sidebar h2 { color: var(--green); font-size: 1.2rem; margin-bottom: 30px; }
-        .nav-link { display: block; color: #cbd5e1; text-decoration: none; padding: 12px; border-radius: 8px; margin-bottom: 5px; }
-        .nav-link:hover { background: var(--blue); color: white; }
-        .main-content { margin-left: 240px; padding: 30px; width: 100%; }
+        .main-content { margin-left: 70px; padding: 30px; width: 100%; }
+        @media (max-width: 1024px) { .main-content { margin-left: 0; padding-top: 80px; } }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
@@ -24,25 +21,6 @@
     </style>
 </head>
 <body>
-
-<div class="sidebar">
-    <h2>JEPE ADMIN</h2>
-    <a href="admin.html" class="nav-link active">📊 Dashboard view</a>
-    <a href="shift-history.html" class="nav-link">📋 Daily Shift Audit</a>
-    <a href="inventory.html" class="nav-link">➕ Add Stock</a>
-     <a href="audit_trail.html" class="nav-link">🤝 track cashier stock edits</a>
-    <a href="sales_editor.html" class="nav-link">✏️ Edit Stock/Sales</a>
-    <a href="sales-history.html" class="nav-link">📜 Sales History</a>
-    <a href="reports.html" class="nav-link">📄 Detailed Reports</a>
-    <a href="suppliers.html" class="nav-link">🤝 Suppliers</a>
-    <a href="gas_hub.html" class="nav-link">🔥 Gas Hub</a>
-    <a href="low_stock.html" class="nav-link" id="low-stock-nav">⚠️ Low Stock Alerts</a>
-    <a href="admin-debtors.html" class="nav-link">👥 Debtors</a>
-   <a href="price_audits.html" class="nav-link">📉 under price sold items</a>
-    <a href="money-history.html" class="nav-link">📜money IN/OUT history</a>
-    <hr style="opacity: 0.1; margin: 20px 0;">
-    <a href="index.html" class="nav-link">Logout</a>
-</div>
 
 <div class="main-content">
     <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
@@ -116,13 +94,18 @@
 </div>
 
 <script type="module">
-    import { supabase } from './auth.js';
+    import { supabase, requireRole } from './auth.js';
     import { showToast, confirmModal } from './ui.js';
+    import { mountAdminNav } from './admin-nav.js';
 
     let allProducts = [];
     let allSuppliers = [];
 
     async function init() {
+        mountAdminNav();
+        const authResult = await requireRole('admin', 'cashier.html');
+        if (!authResult) return;
+
         // Fetch Suppliers first for the dropdown
         const { data: sups } = await supabase.from('suppliers').select('id, name').order('name');
         allSuppliers = sups || [];

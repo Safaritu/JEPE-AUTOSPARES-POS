@@ -24,6 +24,11 @@
             color: var(--text);
             margin: 0;
             padding: 20px;
+            margin-left: 70px;
+        }
+
+        @media (max-width: 1024px) {
+            body { margin-left: 0; padding-top: 84px; }
         }
 
         .report-container { max-width: 1100px; margin: 0 auto; }
@@ -217,12 +222,17 @@
 </div>
 
 <script type="module">
-    import { supabase } from './auth.js';
+    import { supabase, requireRole } from './auth.js';
+    import { mountAdminNav } from './admin-nav.js';
 
     let barChart, pieChart;
     let currentData = { sales: [], transactions: [] };
 
     async function init() {
+        mountAdminNav();
+        const authResult = await requireRole('admin', 'cashier.html');
+        if (!authResult) return;
+
         const now = new Date();
         // Set default dates to current month
         const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
