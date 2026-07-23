@@ -612,11 +612,24 @@
             margin-bottom: 4px;
         }
 
-        .float-item span { 
-            font-size: 1rem; 
-            font-weight: 800; 
-            color: var(--primary); 
+        .float-item span {
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--primary);
             display: block;
+        }
+
+        .float-item.has-variance {
+            background: #fef3c7;
+            border-color: #f59e0b;
+        }
+        .float-variance-note {
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: #92400e;
+            margin-top: 5px;
+            line-height: 1.35;
+            text-align: left;
         }
 
         /* Bank specific styles */
@@ -3616,6 +3629,44 @@
     // "virtual" transaction row would still get swept into those totals.
     // Keeping it as shift metadata guarantees it only ever gets displayed,
     // never calculated with.
+    // Shows the reason recorded for each account's opening-float difference
+    // right on the live "Opening Floats" dashboard card while the shift is
+    // active - not just in shift history after the fact. Highlights the
+    // specific float box yellow and appends the same note text used there.
+    function applyFloatVarianceNotes(shift) {
+        const itemsByLabel = {
+            'Cash': { itemId: 'float-cash-item', spanId: 'float-cash' },
+            'Mpesa': { itemId: 'float-mpesa-item', spanId: 'float-mpesa' },
+            'KCB Float': { itemId: 'float-kcb-item', spanId: 'float-kcb' },
+            'Equity': { itemId: 'float-equity-item', spanId: 'float-equity' },
+            'Family Bank': { itemId: 'float-family-bank-item', spanId: 'float-family-bank' },
+            'Cooperative Bank': { itemId: 'float-cooperative-bank-item', spanId: 'float-cooperative-bank' }
+        };
+
+        Object.values(itemsByLabel).forEach(({ itemId }) => {
+            const item = document.getElementById(itemId);
+            if (!item) return;
+            item.classList.remove('has-variance');
+            const existingNote = item.querySelector('.float-variance-note');
+            if (existingNote) existingNote.remove();
+        });
+
+        if (!Array.isArray(shift.open_variance)) return;
+
+        shift.open_variance.forEach(v => {
+            const target = itemsByLabel[v.account];
+            if (!target) return;
+            const item = document.getElementById(target.itemId);
+            if (!item) return;
+
+            item.classList.add('has-variance');
+            const note = document.createElement('div');
+            note.className = 'float-variance-note';
+            note.textContent = `⚠️ ${v.difference > 0 ? '+' : ''}Ksh ${Math.abs(v.difference).toLocaleString()} ${v.difference > 0 ? 'more' : 'less'} than last close - ${v.reason}`;
+            item.appendChild(note);
+        });
+    }
+
     async function collectOpeningVariances(branchId, entered) {
         const { data: prevShift } = await supabase
             .from('daily_shifts')
@@ -4293,6 +4344,7 @@
                     if (floatFamilyBank) floatFamilyBank.innerText = (currentShift.open_family_bank || 0).toLocaleString();
                     if (floatCooperativeBank) floatCooperativeBank.innerText = (currentShift.open_cooperative_bank || 0).toLocaleString();
                 }
+                applyFloatVarianceNotes(currentShift);
                 await loadShiftData();
                 updateGreeting();
                 setTimeout(checkLowFloats, 500);
