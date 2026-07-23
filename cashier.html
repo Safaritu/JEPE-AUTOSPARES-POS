@@ -619,19 +619,6 @@
             display: block;
         }
 
-        .float-item.has-variance {
-            background: #fef3c7;
-            border-color: #f59e0b;
-        }
-        .float-variance-note {
-            font-size: 0.6rem;
-            font-weight: 700;
-            color: #92400e;
-            margin-top: 5px;
-            line-height: 1.35;
-            text-align: left;
-        }
-
         /* Bank specific styles */
         .family-bank-item {
             border-left: 3px solid var(--family-bank);
@@ -3629,44 +3616,6 @@
     // "virtual" transaction row would still get swept into those totals.
     // Keeping it as shift metadata guarantees it only ever gets displayed,
     // never calculated with.
-    // Shows the reason recorded for each account's opening-float difference
-    // right on the live "Opening Floats" dashboard card while the shift is
-    // active - not just in shift history after the fact. Highlights the
-    // specific float box yellow and appends the same note text used there.
-    function applyFloatVarianceNotes(shift) {
-        const itemsByLabel = {
-            'Cash': { itemId: 'float-cash-item', spanId: 'float-cash' },
-            'Mpesa': { itemId: 'float-mpesa-item', spanId: 'float-mpesa' },
-            'KCB Float': { itemId: 'float-kcb-item', spanId: 'float-kcb' },
-            'Equity': { itemId: 'float-equity-item', spanId: 'float-equity' },
-            'Family Bank': { itemId: 'float-family-bank-item', spanId: 'float-family-bank' },
-            'Cooperative Bank': { itemId: 'float-cooperative-bank-item', spanId: 'float-cooperative-bank' }
-        };
-
-        Object.values(itemsByLabel).forEach(({ itemId }) => {
-            const item = document.getElementById(itemId);
-            if (!item) return;
-            item.classList.remove('has-variance');
-            const existingNote = item.querySelector('.float-variance-note');
-            if (existingNote) existingNote.remove();
-        });
-
-        if (!Array.isArray(shift.open_variance)) return;
-
-        shift.open_variance.forEach(v => {
-            const target = itemsByLabel[v.account];
-            if (!target) return;
-            const item = document.getElementById(target.itemId);
-            if (!item) return;
-
-            item.classList.add('has-variance');
-            const note = document.createElement('div');
-            note.className = 'float-variance-note';
-            note.textContent = `⚠️ ${v.difference > 0 ? '+' : ''}Ksh ${Math.abs(v.difference).toLocaleString()} ${v.difference > 0 ? 'more' : 'less'} than last close - ${v.reason}`;
-            item.appendChild(note);
-        });
-    }
-
     async function collectOpeningVariances(branchId, entered) {
         const { data: prevShift } = await supabase
             .from('daily_shifts')
@@ -3968,6 +3917,15 @@
         } catch (error) { console.error("Fetch Error:", error); }
     }
 
+    function openVarianceNoteHtml(sh, accountLabel) {
+        if (!Array.isArray(sh.open_variance)) return '';
+        const v = sh.open_variance.find(x => x.account === accountLabel);
+        if (!v) return '';
+        return `<div style="font-size:0.65rem; color:#b45309; background:#fff7ed; padding:3px 6px; border-radius:4px; margin:2px 0 6px;">
+            ⚠️ ${v.difference > 0 ? '+' : ''}Ksh ${Math.abs(v.difference).toLocaleString()} ${v.difference > 0 ? 'more' : 'less'} than last close - ${v.reason}
+        </div>`;
+    }
+
     function renderDesktopHistory(shifts, transData, query = "") {
         const desktopTbody = document.getElementById('history-body');
         if (!desktopTbody) return;
@@ -4002,13 +3960,19 @@
             const startD = new Date(sh.start_time);
             let openingFloatsHtml = `
                 <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash || 0).toLocaleString()}</span></div>
+                ${openVarianceNoteHtml(sh, 'Cash')}
                 <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa || 0).toLocaleString()}</span></div>
+                ${openVarianceNoteHtml(sh, 'Mpesa')}
                 <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb || 0).toLocaleString()}</span></div>
-                <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity || 0).toLocaleString()}</span></div>`;
+                ${openVarianceNoteHtml(sh, 'KCB Float')}
+                <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity || 0).toLocaleString()}</span></div>
+                ${openVarianceNoteHtml(sh, 'Equity')}`;
             if (isKituiBranch) {
                 openingFloatsHtml += `
                     <div class="account-line"><span class="account-label">Family Bank</span><span class="account-val">${(sh.open_family_bank || 0).toLocaleString()}</span></div>
-                    <div class="account-line"><span class="account-label">Cooperative Bank</span><span class="account-val">${(sh.open_cooperative_bank || 0).toLocaleString()}</span></div>`;
+                    ${openVarianceNoteHtml(sh, 'Family Bank')}
+                    <div class="account-line"><span class="account-label">Cooperative Bank</span><span class="account-val">${(sh.open_cooperative_bank || 0).toLocaleString()}</span></div>
+                    ${openVarianceNoteHtml(sh, 'Cooperative Bank')}`;
             }
             openingFloatsHtml += `<div class="total-row">Total: ${openTotal.toLocaleString()}</div>`;
 
@@ -4037,8 +4001,9 @@
                 </a>
             `;
 
+            const hasOpenVariance = Array.isArray(sh.open_variance) && sh.open_variance.length > 0;
             tableHtml += `
-                <tr>
+                <tr${hasOpenVariance ? ' style="background:#fef3c7;"' : ''}>
                     <td class="date-cell">
                         <b>${startD.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</b>
                         <span class="time-pill">IN: ${startD.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span><br>
@@ -4093,9 +4058,10 @@
             else varianceClass = 'var-balanced';
 
             const varianceNote = sh.variance_note && sh.variance_note !== 'Balanced' ? (sh.variance_note.split(' - ')[1] || sh.variance_note) : sh.variance_note;
+            const hasOpenVarianceMobile = Array.isArray(sh.open_variance) && sh.open_variance.length > 0;
 
             mobileHtml += `
-                <div class="shift-mobile-card">
+                <div class="shift-mobile-card"${hasOpenVarianceMobile ? ' style="background:#fef3c7;"' : ''}>
                     <div class="shift-mobile-header">
                         <div class="shift-mobile-date">${startD.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
                         <div class="shift-mobile-status ${varianceClass}">${isClosed ? (varianceVal > 0 ? `+${varianceVal.toLocaleString()}` : varianceVal < 0 ? varianceVal.toLocaleString() : 'Balanced') : 'Active'}</div>
@@ -4105,9 +4071,12 @@
                             <div class="shift-mobile-section-title">Opening Floats</div>
                             <div style="font-size: 0.8rem;">
                                 <div>Cash: ${(sh.open_cash || 0).toLocaleString()}</div>
+                                ${openVarianceNoteHtml(sh, 'Cash')}
                                 <div>Mpesa: ${(sh.open_mpesa || 0).toLocaleString()}</div>
+                                ${openVarianceNoteHtml(sh, 'Mpesa')}
                                 <div>KCB: ${(sh.open_kcb || 0).toLocaleString()}</div>
-                                ${isKituiBranch ? `<div>Family Bank: ${(sh.open_family_bank || 0).toLocaleString()}</div><div>Cooperative: ${(sh.open_cooperative_bank || 0).toLocaleString()}</div>` : ''}
+                                ${openVarianceNoteHtml(sh, 'KCB Float')}
+                                ${isKituiBranch ? `<div>Family Bank: ${(sh.open_family_bank || 0).toLocaleString()}</div>${openVarianceNoteHtml(sh, 'Family Bank')}<div>Cooperative: ${(sh.open_cooperative_bank || 0).toLocaleString()}</div>${openVarianceNoteHtml(sh, 'Cooperative Bank')}` : ''}
                                 <div style="font-weight:700; margin-top:5px;">Total: ${openTotal.toLocaleString()}</div>
                             </div>
                         </div>
@@ -4344,7 +4313,6 @@
                     if (floatFamilyBank) floatFamilyBank.innerText = (currentShift.open_family_bank || 0).toLocaleString();
                     if (floatCooperativeBank) floatCooperativeBank.innerText = (currentShift.open_cooperative_bank || 0).toLocaleString();
                 }
-                applyFloatVarianceNotes(currentShift);
                 await loadShiftData();
                 updateGreeting();
                 setTimeout(checkLowFloats, 500);
