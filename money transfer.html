@@ -1564,6 +1564,29 @@
                         <td><span class="transfer-badge success">${branchName}</span></td>
                     </tr>
                 `;
+            } else {
+                // No matching Money In/Money Out pair at this exact timestamp -
+                // most likely entered as a single-sided transaction elsewhere
+                // (e.g. the Money IN/OUT page) rather than through this page's
+                // two-row transfer flow. Still show it instead of silently
+                // dropping it, but don't invent a matching leg for it.
+                items.forEach(t => {
+                    const date = new Date(t.created_at);
+                    const dateStr = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                    const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const branchName = branches[t.branch_id]?.name || 'Unknown';
+                    const direction = t.type === 'Money Out' ? 'Out of' : 'Into';
+
+                    html += `
+                        <tr>
+                            <td>${dateStr} ${timeStr}</td>
+                            <td colspan="2"><span class="account-from">${direction} ${t.category}</span></td>
+                            <td class="amount-col ${t.type === 'Money Out' ? 'negative' : 'positive'}">Ksh ${t.amount.toLocaleString()}</td>
+                            <td>${t.description}</td>
+                            <td><span class="transfer-badge pending">${branchName}</span></td>
+                        </tr>
+                    `;
+                });
             }
         });
 

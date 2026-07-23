@@ -61,6 +61,8 @@
         <div class="float-item"><label>KCB Paybill</label><span id="float-kcb">0</span></div>
         <div class="float-item"><label>Equity</label><span id="float-equity">0</span></div>
         <div class="float-item"><label>KCB Bank</label><span id="float-bank">0</span></div>
+        <div class="float-item kitui-only" style="display:none;"><label>Family Bank</label><span id="float-family-bank">0</span></div>
+        <div class="float-item kitui-only" style="display:none;"><label>Cooperative Bank</label><span id="float-cooperative-bank">0</span></div>
     </div>
 
     <div class="card">
@@ -102,7 +104,10 @@
         <input type="number" id="o-cash" placeholder="Cash Float" style="margin-bottom:10px;">
         <input type="number" id="o-mpesa" placeholder="Mpesa Float" style="margin-bottom:10px;">
         <input type="number" id="o-kcb" placeholder="Paybill Float" style="margin-bottom:10px;">
+        <input type="number" id="o-equity" placeholder="Equity Float" style="margin-bottom:10px;">
         <input type="number" id="o-bank" placeholder="KCB Bank Balance" style="margin-bottom:10px;">
+        <input type="number" id="o-family-bank" placeholder="Family Bank Float" class="kitui-only" style="display:none; margin-bottom:10px;">
+        <input type="number" id="o-cooperative-bank" placeholder="Cooperative Bank Float" class="kitui-only" style="display:none; margin-bottom:10px;">
         <button class="btn btn-primary" id="confirm-open" style="width:100%">OPEN DAY</button>
     </div>
 </div>
@@ -113,7 +118,10 @@
         <input type="number" id="c-cash" placeholder="Actual Cash" style="margin-bottom:10px;">
         <input type="number" id="c-mpesa" placeholder="Actual Mpesa" style="margin-bottom:10px;">
         <input type="number" id="c-kcb" placeholder="Actual Paybill" style="margin-bottom:10px;">
+        <input type="number" id="c-equity" placeholder="Actual Equity" style="margin-bottom:10px;">
         <input type="number" id="c-bank" placeholder="Actual KCB Bank" style="margin-bottom:10px;">
+        <input type="number" id="c-family-bank" placeholder="Actual Family Bank" class="kitui-only" style="display:none; margin-bottom:10px;">
+        <input type="number" id="c-cooperative-bank" placeholder="Actual Cooperative Bank" class="kitui-only" style="display:none; margin-bottom:10px;">
         <button class="btn btn-danger" id="confirm-close" style="width:100%">CLOSE DAY</button>
     </div>
 </div>
@@ -122,23 +130,44 @@
     import { supabase } from './auth.js';
     import { mountCashierNav } from './cashier-nav.js';
     let inventory = [], currentShift = null, selectedItem = null;
+    let currentBranchId = null;
+    let isKituiBranch = false;
+
+    function toggleKituiFields(show) {
+        document.querySelectorAll('.kitui-only').forEach(el => {
+            el.style.display = show ? 'block' : 'none';
+        });
+    }
 
     async function init() {
         mountCashierNav();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return window.location.href = 'index.html';
 
+        const { data: profile } = await supabase.from('profiles').select('*, branches(*)').eq('id', user.id).single();
+        if (!profile) return window.location.href = 'index.html';
+        currentBranchId = profile.branch_id;
+        isKituiBranch = (profile.branches?.name || '').toLowerCase().includes('kitui');
+        toggleKituiFields(isKituiBranch);
+
         const { data: prods } = await supabase.from('products').select('*');
         inventory = prods || [];
         document.getElementById('pList').innerHTML = inventory.map(p => `<option value="${p.name}">`).join('');
 
-        const { data: shift } = await supabase.from('daily_shifts').select('*').eq('status', 'Open').maybeSingle();
+        const { data: shift } = await supabase.from('daily_shifts').select('*').eq('branch_id', currentBranchId).eq('status', 'Open').maybeSingle();
         const actionBtnContainer = document.getElementById('shift-action-container');
         if (shift) {
             currentShift = shift;
             actionBtnContainer.innerHTML = `<button class="btn btn-danger" onclick="document.getElementById('close-modal').style.display='flex'">🔴 CLOSE DAY</button>`;
-            document.getElementById('float-cash').innerText = shift.open_cash.toLocaleString();
+            document.getElementById('float-cash').innerText = (shift.open_cash || 0).toLocaleString();
+            document.getElementById('float-mpesa').innerText = (shift.open_mpesa || 0).toLocaleString();
+            document.getElementById('float-kcb').innerText = (shift.open_kcb || 0).toLocaleString();
+            document.getElementById('float-equity').innerText = (shift.open_equity || 0).toLocaleString();
             document.getElementById('float-bank').innerText = (shift.open_kcb_bank || 0).toLocaleString();
+            if (isKituiBranch) {
+                document.getElementById('float-family-bank').innerText = (shift.open_family_bank || 0).toLocaleString();
+                document.getElementById('float-cooperative-bank').innerText = (shift.open_cooperative_bank || 0).toLocaleString();
+            }
             loadSales();
         } else {
             actionBtnContainer.innerHTML = `<button class="btn btn-primary" onclick="document.getElementById('open-modal').style.display='flex'">🟢 START DAY</button>`;
@@ -167,11 +196,38 @@
     };
 
     document.getElementById('confirm-open').onclick = async () => {
-        await supabase.from('daily_shifts').insert([{
+        const openData = {
+            branch_id: currentBranchId,
             open_cash: parseFloat(document.getElementById('o-cash').value || 0),
+            open_mpesa: parseFloat(document.getElementById('o-mpesa').value || 0),
+            open_kcb: parseFloat(document.getElementById('o-kcb').value || 0),
+            open_equity: parseFloat(document.getElementById('o-equity').value || 0),
             open_kcb_bank: parseFloat(document.getElementById('o-bank').value || 0),
             status: 'Open', start_time: new Date().toISOString()
-        }]);
+        };
+        if (isKituiBranch) {
+            openData.open_family_bank = parseFloat(document.getElementById('o-family-bank').value || 0);
+            openData.open_cooperative_bank = parseFloat(document.getElementById('o-cooperative-bank').value || 0);
+        }
+        await supabase.from('daily_shifts').insert([openData]);
+        location.reload();
+    };
+
+    document.getElementById('confirm-close').onclick = async () => {
+        if (!currentShift) return;
+        const closeData = {
+            close_cash: parseFloat(document.getElementById('c-cash').value || 0),
+            close_mpesa: parseFloat(document.getElementById('c-mpesa').value || 0),
+            close_kcb: parseFloat(document.getElementById('c-kcb').value || 0),
+            close_equity: parseFloat(document.getElementById('c-equity').value || 0),
+            close_kcb_bank: parseFloat(document.getElementById('c-bank').value || 0),
+            status: 'Closed', end_time: new Date().toISOString()
+        };
+        if (isKituiBranch) {
+            closeData.close_family_bank = parseFloat(document.getElementById('c-family-bank').value || 0);
+            closeData.close_cooperative_bank = parseFloat(document.getElementById('c-cooperative-bank').value || 0);
+        }
+        await supabase.from('daily_shifts').update(closeData).eq('id', currentShift.id);
         location.reload();
     };
 
