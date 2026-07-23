@@ -41,163 +41,6 @@
             font-size: 16px;
         }
 
-        /* --- SIDEBAR - Collapsible like Motorbike Hub --- */
-        .sidebar { 
-            width: var(--sidebar-collapsed); 
-            height: 100vh; 
-            background: var(--sidebar-bg); 
-            position: fixed; 
-            left: 0; 
-            top: 0; 
-            z-index: 3000; 
-            overflow-x: hidden; 
-            transition: width 0.3s ease;
-            padding: 20px 10px; 
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sidebar:hover, .sidebar.mobile-active { 
-            width: var(--sidebar-width); 
-        }
-
-        .sidebar-header { 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            margin-bottom: 30px; 
-            padding: 0 10px; 
-            min-height: 40px;
-        }
-
-        .sidebar h2 { 
-            font-size: 1.4rem; 
-            margin: 0; 
-            white-space: nowrap; 
-            opacity: 0; 
-            transition: opacity 0.2s; 
-            color: white;
-        }
-
-        .sidebar:hover h2, .sidebar.mobile-active h2 { 
-            opacity: 1; 
-        }
-
-        .close-btn { 
-            display: none; 
-            background: none; 
-            border: none; 
-            color: white; 
-            font-size: 1.5rem; 
-            cursor: pointer; 
-        }
-
-        /* Branch Info in Sidebar */
-        .branch-info {
-            padding: 12px;
-            margin: 10px 0 20px;
-            background: rgba(79, 70, 229, 0.2);
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.1);
-            white-space: nowrap;
-        }
-
-        .branch-label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            color: #94a3b8;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-
-        .sidebar:hover .branch-label, .sidebar.mobile-active .branch-label {
-            opacity: 1;
-        }
-
-        .branch-name {
-            font-weight: 800;
-            color: white;
-            font-size: 1rem;
-            margin-top: 3px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .branch-name i { 
-            color: var(--primary); 
-            min-width: 20px;
-        }
-
-        .branch-name span {
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-
-        .sidebar:hover .branch-name span, .sidebar.mobile-active .branch-name span {
-            opacity: 1;
-        }
-
-        .nav-list { 
-            flex: 1;
-            list-style: none; 
-            padding: 0; 
-            margin: 0; 
-        }
-
-        .nav-link { 
-            display: flex; 
-            align-items: center; 
-            padding: 14px; 
-            color: #94a3b8; 
-            text-decoration: none; 
-            border-radius: 10px; 
-            margin-bottom: 8px; 
-            transition: 0.3s; 
-            white-space: nowrap;
-            font-size: 0.95rem;
-        }
-
-        .nav-link i { 
-            min-width: 32px; 
-            font-size: 1.3rem; 
-            text-align: center; 
-            margin-right: 15px;
-        }
-
-        .nav-link span { 
-            opacity: 0; 
-            white-space: nowrap; 
-            transition: opacity 0.2s; 
-        }
-
-        .sidebar:hover .nav-link span, 
-        .sidebar.mobile-active .nav-link span { 
-            opacity: 1; 
-        }
-
-        .nav-link:hover, .nav-link.active { 
-            background: var(--primary); 
-            color: white; 
-        }
-
-        /* --- MENU TRIGGER --- */
-        .menu-trigger {
-            display: none; 
-            position: fixed; 
-            top: 15px; 
-            left: 15px; 
-            z-index: 2500;
-            background: var(--sidebar-bg); 
-            color: white; 
-            border: none; 
-            padding: 12px 18px;
-            border-radius: 10px; 
-            cursor: pointer; 
-            font-size: 1rem; 
-            font-weight: 700;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
 
         /* --- MAIN CONTENT --- */
         .main-content { 
@@ -213,27 +56,11 @@
         }
 
         @media (max-width: 1024px) { 
-            .sidebar { 
-                transform: translateX(-100%); 
-                width: var(--sidebar-width);
-            }
-            .sidebar.mobile-active { 
-                transform: translateX(0); 
-            }
             .main-content { 
                 margin-left: 0; 
                 padding-top: 80px; 
                 padding: 20px;
                 overflow-x: hidden;
-            }
-            .menu-trigger { 
-                display: block; 
-            }
-            .close-btn { 
-                display: block; 
-            }
-            .sidebar:hover { 
-                width: var(--sidebar-width); 
             }
         }
 
@@ -1032,53 +859,7 @@
 </head>
 <body>
 
-<!-- Sidebar Navigation -->
-<button class="menu-trigger" onclick="toggleMenu()">☰ MENU</button>
 
-<nav class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <h2>JEPE ADMIN</h2>
-        <button class="close-btn" onclick="toggleMenu()">×</button>
-    </div>
-    
-    <div class="branch-info" id="sidebarBranchInfo">
-        <div class="branch-label">Your Assigned Branch</div>
-        <div class="branch-name" id="sidebarBranchName">
-            <i class="fas fa-store"></i>
-            <span>Loading...</span>
-        </div>
-    </div>
-    
-    <nav class="nav-list">
-        <a href="#" onclick="confirmSwitchToCashier(event)" class="nav-link"><i class="fas fa-exchange-alt"></i> <span>SWITCH TO CASHIER</span></a>
-        <a href="admin.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
-        <a href="gas_hub.html" class="nav-link"><i class="fas fa-fire"></i> <span>Gas Hub</span></a>
-        <a href="spares_hub.html" class="nav-link"><i class="fas fa-cogs"></i> <span>Spare Parts Hub</span></a>
-        <a href="motorbike_hub.html" class="nav-link"><i class="fas fa-motorcycle"></i> <span>Motorbike Hub</span></a>
-        <a href="tuktuk_hub.html" class="nav-link"><i class="fas fa-car-side"></i> <span>TUKTUK Hub</span></a>
-
-        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
-
-        <a href="shift-history.html" class="nav-link active"><i class="fas fa-history"></i> <span>Daily Shifts</span></a>
-        <a href="money-history.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> <span>Money IN/OUT</span></a>
-        <a href="sales-history.html" class="nav-link"><i class="fas fa-chart-line"></i> <span>Sales History</span></a>
-
-        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
-
-        <a href="inventory.html" class="nav-link"><i class="fas fa-plus-circle"></i> <span>Add Stock</span></a>
-        <a href="sales_editor.html" class="nav-link"><i class="fas fa-edit"></i> <span>Edit Stock</span></a>
-        <a href="admin-debtors.html" class="nav-link"><i class="fas fa-users"></i> <span>Debtors</span></a>
-        <a href="low_stock.html" class="nav-link"><i class="fas fa-exclamation-triangle"></i> <span>Low Stock</span></a>
-        <a href="audit_trail.html" class="nav-link"><i class="fas fa-search"></i> <span>Inventory Track</span></a>
-
-        <div style="height:1px; background:rgba(255,255,255,0.1); margin:10px 0;"></div>
-
-        <a href="reports.html" class="nav-link"><i class="fas fa-file-alt"></i> <span>Reports</span></a>
-        <a href="price_audits.html" class="nav-link"><i class="fas fa-tags"></i> <span>Underpriced</span></a>
-        <a href="suppliers.html" class="nav-link"><i class="fas fa-handshake"></i> <span>Suppliers</span></a>
-        <a href="admin.html" class="nav-link"><i class="fas fa-home"></i> <span>HOME</span></a>
-    </nav>
-</nav>
 
 <main class="main-content">
     <div class="page-header">
@@ -1174,6 +955,7 @@
 <script type="module">
     import { supabase, requireRole } from './auth.js';
     import { showToast, confirmModal } from './ui.js';
+    import { mountAdminNav } from './admin-nav.js';
     
     let allShifts = [], allTransactions = [];
     let isMobile = window.innerWidth <= 768;
@@ -1450,16 +1232,7 @@
         setTimeout(() => notification.remove(), 3000);
     }
 
-    window.toggleMenu = function() {
-        document.getElementById('sidebar').classList.toggle('mobile-active');
-    };
 
-    window.confirmSwitchToCashier = (e) => {
-        e.preventDefault();
-        if(confirm("Switch to Cashier Mode?")) {
-            window.location.href = "cashier.html";
-        }
-    };
 
     async function loadBranches() {
         const { data } = await supabase.from('branches').select('*');
@@ -2077,6 +1850,7 @@
     });
 
     document.addEventListener('DOMContentLoaded', async function() {
+        mountAdminNav();
         const authResult = await requireRole('admin', 'cashier.html');
         if (!authResult) return;
 
