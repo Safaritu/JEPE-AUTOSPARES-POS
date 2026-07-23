@@ -619,6 +619,46 @@ export function clearSession() {
     if (warningEl) warningEl.style.display = 'none';
 }
 
+// ============================================
+// AUTO-REFRESH ON INACTIVITY
+// After 5 minutes with no clicks/keys/mouse movement/scrolling/touches,
+// reload the page so any live data on screen (floats, balances, sales
+// lists) doesn't sit stale while a cashier/admin has stepped away.
+// Separate from the 10-minute SESSION_TIMEOUT above - that one logs the
+// user out; this one only reloads the page, session stays intact as
+// long as real activity happened within the last 10 minutes.
+// Self-initializes wherever auth.js is imported, skipping the login
+// page (an idle reload there would wipe out a half-typed email/password).
+// ============================================
+const AUTO_REFRESH_TIMEOUT = 5 * 60 * 1000;
+let autoRefreshTimeoutId = null;
+
+function initAutoRefresh() {
+    const currentPath = window.location.pathname;
+    const skipPages = ['index.html', 'login.html', ''];
+    const isSkipPage = skipPages.some(page => currentPath.endsWith(page) || currentPath === '/');
+    if (isSkipPage) return;
+
+    const resetAutoRefreshTimer = () => {
+        clearTimeout(autoRefreshTimeoutId);
+        autoRefreshTimeoutId = setTimeout(() => {
+            window.location.reload();
+        }, AUTO_REFRESH_TIMEOUT);
+    };
+
+    ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'].forEach(evt => {
+        document.addEventListener(evt, resetAutoRefreshTimer, { passive: true });
+    });
+
+    resetAutoRefreshTimer();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAutoRefresh);
+} else {
+    initAutoRefresh();
+}
+
 // Auth state listener
 supabase.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN' && session?.user) {
