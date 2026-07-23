@@ -3628,16 +3628,19 @@
 
         if (!prevShift) return []; // first shift ever for this branch - nothing to compare against
 
+        // Labels match the account-line labels used in buildOpeningFloatsHtml()
+        // on shift history cashier.html / shift-history.html exactly, so the
+        // reason can be looked up and shown right on that account's own line.
         const accounts = [
             { label: 'Cash', entered: entered.cash, prevClose: prevShift.close_cash },
-            { label: 'Mpesa Float', entered: entered.mpesa, prevClose: prevShift.close_mpesa },
+            { label: 'Mpesa', entered: entered.mpesa, prevClose: prevShift.close_mpesa },
             { label: 'KCB Float', entered: entered.kcb, prevClose: prevShift.close_kcb },
-            { label: 'Equity Float', entered: entered.equity, prevClose: prevShift.close_equity }
+            { label: 'Equity', entered: entered.equity, prevClose: prevShift.close_equity }
         ];
         if (isKituiBranch) {
             accounts.push(
-                { label: 'Family Bank Float', entered: entered.familyBank, prevClose: prevShift.close_family_bank },
-                { label: 'Cooperative Bank Float', entered: entered.cooperativeBank, prevClose: prevShift.close_cooperative_bank }
+                { label: 'Family Bank', entered: entered.familyBank, prevClose: prevShift.close_family_bank },
+                { label: 'Cooperative Bank', entered: entered.cooperativeBank, prevClose: prevShift.close_cooperative_bank }
             );
         }
 

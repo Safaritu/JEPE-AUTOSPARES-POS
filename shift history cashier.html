@@ -905,36 +905,44 @@ td:nth-child(7) div {
         return total;
     }
     
+    function openVarianceNoteHtml(sh, accountLabel) {
+        if (!Array.isArray(sh.open_variance)) return '';
+        const v = sh.open_variance.find(x => x.account === accountLabel);
+        if (!v) return '';
+        return `<div style="font-size:0.65rem; color:#b45309; background:#fff7ed; padding:3px 6px; border-radius:4px; margin:2px 0 6px;">
+            ⚠️ ${v.difference > 0 ? '+' : ''}Ksh ${Math.abs(v.difference).toLocaleString()} ${v.difference > 0 ? 'more' : 'less'} than last close - ${v.reason}
+        </div>`;
+    }
+
     function buildOpeningFloatsHtml(sh) {
         let html = `
             <div class="account-line"><span class="account-label">Cash</span><span class="account-val">${(sh.open_cash || 0).toLocaleString()}</span></div>
+            ${openVarianceNoteHtml(sh, 'Cash')}
             <div class="account-line"><span class="account-label">Mpesa</span><span class="account-val">${(sh.open_mpesa || 0).toLocaleString()}</span></div>
+            ${openVarianceNoteHtml(sh, 'Mpesa')}
             <div class="account-line"><span class="account-label">KCB Float</span><span class="account-val">${(sh.open_kcb || 0).toLocaleString()}</span></div>
+            ${openVarianceNoteHtml(sh, 'KCB Float')}
             <div class="account-line"><span class="account-label">Equity</span><span class="account-val">${(sh.open_equity || 0).toLocaleString()}</span></div>
+            ${openVarianceNoteHtml(sh, 'Equity')}
         `;
-        
+
         if (isKituiBranch) {
             html += `
                 <div class="account-line">
                     <span class="account-label">Family Bank <span class="family-bank-badge">NEW</span></span>
                     <span class="account-val">${(sh.open_family_bank || 0).toLocaleString()}</span>
                 </div>
+                ${openVarianceNoteHtml(sh, 'Family Bank')}
                 <div class="account-line">
                     <span class="account-label">Cooperative Bank <span class="cooperative-bank-badge">NEW</span></span>
                     <span class="account-val">${(sh.open_cooperative_bank || 0).toLocaleString()}</span>
                 </div>
+                ${openVarianceNoteHtml(sh, 'Cooperative Bank')}
             `;
         }
-        
+
         const total = calculateOpenTotal(sh);
         html += `<div class="total-row">Total: ${total.toLocaleString()}</div>`;
-
-        if (Array.isArray(sh.open_variance) && sh.open_variance.length > 0) {
-            html += `<div style="margin-top:10px; padding:10px; background:#fff7ed; border-left:3px solid #f59e0b; border-radius:6px; font-size:0.75rem;">
-                <b>⚠️ Differed from previous close:</b><br>
-                ${sh.open_variance.map(v => `${v.account}: ${v.difference > 0 ? '+' : ''}Ksh ${Math.abs(v.difference).toLocaleString()} ${v.difference > 0 ? 'more' : 'less'} - ${v.reason}`).join('<br>')}
-            </div>`;
-        }
         return html;
     }
     
@@ -1231,42 +1239,41 @@ td:nth-child(7) div {
                     <span class="shift-mobile-detail-label">Cash</span>
                     <span class="shift-mobile-detail-value">${(sh.open_cash || 0).toLocaleString()}</span>
                 </div>
+                ${openVarianceNoteHtml(sh, 'Cash')}
                 <div class="shift-mobile-detail-line">
                     <span class="shift-mobile-detail-label">Mpesa</span>
                     <span class="shift-mobile-detail-value">${(sh.open_mpesa || 0).toLocaleString()}</span>
                 </div>
+                ${openVarianceNoteHtml(sh, 'Mpesa')}
                 <div class="shift-mobile-detail-line">
                     <span class="shift-mobile-detail-label">KCB Float</span>
                     <span class="shift-mobile-detail-value">${(sh.open_kcb || 0).toLocaleString()}</span>
                 </div>
+                ${openVarianceNoteHtml(sh, 'KCB Float')}
                 <div class="shift-mobile-detail-line">
                     <span class="shift-mobile-detail-label">Equity</span>
                     <span class="shift-mobile-detail-value">${(sh.open_equity || 0).toLocaleString()}</span>
                 </div>
+                ${openVarianceNoteHtml(sh, 'Equity')}
             `;
-            
+
             if (isKituiBranch) {
                 openingFloatsHtml += `
                     <div class="shift-mobile-detail-line">
                         <span class="shift-mobile-detail-label">Family Bank <span class="family-bank-badge" style="font-size:0.6rem;">NEW</span></span>
                         <span class="shift-mobile-detail-value">${(sh.open_family_bank || 0).toLocaleString()}</span>
                     </div>
+                    ${openVarianceNoteHtml(sh, 'Family Bank')}
                     <div class="shift-mobile-detail-line">
                         <span class="shift-mobile-detail-label">Cooperative Bank <span class="cooperative-bank-badge" style="font-size:0.6rem;">NEW</span></span>
                         <span class="shift-mobile-detail-value">${(sh.open_cooperative_bank || 0).toLocaleString()}</span>
                     </div>
+                    ${openVarianceNoteHtml(sh, 'Cooperative Bank')}
                 `;
             }
-            
+
             openingFloatsHtml += `<div class="shift-mobile-total">Total: ${openTotal.toLocaleString()}</div>`;
 
-            if (Array.isArray(sh.open_variance) && sh.open_variance.length > 0) {
-                openingFloatsHtml += `<div style="margin-top:8px; padding:8px; background:#fff7ed; border-left:3px solid #f59e0b; border-radius:6px; font-size:0.7rem;">
-                    <b>⚠️ Differed from previous close:</b><br>
-                    ${sh.open_variance.map(v => `${v.account}: ${v.difference > 0 ? '+' : ''}Ksh ${Math.abs(v.difference).toLocaleString()} ${v.difference > 0 ? 'more' : 'less'} - ${v.reason}`).join('<br>')}
-                </div>`;
-            }
-            
             let closingFloatsHtml = `
                 <div class="shift-mobile-detail-line">
                     <span class="shift-mobile-detail-label">Cash</span>
