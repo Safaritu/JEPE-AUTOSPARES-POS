@@ -928,6 +928,13 @@ td:nth-child(7) div {
         
         const total = calculateOpenTotal(sh);
         html += `<div class="total-row">Total: ${total.toLocaleString()}</div>`;
+
+        if (Array.isArray(sh.open_variance) && sh.open_variance.length > 0) {
+            html += `<div style="margin-top:10px; padding:10px; background:#fff7ed; border-left:3px solid #f59e0b; border-radius:6px; font-size:0.75rem;">
+                <b>⚠️ Differed from previous close:</b><br>
+                ${sh.open_variance.map(v => `${v.account}: ${v.difference > 0 ? '+' : ''}Ksh ${Math.abs(v.difference).toLocaleString()} ${v.difference > 0 ? 'more' : 'less'} - ${v.reason}`).join('<br>')}
+            </div>`;
+        }
         return html;
     }
     
@@ -1252,6 +1259,13 @@ td:nth-child(7) div {
             }
             
             openingFloatsHtml += `<div class="shift-mobile-total">Total: ${openTotal.toLocaleString()}</div>`;
+
+            if (Array.isArray(sh.open_variance) && sh.open_variance.length > 0) {
+                openingFloatsHtml += `<div style="margin-top:8px; padding:8px; background:#fff7ed; border-left:3px solid #f59e0b; border-radius:6px; font-size:0.7rem;">
+                    <b>⚠️ Differed from previous close:</b><br>
+                    ${sh.open_variance.map(v => `${v.account}: ${v.difference > 0 ? '+' : ''}Ksh ${Math.abs(v.difference).toLocaleString()} ${v.difference > 0 ? 'more' : 'less'} - ${v.reason}`).join('<br>')}
+                </div>`;
+            }
             
             let closingFloatsHtml = `
                 <div class="shift-mobile-detail-line">

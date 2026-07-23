@@ -3606,6 +3606,60 @@
         } catch (error) { console.error("Error loading shift data:", error); }
     }
 
+    // Compares what the cashier is entering as opening floats against what
+    // the branch's last CLOSED shift actually closed with. A gap either way
+    // (opened with more or less than the till was left with) needs a reason
+    // on record. This is stored on the shift row itself (open_variance), NOT
+    // as a cash_transactions entry - every shift-total calculation in this
+    // app (close-day reconciliation, shift history, monthly reports) sums
+    // ALL cash_transactions tied to a shift with no category filter, so a
+    // "virtual" transaction row would still get swept into those totals.
+    // Keeping it as shift metadata guarantees it only ever gets displayed,
+    // never calculated with.
+    async function collectOpeningVariances(branchId, entered) {
+        const { data: prevShift } = await supabase
+            .from('daily_shifts')
+            .select('*')
+            .eq('branch_id', branchId)
+            .eq('status', 'Closed')
+            .order('start_time', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (!prevShift) return []; // first shift ever for this branch - nothing to compare against
+
+        const accounts = [
+            { label: 'Cash', entered: entered.cash, prevClose: prevShift.close_cash },
+            { label: 'Mpesa Float', entered: entered.mpesa, prevClose: prevShift.close_mpesa },
+            { label: 'KCB Float', entered: entered.kcb, prevClose: prevShift.close_kcb },
+            { label: 'Equity Float', entered: entered.equity, prevClose: prevShift.close_equity }
+        ];
+        if (isKituiBranch) {
+            accounts.push(
+                { label: 'Family Bank Float', entered: entered.familyBank, prevClose: prevShift.close_family_bank },
+                { label: 'Cooperative Bank Float', entered: entered.cooperativeBank, prevClose: prevShift.close_cooperative_bank }
+            );
+        }
+
+        const variances = [];
+        for (const acc of accounts) {
+            const prevClose = acc.prevClose || 0;
+            const diff = acc.entered - prevClose;
+            if (Math.abs(diff) < 1) continue;
+
+            const direction = diff > 0 ? 'MORE' : 'LESS';
+            const reason = await promptModal({
+                title: `${acc.label}: opened with ${direction.toLowerCase()} money`,
+                label: `Last close was Ksh ${prevClose.toLocaleString()}, you entered Ksh ${acc.entered.toLocaleString()} (${direction} by Ksh ${Math.abs(diff).toLocaleString()}). Reason for the difference:`,
+                required: true
+            });
+            if (!reason) return null; // cashier backed out - caller must abort the shift start
+
+            variances.push({ account: acc.label, previous_close: prevClose, opened_with: acc.entered, difference: diff, reason });
+        }
+        return variances;
+    }
+
     // ============================================
     // SHIFT START/CLOSE FUNCTIONS
     // ============================================
@@ -3633,10 +3687,19 @@
                 familyBank = parseFloat(document.getElementById('o-family-bank')?.value || 0);
                 cooperativeBank = parseFloat(document.getElementById('o-cooperative-bank')?.value || 0);
             }
-            
+
+            const variances = await collectOpeningVariances(branchId, { cash, mpesa, kcb, equity, familyBank, cooperativeBank });
+            if (variances === null) {
+                showToast("Shift start cancelled - a reason is required for any opening float difference.", 'warning');
+                return;
+            }
+
             let confirmMessage = `Are these the correct opening floats?<br><br>Cash: Ksh ${cash.toLocaleString()}<br>Mpesa: Ksh ${mpesa.toLocaleString()}<br>KCB Float: Ksh ${kcb.toLocaleString()}<br>Equity Float: Ksh ${equity.toLocaleString()}`;
             if (isKituiBranch) confirmMessage += `<br>Family Bank Float: Ksh ${familyBank.toLocaleString()}<br>Cooperative Bank Float: Ksh ${cooperativeBank.toLocaleString()}`;
             confirmMessage += `<br><br>Total: Ksh ${(cash + mpesa + kcb + equity + familyBank + cooperativeBank).toLocaleString()}`;
+            if (variances.length > 0) {
+                confirmMessage += `<br><br><b>⚠️ Different from last close:</b><br>` + variances.map(v => `${v.account}: ${v.difference > 0 ? '+' : ''}Ksh ${v.difference.toLocaleString()} - ${v.reason}`).join('<br>');
+            }
             const openConfirmed = await confirmModal({ title: 'Confirm Opening Floats', message: confirmMessage, confirmText: 'Start Day' });
             if (!openConfirmed) return;
 
@@ -3646,6 +3709,7 @@
 
             const openData = { user_id: currentUser.id, branch_id: branchId, open_cash: cash, open_mpesa: mpesa, open_kcb: kcb, open_equity: equity, status: 'Open', start_time: new Date().toISOString() };
             if (isKituiBranch) { openData.open_family_bank = familyBank; openData.open_cooperative_bank = cooperativeBank; }
+            if (variances.length > 0) openData.open_variance = variances;
 
             try {
                 const { error } = await supabase.from('daily_shifts').insert([openData]);
