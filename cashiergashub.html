@@ -1016,6 +1016,7 @@
 
 <script type="module">
     import { supabase } from './auth.js';
+    import { showToast, confirmModal, promptModal } from './ui.js';
 
     let gasItems = [];
     let activeShift = null;
@@ -1312,7 +1313,7 @@
         await checkShift();
         
         if (!activeShift) {
-            alert("❌ No active shift found. Please open a shift in the Cashier Dashboard first!");
+            showToast("No active shift found. Please open a shift in the Cashier Dashboard first!", 'error');
             return;
         }
         
@@ -1325,12 +1326,12 @@
         const btn = document.getElementById(btnId);
 
         if (!outgoingId || !qty || !price || qty <= 0) {
-            alert("Please fill all details correctly.");
+            showToast("Please fill all details correctly.", 'warning');
             return;
         }
-        
+
         if (outgoingItem.stock_quantity < qty) {
-            alert(`Insufficient full stock! Available: ${outgoingItem.stock_quantity}`);
+            showToast(`Insufficient full stock! Available: ${outgoingItem.stock_quantity}`, 'warning');
             return;
         }
 
@@ -1340,7 +1341,7 @@
             (outgoingItem.complete_price || 0);
             
         if (price < minAllowed) {
-            discountReason = prompt(`Price is below minimum (Ksh ${minAllowed}). Enter reason for discount:`);
+            discountReason = await promptModal({ title: 'Discount Reason', label: `Price is below minimum (Ksh ${minAllowed}). Enter reason for discount:`, required: true });
             if (!discountReason) return;
         }
 
@@ -1378,15 +1379,15 @@
             let customerPhone = null;
             
             if (method === 'Debt') {
-                customerName = prompt("Customer Name (required for debt):");
+                customerName = await promptModal({ title: 'Credit Sale', label: 'Customer Name (required for debt)', required: true });
                 if (!customerName) {
-                    alert("❌ Customer name is required for debt sales!");
+                    showToast("Customer name is required for debt sales!", 'error');
                     btn.disabled = false;
                     btn.innerHTML = (type === 'refill') ? "Complete Refill" : "Complete Full Sale";
                     isProcessing = false;
                     return;
                 }
-                customerPhone = prompt("Customer Phone (optional):", "");
+                customerPhone = await promptModal({ title: 'Credit Sale', label: 'Customer Phone (optional)' });
             }
 
             // ============================================
@@ -1534,10 +1535,10 @@
             if (type === 'refill') document.getElementById('incoming-select').value = "same";
             document.getElementById(`split-fields-${type}`).style.display = 'none';
 
-        } catch (err) { 
+        } catch (err) {
             console.error("Sale error:", err);
-            alert("❌ Error: " + err.message);
-        } finally { 
+            showToast("Error: " + err.message, 'error');
+        } finally {
             isProcessing = false;
             btn.disabled = false; 
             btn.innerHTML = (type === 'refill') ? "Complete Refill" : "Complete Full Sale"; 
@@ -1548,17 +1549,17 @@
     document.getElementById('btn-sell-complete').onclick = () => processSale('btn-sell-complete', 'complete');
 
     document.getElementById('btn-add-inventory').onclick = async () => {
-        if (!currentBranchId) return alert("Branch information not loaded");
-        
+        if (!currentBranchId) { showToast("Branch information not loaded", 'error'); return; }
+
         const refillCost = parseFloat(document.getElementById('new-cost').value) || 0;
         const refillPrice = parseFloat(document.getElementById('new-sell').value) || 0;
         const completePrice = parseFloat(document.getElementById('new-complete-price').value) || 0;
         const supplierCompleteCost = parseFloat(document.getElementById('new-supplier-complete').value) || 0;
-        
-        if (!refillCost) return alert("Refill Cost is required");
-        if (!refillPrice) return alert("Refill Price is required");
-        if (!completePrice) return alert("Complete Price is required");
-        if (!supplierCompleteCost) return alert("Supplier Complete Cost is required");
+
+        if (!refillCost) { showToast("Refill Cost is required", 'warning'); return; }
+        if (!refillPrice) { showToast("Refill Price is required", 'warning'); return; }
+        if (!completePrice) { showToast("Complete Price is required", 'warning'); return; }
+        if (!supplierCompleteCost) { showToast("Supplier Complete Cost is required", 'warning'); return; }
         
         const payload = {
             name: document.getElementById('new-name').value,
@@ -1575,8 +1576,8 @@
             branch_id: currentBranchId
         };
         
-        if (!payload.name) return alert("Brand Name is required");
-        if (!payload.weight_category) return alert("Weight Category is required");
+        if (!payload.name) { showToast("Brand Name is required", 'warning'); return; }
+        if (!payload.weight_category) { showToast("Weight Category is required", 'warning'); return; }
         
         const btn = document.getElementById('btn-add-inventory');
         const originalText = btn.innerHTML;
@@ -1600,7 +1601,7 @@
             document.getElementById('new-supplier-complete').value = ""; 
             document.getElementById('new-qty').value = "0"; 
         } else {
-            alert("❌ Error: " + error.message);
+            showToast("Error: " + error.message, 'error');
         }
     };
 
@@ -1609,8 +1610,8 @@
         const qty = parseInt(document.getElementById('action-qty').value);
         const item = gasItems.find(g => g.id == id);
         
-        if (!item || !qty || qty <= 0) return alert("Please select a gas brand and enter valid quantity.");
-        if (!item.empty_quantity || item.empty_quantity < qty) return alert("Insufficient empty stock.");
+        if (!item || !qty || qty <= 0) { showToast("Please select a gas brand and enter valid quantity.", 'warning'); return; }
+        if (!item.empty_quantity || item.empty_quantity < qty) { showToast("Insufficient empty stock.", 'warning'); return; }
         
         const btn = document.getElementById('btn-instant-refill');
         const originalText = btn.innerHTML;
@@ -1634,7 +1635,7 @@
             await loadAll(); 
             document.getElementById('action-qty').value = ""; 
         } else {
-            alert("❌ Error: " + error.message);
+            showToast("Error: " + error.message, 'error');
         }
     };
 

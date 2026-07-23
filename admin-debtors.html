@@ -422,6 +422,7 @@
 
 <script type="module">
     import { supabase, requireRole } from './auth.js';
+    import { showToast, confirmModal } from './ui.js';
 
     let allDebts = [], currentFilter = 'All', currentShift = null, selectedDebt = null, selectedDebtToDelete = null;
     let currentUser = null, currentBranchId = null, currentBranch = null, selectedBranchId = null, branches = {}, branchIdMap = {};
@@ -557,10 +558,10 @@
         try {
             const { error } = await supabase.from('debtors').delete().eq('id', selectedDebtToDelete.id);
             if (error) throw error;
-            alert(`✅ Debt record for ${selectedDebtToDelete.name} has been deleted.`);
+            showToast(`Debt record for ${selectedDebtToDelete.name} has been deleted.`, 'success');
             closeDeleteModal();
             await loadLedger();
-        } catch (err) { alert("Error deleting record: " + err.message); }
+        } catch (err) { showToast("Error deleting record: " + err.message, 'error'); }
         finally { btn.innerHTML = originalText; btn.disabled = false; }
     };
 
@@ -584,10 +585,10 @@
             const { error: transError } = await supabase.from('cash_transactions').insert([transData]);
             if (transError) throw transError;
             generateReceipt(selectedDebt, method);
-            alert("✅ Debt cleared successfully!");
+            showToast("Debt cleared successfully!", 'success');
             closeModal();
             await loadLedger();
-        } catch (err) { alert("Error: " + err.message); }
+        } catch (err) { showToast("Error: " + err.message, 'error'); }
         finally { btn.innerHTML = '<i class="fas fa-print"></i> CLEAR & PRINT RECEIPT'; btn.disabled = false; }
     };
 
@@ -610,19 +611,19 @@
     document.getElementById('debt-form').onsubmit = async (e) => {
         e.preventDefault();
         if (!currentShift) {
-            const proceed = confirm("No open shift found. Debt will still be recorded but may not appear in today's sales. Continue?");
+            const proceed = await confirmModal({ title: 'No Active Shift', message: "No open shift found. Debt will still be recorded but may not appear in today's sales. Continue?" });
             if (!proceed) return;
         }
         const searchVal = document.getElementById('prod-search').value;
         const opt = document.querySelector(`#prod-list option[value="${searchVal}"]`);
-        if(!opt) return alert("Please select a valid product");
+        if(!opt) { showToast("Please select a valid product", 'warning'); return; }
         const btn = document.getElementById('submit-btn');
         btn.innerHTML = '<span class="spinner"></span> Processing...';
         btn.disabled = true;
         const customer = document.getElementById('cust-name').value;
         const amount = parseFloat(document.getElementById('debt-amt').value);
         const branchToUse = selectedBranchId || currentBranchId;
-        if (!branchToUse) { alert("Branch information not found."); btn.innerHTML = '<i class="fas fa-save"></i> RECORD ENTRY'; btn.disabled = false; return; }
+        if (!branchToUse) { showToast("Branch information not found.", 'error'); btn.innerHTML = '<i class="fas fa-save"></i> RECORD ENTRY'; btn.disabled = false; return; }
         try {
             const { error: debtError } = await supabase.from('debtors').insert([{ customer_name: customer, customer_phone: document.getElementById('cust-phone').value, product_id: opt.dataset.id, amount_owed: amount, status: 'Unpaid', branch_id: branchToUse }]);
             if (debtError) throw debtError;
@@ -632,12 +633,12 @@
             if (saleError) throw saleError;
             const newStock = parseInt(opt.dataset.stock) - 1;
             await supabase.from('products').update({ stock_quantity: newStock }).eq('id', opt.dataset.id);
-            alert("✅ Debt Recorded & Stock Updated!");
+            showToast("Debt Recorded & Stock Updated!", 'success');
             document.getElementById('debt-form').reset();
             document.getElementById('live-stock').innerText = '-';
             document.getElementById('live-min').innerHTML = '-';
             await loadLedger();
-        } catch (err) { alert("Error: " + err.message); }
+        } catch (err) { showToast("Error: " + err.message, 'error'); }
         finally { btn.innerHTML = '<i class="fas fa-save"></i> RECORD ENTRY'; btn.disabled = false; }
     };
 

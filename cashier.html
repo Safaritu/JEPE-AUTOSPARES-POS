@@ -2531,6 +2531,7 @@
 
 <script type="module">
     import { supabase } from './auth.js';
+    import { showToast, confirmModal, promptModal } from './ui.js';
 
     // ============================================
     // AUTH CHECK - Like Admin page
@@ -2755,21 +2756,21 @@
         const confirmPassword = confirmPasswordInput ? confirmPasswordInput.value : '';
         
         if (!fullName) {
-            alert('Please enter your full name');
+            showToast('Please enter your full name', 'warning');
             return;
         }
-        
+
         if (newPassword || currentPassword || confirmPassword) {
             if (!currentPassword) {
-                alert('Please enter your current password');
+                showToast('Please enter your current password', 'warning');
                 return;
             }
             if (newPassword.length < 8) {
-                alert('New password must be at least 8 characters');
+                showToast('New password must be at least 8 characters', 'warning');
                 return;
             }
             if (newPassword !== confirmPassword) {
-                alert('Passwords do not match');
+                showToast('Passwords do not match', 'warning');
                 return;
             }
         }
@@ -2829,7 +2830,7 @@
             }, 4000);
             
         } catch (error) {
-            alert('Error updating profile: ' + error.message);
+            showToast('Error updating profile: ' + error.message, 'error');
         } finally {
             btn.disabled = false;
             btn.innerHTML = originalText;
@@ -3089,14 +3090,20 @@
         const branchId = getCurrentBranchId();
         
         if (!refundAmount || refundAmount <= 0) {
-            alert("Please enter a valid refund amount");
+            showToast("Please enter a valid refund amount", 'warning');
             return;
         }
         if (refundAmount > refundingSale.total_amount) {
-            alert("Refund amount cannot exceed original sale amount");
+            showToast("Refund amount cannot exceed original sale amount", 'warning');
             return;
         }
-        if (!confirm(`Confirm Refund:\n\nItem: ${refundingSale.item_name}\nAmount: Ksh ${refundAmount.toLocaleString()}\nMethod: ${refundMethod}`)) return;
+        const refundConfirmed = await confirmModal({
+            title: 'Confirm Refund',
+            message: `Item: ${refundingSale.item_name}<br>Amount: Ksh ${refundAmount.toLocaleString()}<br>Method: ${refundMethod}`,
+            confirmText: 'Confirm Refund',
+            danger: true
+        });
+        if (!refundConfirmed) return;
         
         const submitBtn = document.querySelector('#refund-modal .btn-danger');
         if (!submitBtn) return;
@@ -3141,7 +3148,7 @@
             showSuccessNotification('Refund processed successfully!', `Ksh ${refundAmount.toLocaleString()} refunded via ${refundMethod}`);
         } catch (error) {
             console.error("Refund error:", error);
-            alert("Error processing refund: " + error.message);
+            showToast("Error processing refund: " + error.message, 'error');
         } finally {
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalBtnText;
@@ -3246,8 +3253,8 @@
             const branchId = getCurrentBranchId();
             const activeShiftId = await getCurrentActiveShiftId(branchId);
             
-            if (!activeShiftId) { alert("❌ You must open a shift first before making sales!"); return; }
-            if (!selectedItem) { alert("Select a valid item."); return; }
+            if (!activeShiftId) { showToast("You must open a shift first before making sales!", 'error'); return; }
+            if (!selectedItem) { showToast("Select a valid item.", 'warning'); return; }
             if (selectedItem.category === 'Gas') {
                 const notice = document.getElementById('gas-redirect-notice');
                 if (notice) { notice.style.display = 'flex'; setTimeout(() => { if (notice.style.display === 'flex') notice.style.display = 'none'; }, 5000); }
@@ -3260,11 +3267,11 @@
             const method = document.getElementById('pMethod')?.value || 'Cash';
 
             if (price < (selectedItem.min_price || 0)) {
-                const discReason = prompt(`Price below Min. Reason:`);
+                const discReason = await promptModal({ title: 'Discount Reason', label: 'Price below minimum. Reason:', required: true });
                 if (!discReason) return;
                 selectedItem.tempReason = discReason;
             }
-            if (qty > selectedItem.stock_quantity) { alert("Insufficient stock!"); return; }
+            if (qty > selectedItem.stock_quantity) { showToast("Insufficient stock!", 'warning'); return; }
 
             if (btn) {
                 btn.disabled = true;
@@ -3300,9 +3307,9 @@
                 await supabase.from('products').update({ stock_quantity: selectedItem.stock_quantity - qty }).eq('id', selectedItem.id);
 
                 if (method === "Debt") {
-                    const customerName = prompt("Customer Name (required):");
+                    const customerName = await promptModal({ title: 'Credit Sale', label: 'Customer Name', required: true });
                     if (!customerName) { if (btn) { btn.disabled = false; btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>'; } return; }
-                    const customerPhone = prompt("Customer Phone (optional):", "");
+                    const customerPhone = await promptModal({ title: 'Credit Sale', label: 'Customer Phone (optional)' });
                     await supabase.from('debtors').insert([{ customer_name: customerName, customer_phone: customerPhone || null, product_id: selectedItem.id, amount_owed: total, branch_id: branchId, status: 'Unpaid' }]);
                 }
 
@@ -3329,7 +3336,7 @@
                 showSuccessNotification('Sale recorded successfully!', `Ksh ${total.toLocaleString()} - ${method}`);
             } catch (error) {
                 console.error("Sale Error:", error);
-                alert("❌ Error: " + error.message);
+                showToast("Error: " + error.message, 'error');
                 if (btn) {
                     btn.disabled = false;
                     btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
@@ -3411,11 +3418,11 @@
     const confirmOpenBtn = document.getElementById('confirm-open');
     if (confirmOpenBtn) {
         confirmOpenBtn.addEventListener('click', async function() {
-            if (isCreatingShift) { alert("Please wait, shift is being created..."); return; }
+            if (isCreatingShift) { showToast("Please wait, shift is being created...", 'warning'); return; }
             const branchId = getCurrentBranchId();
             const existingOpenShift = await checkForOpenShift(branchId);
             if (existingOpenShift) {
-                alert("❌ There is already an open shift for this branch. Please close it first.");
+                showToast("There is already an open shift for this branch. Please close it first.", 'error');
                 this.disabled = false;
                 this.innerHTML = 'START DAY';
                 const openModal = document.getElementById('open-modal');
@@ -3433,10 +3440,11 @@
                 cooperativeBank = parseFloat(document.getElementById('o-cooperative-bank')?.value || 0);
             }
             
-            let confirmMessage = `Are these the correct opening floats?\n\nCash: Ksh ${cash.toLocaleString()}\nMpesa: Ksh ${mpesa.toLocaleString()}\nKCB Float: Ksh ${kcb.toLocaleString()}\nEquity Float: Ksh ${equity.toLocaleString()}`;
-            if (isKituiBranch) confirmMessage += `\nFamily Bank Float: Ksh ${familyBank.toLocaleString()}\nCooperative Bank Float: Ksh ${cooperativeBank.toLocaleString()}`;
-            confirmMessage += `\n\nTotal: Ksh ${(cash + mpesa + kcb + equity + familyBank + cooperativeBank).toLocaleString()}`;
-            if (!confirm(confirmMessage)) return;
+            let confirmMessage = `Are these the correct opening floats?<br><br>Cash: Ksh ${cash.toLocaleString()}<br>Mpesa: Ksh ${mpesa.toLocaleString()}<br>KCB Float: Ksh ${kcb.toLocaleString()}<br>Equity Float: Ksh ${equity.toLocaleString()}`;
+            if (isKituiBranch) confirmMessage += `<br>Family Bank Float: Ksh ${familyBank.toLocaleString()}<br>Cooperative Bank Float: Ksh ${cooperativeBank.toLocaleString()}`;
+            confirmMessage += `<br><br>Total: Ksh ${(cash + mpesa + kcb + equity + familyBank + cooperativeBank).toLocaleString()}`;
+            const openConfirmed = await confirmModal({ title: 'Confirm Opening Floats', message: confirmMessage, confirmText: 'Start Day' });
+            if (!openConfirmed) return;
 
             isCreatingShift = true;
             this.disabled = true;
@@ -3452,7 +3460,7 @@
                 setTimeout(() => location.reload(), 1500);
             } catch (error) {
                 console.error("Start shift error:", error);
-                alert("Error starting shift: " + error.message);
+                showToast("Error starting shift: " + error.message, 'error');
                 this.disabled = false;
                 this.innerHTML = 'START DAY';
             } finally { isCreatingShift = false; }
@@ -3472,7 +3480,7 @@
             const clE = parseFloat(document.getElementById('c-equity')?.value || 0);
             const clC = parseFloat(document.getElementById('c-cash')?.value || 0);
             if (clM === 0 && clK === 0 && clE === 0 && clC === 0) {
-                alert("❌ Please enter closing amounts for all floats before closing the shift.");
+                showToast("Please enter closing amounts for all floats before closing the shift.", 'warning');
                 return;
             }
             showCloseConfirmation();
@@ -3563,7 +3571,7 @@
     };
 
     window.processFinalClose = async function() {
-        if (isClosingShift) { alert("Please wait, shift is being closed..."); return; }
+        if (isClosingShift) { showToast("Please wait, shift is being closed...", 'warning'); return; }
         const card = document.getElementById('close-confirm-card');
         if (!card) return;
 
@@ -3605,7 +3613,7 @@
             let note = "";
             if (Math.abs(variance) < 1) { note = "Balanced"; } else {
                 const sign = variance > 0 ? "+" : "-";
-                note = prompt(`Variance: ${sign}${Math.abs(variance).toFixed(2)}. Please enter reason:`);
+                note = await promptModal({ title: 'Variance Reason', label: `Variance: ${sign}${Math.abs(variance).toFixed(2)}. Please enter reason:`, required: true });
                 if (!note) { isClosingShift = false; if (btn) { btn.disabled = false; btn.innerHTML = 'FINALIZE & CLOSE'; } return; }
             }
 
@@ -3619,7 +3627,7 @@
             setTimeout(() => location.reload(), 1500);
         } catch (error) {
             console.error("Close shift error:", error);
-            alert("Error closing shift: " + error.message);
+            showToast("Error closing shift: " + error.message, 'error');
             isClosingShift = false;
             if (btn) {
                 btn.disabled = false;
@@ -3836,7 +3844,7 @@
             const amt = parseFloat(document.getElementById('exp-amt')?.value || 0);
             const desc = document.getElementById('exp-desc')?.value || '';
             const branchId = getCurrentBranchId();
-            if (!amt || !desc || !currentShift) { alert("❌ Please fill all fields and make sure a shift is active"); return; }
+            if (!amt || !desc || !currentShift) { showToast("Please fill all fields and make sure a shift is active", 'warning'); return; }
 
             this.disabled = true;
             this.innerHTML = '<span class="spinner"></span> RECORDING...';
@@ -3863,7 +3871,7 @@
                     showSuccessNotification('Transaction recorded successfully!', `${document.getElementById('exp-type')?.value || 'Money Out'}: Ksh ${amt.toLocaleString()} via ${document.getElementById('exp-method')?.value || 'Cash'}`);
                 } else { throw error; }
             } catch (error) {
-                alert("❌ Error recording transaction: " + error.message);
+                showToast("Error recording transaction: " + error.message, 'error');
                 this.disabled = false;
                 this.innerHTML = 'RECORD MONEY';
             }
