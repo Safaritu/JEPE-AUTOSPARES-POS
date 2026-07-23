@@ -1162,6 +1162,7 @@
 
 <script type="module">
     import { supabase, requireRole } from './auth.js';
+    import { showToast, confirmModal } from './ui.js';
 
     let allSuppliers = [], allOrders = [], allPayments = [], allProducts = [];
     let orderLimit = 10;
@@ -1481,7 +1482,7 @@
         const totalCost = qty * buyPrice;
         const branchId = selectedBranchId || currentBranchId;
 
-        if(!pid || qty <= 0) return alert("Select product and enter valid quantity");
+        if(!pid || qty <= 0) { showToast("Select product and enter valid quantity", 'warning'); return; }
 
         saveBtn.disabled = true;
         saveBtn.innerHTML = '<span class="spinner"></span> SAVING...';
@@ -1511,7 +1512,7 @@
             closeModals();
             await loadAllData();
         } catch (error) {
-            alert("Error: " + error.message);
+            showToast("Error: " + error.message, 'error');
         } finally {
             saveBtn.disabled = false;
             saveBtn.innerHTML = '<i class="fas fa-check-circle"></i> Finalize Update';
@@ -1558,7 +1559,7 @@
         };
 
         if (!payload.name) {
-            alert("Supplier name is required");
+            showToast("Supplier name is required", 'warning');
             return;
         }
 
@@ -1578,7 +1579,7 @@
             closeModals();
             await loadAllData();
         } catch (error) {
-            alert("Error: " + error.message);
+            showToast("Error: " + error.message, 'error');
         } finally {
             saveBtn.innerHTML = originalText;
             saveBtn.disabled = false;
@@ -1593,7 +1594,7 @@
         const branchId = selectedBranchId || currentBranchId;
         const btn = document.getElementById('confirmPaymentBtn');
 
-        if(!amount || amount <= 0) return alert("Enter valid amount");
+        if(!amount || amount <= 0) { showToast("Enter valid amount", 'warning'); return; }
 
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner"></span> PROCESSING...';
@@ -1635,7 +1636,7 @@
             closeModals();
             await loadAllData();
         } catch (error) {
-            alert("Error: " + error.message);
+            showToast("Error: " + error.message, 'error');
         } finally {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-check"></i> Confirm Payment';

@@ -762,6 +762,7 @@
 
 <script type="module">
     import { supabase, requireRole } from './auth.js';
+    import { showToast } from './ui.js';
 
     let allProducts = [];
     let filteredProducts = [];
@@ -888,7 +889,7 @@
         
         const quantity = parseInt(input.value);
         if (isNaN(quantity) || quantity < 1) {
-            alert("Please enter a valid quantity (minimum 1)");
+            showToast("Please enter a valid quantity (minimum 1)", 'warning');
             return;
         }
 
@@ -917,7 +918,7 @@
 
         } catch (error) {
             console.error("Error restocking:", error);
-            alert("Failed to restock: " + error.message);
+            showToast("Failed to restock: " + error.message, 'error');
         } finally {
             // Restore button
             btn.innerHTML = originalText;

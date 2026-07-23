@@ -1089,6 +1089,7 @@
 
 <script type="module">
     import { supabase } from './auth.js';
+    import { showToast } from './ui.js';
 
     let allSuppliers = [];
     let allOrders = [];
@@ -1356,7 +1357,7 @@
     window.saveSupplier = async () => {
         const branchId = getCurrentBranchId();
         if (!branchId) {
-            alert("Branch information not found");
+            showToast("Branch information not found", 'error');
             return;
         }
 
@@ -1370,7 +1371,7 @@
         
         const { error } = await supabase.from('suppliers').insert([payload]);
         if (error) {
-            alert("Error: " + error.message);
+            showToast("Error: " + error.message, 'error');
         } else {
             closeModals();
             await fetchSuppliers();
@@ -1388,7 +1389,7 @@
         const totalCost = qty * buyPrice;
         const branchId = getCurrentBranchId();
 
-        if(!pid || qty <= 0) return alert("Please select a product and enter quantity");
+        if(!pid || qty <= 0) { showToast("Please select a product and enter quantity", 'warning'); return; }
 
         saveBtn.disabled = true;
         saveBtn.innerHTML = '<span class="spinner"></span> Updating...';

@@ -117,6 +117,7 @@
 
 <script type="module">
     import { supabase } from './auth.js';
+    import { showToast, confirmModal } from './ui.js';
 
     let allProducts = [];
     let allSuppliers = [];
@@ -202,12 +203,13 @@
             ? await supabase.from('products').update(productData).eq('id', id)
             : await supabase.from('products').insert([productData]);
 
-        if (error) alert("Error: " + error.message);
+        if (error) showToast("Error: " + error.message, 'error');
         else { closeModal(); loadProducts(); }
     };
 
     window.deleteProduct = async (id) => {
-        if (confirm("Delete product?")) {
+        const deleteConfirmed = await confirmModal({ title: 'Delete Product', message: 'Delete this product?', danger: true });
+        if (deleteConfirmed) {
             await supabase.from('products').delete().eq('id', id);
             loadProducts();
         }

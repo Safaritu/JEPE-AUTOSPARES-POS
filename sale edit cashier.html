@@ -1095,6 +1095,7 @@
 
 <script type="module">
     import { supabase } from './auth.js';
+    import { showToast } from './ui.js';
     
     let allProducts = [];
     let currentUser = null;
@@ -1494,7 +1495,7 @@
         const branchId = getCurrentBranchId();
         
         if (!branchId) {
-            alert("Branch information not found. Please log out and log in again.");
+            showToast("Branch information not found. Please log out and log in again.", 'error');
             return;
         }
         
@@ -1527,11 +1528,11 @@
             : await supabase.from('products').insert([data]);
 
         if (error) {
-            alert("Error: " + error.message);
+            showToast("Error: " + error.message, 'error');
         } else {
             closeModal();
             await fetchProducts();
-            alert(id ? "✅ Product updated successfully!" : "✅ Product added successfully!");
+            showToast(id ? "Product updated successfully!" : "Product added successfully!", 'success');
         }
     };
 
