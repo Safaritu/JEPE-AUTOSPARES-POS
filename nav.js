@@ -106,6 +106,21 @@ function ensureNavStyles() {
         .sidebar .nav-link:hover, .sidebar .nav-link.active { background: #4f46e5; color: white; }
         .sidebar .nav-link.switch-link { background: #0ea5e9; color: white; margin-bottom: 15px; }
         .sidebar .nav-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 10px 0; }
+        .sidebar .nav-section {
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            color: #64748b;
+            text-transform: uppercase;
+            margin: 16px 0 6px;
+            padding: 8px 12px 0;
+            white-space: nowrap;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .sidebar .nav-section:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+        .sidebar:hover .nav-section, .sidebar.mobile-active .nav-section { opacity: 1; }
         .sidebar .nav-logout-wrap { margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
         .sidebar .nav-link.nav-logout { color: #fb7185; }
         .menu-trigger {
@@ -148,6 +163,7 @@ function currentPageName() {
 
 function renderLink(item, current) {
     if (item.divider) return '<div class="nav-divider"></div>';
+    if (item.section) return `<div class="nav-section">${item.section}</div>`;
     const active = item.href === current ? ' active' : '';
     return `<a href="${item.href}" class="nav-link${active}"><i class="fas ${item.icon}"></i> <span>${item.label}</span></a>`;
 }
@@ -187,6 +203,13 @@ export function mountSidebar({ brandLabel, links, showSwitchLink = false }) {
             </nav>
         </div>
     `);
+
+    // A categorized menu can be long enough to push the current page below
+    // the fold - bring it into view instead of leaving it to be found by
+    // scrolling, since it's still highlighted correctly wherever it lands.
+    requestAnimationFrame(() => {
+        document.querySelector('.sidebar .nav-link.active')?.scrollIntoView({ block: 'center' });
+    });
 }
 
 window.toggleMenu = () => {
