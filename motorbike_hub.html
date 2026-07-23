@@ -34,129 +34,6 @@
             min-height: 100vh; 
         }
         
-        /* Sidebar */
-        .sidebar { 
-            width: var(--sidebar-collapsed); 
-            height: 100vh; 
-            background: var(--admin-dark); 
-            color: white; 
-            padding: 20px 10px; 
-            position: fixed; 
-            transition: 0.3s; 
-            overflow-x: hidden; 
-            z-index: 2000; 
-        }
-        
-        .sidebar:hover, .sidebar.mobile-active { 
-            width: var(--sidebar-width); 
-        }
-        
-        .sidebar-header { 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            margin-bottom: 30px; 
-            padding: 0 10px; 
-        }
-        
-        .sidebar h2 { 
-            font-size: 1.2rem; 
-            margin: 0; 
-            white-space: nowrap; 
-            opacity: 0; 
-            transition: 0.3s; 
-        }
-        
-        .sidebar:hover h2, .sidebar.mobile-active h2 { 
-            opacity: 1; 
-        }
-        
-        .close-btn { 
-            display: none; 
-            background: none; 
-            border: none; 
-            color: white; 
-            font-size: 1.5rem; 
-            cursor: pointer; 
-        }
-
-        .nav-link { 
-            display: flex; 
-            align-items: center; 
-            padding: 12px; 
-            color: #94a3b8; 
-            text-decoration: none; 
-            border-radius: 8px; 
-            margin-bottom: 5px; 
-            transition: 0.3s; 
-        }
-        
-        .nav-link span:first-child { 
-            min-width: 30px; 
-            font-size: 1.2rem; 
-            text-align: center; 
-        }
-        
-        .nav-link span:last-child { 
-            opacity: 0; 
-            white-space: nowrap; 
-            transition: 0.3s; 
-            margin-left: 15px; 
-        }
-        
-        .sidebar:hover .nav-link span:last-child, 
-        .sidebar.mobile-active .nav-link span:last-child { 
-            opacity: 1; 
-        }
-        
-        .nav-link:hover, .nav-link.active { 
-            background: var(--admin-accent); 
-            color: white; 
-        }
-        
-        /* Branch Info in Sidebar */
-        .branch-info {
-            padding: 10px;
-            margin: 10px 0 20px;
-            background: rgba(79, 70, 229, 0.2);
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .branch-label {
-            font-size: 0.6rem;
-            text-transform: uppercase;
-            color: #94a3b8;
-        }
-        
-        .branch-name {
-            font-weight: 800;
-            color: white;
-            font-size: 0.85rem;
-            margin-top: 3px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .branch-name i { color: var(--admin-accent); }
-        
-        /* Menu Trigger */
-        .menu-trigger { 
-            display: none; 
-            position: fixed; 
-            top: 15px; 
-            left: 15px; 
-            z-index: 1500; 
-            background: var(--admin-dark); 
-            color: white; 
-            border: none; 
-            padding: 10px 15px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
-            font-weight: 700; 
-        }
 
         .main-content { 
             margin-left: var(--sidebar-collapsed); 
@@ -371,11 +248,6 @@
         }
 
         @media (max-width: 768px) {
-            .menu-trigger { display: block; }
-            .sidebar { transform: translateX(-100%); width: var(--sidebar-width); }
-            .sidebar.mobile-active { transform: translateX(0); }
-            .sidebar:hover { width: var(--sidebar-width); }
-            .close-btn { display: block; }
             .main-content { margin-left: 0; width: 100%; padding: 80px 20px 20px; }
             .charts-container { grid-template-columns: 1fr; }
             .branch-selector-container { flex-direction: column; align-items: flex-start; }
@@ -386,43 +258,7 @@
     </style>
 </head>
 <body>
-    <button class="menu-trigger" onclick="toggleMenu()">☰ MENU</button>
 
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <h2>JEPE ADMIN</h2>
-            <button class="close-btn" onclick="toggleMenu()">×</button>
-        </div>
-        
-        <!-- Branch Info Display -->
-        <div class="branch-info" id="sidebarBranchInfo">
-            <div class="branch-label">Your Assigned Branch</div>
-            <div class="branch-name" id="sidebarBranchName">
-                <i class="fas fa-store"></i>
-                <span>Loading...</span>
-            </div>
-        </div>
-        
-        <nav>
-            <a href="admin.html" class="nav-link"><span>📊</span> <span>Dashboard</span></a>
-            <a href="gas_hub.html" class="nav-link"><span>🔥</span> <span>Gas Hub</span></a>
-            <a href="spares_hub.html" class="nav-link"><span>⚙️</span> <span>Spare Parts Hub</span></a>
-            <a href="motorbike_hub.html" class="nav-link active"><span>🏍️</span> <span>Motorbike Hub</span></a>
-            <a href="tuktuk_hub.html" class="nav-link"><span>🚖 </span> <span>TUKTUK Hub</span></a>
-            <a href="shift-history.html" class="nav-link"><span>📋</span> <span>Daily Shifts</span></a>
-            <a href="money-history.html" class="nav-link"><span>💰</span> <span>Money IN/OUT</span></a>
-            <a href="sales-history.html" class="nav-link"><span>📜</span> <span>Sales History</span></a>
-            <a href="inventory.html" class="nav-link"><span>➕</span> <span>Add Stock</span></a>
-            <a href="sales_editor.html" class="nav-link"><span>✏️</span> <span>Edit Stock</span></a>
-            <a href="admin-debtors.html" class="nav-link"><span>👥</span> <span>Debtors</span></a>
-            <a href="low_stock.html" class="nav-link"><span>⚠️</span> <span>Low Stock</span></a>
-            <a href="audit_trail.html" class="nav-link"><span>🔍</span> <span>Inventory Track</span></a>
-            <a href="reports.html" class="nav-link"><span>📄</span> <span>Reports</span></a>
-            <a href="price_audits.html" class="nav-link"><span>📉</span> <span>Underpriced</span></a>
-            <a href="suppliers.html" class="nav-link"><span>🤝</span> <span>Suppliers</span></a>
-            <a href="admin.html" class="nav-link"><span>🏠</span> <span>HOME</span></a>
-        </nav>
-    </div>
 
     <div class="main-content">
         <!-- Branch Selector -->
@@ -510,12 +346,8 @@
 
     <script type="module">
         import { supabase, requireRole } from './auth.js';
+        import { mountAdminNav } from './admin-nav.js';
         
-        // Mobile Sidebar Function
-        window.toggleMenu = function() {
-            document.getElementById('sidebar').classList.toggle('mobile-active');
-        };
-
         let displayLimit = 10;
         let allMotoData = [];
         let currentUser = null;
@@ -891,6 +723,7 @@
         });
 
         async function init() {
+            mountAdminNav();
             const authResult = await requireRole('admin', 'cashier.html');
             if (!authResult) return;
 
