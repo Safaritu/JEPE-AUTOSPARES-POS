@@ -2720,6 +2720,12 @@
     // PROFILE SETTINGS FUNCTIONS
     // ============================================
     window.openProfileSettings = function() {
+        // The CASHIER HUB overlay (#navBanner) sits at a higher z-index than
+        // this modal's generic .overlay class, so opening Settings from
+        // inside that menu rendered the modal behind it - completely
+        // invisible, which looked like the click did nothing. Close the hub
+        // menu first so the modal is actually on top.
+        document.getElementById('navBanner')?.classList.remove('active');
         const modal = document.getElementById('profile-settings-modal');
         if (!modal) return;
         modal.style.display = 'flex';
@@ -4141,6 +4147,14 @@
             if (!profile) {
                 return;
             }
+
+            // The profile dropdown/avatar showed static placeholder text
+            // ("Cashier" / "user@example.com") until a name was manually
+            // saved once - populate it from the real signed-in profile now.
+            const profileUserNameEl = document.getElementById('profileUserName');
+            if (profileUserNameEl) profileUserNameEl.textContent = profile.full_name || currentUser?.email || 'Cashier';
+            const profileUserEmailEl = document.getElementById('profileUserEmail');
+            if (profileUserEmailEl) profileUserEmailEl.textContent = currentUser?.email || profile.email || '';
 
             const branchId = getCurrentBranchId();
             const branchNameHeader = document.getElementById('branch-name-header');
