@@ -2327,6 +2327,10 @@
 
     <div class="card">
         <div class="section-label">Sale Item</div>
+        <div id="debt-continue-banner" style="display:none; background:#eef2ff; border:1px solid var(--primary); border-radius:10px; padding:10px 14px; margin-bottom:12px; font-size:0.8rem; align-items:center; justify-content:space-between; gap:10px;">
+            <span id="debt-continue-text"></span>
+            <button type="button" onclick="endDebtContinuation()" style="background:var(--primary); color:white; border:none; padding:6px 12px; border-radius:20px; font-size:0.7rem; font-weight:700; cursor:pointer;">DONE</button>
+        </div>
         <form id="sale-form">
             <div class="compact-form-grid">
                 <div class="input-group">
@@ -2903,6 +2907,7 @@
     let allShifts = [];
     let allTransactions = [];
     let currentKcbSalesTotal = 0;
+    let continuingDebtCustomer = null; // {name, phone} while adding successive items to the same debtor
     let currentUser = null;
     let timeCheckInterval = null;
     let refundingSale = null;
@@ -3314,10 +3319,26 @@
                 await supabase.from('products').update({ stock_quantity: selectedItem.stock_quantity - qty }).eq('id', selectedItem.id);
 
                 if (method === "Debt") {
-                    const customerName = await promptModal({ title: 'Credit Sale', label: 'Customer Name', required: true });
-                    if (!customerName) { if (btn) { btn.disabled = false; btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>'; } return; }
-                    const customerPhone = await promptModal({ title: 'Credit Sale', label: 'Customer Phone (optional)' });
+                    let customerName, customerPhone;
+                    if (continuingDebtCustomer) {
+                        customerName = continuingDebtCustomer.name;
+                        customerPhone = continuingDebtCustomer.phone;
+                    } else {
+                        customerName = await promptModal({ title: 'Credit Sale', label: 'Customer Name', required: true });
+                        if (!customerName) { if (btn) { btn.disabled = false; btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>'; } return; }
+                        customerPhone = await promptModal({ title: 'Credit Sale', label: 'Customer Phone (optional)' });
+                    }
                     await supabase.from('debtors').insert([{ customer_name: customerName, customer_phone: customerPhone || null, product_id: selectedItem.id, amount_owed: total, branch_id: branchId, status: 'Unpaid' }]);
+
+                    // Selling one customer several items on credit shouldn't mean
+                    // re-typing their name/phone for every item - offer to keep
+                    // going under the same debtor instead.
+                    const addMore = await confirmModal({
+                        title: 'Item Added to Debt',
+                        message: `Ksh ${total.toLocaleString()} added for ${customerName}. Add another item for the same customer?`
+                    });
+                    continuingDebtCustomer = addMore ? { name: customerName, phone: customerPhone } : null;
+                    updateDebtContinueBanner();
                 }
 
                 await fetchInventory();
@@ -3350,10 +3371,32 @@
         const gasPanel = document.getElementById('gas-options-panel');
         if (gasPanel) gasPanel.style.display = 'none';
         selectedItem = null;
+        // Keep the form on Debt for the next item when continuing a debtor's order
+        if (continuingDebtCustomer) {
+            const methodSelect = document.getElementById('pMethod');
+            if (methodSelect) methodSelect.value = 'Debt';
+        }
         const btn = document.getElementById('submit-sale-btn');
         if (btn) {
             btn.disabled = false;
             btn.innerHTML = 'RECORD ITEM Ksh <span id="total-text">0.00</span>';
+        }
+    }
+
+    window.endDebtContinuation = () => {
+        continuingDebtCustomer = null;
+        updateDebtContinueBanner();
+    };
+
+    function updateDebtContinueBanner() {
+        const banner = document.getElementById('debt-continue-banner');
+        const text = document.getElementById('debt-continue-text');
+        if (!banner || !text) return;
+        if (continuingDebtCustomer) {
+            banner.style.display = 'flex';
+            text.innerHTML = `<i class="fas fa-user-clock"></i> Adding more items for <b>${continuingDebtCustomer.name}</b> (Debt)`;
+        } else {
+            banner.style.display = 'none';
         }
     }
 
@@ -3379,9 +3422,14 @@
         let customerName = null;
         let customerPhone = null;
         if (method === 'Debt') {
-            customerName = await promptModal({ title: 'Credit Sale', label: 'Customer Name (required for debt)', required: true });
-            if (!customerName) { showToast("Customer name is required for debt sales!", 'error'); return; }
-            customerPhone = await promptModal({ title: 'Credit Sale', label: 'Customer Phone (optional)' });
+            if (continuingDebtCustomer) {
+                customerName = continuingDebtCustomer.name;
+                customerPhone = continuingDebtCustomer.phone;
+            } else {
+                customerName = await promptModal({ title: 'Credit Sale', label: 'Customer Name (required for debt)', required: true });
+                if (!customerName) { showToast("Customer name is required for debt sales!", 'error'); return; }
+                customerPhone = await promptModal({ title: 'Credit Sale', label: 'Customer Phone (optional)' });
+            }
         }
 
         const incomingId = type === 'refill' ? (document.getElementById('gas-incoming-select')?.value || 'same') : null;
@@ -3412,6 +3460,15 @@
                 customerName,
                 customerPhone
             });
+
+            if (method === 'Debt') {
+                const addMore = await confirmModal({
+                    title: 'Item Added to Debt',
+                    message: `Ksh ${total.toLocaleString()} added for ${customerName}. Add another item for the same customer?`
+                });
+                continuingDebtCustomer = addMore ? { name: customerName, phone: customerPhone } : null;
+                updateDebtContinueBanner();
+            }
 
             await fetchInventory();
             await loadShiftData();
