@@ -722,6 +722,7 @@
 
 <script type="module">
     import { supabase } from './auth.js';
+    import { showToast, confirmModal } from './ui.js';
 
     let allProducts = [];
     let currentUser = null;
@@ -887,7 +888,7 @@
     window.saveProduct = async () => {
         const id = document.getElementById('prod-id').value;
         const branchToUse = selectedBranchId || currentBranchId;
-        if (!branchToUse) { alert("Branch missing"); return; }
+        if (!branchToUse) { showToast("Branch missing", 'error'); return; }
         const category = document.getElementById('prod-category').value;
         const isGas = category === 'Gas';
         
@@ -909,7 +910,7 @@
         if (isGas) {
             const completePrice = parseFloat(document.getElementById('prod-complete-price').value) || 0;
             const completeCost = parseFloat(document.getElementById('prod-complete-cost').value) || 0;
-            if (!completePrice && data.name) alert("Complete Price is recommended for gas products");
+            if (!completePrice && data.name) showToast("Complete Price is recommended for gas products", 'warning');
             data.complete_price = completePrice;
             data.complete_cost = completeCost;
             // Calculate cylinder_price (new cylinder without gas)
@@ -934,18 +935,19 @@
         
         if (error) {
             console.error("Save error:", error);
-            alert("Error: " + error.message);
+            showToast("Error: " + error.message, 'error');
         } else {
-            closeModal(); 
-            await fetchProducts(); 
-            alert(id ? "✅ Updated!" : "✅ Added!");
+            closeModal();
+            await fetchProducts();
+            showToast(id ? "Updated!" : "Added!", 'success');
         }
     };
 
     window.deleteProduct = async (id) => {
-        if(confirm("Permanently delete?")) {
+        const deleteConfirmed = await confirmModal({ title: 'Delete Product', message: 'Permanently delete this product?', danger: true });
+        if (deleteConfirmed) {
             const { error } = await supabase.from('products').delete().eq('id', id);
-            if(error) alert(error.message);
+            if(error) showToast(error.message, 'error');
             else await fetchProducts();
         }
     };

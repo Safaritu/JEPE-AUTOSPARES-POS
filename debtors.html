@@ -1225,13 +1225,14 @@
 
 <script type="module">
     import { supabase } from './auth.js';
+    import { showToast, confirmModal } from './ui.js';
 
     let allProducts = [], allDebts = [], currentFilter = 'All', currentUser = null, currentBranchId = null, currentBranch = null, currentShift = null, selectedDebt = null;
 
     window.toggleMenu = () => { document.getElementById('sidebar').classList.toggle('mobile-active'); document.getElementById('overlay').classList.toggle('active'); };
     window.logoutUser = async () => { localStorage.removeItem('pos_session'); await supabase.auth.signOut(); location.href = 'index.html'; };
     window.filterTable = (status, btn) => { currentFilter = status; document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); btn.classList.add('active'); renderTable(); };
-    window.openSettleModal = (id, amt, name, item) => { if(!currentShift){ alert("Open shift required!"); return; } selectedDebt={id,amt,name,item}; document.getElementById('modal-info-container').innerHTML=`<div class="amount">Ksh ${amt.toLocaleString()}</div><div class="customer">${name}</div><div class="item">${item}</div>`; document.getElementById('method-cash').checked=true; document.getElementById('settle-modal').style.display='flex'; };
+    window.openSettleModal = (id, amt, name, item) => { if(!currentShift){ showToast("Open shift required!", 'warning'); return; } selectedDebt={id,amt,name,item}; document.getElementById('modal-info-container').innerHTML=`<div class="amount">Ksh ${amt.toLocaleString()}</div><div class="customer">${name}</div><div class="item">${item}</div>`; document.getElementById('method-cash').checked=true; document.getElementById('settle-modal').style.display='flex'; };
     window.closeModal = () => { document.getElementById('settle-modal').style.display='none'; selectedDebt=null; };
 
     function getCurrentBranchId(){ const sess=JSON.parse(localStorage.getItem('pos_session')||'{}'); return sess.branch?.id||currentBranchId; }
@@ -1288,10 +1289,10 @@
             await supabase.from('debtors').update({status:'Paid'}).eq('id',selectedDebt.id);
             const transCategory=method==='KCB Paybill'?'KCB Paybill':method;
             await supabase.from('cash_transactions').insert([{ shift_id:currentShift.id, type:'Money In', category:transCategory, amount:selectedDebt.amt, description:`Debt settlement: ${selectedDebt.name} - ${selectedDebt.item}${method==='KCB Paybill'?' [LIVE KCB]':''}`, branch_id:branchId, user_id:currentUser.id }]);
-            alert('✅ Debt settled successfully! '+(method==='KCB Paybill'?'Added to Live KCB Paybill.':''));
+            showToast('Debt settled successfully! '+(method==='KCB Paybill'?'Added to Live KCB Paybill.':''), 'success');
             closeModal();
             await loadDebts();
-        } catch(err){ alert('Error: '+err.message); }
+        } catch(err){ showToast('Error: '+err.message, 'error'); }
         finally{ btn.innerHTML=original; btn.disabled=false; }
     });
 
@@ -1302,10 +1303,10 @@
     document.getElementById('ledger-search').addEventListener('input',()=>renderTable());
     document.getElementById('debt-form').onsubmit=async(e)=>{
         e.preventDefault();
-        if(!currentShift){ alert("Open shift required!"); return; }
+        if(!currentShift){ showToast("Open shift required!", 'warning'); return; }
         const searchVal=document.getElementById('prod-search').value;
         const opt=document.querySelector(`#prod-list option[value="${searchVal}"]`);
-        if(!opt){ alert("Select valid product"); return; }
+        if(!opt){ showToast("Select valid product", 'warning'); return; }
         const btn=document.getElementById('submit-btn'), original=btn.innerHTML;
         btn.innerHTML='<span class="spinner"></span> SAVING...';
         btn.disabled=true;
@@ -1313,12 +1314,12 @@
             const branchId=getCurrentBranchId();
             await supabase.from('debtors').insert([{ customer_name:document.getElementById('cust-name').value, customer_phone:document.getElementById('cust-phone').value||null, product_id:opt.dataset.id, amount_owed:parseFloat(document.getElementById('debt-amt').value), status:'Unpaid', branch_id:branchId }]);
             await supabase.from('products').update({stock_quantity:parseInt(opt.dataset.stock)-1}).eq('id',opt.dataset.id);
-            alert('✅ Debt recorded successfully!');
+            showToast('Debt recorded successfully!', 'success');
             document.getElementById('debt-form').reset();
             document.getElementById('live-stock').innerText='-';
             document.getElementById('live-price').innerText='-';
             await loadDebts();
-        } catch(err){ alert('Error: '+err.message); }
+        } catch(err){ showToast('Error: '+err.message, 'error'); }
         finally{ btn.innerHTML=original; btn.disabled=false; }
     };
 

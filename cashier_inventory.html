@@ -742,6 +742,7 @@
 
 <script type="module">
     import { supabase } from './auth.js';
+    import { showToast, confirmModal } from './ui.js';
 
     let allProducts = [];
     let currentUser = null;
@@ -971,11 +972,12 @@
         const input = document.getElementById(`add-${id}`);
         const val = parseInt(input.value);
         if (isNaN(val) || val < 1) {
-            alert("Please enter a valid quantity");
+            showToast("Please enter a valid quantity", 'warning');
             return;
         }
-        
-        if (!confirm(`Add ${val} item(s) to "${name}"?`)) return;
+
+        const addConfirmed = await confirmModal({ title: 'Add Stock', message: `Add ${val} item(s) to "${name}"?` });
+        if (!addConfirmed) return;
         
         const btn = event.target.closest('button');
         const originalText = btn.innerHTML;
@@ -989,10 +991,10 @@
             .eq('branch_id', getCurrentBranchId());
 
         if (!error) {
-            await loadData(); 
-            alert(`✅ Added ${val} items to ${name}`);
+            await loadData();
+            showToast(`Added ${val} items to ${name}`, 'success');
         } else {
-            alert("Update failed: " + error.message);
+            showToast("Update failed: " + error.message, 'error');
             btn.innerHTML = originalText;
             btn.disabled = false;
         }
@@ -1005,7 +1007,7 @@
         const category = document.getElementById('cat').value;
         
         if (!branchId) {
-            alert("Error: Could not determine your branch. Please log out and log in again.");
+            showToast("Error: Could not determine your branch. Please log out and log in again.", 'error');
             return;
         }
         
@@ -1036,13 +1038,13 @@
         btn.innerHTML = 'ADD TO SYSTEM';
         btn.disabled = false;
 
-        if (!error) { 
-            alert("✅ Product Registered Successfully!"); 
-            document.getElementById('cashier-form').reset(); 
-            await loadData(); 
+        if (!error) {
+            showToast("Product Registered Successfully!", 'success');
+            document.getElementById('cashier-form').reset();
+            await loadData();
             toggleCategoryFields();
         } else {
-            alert("❌ Error: " + error.message);
+            showToast("Error: " + error.message, 'error');
         }
     };
 

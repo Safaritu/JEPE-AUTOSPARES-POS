@@ -765,6 +765,7 @@
 
 <script type="module">
     import { supabase, requireRole } from './auth.js';
+    import { showToast, confirmModal } from './ui.js';
 
     let displayLimit = 10;
     let currentUser = null;
@@ -1017,7 +1018,12 @@
 
     // New Delete Function
     window.deleteTransaction = async (id, amount, type) => {
-        if (!confirm(`Are you sure you want to delete this ${type} of Ksh ${amount.toLocaleString()}? This will update your balance immediately.`)) return;
+        const deleteConfirmed = await confirmModal({
+            title: 'Delete Transaction',
+            message: `Are you sure you want to delete this ${type} of Ksh ${amount.toLocaleString()}? This will update your balance immediately.`,
+            danger: true
+        });
+        if (!deleteConfirmed) return;
 
         const btn = event.target.closest('button');
         const originalText = btn.innerHTML;
@@ -1030,7 +1036,7 @@
             .eq('id', id);
 
         if (error) {
-            alert("Error deleting: " + error.message);
+            showToast("Error deleting: " + error.message, 'error');
             btn.innerHTML = originalText;
             btn.disabled = false;
         } else {
@@ -1046,15 +1052,19 @@
         const branchToUse = selectedBranchId || currentBranchId;
         
         if (!branchToUse) {
-            alert("Please select a branch first");
+            showToast("Please select a branch first", 'warning');
             return;
         }
-        
+
         const btn = document.getElementById('submitBtn');
         const type = document.querySelector('input[name="tx_type"]:checked').value;
         const amount = parseFloat(document.getElementById('amount').value);
-        
-        if(!confirm(`Commit this ${type} of Ksh ${amount.toLocaleString()} to ${branches[branchToUse]?.name || 'selected branch'}?`)) return;
+
+        const commitConfirmed = await confirmModal({
+            title: 'Confirm Transaction',
+            message: `Commit this ${type} of Ksh ${amount.toLocaleString()} to ${branches[branchToUse]?.name || 'selected branch'}?`
+        });
+        if (!commitConfirmed) return;
 
         btn.disabled = true; 
         btn.innerHTML = '<span class="spinner"></span> SAVING...';
@@ -1069,12 +1079,12 @@
         }]);
 
         if (error) {
-            alert("Error: " + error.message);
+            showToast("Error: " + error.message, 'error');
         } else {
             await calculateTotals();
             await loadHistory();
             document.getElementById('expenseForm').reset();
-            alert("✅ Transaction Recorded Successfully!");
+            showToast("Transaction Recorded Successfully!", 'success');
         }
         btn.disabled = false; 
         btn.innerHTML = '<i class="fas fa-check-circle"></i> COMMIT TRANSACTION';

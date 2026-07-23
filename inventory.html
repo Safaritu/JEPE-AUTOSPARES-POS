@@ -869,6 +869,7 @@
 
 <script type="module">
     import { supabase, requireRole } from './auth.js';
+    import { showToast, confirmModal } from './ui.js';
     
     let allProducts = [];
     let displayLimit = 15;
@@ -1228,28 +1229,29 @@
         const val = parseInt(document.getElementById(`add-${id}`).value);
         if (isNaN(val) || val < 1) return;
         
-        if (confirm(`Add ${val} items to ${name}?`)) {
+        const addConfirmed = await confirmModal({ title: 'Add Stock', message: `Add ${val} items to ${name}?` });
+        if (addConfirmed) {
             const btn = event.target;
             const originalText = btn.innerHTML;
             btn.innerHTML = '<span class="spinner"></span>';
             btn.disabled = true;
-            
+
             try {
                 const branchToUse = selectedBranchId || currentBranchId;
-                
+
                 const { error } = await supabase
                     .from('products')
                     .update({ stock_quantity: current + val })
                     .eq('id', id)
                     .eq('branch_id', branchToUse);
-                    
+
                 if(!error) {
                     await loadData();
                 } else {
-                    alert("Error updating stock: " + error.message);
+                    showToast("Error updating stock: " + error.message, 'error');
                 }
             } catch (err) {
-                alert("Error: " + err.message);
+                showToast("Error: " + err.message, 'error');
             } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
@@ -1270,7 +1272,7 @@
         const category = document.getElementById('cat').value;
         
         if (!branchToUse) {
-            alert("Branch information not found. Please log out and log in again.");
+            showToast("Branch information not found. Please log out and log in again.", 'error');
             btn.innerHTML = originalText;
             btn.disabled = false;
             return;
@@ -1324,17 +1326,17 @@
             const { error } = await supabase.from('products').insert([payload]);
             if (error) throw error;
             
-            document.getElementById('admin-form').reset(); 
-            await loadData(); 
-            alert("✅ Item Added Successfully!");
-            
+            document.getElementById('admin-form').reset();
+            await loadData();
+            showToast("Item Added Successfully!", 'success');
+
             // Hide TUKTUK fields after submit
             document.getElementById('tuktuk-row').style.display = 'none';
             document.getElementById('gas-row').style.display = 'none';
-            
+
         } catch (err) {
             console.error("Insert error:", err);
-            alert("❌ Error: " + err.message);
+            showToast("Error: " + err.message, 'error');
         } finally {
             btn.innerHTML = originalText;
             btn.disabled = false;
