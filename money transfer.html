@@ -1548,10 +1548,12 @@
                 const dateStr = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
                 const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-                const fromMatch = out.description.match(/Transfer to (.+?)(?:$|:)/);
-                const toMatch = inT.description.match(/Transfer from (.+?)(?:$|:)/);
-                const from = fromMatch ? fromMatch[1] : out.category;
-                const to = toMatch ? toMatch[1] : inT.category;
+                // The account each leg affected IS the from/to account - no need to
+                // (unreliably) parse it back out of the description text. Money Out's
+                // category is where the money left; Money In's category is where it
+                // landed.
+                const from = out.category;
+                const to = inT.category;
 
                 const branchName = branches[out.branch_id]?.name || 'Unknown';
 

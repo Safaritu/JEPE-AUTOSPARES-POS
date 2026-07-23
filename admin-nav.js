@@ -17,6 +17,7 @@ const ADMIN_LINKS = [
     { divider: true },
     { href: 'shift-history.html', icon: 'fa-history', label: 'Daily Shifts' },
     { href: 'money-history.html', icon: 'fa-money-bill-wave', label: 'Money IN/OUT' },
+    { href: 'money transfer.html', icon: 'fa-exchange-alt', label: 'Transfer Money' },
     { href: 'sales-history.html', icon: 'fa-chart-line', label: 'Sales History' },
     { divider: true },
     { href: 'inventory.html', icon: 'fa-plus-circle', label: 'Add Stock' },
