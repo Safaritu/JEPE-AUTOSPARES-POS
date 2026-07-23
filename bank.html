@@ -15,7 +15,8 @@
             --border: #e2e8f0; --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); padding: 10px; margin: 0; color: var(--text-main); line-height: 1.5; overflow-x: hidden; width: 100%; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); padding: 10px; padding-left: 80px; margin: 0; color: var(--text-main); line-height: 1.5; overflow-x: hidden; width: 100%; }
+        @media (max-width: 1024px) { body { padding-left: 10px; } }
         .container { max-width: 1450px; margin: auto; width: 100%; }
         header { display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; padding: 20px; background: #fff; border-radius: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); }
         @media (min-width: 768px) { header { flex-direction: row; justify-content: space-between; align-items: center; } }
@@ -36,14 +37,12 @@
         .btn { padding: 16px 24px; border-radius: 12px; font-weight: 800; cursor: pointer; border: none; transition: 0.3s; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 8px; text-transform: uppercase; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-danger { background: var(--danger); color: white; }
-        .overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(8px); padding: 20px; }
+        .shift-modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); display: none; align-items: center; justify-content: center; z-index: 100000; backdrop-filter: blur(8px); padding: 20px; }
         .modal { background: #fff; padding: 25px; border-radius: 24px; width: 100%; max-width: 500px; }
         .table-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; overflow-x: auto; margin-bottom: 20px; }
         table { width: 100%; border-collapse: collapse; }
         th { padding: 15px; background: #f8fafc; text-align: left; font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; border-bottom: 2px solid var(--border); }
         td { padding: 14px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
-        .container { margin-left: 70px; }
-        @media (max-width: 1024px) { .container { margin-left: 0; } }
     </style>
 </head>
 <body>
@@ -98,7 +97,7 @@
     <div class="table-card"><table id="sales-table"><thead><tr><th>Time</th><th>Item</th><th>Qty</th><th>Total</th><th>Method</th></tr></thead><tbody id="live-sales-body"></tbody></table></div>
 </div>
 
-<div id="open-modal" class="overlay">
+<div id="open-modal" class="shift-modal-overlay">
     <div class="modal">
         <h3>🚀 Start Shift</h3>
         <input type="number" id="o-cash" placeholder="Cash Float" style="margin-bottom:10px;">
@@ -112,7 +111,7 @@
     </div>
 </div>
 
-<div id="close-modal" class="overlay">
+<div id="close-modal" class="shift-modal-overlay">
     <div class="modal">
         <h3>🔒 Close Shift</h3>
         <input type="number" id="c-cash" placeholder="Actual Cash" style="margin-bottom:10px;">
