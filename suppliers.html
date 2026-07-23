@@ -1266,12 +1266,14 @@
     window.handleBranchChange = async function() {
         const selector = document.getElementById('branchSelector');
         const selectedCode = selector.value;
-        
+
         const branchDisplay = document.getElementById('currentBranchDisplay');
+        const branchName = document.getElementById('branchName');
         const dateRange = document.getElementById('dateRange');
-        
+
         if (selectedCode === 'all') {
             branchDisplay.textContent = 'ALL BRANCHES';
+            if (branchName) branchName.textContent = 'ALL BRANCHES';
             selectedBranchId = null;
             dateRange.textContent = 'Showing all branches';
         } else {
@@ -1279,13 +1281,11 @@
             if (branchId) {
                 selectedBranchId = branchId;
                 branchDisplay.textContent = branches[branchId].name;
+                if (branchName) branchName.textContent = branches[branchId].name;
                 dateRange.textContent = `Showing ${branches[branchId].name} only`;
-                
-                // Save selected branch to localStorage so it persists
-                localStorage.setItem('selectedBranchCode', selectedCode);
             }
         }
-        
+
         // Reset limit and reload data
         orderLimit = 10;
         await loadAllData();
@@ -1653,11 +1653,10 @@
         document.getElementById('supplierModal').style.display = "flex";
     };
 
-    window.handleLogout = async () => { 
+    window.handleLogout = async () => {
         localStorage.removeItem('pos_session');
-        localStorage.removeItem('selectedBranchCode'); // Clear saved branch on logout
-        await supabase.auth.signOut(); 
-        window.location.href = 'index.html'; 
+        await supabase.auth.signOut();
+        window.location.href = 'index.html';
     };
 
     // ==================== INITIALIZATION ====================
@@ -1667,24 +1666,15 @@
 
         await loadBranches();
         await loadUserProfile();
-        
-        // Check if there's a saved branch in localStorage
-        const savedBranchCode = localStorage.getItem('selectedBranchCode');
-        
-        if (savedBranchCode && branchIdMap[savedBranchCode]) {
-            // Use saved branch
-            document.getElementById('branchSelector').value = savedBranchCode;
-            selectedBranchId = branchIdMap[savedBranchCode];
-            document.getElementById('currentBranchDisplay').textContent = branches[selectedBranchId].name;
-            document.getElementById('dateRange').textContent = `Showing ${branches[selectedBranchId].name} only`;
-        } else {
-            // Default to all branches
-            document.getElementById('branchSelector').value = 'all';
-            selectedBranchId = null;
-            document.getElementById('currentBranchDisplay').textContent = 'ALL BRANCHES';
-            document.getElementById('dateRange').textContent = 'Showing all branches';
-        }
-        
+
+        // Default to all branches
+        document.getElementById('branchSelector').value = 'all';
+        selectedBranchId = null;
+        document.getElementById('currentBranchDisplay').textContent = 'ALL BRANCHES';
+        const branchNameEl = document.getElementById('branchName');
+        if (branchNameEl) branchNameEl.textContent = 'ALL BRANCHES';
+        document.getElementById('dateRange').textContent = 'Showing all branches';
+
         await loadAllData();
     }
 
