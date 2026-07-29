@@ -615,6 +615,14 @@
             </div>
         </div>
 
+        <div class="card" style="margin-bottom: 30px;">
+            <h3 class="section-title" style="justify-content: space-between;">
+                <span><i class="fas fa-calendar-alt"></i> Monthly Profit Distribution</span>
+                <select id="monthlyProfitYear" style="padding: 10px 18px; min-width: 110px;"></select>
+            </h3>
+            <div class="chart-container"><canvas id="monthlyProfitChart"></canvas></div>
+        </div>
+
         <div class="card">
             <h3 class="section-title"><i class="fas fa-table"></i> Category Performance Dashboard</h3>
             <div class="table-container">
@@ -673,13 +681,14 @@
 
     let allProducts = [], allSales = [], filteredSales = [];
     let displayLimit = 15;
-    let profitChart = null, revenueChart = null, marginChart = null;
+    let profitChart = null, revenueChart = null, marginChart = null, monthlyProfitChart = null;
     let currentUser = null;
     let currentBranchId = null;
     let selectedBranchId = null;
     let branches = {};
     let branchIdMap = {};
     let itemSummary = {};
+    let selectedMonthlyProfitYear = new Date().getFullYear();
 
     window.exportToCSV = function() {
         const rows = [['Item Name', 'Category', 'Type', 'Quantity Sold', 'Revenue', 'Cost', 'Profit', 'Margin %', 'Current Stock', 'Branch']];
@@ -748,6 +757,7 @@
             allSales = salesRes.data || [];
             console.log(`Loaded ${allSales.length} sales records`);
             console.log("Categories in sales:", [...new Set(allSales.map(s => s.category))]);
+            setupMonthlyProfitChart();
             applyFilter();
         } catch (error) { console.error("Error loading data:", error); }
     }
@@ -1006,6 +1016,64 @@
     document.getElementById('startDate').onchange = applyFilter;
     document.getElementById('endDate').onchange = applyFilter;
     document.getElementById('loadMoreSales').onclick = () => { displayLimit += 20; renderUI(); };
+
+    // Populates the year dropdown from years present in allSales (plus the current
+    // year), keeping the user's current selection if it's still valid. This chart is
+    // independent of the Timeframe filter above - it always shows Jan-Dec of one year.
+    function setupMonthlyProfitChart() {
+        const yearSelect = document.getElementById('monthlyProfitYear');
+        const years = new Set(allSales.map(s => new Date(s.created_at).getFullYear()));
+        years.add(new Date().getFullYear());
+        const sortedYears = [...years].sort((a, b) => b - a);
+
+        const previousValue = yearSelect.value;
+        yearSelect.innerHTML = sortedYears.map(y => `<option value="${y}">${y}</option>`).join('');
+        yearSelect.value = sortedYears.includes(parseInt(previousValue)) ? previousValue : String(new Date().getFullYear());
+        selectedMonthlyProfitYear = parseInt(yearSelect.value);
+
+        renderMonthlyProfitChart();
+    }
+
+    // Buckets allSales (lifetime, unfiltered by Timeframe) into Jan-Dec profit totals
+    function renderMonthlyProfitChart() {
+        const monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const monthlyProfit = new Array(12).fill(0);
+
+        allSales.forEach(s => {
+            if (s.refunded === true) return;
+            const d = new Date(s.created_at);
+            if (d.getFullYear() !== selectedMonthlyProfitYear) return;
+            const costPrice = s.cost_price || 0;
+            monthlyProfit[d.getMonth()] += (s.unit_price - costPrice) * s.quantity;
+        });
+
+        if (monthlyProfitChart) monthlyProfitChart.destroy();
+        monthlyProfitChart = new Chart(document.getElementById('monthlyProfitChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: monthLabels,
+                datasets: [{
+                    label: `Profit ${selectedMonthlyProfitYear}`,
+                    data: monthlyProfit,
+                    backgroundColor: '#4f46e5',
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: (ctx) => `Ksh ${(ctx.raw || 0).toLocaleString()}` } }
+                },
+                scales: { y: { beginAtZero: true, ticks: { callback: v => 'Ksh ' + v.toLocaleString() } } }
+            }
+        });
+    }
+
+    document.getElementById('monthlyProfitYear').addEventListener('change', () => {
+        selectedMonthlyProfitYear = parseInt(document.getElementById('monthlyProfitYear').value);
+        renderMonthlyProfitChart();
+    });
 
     async function init() {
         mountAdminNav();
