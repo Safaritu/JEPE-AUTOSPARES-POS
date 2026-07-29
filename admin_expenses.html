@@ -580,6 +580,25 @@
     let branches = {};
     let branchIdMap = {};
 
+    // Supabase/PostgREST caps select() results at 1000 rows by default - for a
+    // lifetime (from-the-start) balance this silently truncates the data once a
+    // branch passes 1000 sales/transactions, giving a wrong number with no error.
+    // queryFactory must return a FRESH query builder each call (a new .range() is
+    // applied per page).
+    async function fetchAllRows(queryFactory, pageSize = 1000) {
+        let rows = [];
+        let from = 0;
+        while (true) {
+            const { data, error } = await queryFactory().range(from, from + pageSize - 1);
+            if (error) { console.error('fetchAllRows error:', error); break; }
+            if (!data || data.length === 0) break;
+            rows = rows.concat(data);
+            if (data.length < pageSize) break;
+            from += pageSize;
+        }
+        return rows;
+    }
+
     // ==================== SIDEBAR FUNCTIONS ====================
 
 
@@ -687,59 +706,60 @@
 
     window.loadMore = () => {
         displayLimit += 10;
-        loadHistory();
+        renderHistory();
     };
 
     // Recalculate Totals Logic (Fixed Funding vs Expense Addition)
     async function calculateTotals() {
         try {
-            const branchFilter = selectedBranchId || currentBranchId;
+            // selectedBranchId is explicitly null for "All Branches" - falling back to
+            // currentBranchId here used to make "All Branches" silently show only the
+            // admin's own home branch (identical to picking that branch directly).
+            const branchFilter = selectedBranchId;
 
-            let salesQuery = supabase
-                .from('sales')
-                .select('total_amount')
-                .eq('payment_method', 'KCB Paybill');
+            // fetchAllRows() is required (not a plain .select()) because a branch can
+            // easily pass 1000 lifetime sales/transactions, and PostgREST silently
+            // caps results at 1000 rows - a plain select would quietly undercount.
+            const sales = await fetchAllRows(() => {
+                let q = supabase.from('sales').select('total_amount').eq('payment_method', 'KCB Paybill');
+                if (branchFilter) q = q.eq('branch_id', branchFilter);
+                return q;
+            });
 
-            if (branchFilter) {
-                salesQuery = salesQuery.eq('branch_id', branchFilter);
-            }
-
-            const { data: sales } = await salesQuery;
-
-            let recordsQuery = supabase
-                .from('admin_expenses')
-                .select('amount, type')
-                .eq('payment_source', 'KCB Paybill');
-
-            if (branchFilter) {
-                recordsQuery = recordsQuery.eq('branch_id', branchFilter);
-            }
-
-            const { data: records } = await recordsQuery;
+            const records = await fetchAllRows(() => {
+                let q = supabase.from('admin_expenses').select('amount, type').eq('payment_source', 'KCB Paybill');
+                if (branchFilter) q = q.eq('branch_id', branchFilter);
+                return q;
+            });
 
             // Transfers made via money transfer.html / cashier.html's Money IN/OUT
             // card / bank.html also move money into and out of KCB Paybill, through
             // cash_transactions rather than this page's own admin_expenses table -
             // without pulling those in too, a transfer like Cash -> KCB Paybill would
             // never show up here even though it really changed the Paybill balance.
-            let txInQuery = supabase.from('cash_transactions').select('amount')
-                .eq('category', 'KCB Paybill').eq('type', 'Money In');
-            let txOutQuery = supabase.from('cash_transactions').select('amount')
-                .eq('category', 'KCB Paybill').eq('type', 'Money Out');
-            if (branchFilter) {
-                txInQuery = txInQuery.eq('branch_id', branchFilter);
-                txOutQuery = txOutQuery.eq('branch_id', branchFilter);
-            }
-            const [{ data: txIn }, { data: txOut }] = await Promise.all([txInQuery, txOutQuery]);
+            const [txIn, txOut] = await Promise.all([
+                fetchAllRows(() => {
+                    let q = supabase.from('cash_transactions').select('amount')
+                        .eq('category', 'KCB Paybill').eq('type', 'Money In');
+                    if (branchFilter) q = q.eq('branch_id', branchFilter);
+                    return q;
+                }),
+                fetchAllRows(() => {
+                    let q = supabase.from('cash_transactions').select('amount')
+                        .eq('category', 'KCB Paybill').eq('type', 'Money Out');
+                    if (branchFilter) q = q.eq('branch_id', branchFilter);
+                    return q;
+                })
+            ]);
 
-            const totalSales = sales?.reduce((sum, s) => sum + parseFloat(s.total_amount || 0), 0) || 0;
-            const totalTransfersIn = txIn?.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0) || 0;
-            const totalTransfersOut = txOut?.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0) || 0;
+            const totalSales = sales.reduce((sum, s) => sum + parseFloat(s.total_amount || 0), 0);
+            const totalTransfersIn = txIn.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+            const totalTransfersOut = txOut.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
 
             let manualFunding = 0;
             let manualExpense = 0;
 
-            records?.forEach(r => {
+            records.forEach(r => {
                 const val = parseFloat(r.amount || 0);
                 if(r.type === 'funding') manualFunding += val;
                 else manualExpense += val;
@@ -760,62 +780,60 @@
     }
 
     // Load History with Delete Feature
+    // Merges TWO sources so every rupee counted in the totals above is visible here:
+    // 1) admin_expenses rows (manual funding/deductions recorded on this page)
+    // 2) cash_transactions rows (wallet transfers into/out of KCB Paybill made via
+    //    money transfer.html, cashier.html's Money In/Out card, or bank.html) -
+    //    calculateTotals() already includes these in the balance, but the old
+    //    history list never fetched cash_transactions at all, so that money looked
+    //    like it came from nowhere.
+    let historyCache = [];
+
     async function loadHistory() {
         try {
-            const branchFilter = selectedBranchId || currentBranchId;
-            
-            let query = supabase
-                .from('admin_expenses')
-                .select('*, branches(name)')
-                .eq('payment_source', 'KCB Paybill')
-                .order('created_at', { ascending: false })
-                .limit(displayLimit);
-            
-            if (branchFilter) {
-                query = query.eq('branch_id', branchFilter);
-            }
-            
-            const { data, error } = await query;
+            // See calculateTotals() - must stay selectedBranchId only, no currentBranchId fallback.
+            const branchFilter = selectedBranchId;
 
-            const list = document.getElementById('expenseList');
-            if (error || !data) throw error;
+            const [expenseRows, transferRows] = await Promise.all([
+                fetchAllRows(() => {
+                    let q = supabase.from('admin_expenses').select('*, branches(name)').eq('payment_source', 'KCB Paybill');
+                    if (branchFilter) q = q.eq('branch_id', branchFilter);
+                    return q;
+                }),
+                fetchAllRows(() => {
+                    let q = supabase.from('cash_transactions').select('*').eq('category', 'KCB Paybill');
+                    if (branchFilter) q = q.eq('branch_id', branchFilter);
+                    return q;
+                })
+            ]);
 
-            if (data.length === 0) {
-                const branchName = branchFilter ? branches[branchFilter]?.name : 'All Branches';
-                list.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-dim);">
-                    <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                    No transactions found for ${branchName}
-                </div>`;
-                return;
-            }
+            const normalizedExpenses = expenseRows.map(ex => ({
+                id: ex.id,
+                fromTransfer: false,
+                isFunding: ex.type === 'funding',
+                type: ex.type,
+                amount: ex.amount,
+                title: ex.description || ex.category,
+                category: ex.category,
+                branchName: ex.branches?.name || branches[ex.branch_id]?.name || 'Unknown',
+                created_at: ex.created_at
+            }));
 
-            list.innerHTML = data.map(ex => {
-                const isFunding = ex.type === 'funding';
-                const formattedDate = new Date(ex.created_at).toLocaleDateString('en-GB', {
-                    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                });
-                const branchName = ex.branches?.name || branches[ex.branch_id]?.name || 'Unknown';
+            const normalizedTransfers = transferRows.map(t => ({
+                id: t.id,
+                fromTransfer: true,
+                isFunding: t.type === 'Money In',
+                amount: t.amount,
+                title: t.description || 'Wallet Transfer',
+                category: 'Wallet Transfer',
+                branchName: branches[t.branch_id]?.name || 'Unknown',
+                created_at: t.created_at
+            }));
 
-                return `
-                    <div class="history-item">
-                        <div class="item-info">
-                            <div class="title">${ex.description || ex.category}</div>
-                            <div class="date">${formattedDate}</div>
-                            <div class="branch-tag"><i class="fas fa-store"></i> ${branchName}</div>
-                        </div>
-                        <div class="item-right">
-                            <div class="item-amount-box">
-                                <div class="${isFunding ? 'amt-in' : 'amt-out'}">
-                                    ${isFunding ? '+' : '-'} Ksh ${parseFloat(ex.amount).toLocaleString()}
-                                </div>
-                                <div class="cat-tag">${ex.category}</div>
-                            </div>
-                            <button class="btn-delete" onclick="deleteTransaction('${ex.id}', ${ex.amount}, '${ex.type}')">
-                                <i class="fas fa-undo-alt"></i> UNDO
-                            </button>
-                        </div>
-                    </div>`;
-            }).join('');
+            historyCache = [...normalizedExpenses, ...normalizedTransfers]
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            renderHistory();
         } catch (error) {
             console.error("Error loading history:", error);
             document.getElementById('expenseList').innerHTML = `
@@ -825,6 +843,58 @@
                 </div>
             `;
         }
+    }
+
+    // Renders the currently cached, merged history list up to displayLimit -
+    // purely client-side, so "View Older Transactions" doesn't need a re-fetch.
+    function renderHistory() {
+        const list = document.getElementById('expenseList');
+        const branchFilter = selectedBranchId;
+        const visible = historyCache.slice(0, displayLimit);
+
+        if (visible.length === 0) {
+            const branchName = branchFilter ? branches[branchFilter]?.name : 'All Branches';
+            list.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-dim);">
+                <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                No transactions found for ${branchName}
+            </div>`;
+            document.getElementById('showMoreBtn').style.display = 'none';
+            return;
+        }
+
+        list.innerHTML = visible.map(item => {
+            const formattedDate = new Date(item.created_at).toLocaleDateString('en-GB', {
+                day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+
+            // Transfers are managed on their own pages (money transfer.html, cashier.html,
+            // bank.html) - no UNDO button here, just a badge showing where it came from.
+            const rightAction = item.fromTransfer
+                ? `<span style="font-size:0.65rem; color:var(--text-dim); font-weight:700; display:flex; align-items:center; gap:4px;"><i class="fas fa-exchange-alt"></i> VIA TRANSFER</span>`
+                : `<button class="btn-delete" onclick="deleteTransaction('${item.id}', ${item.amount}, '${item.type}')">
+                        <i class="fas fa-undo-alt"></i> UNDO
+                   </button>`;
+
+            return `
+                <div class="history-item">
+                    <div class="item-info">
+                        <div class="title">${item.title}</div>
+                        <div class="date">${formattedDate}</div>
+                        <div class="branch-tag"><i class="fas fa-store"></i> ${item.branchName}</div>
+                    </div>
+                    <div class="item-right">
+                        <div class="item-amount-box">
+                            <div class="${item.isFunding ? 'amt-in' : 'amt-out'}">
+                                ${item.isFunding ? '+' : '-'} Ksh ${parseFloat(item.amount).toLocaleString()}
+                            </div>
+                            <div class="cat-tag">${item.category}</div>
+                        </div>
+                        ${rightAction}
+                    </div>
+                </div>`;
+        }).join('');
+
+        document.getElementById('showMoreBtn').style.display = displayLimit >= historyCache.length ? 'none' : 'block';
     }
 
     // New Delete Function
