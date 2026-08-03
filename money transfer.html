@@ -1399,54 +1399,27 @@
                 throw new Error('Authentication required');
             }
 
-            const now = new Date().toISOString();
             const categoryFrom = formatAccountName(fromAccount);
             const categoryTo = formatAccountName(toAccount);
 
             // If no open shift, create a transfer without shift_id
             const shiftId = currentShift ? currentShift.id : null;
 
-            // Record Money Out (from account)
-            const outData = {
-                type: 'Money Out',
-                category: categoryFrom,
-                amount: amount,
-                description: `Transfer to ${categoryTo}${description ? ': ' + description : ''}`,
-                branch_id: branchId,
-                user_id: user.id,
-                created_at: now
-            };
+            // process_transfer() writes the transfers row and both
+            // cash_transactions legs in one DB transaction - either the whole
+            // transfer lands or none of it does, instead of the old two
+            // independent .insert() calls where a failure on the second left
+            // a dangling, unmatched leg.
+            const { error: transferError } = await supabase.rpc('process_transfer', {
+                p_branch_id: branchId,
+                p_shift_id: shiftId,
+                p_from_category: categoryFrom,
+                p_to_category: categoryTo,
+                p_amount: amount,
+                p_description: description
+            });
 
-            if (shiftId) {
-                outData.shift_id = shiftId;
-            }
-
-            const { error: outError } = await supabase
-                .from('cash_transactions')
-                .insert(outData);
-
-            if (outError) throw outError;
-
-            // Record Money In (to account)
-            const inData = {
-                type: 'Money In',
-                category: categoryTo,
-                amount: amount,
-                description: `Transfer from ${categoryFrom}${description ? ': ' + description : ''}`,
-                branch_id: branchId,
-                user_id: user.id,
-                created_at: now
-            };
-
-            if (shiftId) {
-                inData.shift_id = shiftId;
-            }
-
-            const { error: inError } = await supabase
-                .from('cash_transactions')
-                .insert(inData);
-
-            if (inError) throw inError;
+            if (transferError) throw transferError;
 
             // Update balances
             balances[fromAccount] -= amount;
@@ -1495,10 +1468,11 @@
     async function loadHistory() {
         try {
             let branchId = selectedBranchId || getCurrentBranchId();
-            let query = supabase
-                .from('cash_transactions')
-                .select('*')
-                .ilike('description', '%transfer%');
+            // transfers has one row per transfer (from_category/to_category/
+            // amount already on the row) - no more inferring "this was a
+            // transfer" from cash_transactions description text, and no more
+            // pairing two rows by matching timestamp.
+            let query = supabase.from('transfers').select('*');
 
             if (!isAllBranches && branchId) {
                 query = query.eq('branch_id', branchId);
@@ -1537,67 +1511,23 @@
             return;
         }
 
-        const grouped = {};
-        transfers.forEach(t => {
-            const key = t.created_at;
-            if (!grouped[key]) grouped[key] = [];
-            grouped[key].push(t);
-        });
-
         let html = '';
-        Object.keys(grouped).forEach(key => {
-            const items = grouped[key];
-            const out = items.find(t => t.type === 'Money Out');
-            const inT = items.find(t => t.type === 'Money In');
+        transfers.forEach(t => {
+            const date = new Date(t.created_at);
+            const dateStr = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const branchName = branches[t.branch_id]?.name || 'Unknown';
 
-            if (out && inT) {
-                const date = new Date(out.created_at);
-                const dateStr = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-                const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-                // The account each leg affected IS the from/to account - no need to
-                // (unreliably) parse it back out of the description text. Money Out's
-                // category is where the money left; Money In's category is where it
-                // landed.
-                const from = out.category;
-                const to = inT.category;
-
-                const branchName = branches[out.branch_id]?.name || 'Unknown';
-
-                html += `
-                    <tr>
-                        <td>${dateStr} ${timeStr}</td>
-                        <td><span class="account-from">${from}</span></td>
-                        <td><span class="account-from"><span class="to">${to}</span></span></td>
-                        <td class="amount-col positive">Ksh ${out.amount.toLocaleString()}</td>
-                        <td>${out.description}</td>
-                        <td><span class="transfer-badge success">${branchName}</span></td>
-                    </tr>
-                `;
-            } else {
-                // No matching Money In/Money Out pair at this exact timestamp -
-                // most likely entered as a single-sided transaction elsewhere
-                // (e.g. the Money IN/OUT page) rather than through this page's
-                // two-row transfer flow. Still show it instead of silently
-                // dropping it, but don't invent a matching leg for it.
-                items.forEach(t => {
-                    const date = new Date(t.created_at);
-                    const dateStr = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-                    const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    const branchName = branches[t.branch_id]?.name || 'Unknown';
-                    const direction = t.type === 'Money Out' ? 'Out of' : 'Into';
-
-                    html += `
-                        <tr>
-                            <td>${dateStr} ${timeStr}</td>
-                            <td colspan="2"><span class="account-from">${direction} ${t.category}</span></td>
-                            <td class="amount-col ${t.type === 'Money Out' ? 'negative' : 'positive'}">Ksh ${t.amount.toLocaleString()}</td>
-                            <td>${t.description}</td>
-                            <td><span class="transfer-badge pending">${branchName}</span></td>
-                        </tr>
-                    `;
-                });
-            }
+            html += `
+                <tr>
+                    <td>${dateStr} ${timeStr}</td>
+                    <td><span class="account-from">${t.from_category}</span></td>
+                    <td><span class="account-from"><span class="to">${t.to_category}</span></span></td>
+                    <td class="amount-col positive">Ksh ${t.amount.toLocaleString()}</td>
+                    <td>${t.description || ''}</td>
+                    <td><span class="transfer-badge success">${branchName}</span></td>
+                </tr>
+            `;
         });
 
         tbody.innerHTML = html || `

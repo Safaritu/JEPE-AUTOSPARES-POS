@@ -2461,6 +2461,7 @@
             <div class="section-label">MONEY IN/OUT RECORD</div>
             <input type="number" id="exp-amt" placeholder="Amount" style="margin-bottom:12px; padding: 12px; border-radius: 8px;">
             <select id="exp-type" style="margin-bottom:12px; padding: 12px; border-radius: 8px;">
+                <option value="" selected disabled>Select Money In or Money Out</option>
                 <option value="Money Out">Money Out</option>
                 <option value="Money In">Money In</option>
             </select>
@@ -4131,8 +4132,10 @@
         recordExpenseBtn.addEventListener('click', async function() {
             const amt = parseFloat(document.getElementById('exp-amt')?.value || 0);
             const desc = document.getElementById('exp-desc')?.value || '';
+            const expType = document.getElementById('exp-type')?.value || '';
             const branchId = getCurrentBranchId();
             if (!amt || !desc || !currentShift) { showToast("Please fill all fields and make sure a shift is active", 'warning'); return; }
+            if (!expType) { showToast("Please select Money In or Money Out", 'warning'); return; }
 
             this.disabled = true;
             this.innerHTML = '<span class="spinner"></span> RECORDING...';
@@ -4140,7 +4143,7 @@
             try {
                 const { error } = await supabase.from('cash_transactions').insert([{
                     shift_id: currentShift.id,
-                    type: document.getElementById('exp-type')?.value || 'Money Out',
+                    type: expType,
                     category: document.getElementById('exp-method')?.value || 'Cash',
                     amount: amt,
                     description: desc,
