@@ -2460,19 +2460,33 @@
         <div class="card">
             <div class="section-label">MONEY IN/OUT RECORD</div>
             <input type="number" id="exp-amt" placeholder="Amount" style="margin-bottom:12px; padding: 12px; border-radius: 8px;">
+            <label style="display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:0.82rem; cursor:pointer;">
+                <input type="checkbox" id="exp-is-transfer" style="width:auto;">
+                Internal transfer to another wallet
+            </label>
             <select id="exp-type" style="margin-bottom:12px; padding: 12px; border-radius: 8px;">
                 <option value="" selected disabled>Select Money In or Money Out</option>
                 <option value="Money Out">Money Out</option>
                 <option value="Money In">Money In</option>
             </select>
             <input type="text" id="exp-desc" placeholder="Reason (e.g. Loading Fee, Lunch)" style="width:100%; margin-bottom:12px; padding: 12px; border-radius: 8px;">
-            <select id="exp-method" style="width:100%; margin-bottom:15px; padding: 12px; border-radius: 8px;">
+            <select id="exp-method" style="width:100%; margin-bottom:12px; padding: 12px; border-radius: 8px;">
                 <option value="Cash">Cash</option>
                 <option value="Mpesa">Mpesa</option>
                 <option value="KCB Float">KCB Float</option>
                 <option value="Equity Float">Equity Float</option>
                 <option value="KCB Paybill" style="color: #2563eb; font-weight: 700;">💰 KCB Paybill (Live Box)</option>
                 <!-- New Bank Options - Will be shown conditionally -->
+                <option value="Family Bank Float" style="color: #059669; font-weight: 700;" class="family-bank-option" style="display: none;">🏦 Family Bank Float</option>
+                <option value="Cooperative Bank Float" style="color: #7c3aed; font-weight: 700;" class="cooperative-bank-option" style="display: none;">🏦 Cooperative Bank Float</option>
+            </select>
+            <select id="exp-to-method" style="display:none; width:100%; margin-bottom:15px; padding: 12px; border-radius: 8px;">
+                <option value="" selected disabled>Transfer TO which wallet?</option>
+                <option value="Cash">Cash</option>
+                <option value="Mpesa">Mpesa</option>
+                <option value="KCB Float">KCB Float</option>
+                <option value="Equity Float">Equity Float</option>
+                <option value="KCB Paybill" style="color: #2563eb; font-weight: 700;">💰 KCB Paybill (Live Box)</option>
                 <option value="Family Bank Float" style="color: #059669; font-weight: 700;" class="family-bank-option" style="display: none;">🏦 Family Bank Float</option>
                 <option value="Cooperative Bank Float" style="color: #7c3aed; font-weight: 700;" class="cooperative-bank-option" style="display: none;">🏦 Cooperative Bank Float</option>
             </select>
@@ -4127,40 +4141,83 @@
     // ============================================
     // MONEY IN/OUT
     // ============================================
+    // Checking "Internal transfer to another wallet" switches this card from
+    // a single-sided Money In/Out entry to a real transfer through the same
+    // process_transfer() RPC money transfer.html uses - it was too easy for
+    // a cashier to record a transfer here as one plain Money Out/In (wrong
+    // direction, no linked counterpart leg) instead of using the dedicated
+    // Transfer page.
+    const expIsTransfer = document.getElementById('exp-is-transfer');
+    const expTypeSelect = document.getElementById('exp-type');
+    const expToMethodSelect = document.getElementById('exp-to-method');
+    if (expIsTransfer) {
+        expIsTransfer.addEventListener('change', function() {
+            expTypeSelect.style.display = this.checked ? 'none' : '';
+            expToMethodSelect.style.display = this.checked ? '' : 'none';
+            if (this.checked) {
+                expTypeSelect.value = '';
+            } else {
+                expToMethodSelect.value = '';
+            }
+        });
+    }
+
     const recordExpenseBtn = document.getElementById('record-expense-btn');
     if (recordExpenseBtn) {
         recordExpenseBtn.addEventListener('click', async function() {
             const amt = parseFloat(document.getElementById('exp-amt')?.value || 0);
             const desc = document.getElementById('exp-desc')?.value || '';
             const expType = document.getElementById('exp-type')?.value || '';
+            const fromMethod = document.getElementById('exp-method')?.value || 'Cash';
+            const isTransfer = expIsTransfer?.checked;
+            const toMethod = document.getElementById('exp-to-method')?.value || '';
             const branchId = getCurrentBranchId();
             if (!amt || !desc || !currentShift) { showToast("Please fill all fields and make sure a shift is active", 'warning'); return; }
-            if (!expType) { showToast("Please select Money In or Money Out", 'warning'); return; }
+            if (!isTransfer && !expType) { showToast("Please select Money In or Money Out", 'warning'); return; }
+            if (isTransfer && !toMethod) { showToast("Please select which wallet to transfer to", 'warning'); return; }
+            if (isTransfer && toMethod === fromMethod) { showToast("Cannot transfer to the same wallet", 'warning'); return; }
 
             this.disabled = true;
             this.innerHTML = '<span class="spinner"></span> RECORDING...';
 
             try {
-                const { error } = await supabase.from('cash_transactions').insert([{
-                    shift_id: currentShift.id,
-                    type: expType,
-                    category: document.getElementById('exp-method')?.value || 'Cash',
-                    amount: amt,
-                    description: desc,
-                    branch_id: branchId,
-                    user_id: currentUser.id
-                }]);
+                if (isTransfer) {
+                    const { error } = await supabase.rpc('process_transfer', {
+                        p_branch_id: branchId,
+                        p_shift_id: currentShift.id,
+                        p_from_category: fromMethod,
+                        p_to_category: toMethod,
+                        p_amount: amt,
+                        p_description: desc
+                    });
+                    if (error) throw error;
+                } else {
+                    const { error } = await supabase.from('cash_transactions').insert([{
+                        shift_id: currentShift.id,
+                        type: expType,
+                        category: fromMethod,
+                        amount: amt,
+                        description: desc,
+                        branch_id: branchId,
+                        user_id: currentUser.id
+                    }]);
+                    if (error) throw error;
+                }
 
-                if (!error) {
-                    const expAmt = document.getElementById('exp-amt');
-                    const expDesc = document.getElementById('exp-desc');
-                    if (expAmt) expAmt.value = '';
-                    if (expDesc) expDesc.value = '';
-                    await loadShiftData();
-                    this.disabled = false;
-                    this.innerHTML = 'RECORD MONEY';
-                    showSuccessNotification('Transaction recorded successfully!', `${document.getElementById('exp-type')?.value || 'Money Out'}: Ksh ${amt.toLocaleString()} via ${document.getElementById('exp-method')?.value || 'Cash'}`);
-                } else { throw error; }
+                const expAmt = document.getElementById('exp-amt');
+                const expDesc = document.getElementById('exp-desc');
+                if (expAmt) expAmt.value = '';
+                if (expDesc) expDesc.value = '';
+                if (expToMethodSelect) expToMethodSelect.value = '';
+                await loadShiftData();
+                this.disabled = false;
+                this.innerHTML = 'RECORD MONEY';
+                showSuccessNotification(
+                    'Transaction recorded successfully!',
+                    isTransfer
+                        ? `Transfer: Ksh ${amt.toLocaleString()} from ${fromMethod} to ${toMethod}`
+                        : `${expType}: Ksh ${amt.toLocaleString()} via ${fromMethod}`
+                );
             } catch (error) {
                 showToast("Error recording transaction: " + error.message, 'error');
                 this.disabled = false;
